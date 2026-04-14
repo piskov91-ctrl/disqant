@@ -53,6 +53,7 @@ export async function POST(req: Request) {
 
   const modelFile = form.get("model");
   const garmentFile = form.get("garment");
+  const tryOnType = String(form.get("tryOnType") || "clothing"); // clothing | shoes
   const mode = String(form.get("mode") || "balanced");
   const outputFormat = String(form.get("outputFormat") || "png");
   const returnBase64 = String(form.get("returnBase64") || "true") === "true";
@@ -73,18 +74,29 @@ export async function POST(req: Request) {
     Authorization: `Bearer ${apiKey}`,
   };
 
+  const isShoes = tryOnType === "shoes";
+
   const runRes = await fetch(`${baseUrl}/run`, {
     method: "POST",
     headers,
     body: JSON.stringify({
-      model_name: "tryon-v1.6",
-      inputs: {
-        model_image: modelImage,
-        garment_image: garmentImage,
-        mode,
-        output_format: outputFormat,
-        return_base64: returnBase64,
-      },
+      model_name: isShoes ? "tryon-max" : "tryon-v1.6",
+      inputs: isShoes
+        ? {
+            model_image: modelImage,
+            product_image: garmentImage,
+            generation_mode: mode === "quality" ? "quality" : "balanced",
+            resolution: "1k",
+            output_format: outputFormat,
+            return_base64: returnBase64,
+          }
+        : {
+            model_image: modelImage,
+            garment_image: garmentImage,
+            mode,
+            output_format: outputFormat,
+            return_base64: returnBase64,
+          },
     }),
   });
 
@@ -103,7 +115,7 @@ export async function POST(req: Request) {
   }
 
   const startedAt = Date.now();
-  const timeoutMs = 90_000;
+  const timeoutMs = isShoes ? 150_000 : 90_000;
 
   while (true) {
     if (Date.now() - startedAt > timeoutMs) {
@@ -138,7 +150,7 @@ export async function POST(req: Request) {
       );
     }
 
-    await sleep(1200);
+    await sleep(isShoes ? 2000 : 1200);
   }
 }
 
