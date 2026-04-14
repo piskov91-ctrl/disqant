@@ -30,6 +30,69 @@ async function fileToDataUrl(file: File) {
   return `data:${mime};base64,${base64}`;
 }
 
+function looksLikeShoesByName(name: string) {
+  return /(shoe|sneaker|boot|heel|loafer|sandal|footwear)/.test(name.toLowerCase());
+}
+
+async function startPrediction(params: {
+  apiKey: string;
+  modelName: "tryon-v1.6" | "tryon-max";
+  mode: string;
+  outputFormat: string;
+  returnBase64: boolean;
+  modelImage: string;
+  garmentOrProductImage: string;
+}) {
+  const { apiKey, modelName, mode, outputFormat, returnBase64, modelImage, garmentOrProductImage } =
+    params;
+
+  const baseUrl = "https://api.fashn.ai/v1";
+  const headers = {
+    "Content-Type": "application/json",
+    Authorization: `Bearer ${apiKey}`,
+  };
+
+  const isMax = modelName === "tryon-max";
+  const body = isMax
+    ? {
+        model_name: "tryon-max",
+        inputs: {
+          model_image: modelImage,
+          product_image: garmentOrProductImage,
+          generation_mode: mode === "quality" ? "quality" : "balanced",
+          resolution: "1k",
+          output_format: outputFormat,
+          return_base64: returnBase64,
+        },
+      }
+    : {
+        model_name: "tryon-v1.6",
+        inputs: {
+          model_image: modelImage,
+          garment_image: garmentOrProductImage,
+          mode,
+          output_format: outputFormat,
+          return_base64: returnBase64,
+        },
+      };
+
+  const runRes = await fetch(`${baseUrl}/run`, {
+    method: "POST",
+    headers,
+    body: JSON.stringify(body),
+  });
+
+  if (!runRes.ok) {
+    const text = await runRes.text().catch(() => "");
+    return { ok: false as const, error: `FASHN /run failed (${runRes.status}). ${text || ""}`.trim() };
+  }
+
+  const runData = (await runRes.json()) as FashnRunResponse;
+  const id = runData.id;
+  if (!id) return { ok: false as const, error: "FASHN did not return a prediction id." };
+  return { ok: true as const, id, headers, baseUrl, isMax };
+}
+
 export async function POST(req: Request) {
   const jar = await cookies();
   if (!isDemoAuthorizedCookieValue(jar.get(DEMO_AUTH_COOKIE)?.value)) {
@@ -53,7 +116,8 @@ export async function POST(req: Request) {
 
   const modelFile = form.get("model");
   const garmentFile = form.get("garment");
-  const tryOnType = String(form.get("tryOnType") || "clothing"); // clothing | shoes
+  const tryOnType = String(form.get("tryOnType") || "auto"); // auto | clothing | shoes
+  const autoDetectedType = String(form.get("autoDetectedType") || ""); // clothing | shoes (hint)
   const mode = String(form.get("mode") || "balanced");
   const outputFormat = String(form.get("outputFormat") || "png");
   const returnBase64 = String(form.get("returnBase64") || "true") === "true";
@@ -68,54 +132,66 @@ export async function POST(req: Request) {
   const modelImage = await fileToDataUrl(modelFile);
   const garmentImage = await fileToDataUrl(garmentFile);
 
-  const baseUrl = "https://api.fashn.ai/v1";
-  const headers = {
-    "Content-Type": "application/json",
-    Authorization: `Bearer ${apiKey}`,
-  };
+  const hintedShoes = autoDetectedType === "shoes";
+  const guessedShoesByName = looksLikeShoesByName(garmentFile.name || "");
+  const shouldUseMaxFirst =
+    tryOnType === "shoes" ||
+    (tryOnType === "auto" && (hintedShoes || guessedShoesByName));
 
-  const isShoes = tryOnType === "shoes";
+  // Attempt fast clothing model first (unless we think it's shoes), then fall back to Try-On Max.
+  const firstModel: "tryon-v1.6" | "tryon-max" = shouldUseMaxFirst ? "tryon-max" : "tryon-v1.6";
+  const secondModel: "tryon-v1.6" | "tryon-max" = firstModel === "tryon-v1.6" ? "tryon-max" : "tryon-v1.6";
 
-  const runRes = await fetch(`${baseUrl}/run`, {
-    method: "POST",
-    headers,
-    body: JSON.stringify({
-      model_name: isShoes ? "tryon-max" : "tryon-v1.6",
-      inputs: isShoes
-        ? {
-            model_image: modelImage,
-            product_image: garmentImage,
-            generation_mode: mode === "quality" ? "quality" : "balanced",
-            resolution: "1k",
-            output_format: outputFormat,
-            return_base64: returnBase64,
-          }
-        : {
-            model_image: modelImage,
-            garment_image: garmentImage,
-            mode,
-            output_format: outputFormat,
-            return_base64: returnBase64,
-          },
-    }),
+  const first = await startPrediction({
+    apiKey,
+    modelName: firstModel,
+    mode,
+    outputFormat,
+    returnBase64,
+    modelImage,
+    garmentOrProductImage: garmentImage,
   });
 
-  if (!runRes.ok) {
-    const text = await runRes.text().catch(() => "");
-    return Response.json(
-      { error: `FASHN /run failed (${runRes.status}). ${text || ""}`.trim() },
-      { status: 502 },
-    );
+  if (!first.ok) {
+    // If the first attempt fails, try the other model (useful for auto-detection edge cases).
+    const second = await startPrediction({
+      apiKey,
+      modelName: secondModel,
+      mode,
+      outputFormat,
+      returnBase64,
+      modelImage,
+      garmentOrProductImage: garmentImage,
+    });
+    if (!second.ok) return Response.json({ error: second.error }, { status: 502 });
+
+    return await pollUntilDone({
+      id: second.id,
+      headers: second.headers,
+      baseUrl: second.baseUrl,
+      timeoutMs: second.isMax ? 150_000 : 90_000,
+      pollMs: second.isMax ? 2000 : 1200,
+    });
   }
 
-  const runData = (await runRes.json()) as FashnRunResponse;
-  const id = runData.id;
-  if (!id) {
-    return Response.json({ error: "FASHN did not return a prediction id." }, { status: 502 });
-  }
+  return await pollUntilDone({
+    id: first.id,
+    headers: first.headers,
+    baseUrl: first.baseUrl,
+    timeoutMs: first.isMax ? 150_000 : 90_000,
+    pollMs: first.isMax ? 2000 : 1200,
+  });
+}
 
+async function pollUntilDone(params: {
+  id: string;
+  headers: Record<string, string>;
+  baseUrl: string;
+  timeoutMs: number;
+  pollMs: number;
+}) {
+  const { id, headers, baseUrl, timeoutMs, pollMs } = params;
   const startedAt = Date.now();
-  const timeoutMs = isShoes ? 150_000 : 90_000;
 
   while (true) {
     if (Date.now() - startedAt > timeoutMs) {
@@ -150,7 +226,8 @@ export async function POST(req: Request) {
       );
     }
 
-    await sleep(isShoes ? 2000 : 1200);
+    await sleep(pollMs);
   }
 }
+
 

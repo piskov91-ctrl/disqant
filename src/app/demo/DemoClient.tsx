@@ -51,10 +51,29 @@ async function compressImageToMax1000px(file: File) {
   }
 }
 
+async function getImageAspectRatio(file: File) {
+  try {
+    const bitmap = await createImageBitmap(file);
+    const ratio = bitmap.width / bitmap.height;
+    bitmap.close?.();
+    return ratio;
+  } catch {
+    return null;
+  }
+}
+
+function guessIfShoes(fileName: string, aspectRatio: number | null) {
+  const n = fileName.toLowerCase();
+  const nameHint = /(shoe|sneaker|boot|heel|loafer|sandal|footwear)/.test(n);
+  // Common product-only shoe shots are wider than tall.
+  const aspectHint = aspectRatio !== null ? aspectRatio >= 1.15 : false;
+  return nameHint || aspectHint;
+}
+
 export default function DemoClient() {
   const [model, setModel] = useState<File | null>(null);
   const [garment, setGarment] = useState<File | null>(null);
-  const [tryOnType, setTryOnType] = useState<"clothing" | "shoes">("clothing");
+  const [autoDetectedType, setAutoDetectedType] = useState<"clothing" | "shoes" | null>(null);
   const [mode, setMode] = useState<"performance" | "balanced" | "quality">("balanced");
   const [outputFormat, setOutputFormat] = useState<"png" | "jpeg">("png");
 
@@ -87,9 +106,12 @@ export default function DemoClient() {
     setResult(null);
     if (!file) {
       setGarment(null);
+      setAutoDetectedType(null);
       return;
     }
     setCompressing("garment");
+    const ratio = await getImageAspectRatio(file);
+    setAutoDetectedType(guessIfShoes(file.name, ratio) ? "shoes" : "clothing");
     const compressed = await compressImageToMax1000px(file);
     setGarment(compressed);
     setCompressing(null);
@@ -110,7 +132,8 @@ export default function DemoClient() {
       const fd = new FormData();
       fd.set("model", model);
       fd.set("garment", garment);
-      fd.set("tryOnType", tryOnType);
+      fd.set("tryOnType", "auto");
+      if (autoDetectedType) fd.set("autoDetectedType", autoDetectedType);
       fd.set("mode", mode);
       fd.set("outputFormat", outputFormat);
       fd.set("returnBase64", "true");
@@ -182,39 +205,6 @@ export default function DemoClient() {
 
             <form onSubmit={onSubmit} className="mt-8 space-y-5">
               <div className="rounded-2xl border border-surface-border bg-surface-raised/30 p-5">
-                <label className="block text-sm font-medium text-white">Try-on type</label>
-                <p className="mt-1 text-xs text-zinc-500">
-                  Clothing uses fast try-on. Shoes uses Try-On Max (slower, higher fidelity).
-                </p>
-                <div className="mt-3 grid gap-3 sm:grid-cols-2">
-                  <button
-                    type="button"
-                    onClick={() => setTryOnType("clothing")}
-                    className={`inline-flex h-11 items-center justify-center rounded-full border text-sm font-semibold transition ${
-                      tryOnType === "clothing"
-                        ? "border-accent/60 bg-accent/15 text-white"
-                        : "border-surface-border bg-transparent text-zinc-300 hover:border-zinc-600 hover:bg-surface-raised"
-                    }`}
-                    disabled={loading || compressing !== null}
-                  >
-                    Clothing
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setTryOnType("shoes")}
-                    className={`inline-flex h-11 items-center justify-center rounded-full border text-sm font-semibold transition ${
-                      tryOnType === "shoes"
-                        ? "border-accent/60 bg-accent/15 text-white"
-                        : "border-surface-border bg-transparent text-zinc-300 hover:border-zinc-600 hover:bg-surface-raised"
-                    }`}
-                    disabled={loading || compressing !== null}
-                  >
-                    Shoes
-                  </button>
-                </div>
-              </div>
-
-              <div className="rounded-2xl border border-surface-border bg-surface-raised/30 p-5">
                 <label className="block text-sm font-medium text-white">Person photo</label>
                 <p className="mt-1 text-xs text-zinc-500">
                   Front-facing, good lighting works best. We auto-compress to max 1000px.
@@ -267,12 +257,11 @@ export default function DemoClient() {
 
               <div className="rounded-2xl border border-surface-border bg-surface-raised/30 p-5">
                 <label className="block text-sm font-medium text-white">
-                  {tryOnType === "shoes" ? "Shoe image" : "Garment image"}
+                  Item image
                 </label>
                 <p className="mt-1 text-xs text-zinc-500">
-                  {tryOnType === "shoes"
-                    ? "Product-only shoe photos work best (side view, clean background). We auto-compress to max 1000px."
-                    : "Flat-lay or mannequin photos are ideal. We auto-compress to max 1000px."}
+                  Upload a clothing item or shoes. Disquant automatically detects the item type and
+                  chooses the correct try-on mode.
                 </p>
                 <div className="mt-3">
                   <input
@@ -284,6 +273,11 @@ export default function DemoClient() {
                   {garment && (
                     <p className="mt-2 text-xs text-zinc-500">
                       {garment.name} · {formatBytes(garment.size)}
+                      {autoDetectedType ? (
+                        <span className="ml-2 rounded-full border border-surface-border bg-surface-raised/50 px-2 py-0.5 text-[11px] text-zinc-300">
+                          Detected: {autoDetectedType}
+                        </span>
+                      ) : null}
                     </p>
                   )}
                   {compressing === "garment" && (
@@ -307,9 +301,7 @@ export default function DemoClient() {
                     <option value="quality">quality</option>
                   </select>
                   <p className="mt-2 text-xs text-zinc-500">
-                    {tryOnType === "shoes"
-                      ? "Shoes uses Try-On Max; expect ~20–120s depending on load."
-                      : "Quality takes longer (12–17s)."}
+                    Quality takes longer. Shoes can take ~20–120s depending on load.
                   </p>
                 </div>
 
