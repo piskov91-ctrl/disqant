@@ -1,4 +1,5 @@
 import { cookies } from "next/headers";
+import Link from "next/link";
 import DemoClient from "./DemoClient";
 import AccessCodeGateClient from "./AccessCodeGateClient";
 import { DEMO_AUTH_COOKIE, isDemoAuthorizedCookieValue } from "@/lib/demoAuth";
@@ -8,16 +9,16 @@ function AccessCodeGate() {
     <div className="min-h-dvh bg-surface">
       <header className="border-b border-surface-border bg-surface/80 backdrop-blur-xl">
         <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-6">
-          <a href="/" className="flex items-center gap-2 text-lg font-semibold tracking-tight">
+          <Link href="/" className="flex items-center gap-2 text-lg font-semibold tracking-tight">
             <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-accent/20 text-accent">
               D
             </span>
             Disquant
-          </a>
+          </Link>
           <div className="flex items-center gap-3">
-            <a href="/" className="text-sm text-zinc-400 transition hover:text-white">
+            <Link href="/" className="text-sm text-zinc-400 transition hover:text-white">
               Back to landing
-            </a>
+            </Link>
           </div>
         </div>
       </header>

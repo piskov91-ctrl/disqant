@@ -1,6 +1,13 @@
 import { cookies } from "next/headers";
 import { DEMO_AUTH_COOKIE } from "@/lib/demoAuth";
 
+function extractCode(body: unknown) {
+  if (typeof body !== "object" || body === null) return null;
+  if (!("code" in body)) return null;
+  const value = (body as Record<string, unknown>).code;
+  return typeof value === "string" ? value : null;
+}
+
 export async function POST(req: Request) {
   let body: unknown;
   try {
@@ -9,7 +16,7 @@ export async function POST(req: Request) {
     return Response.json({ error: "Invalid JSON body." }, { status: 400 });
   }
 
-  const code = typeof (body as any)?.code === "string" ? ((body as any).code as string) : "";
+  const code = extractCode(body) ?? "";
   if (code !== "ivan91") {
     return Response.json({ error: "Invalid access code." }, { status: 401 });
   }
