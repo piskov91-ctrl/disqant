@@ -2,9 +2,10 @@
 
 import { useMemo, useRef, useState } from "react";
 import Link from "next/link";
+import { detectGarmentKind } from "@/lib/garmentDetect";
 
 type TryOnResponse =
-  | { id: string; output: string[] }
+  | { id: string; output: string[]; detectedKind?: "shoes" | "clothing" }
   | { error: string };
 
 function formatBytes(bytes: number) {
@@ -51,25 +52,6 @@ async function compressImageToMax1000px(file: File) {
   }
 }
 
-async function getImageAspectRatio(file: File) {
-  try {
-    const bitmap = await createImageBitmap(file);
-    const ratio = bitmap.width / bitmap.height;
-    bitmap.close?.();
-    return ratio;
-  } catch {
-    return null;
-  }
-}
-
-function guessIfShoes(fileName: string, aspectRatio: number | null) {
-  const n = fileName.toLowerCase();
-  const nameHint = /(shoe|sneaker|boot|heel|loafer|sandal|footwear)/.test(n);
-  // Common product-only shoe shots are wider than tall.
-  const aspectHint = aspectRatio !== null ? aspectRatio >= 1.15 : false;
-  return nameHint || aspectHint;
-}
-
 export default function DemoClient() {
   const [model, setModel] = useState<File | null>(null);
   const [garment, setGarment] = useState<File | null>(null);
@@ -110,8 +92,19 @@ export default function DemoClient() {
       return;
     }
     setCompressing("garment");
-    const ratio = await getImageAspectRatio(file);
-    setAutoDetectedType(guessIfShoes(file.name, ratio) ? "shoes" : "clothing");
+    try {
+      const bitmap = await createImageBitmap(file);
+      setAutoDetectedType(
+        detectGarmentKind({
+          fileName: file.name,
+          width: bitmap.width,
+          height: bitmap.height,
+        }),
+      );
+      bitmap.close?.();
+    } catch {
+      setAutoDetectedType("clothing");
+    }
     const compressed = await compressImageToMax1000px(file);
     setGarment(compressed);
     setCompressing(null);
@@ -132,7 +125,6 @@ export default function DemoClient() {
       const fd = new FormData();
       fd.set("model", model);
       fd.set("garment", garment);
-      if (autoDetectedType) fd.set("autoDetectedType", autoDetectedType);
       fd.set("mode", mode);
       fd.set("outputFormat", outputFormat);
       fd.set("returnBase64", "true");
@@ -151,6 +143,7 @@ export default function DemoClient() {
 
       if ("output" in data && data.output?.[0]) {
         setResult(data.output[0]);
+        if (data.detectedKind) setAutoDetectedType(data.detectedKind);
       } else {
         setError("No output returned.");
       }

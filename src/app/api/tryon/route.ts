@@ -1,4 +1,5 @@
 import { cookies } from "next/headers";
+import { detectGarmentKindFromImageBytes } from "@/lib/garmentDetect";
 import { DEMO_AUTH_COOKIE, isDemoAuthorizedCookieValue } from "@/lib/demoAuth";
 
 export const runtime = "nodejs";
@@ -30,8 +31,9 @@ async function fileToDataUrl(file: File) {
   return `data:${mime};base64,${base64}`;
 }
 
-function looksLikeShoesByName(name: string) {
-  return /(shoe|sneaker|boot|heel|loafer|sandal|footwear)/.test(name.toLowerCase());
+function bufferToDataUrl(buffer: ArrayBuffer, mime: string) {
+  const base64 = arrayBufferToBase64(buffer);
+  return `data:${mime};base64,${base64}`;
 }
 
 async function startPrediction(params: {
@@ -116,9 +118,6 @@ export async function POST(req: Request) {
 
   const modelFile = form.get("model");
   const garmentFile = form.get("garment");
-  // Always auto-detect server-side; do not allow the client to force a model choice.
-  const tryOnType = "auto";
-  const autoDetectedType = String(form.get("autoDetectedType") || ""); // clothing | shoes (hint)
   const mode = String(form.get("mode") || "balanced");
   const outputFormat = String(form.get("outputFormat") || "png");
   const returnBase64 = String(form.get("returnBase64") || "true") === "true";
@@ -131,12 +130,13 @@ export async function POST(req: Request) {
   }
 
   const modelImage = await fileToDataUrl(modelFile);
-  const garmentImage = await fileToDataUrl(garmentFile);
 
-  const hintedShoes = autoDetectedType === "shoes";
-  const guessedShoesByName = looksLikeShoesByName(garmentFile.name || "");
-  // tryOnType is forced to "auto" above; decide purely from hints.
-  const shouldUseMaxFirst = hintedShoes || guessedShoesByName;
+  const garmentBuf = await garmentFile.arrayBuffer();
+  const garmentMime = garmentFile.type || "image/jpeg";
+  const garmentKind = detectGarmentKindFromImageBytes(garmentFile.name || "item.jpg", garmentBuf);
+  const garmentImage = bufferToDataUrl(garmentBuf, garmentMime);
+
+  const shouldUseMaxFirst = garmentKind === "shoes";
 
   // Attempt fast clothing model first (unless we think it's shoes), then fall back to Try-On Max.
   const firstModel: "tryon-v1.6" | "tryon-max" = shouldUseMaxFirst ? "tryon-max" : "tryon-v1.6";
@@ -171,6 +171,7 @@ export async function POST(req: Request) {
       baseUrl: second.baseUrl,
       timeoutMs: second.isMax ? 150_000 : 90_000,
       pollMs: second.isMax ? 2000 : 1200,
+      detectedKind: garmentKind,
     });
   }
 
@@ -180,6 +181,7 @@ export async function POST(req: Request) {
     baseUrl: first.baseUrl,
     timeoutMs: first.isMax ? 150_000 : 90_000,
     pollMs: first.isMax ? 2000 : 1200,
+    detectedKind: garmentKind,
   });
 }
 
@@ -189,8 +191,9 @@ async function pollUntilDone(params: {
   baseUrl: string;
   timeoutMs: number;
   pollMs: number;
+  detectedKind: "shoes" | "clothing";
 }) {
-  const { id, headers, baseUrl, timeoutMs, pollMs } = params;
+  const { id, headers, baseUrl, timeoutMs, pollMs, detectedKind } = params;
   const startedAt = Date.now();
 
   while (true) {
@@ -216,7 +219,7 @@ async function pollUntilDone(params: {
       if (!out) {
         return Response.json({ error: "FASHN completed but returned no output." }, { status: 502 });
       }
-      return Response.json({ id, output: statusData.output });
+      return Response.json({ id, output: statusData.output, detectedKind });
     }
 
     if (statusData.status === "failed") {
