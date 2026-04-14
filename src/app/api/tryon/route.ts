@@ -1,5 +1,4 @@
 import { cookies } from "next/headers";
-import { detectGarmentKindFromImageBytes } from "@/lib/garmentDetect";
 import { DEMO_AUTH_COOKIE, isDemoAuthorizedCookieValue } from "@/lib/demoAuth";
 
 export const runtime = "nodejs";
@@ -28,11 +27,6 @@ function arrayBufferToBase64(buffer: ArrayBuffer) {
 async function fileToDataUrl(file: File) {
   const mime = file.type || "image/jpeg";
   const base64 = arrayBufferToBase64(await file.arrayBuffer());
-  return `data:${mime};base64,${base64}`;
-}
-
-function bufferToDataUrl(buffer: ArrayBuffer, mime: string) {
-  const base64 = arrayBufferToBase64(buffer);
   return `data:${mime};base64,${base64}`;
 }
 
@@ -118,6 +112,8 @@ export async function POST(req: Request) {
 
   const modelFile = form.get("model");
   const garmentFile = form.get("garment");
+  const tryOnTypeRaw = String(form.get("tryOnType") || "clothing");
+  const tryOnType = tryOnTypeRaw === "shoes" ? "shoes" : "clothing";
   const mode = String(form.get("mode") || "balanced");
   const outputFormat = String(form.get("outputFormat") || "png");
   const returnBase64 = String(form.get("returnBase64") || "true") === "true";
@@ -130,17 +126,12 @@ export async function POST(req: Request) {
   }
 
   const modelImage = await fileToDataUrl(modelFile);
+  const garmentImage = await fileToDataUrl(garmentFile);
 
-  const garmentBuf = await garmentFile.arrayBuffer();
-  const garmentMime = garmentFile.type || "image/jpeg";
-  const garmentKind = detectGarmentKindFromImageBytes(garmentFile.name || "item.jpg", garmentBuf);
-  const garmentImage = bufferToDataUrl(garmentBuf, garmentMime);
-
-  const shouldUseMaxFirst = garmentKind === "shoes";
-
-  // Attempt fast clothing model first (unless we think it's shoes), then fall back to Try-On Max.
-  const firstModel: "tryon-v1.6" | "tryon-max" = shouldUseMaxFirst ? "tryon-max" : "tryon-v1.6";
-  const secondModel: "tryon-v1.6" | "tryon-max" = firstModel === "tryon-v1.6" ? "tryon-max" : "tryon-v1.6";
+  const firstModel: "tryon-v1.6" | "tryon-max" =
+    tryOnType === "shoes" ? "tryon-max" : "tryon-v1.6";
+  const secondModel: "tryon-v1.6" | "tryon-max" =
+    firstModel === "tryon-v1.6" ? "tryon-max" : "tryon-v1.6";
 
   const first = await startPrediction({
     apiKey,
@@ -153,7 +144,10 @@ export async function POST(req: Request) {
   });
 
   if (!first.ok) {
-    // If the first attempt fails, try the other model (useful for auto-detection edge cases).
+    // Shoes must stay on Try-On Max (foot placement). Clothing can fall back to Max if v1.6 fails.
+    if (tryOnType === "shoes") {
+      return Response.json({ error: first.error }, { status: 502 });
+    }
     const second = await startPrediction({
       apiKey,
       modelName: secondModel,
@@ -171,7 +165,7 @@ export async function POST(req: Request) {
       baseUrl: second.baseUrl,
       timeoutMs: second.isMax ? 150_000 : 90_000,
       pollMs: second.isMax ? 2000 : 1200,
-      detectedKind: garmentKind,
+      tryOnType,
     });
   }
 
@@ -181,7 +175,7 @@ export async function POST(req: Request) {
     baseUrl: first.baseUrl,
     timeoutMs: first.isMax ? 150_000 : 90_000,
     pollMs: first.isMax ? 2000 : 1200,
-    detectedKind: garmentKind,
+    tryOnType,
   });
 }
 
@@ -191,9 +185,9 @@ async function pollUntilDone(params: {
   baseUrl: string;
   timeoutMs: number;
   pollMs: number;
-  detectedKind: "shoes" | "clothing";
+  tryOnType: "shoes" | "clothing";
 }) {
-  const { id, headers, baseUrl, timeoutMs, pollMs, detectedKind } = params;
+  const { id, headers, baseUrl, timeoutMs, pollMs, tryOnType } = params;
   const startedAt = Date.now();
 
   while (true) {
@@ -219,7 +213,7 @@ async function pollUntilDone(params: {
       if (!out) {
         return Response.json({ error: "FASHN completed but returned no output." }, { status: 502 });
       }
-      return Response.json({ id, output: statusData.output, detectedKind });
+      return Response.json({ id, output: statusData.output, tryOnType });
     }
 
     if (statusData.status === "failed") {

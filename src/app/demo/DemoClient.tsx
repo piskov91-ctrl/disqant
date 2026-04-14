@@ -2,10 +2,9 @@
 
 import { useMemo, useRef, useState } from "react";
 import Link from "next/link";
-import { detectGarmentKind } from "@/lib/garmentDetect";
 
 type TryOnResponse =
-  | { id: string; output: string[]; detectedKind?: "shoes" | "clothing" }
+  | { id: string; output: string[]; tryOnType?: "shoes" | "clothing" }
   | { error: string };
 
 function formatBytes(bytes: number) {
@@ -55,7 +54,7 @@ async function compressImageToMax1000px(file: File) {
 export default function DemoClient() {
   const [model, setModel] = useState<File | null>(null);
   const [garment, setGarment] = useState<File | null>(null);
-  const [autoDetectedType, setAutoDetectedType] = useState<"clothing" | "shoes" | null>(null);
+  const [tryOnType, setTryOnType] = useState<"clothing" | "shoes">("clothing");
   const [mode, setMode] = useState<"performance" | "balanced" | "quality">("balanced");
   const [outputFormat, setOutputFormat] = useState<"png" | "jpeg">("png");
 
@@ -88,23 +87,9 @@ export default function DemoClient() {
     setResult(null);
     if (!file) {
       setGarment(null);
-      setAutoDetectedType(null);
       return;
     }
     setCompressing("garment");
-    try {
-      const bitmap = await createImageBitmap(file);
-      setAutoDetectedType(
-        detectGarmentKind({
-          fileName: file.name,
-          width: bitmap.width,
-          height: bitmap.height,
-        }),
-      );
-      bitmap.close?.();
-    } catch {
-      setAutoDetectedType("clothing");
-    }
     const compressed = await compressImageToMax1000px(file);
     setGarment(compressed);
     setCompressing(null);
@@ -125,6 +110,7 @@ export default function DemoClient() {
       const fd = new FormData();
       fd.set("model", model);
       fd.set("garment", garment);
+      fd.set("tryOnType", tryOnType);
       fd.set("mode", mode);
       fd.set("outputFormat", outputFormat);
       fd.set("returnBase64", "true");
@@ -143,7 +129,6 @@ export default function DemoClient() {
 
       if ("output" in data && data.output?.[0]) {
         setResult(data.output[0]);
-        if (data.detectedKind) setAutoDetectedType(data.detectedKind);
       } else {
         setError("No output returned.");
       }
@@ -191,11 +176,44 @@ export default function DemoClient() {
               Virtual try-on demo
             </h1>
             <p className="mt-4 text-zinc-400">
-              Upload a person photo and a garment image. We auto-compress to max 1000px before
+              Upload a person photo and an item image. We auto-compress to max 1000px before
               generating.
             </p>
 
             <form onSubmit={onSubmit} className="mt-8 space-y-5">
+              <div className="rounded-2xl border border-surface-border bg-surface-raised/30 p-5">
+                <label className="block text-sm font-medium text-white">Try-on type</label>
+                <p className="mt-1 text-xs text-zinc-500">
+                  Clothing uses fast try-on (v1.6). Shoes use Try-On Max so footwear lands on the feet.
+                </p>
+                <div className="mt-3 grid gap-3 sm:grid-cols-2">
+                  <button
+                    type="button"
+                    onClick={() => setTryOnType("clothing")}
+                    className={`inline-flex h-11 items-center justify-center rounded-full border text-sm font-semibold transition ${
+                      tryOnType === "clothing"
+                        ? "border-accent/60 bg-accent/15 text-white"
+                        : "border-surface-border bg-transparent text-zinc-300 hover:border-zinc-600 hover:bg-surface-raised"
+                    }`}
+                    disabled={loading || compressing !== null}
+                  >
+                    Clothing
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setTryOnType("shoes")}
+                    className={`inline-flex h-11 items-center justify-center rounded-full border text-sm font-semibold transition ${
+                      tryOnType === "shoes"
+                        ? "border-accent/60 bg-accent/15 text-white"
+                        : "border-surface-border bg-transparent text-zinc-300 hover:border-zinc-600 hover:bg-surface-raised"
+                    }`}
+                    disabled={loading || compressing !== null}
+                  >
+                    Shoes
+                  </button>
+                </div>
+              </div>
+
               <div className="rounded-2xl border border-surface-border bg-surface-raised/30 p-5">
                 <label className="block text-sm font-medium text-white">Person photo</label>
                 <p className="mt-1 text-xs text-zinc-500">
@@ -249,11 +267,13 @@ export default function DemoClient() {
 
               <div className="rounded-2xl border border-surface-border bg-surface-raised/30 p-5">
                 <label className="block text-sm font-medium text-white">
-                  Item image
+                  {tryOnType === "shoes" ? "Shoe image" : "Garment image"}
                 </label>
                 <p className="mt-1 text-xs text-zinc-500">
-                  Upload a clothing item or shoes. Disquant automatically detects the item type and
-                  chooses the correct try-on mode.
+                  {tryOnType === "shoes"
+                    ? "Product shoe photos work best (side view, clean background)."
+                    : "Flat-lay or mannequin photos are ideal."}{" "}
+                  We auto-compress to max 1000px.
                 </p>
                 <div className="mt-3">
                   <input
@@ -265,11 +285,6 @@ export default function DemoClient() {
                   {garment && (
                     <p className="mt-2 text-xs text-zinc-500">
                       {garment.name} · {formatBytes(garment.size)}
-                      {autoDetectedType ? (
-                        <span className="ml-2 rounded-full border border-surface-border bg-surface-raised/50 px-2 py-0.5 text-[11px] text-zinc-300">
-                          Detected: {autoDetectedType}
-                        </span>
-                      ) : null}
                     </p>
                   )}
                   {compressing === "garment" && (
@@ -293,7 +308,9 @@ export default function DemoClient() {
                     <option value="quality">quality</option>
                   </select>
                   <p className="mt-2 text-xs text-zinc-500">
-                    Quality takes longer. Shoes can take ~20–120s depending on load.
+                    {tryOnType === "shoes"
+                      ? "Shoes use Try-On Max; expect ~20–120s depending on load."
+                      : "Quality takes longer (12–17s)."}
                   </p>
                 </div>
 
@@ -362,7 +379,7 @@ export default function DemoClient() {
 
                   <div className="overflow-hidden rounded-xl border border-surface-border bg-zinc-950/40">
                     <div className="border-b border-surface-border px-3 py-2 text-xs text-zinc-500">
-                      Item
+                      {tryOnType === "shoes" ? "Shoes" : "Garment"}
                     </div>
                     <div className="aspect-[4/3] bg-black/30">
                       {garmentPreview ? (
