@@ -135,9 +135,8 @@ export async function POST(req: Request) {
 
   const hintedShoes = autoDetectedType === "shoes";
   const guessedShoesByName = looksLikeShoesByName(garmentFile.name || "");
-  const shouldUseMaxFirst =
-    tryOnType === "shoes" ||
-    (tryOnType === "auto" && (hintedShoes || guessedShoesByName));
+  // tryOnType is forced to "auto" above; decide purely from hints.
+  const shouldUseMaxFirst = hintedShoes || guessedShoesByName;
 
   // Attempt fast clothing model first (unless we think it's shoes), then fall back to Try-On Max.
   const firstModel: "tryon-v1.6" | "tryon-max" = shouldUseMaxFirst ? "tryon-max" : "tryon-v1.6";
