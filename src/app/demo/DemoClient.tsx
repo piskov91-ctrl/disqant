@@ -132,7 +132,6 @@ export default function DemoClient() {
       const fd = new FormData();
       fd.set("model", model);
       fd.set("garment", garment);
-      fd.set("tryOnType", "auto");
       if (autoDetectedType) fd.set("autoDetectedType", autoDetectedType);
       fd.set("mode", mode);
       fd.set("outputFormat", outputFormat);
@@ -370,7 +369,7 @@ export default function DemoClient() {
 
                   <div className="overflow-hidden rounded-xl border border-surface-border bg-zinc-950/40">
                     <div className="border-b border-surface-border px-3 py-2 text-xs text-zinc-500">
-                      Garment
+                      Item
                     </div>
                     <div className="aspect-[4/3] bg-black/30">
                       {garmentPreview ? (

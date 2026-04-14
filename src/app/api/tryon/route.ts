@@ -116,7 +116,8 @@ export async function POST(req: Request) {
 
   const modelFile = form.get("model");
   const garmentFile = form.get("garment");
-  const tryOnType = String(form.get("tryOnType") || "auto"); // auto | clothing | shoes
+  // Always auto-detect server-side; do not allow the client to force a model choice.
+  const tryOnType = "auto";
   const autoDetectedType = String(form.get("autoDetectedType") || ""); // clothing | shoes (hint)
   const mode = String(form.get("mode") || "balanced");
   const outputFormat = String(form.get("outputFormat") || "png");
