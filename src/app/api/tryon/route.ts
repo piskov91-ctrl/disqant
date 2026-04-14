@@ -1,3 +1,6 @@
+import { cookies } from "next/headers";
+import { DEMO_AUTH_COOKIE, isDemoAuthorizedCookieValue } from "@/lib/demoAuth";
+
 export const runtime = "nodejs";
 
 type FashnRunResponse = {
@@ -28,6 +31,11 @@ async function fileToDataUrl(file: File) {
 }
 
 export async function POST(req: Request) {
+  const jar = await cookies();
+  if (!isDemoAuthorizedCookieValue(jar.get(DEMO_AUTH_COOKIE)?.value)) {
+    return Response.json({ error: "Unauthorized." }, { status: 401 });
+  }
+
   const apiKey = process.env.FASHN_API_KEY;
   if (!apiKey) {
     return Response.json(
