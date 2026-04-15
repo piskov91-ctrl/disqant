@@ -22,21 +22,17 @@ let redisSingleton: Redis | null = null;
 function getRedis() {
   if (redisSingleton) return redisSingleton;
 
-  const url =
-    process.env.UPSTASH_REDIS_REST_URL ||
-    process.env.KV_REST_API_URL ||
-    process.env.STORAGE_KV_REST_API_URL;
-  const token =
-    process.env.UPSTASH_REDIS_REST_TOKEN ||
-    process.env.KV_REST_API_TOKEN ||
-    process.env.STORAGE_KV_REST_API_TOKEN;
+  const url = process.env.STORAGE_KV_REST_API_URL;
+  const token = process.env.STORAGE_KV_REST_API_TOKEN;
+  const readOnlyToken = process.env.STORAGE_KV_REST_API_READ_ONLY_TOKEN;
 
   if (!url || !token) {
     throw new Error(
-      "Missing Upstash Redis env vars. Set UPSTASH_REDIS_REST_URL and UPSTASH_REDIS_REST_TOKEN (or STORAGE_KV_REST_API_URL / STORAGE_KV_REST_API_TOKEN).",
+      "Missing Upstash Redis env vars. Set STORAGE_KV_REST_API_URL and STORAGE_KV_REST_API_TOKEN.",
     );
   }
 
+  // Prefer write token since admin needs writes. (Read-only token is optional and unused here.)
   redisSingleton = new Redis({ url, token });
   return redisSingleton;
 }
