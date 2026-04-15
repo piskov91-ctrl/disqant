@@ -1,5 +1,5 @@
 import crypto from "node:crypto";
-import { kv } from "@vercel/kv";
+import { Redis } from "@upstash/redis";
 
 export type ClientApiKeyRecord = {
   id: string;
@@ -17,12 +17,40 @@ function recordKey(id: string) {
   return `${KEY_PREFIX}${id}`;
 }
 
+let redisSingleton: Redis | null = null;
+
+function getRedis() {
+  if (redisSingleton) return redisSingleton;
+
+  const url =
+    process.env.UPSTASH_REDIS_REST_URL ||
+    process.env.KV_REST_API_URL ||
+    process.env.STORAGE_KV_REST_API_URL;
+  const token =
+    process.env.UPSTASH_REDIS_REST_TOKEN ||
+    process.env.KV_REST_API_TOKEN ||
+    process.env.STORAGE_KV_REST_API_TOKEN;
+
+  if (!url || !token) {
+    throw new Error(
+      "Missing Upstash Redis env vars. Set UPSTASH_REDIS_REST_URL and UPSTASH_REDIS_REST_TOKEN (or STORAGE_KV_REST_API_URL / STORAGE_KV_REST_API_TOKEN).",
+    );
+  }
+
+  redisSingleton = new Redis({ url, token });
+  return redisSingleton;
+}
+
 export async function listClientKeys() {
   // Read IDs from index, then mget full records.
-  const ids = (await kv.lrange<string>(KEY_INDEX, 0, 499)) ?? [];
+  const redis = getRedis();
+  const ids = (await redis.lrange<string>(KEY_INDEX, 0, 499)) ?? [];
   if (ids.length === 0) return [];
 
-  const keys = await kv.mget(...ids.map((id: string) => recordKey(id)));
+  // Upstash client typing for mget varies; normalize to a nullable list.
+  const keys = (await redis.mget(...ids.map((id: string) => recordKey(id)))) as Array<
+    ClientApiKeyRecord | null
+  >;
   return (keys ?? []).filter(Boolean) as ClientApiKeyRecord[];
 }
 
@@ -38,6 +66,7 @@ export async function createClientKey(params: { clientName: string; usageLimit: 
     throw new Error("Usage limit must be a positive number.");
   }
 
+  const redis = getRedis();
   const now = new Date().toISOString();
 
   const rec: ClientApiKeyRecord = {
@@ -50,8 +79,8 @@ export async function createClientKey(params: { clientName: string; usageLimit: 
   };
 
   // Persist record + add to index.
-  await kv.set(recordKey(rec.id), rec);
-  await kv.lpush(KEY_INDEX, rec.id);
+  await redis.set(recordKey(rec.id), rec);
+  await redis.lpush(KEY_INDEX, rec.id);
   return rec;
 }
 
