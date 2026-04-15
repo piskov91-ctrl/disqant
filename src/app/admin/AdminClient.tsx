@@ -228,15 +228,15 @@ export default function AdminClient() {
                         </div>
                         <div className="col-span-2 text-right text-zinc-300">{k.usageCount}</div>
                         <div className="col-span-2 text-right text-zinc-300">{k.usageLimit}</div>
-                        <div className="col-span-1 flex justify-end">
+                        <div className="col-span-1 flex justify-end pl-2">
                           <button
                             type="button"
                             onClick={() => deleteKey(k.id)}
                             disabled={deletingId === k.id}
-                            className="rounded-md border border-surface-border bg-transparent px-2 py-1 text-xs text-zinc-300 transition hover:border-red-500/40 hover:bg-red-500/10 hover:text-red-200 disabled:cursor-not-allowed disabled:opacity-60"
+                            className="inline-flex h-9 items-center justify-center rounded-full border border-red-500/50 bg-red-500/15 px-4 text-sm font-semibold text-red-100 transition hover:border-red-400/70 hover:bg-red-500/25 disabled:cursor-not-allowed disabled:opacity-60"
                             aria-label={`Delete key for ${k.clientName}`}
                           >
-                            {deletingId === k.id ? "…" : "Delete"}
+                            {deletingId === k.id ? "Deleting…" : "Delete"}
                           </button>
                         </div>
                       </div>
