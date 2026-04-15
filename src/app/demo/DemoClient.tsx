@@ -1,7 +1,8 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 
 type TryOnResponse =
   | { id: string; output: string[]; tryOnType?: "shoes" | "clothing" }
@@ -52,7 +53,8 @@ async function compressImageToMax1000px(file: File) {
 }
 
 export default function DemoClient() {
-  const [clientApiKey, setClientApiKey] = useState("");
+  const searchParams = useSearchParams();
+  const urlKey = searchParams.get("key");
   const [model, setModel] = useState<File | null>(null);
   const [garment, setGarment] = useState<File | null>(null);
   const [tryOnType, setTryOnType] = useState<"clothing" | "shoes">("clothing");
@@ -69,24 +71,6 @@ export default function DemoClient() {
 
   const modelPreview = useMemo(() => (model ? URL.createObjectURL(model) : null), [model]);
   const garmentPreview = useMemo(() => (garment ? URL.createObjectURL(garment) : null), [garment]);
-
-  useEffect(() => {
-    try {
-      const saved = window.localStorage.getItem("disquant_client_api_key");
-      if (saved) setClientApiKey(saved);
-    } catch {
-      // ignore
-    }
-  }, []);
-
-  function persistClientKey(value: string) {
-    setClientApiKey(value);
-    try {
-      window.localStorage.setItem("disquant_client_api_key", value);
-    } catch {
-      // ignore
-    }
-  }
 
   async function setModelFromFile(file: File | null) {
     setError(null);
@@ -118,11 +102,6 @@ export default function DemoClient() {
     e.preventDefault();
     setError(null);
     setResult(null);
-
-    if (!clientApiKey.trim()) {
-      setError("Please enter your Disquant client API key.");
-      return;
-    }
     if (!model || !garment) {
       setError("Please choose both a person photo and a garment image.");
       return;
@@ -140,7 +119,7 @@ export default function DemoClient() {
 
       const res = await fetch("/api/tryon", {
         method: "POST",
-        headers: { "x-api-key": clientApiKey.trim() },
+        headers: urlKey ? { "x-api-key": urlKey } : undefined,
         body: fd,
       });
       const data = (await res.json()) as TryOnResponse;
@@ -204,19 +183,6 @@ export default function DemoClient() {
             </p>
 
             <form onSubmit={onSubmit} className="mt-8 space-y-5">
-              <div className="rounded-2xl border border-surface-border bg-surface-raised/30 p-5">
-                <label className="block text-sm font-medium text-white">Disquant client API key</label>
-                <p className="mt-1 text-xs text-zinc-500">
-                  Required to run try-on. Usage is tracked per client.
-                </p>
-                <input
-                  value={clientApiKey}
-                  onChange={(e) => persistClientKey(e.target.value)}
-                  placeholder="Paste your client API key"
-                  className="mt-3 block w-full rounded-xl border border-surface-border bg-surface px-4 py-3 text-sm text-zinc-200 outline-none transition focus:border-accent/60"
-                />
-              </div>
-
               <div className="rounded-2xl border border-surface-border bg-surface-raised/30 p-5">
                 <label className="block text-sm font-medium text-white">Try-on type</label>
                 <p className="mt-1 text-xs text-zinc-500">
