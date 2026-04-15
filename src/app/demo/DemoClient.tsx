@@ -65,6 +65,7 @@ export default function DemoClient() {
   const [compressing, setCompressing] = useState<null | "model" | "garment">(null);
   const [error, setError] = useState<string | null>(null);
   const [result, setResult] = useState<string | null>(null);
+  const [showUnavailableModal, setShowUnavailableModal] = useState(false);
 
   const modelCameraInputRef = useRef<HTMLInputElement | null>(null);
   const modelFileInputRef = useRef<HTMLInputElement | null>(null);
@@ -102,6 +103,7 @@ export default function DemoClient() {
     e.preventDefault();
     setError(null);
     setResult(null);
+    setShowUnavailableModal(false);
     if (!model || !garment) {
       setError("Please choose both a person photo and a garment image.");
       return;
@@ -125,6 +127,10 @@ export default function DemoClient() {
       const data = (await res.json()) as TryOnResponse;
 
       if (!res.ok) {
+        if (res.status === 402) {
+          setShowUnavailableModal(true);
+          return;
+        }
         const raw = "error" in data ? data.error : "Try-on failed.";
         if (
           res.status === 403 &&
@@ -163,6 +169,39 @@ export default function DemoClient() {
 
   return (
     <div className="min-h-dvh bg-surface">
+      {showUnavailableModal && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-6"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="unavailable-title"
+        >
+          <div className="w-full max-w-md rounded-2xl border border-amber-500/30 bg-surface-raised p-6 shadow-2xl shadow-black/40">
+            <div className="flex items-start gap-4">
+              <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-amber-500/15 text-2xl text-amber-300">
+                ⚠️
+              </div>
+              <div className="min-w-0">
+                <p id="unavailable-title" className="text-base font-semibold text-white">
+                  Virtual try-on temporarily unavailable
+                </p>
+                <p className="mt-1 text-sm text-zinc-400">
+                  Please try again later or contact support.
+                </p>
+              </div>
+            </div>
+            <div className="mt-6 flex justify-end">
+              <button
+                type="button"
+                onClick={() => setShowUnavailableModal(false)}
+                className="inline-flex h-10 items-center justify-center rounded-full bg-amber-500 px-5 text-sm font-semibold text-surface transition hover:bg-amber-400"
+              >
+                OK
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
       <header className="border-b border-surface-border bg-surface/80 backdrop-blur-xl">
         <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-6">
           <Link href="/" className="flex items-center gap-2 text-lg font-semibold tracking-tight">

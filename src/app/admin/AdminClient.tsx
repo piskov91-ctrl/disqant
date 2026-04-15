@@ -18,6 +18,7 @@ export default function AdminClient() {
   const [error, setError] = useState<string | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [resettingId, setResettingId] = useState<string | null>(null);
+  const [copiedId, setCopiedId] = useState<string | null>(null);
 
   const [clientName, setClientName] = useState("");
   const [fashnApiKey, setFashnApiKey] = useState("");
@@ -134,6 +135,29 @@ export default function AdminClient() {
       setError(e instanceof Error ? e.message : "Failed to reset usage.");
     } finally {
       setResettingId(null);
+    }
+  }
+
+  async function copyWidgetCode(apiKey: string, id: string) {
+    const origin = window.location.origin;
+    const snippet = `<script async src=\"${origin}/widget.js\" data-disquant-key=\"${apiKey}\"></script>`;
+    try {
+      await navigator.clipboard.writeText(snippet);
+      setCopiedId(id);
+      window.setTimeout(() => setCopiedId(null), 1200);
+    } catch {
+      // Fallback for older browsers
+      const ta = document.createElement("textarea");
+      ta.value = snippet;
+      ta.style.position = "fixed";
+      ta.style.left = "-9999px";
+      document.body.appendChild(ta);
+      ta.focus();
+      ta.select();
+      document.execCommand("copy");
+      document.body.removeChild(ta);
+      setCopiedId(id);
+      window.setTimeout(() => setCopiedId(null), 1200);
     }
   }
 
@@ -289,7 +313,14 @@ export default function AdminClient() {
                           </div>
 
                           <div className="mt-auto pt-5">
-                            <div className="flex justify-end gap-2">
+                            <div className="flex flex-wrap justify-end gap-2">
+                              <button
+                                type="button"
+                                onClick={() => copyWidgetCode(k.key, k.id)}
+                                className="inline-flex h-9 items-center justify-center rounded-full border border-surface-border bg-surface-raised/30 px-4 text-sm font-semibold text-white transition hover:border-zinc-600 hover:bg-surface-raised"
+                              >
+                                {copiedId === k.id ? "Copied" : "Copy code"}
+                              </button>
                               <button
                                 type="button"
                                 onClick={() => resetKeyUsage(k.id)}
