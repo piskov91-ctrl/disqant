@@ -14,10 +14,12 @@ async function requireAdmin() {
 export async function GET() {
   if (!(await requireAdmin())) return Response.json({ error: "Unauthorized." }, { status: 401 });
   const keys = await listClientKeys();
-  return Response.json({ keys });
+  // Do not send raw Fashn keys to the browser.
+  const redacted = keys.map(({ fashnApiKey: _f, ...rest }) => rest);
+  return Response.json({ keys: redacted });
 }
 
-type CreateBody = { clientName?: unknown; usageLimit?: unknown };
+type CreateBody = { clientName?: unknown; usageLimit?: unknown; fashnApiKey?: unknown };
 
 export async function POST(req: Request) {
   if (!(await requireAdmin())) return Response.json({ error: "Unauthorized." }, { status: 401 });
@@ -30,6 +32,7 @@ export async function POST(req: Request) {
   }
 
   const clientName = typeof body.clientName === "string" ? body.clientName : "";
+  const fashnApiKey = typeof body.fashnApiKey === "string" ? body.fashnApiKey : "";
   const usageLimitNum =
     typeof body.usageLimit === "number"
       ? body.usageLimit
@@ -38,8 +41,9 @@ export async function POST(req: Request) {
         : NaN;
 
   try {
-    const rec = await createClientKey({ clientName, usageLimit: usageLimitNum });
-    return Response.json({ key: rec });
+    const rec = await createClientKey({ clientName, usageLimit: usageLimitNum, fashnApiKey });
+    const { fashnApiKey: _f, ...rest } = rec;
+    return Response.json({ key: rest });
   } catch (e) {
     return Response.json(
       { error: e instanceof Error ? e.message : "Failed to create key." },

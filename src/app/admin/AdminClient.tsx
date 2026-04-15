@@ -19,6 +19,7 @@ export default function AdminClient() {
   const [deletingId, setDeletingId] = useState<string | null>(null);
 
   const [clientName, setClientName] = useState("");
+  const [fashnApiKey, setFashnApiKey] = useState("");
   const [usageLimit, setUsageLimit] = useState("1000");
   const [creating, setCreating] = useState(false);
 
@@ -61,6 +62,7 @@ export default function AdminClient() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           clientName,
+          fashnApiKey,
           usageLimit: Number(usageLimit),
         }),
       });
@@ -72,6 +74,7 @@ export default function AdminClient() {
       if (data.key) {
         setKeys((prev) => [data.key!, ...prev]);
         setClientName("");
+        setFashnApiKey("");
       }
     } catch (e) {
       setError(e instanceof Error ? e.message : "Failed to create key.");
@@ -154,6 +157,19 @@ export default function AdminClient() {
               </div>
 
               <div className="rounded-2xl border border-surface-border bg-surface-raised/30 p-5">
+                <label className="block text-sm font-medium text-white">Fashn.ai API key</label>
+                <input
+                  value={fashnApiKey}
+                  onChange={(e) => setFashnApiKey(e.target.value)}
+                  placeholder="fa-…"
+                  className="mt-3 block w-full rounded-xl border border-surface-border bg-surface px-4 py-3 text-sm text-zinc-200 outline-none transition focus:border-accent/60"
+                />
+                <p className="mt-2 text-xs text-zinc-500">
+                  Stored server-side only. Not shown in the UI after saving.
+                </p>
+              </div>
+
+              <div className="rounded-2xl border border-surface-border bg-surface-raised/30 p-5">
                 <label className="block text-sm font-medium text-white">Usage limit</label>
                 <input
                   value={usageLimit}
@@ -173,7 +189,7 @@ export default function AdminClient() {
 
               <button
                 type="submit"
-                disabled={creating || clientName.trim().length === 0}
+                disabled={creating || clientName.trim().length === 0 || fashnApiKey.trim().length === 0}
                 className="inline-flex h-12 w-full items-center justify-center rounded-full bg-accent px-8 text-sm font-semibold text-white shadow-[0_0_48px_-12px_rgba(124,92,255,0.45)] transition hover:bg-accent-muted disabled:cursor-not-allowed disabled:opacity-60"
               >
                 {creating ? "Creating…" : "Create API key"}

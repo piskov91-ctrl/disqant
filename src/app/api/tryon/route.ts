@@ -1,5 +1,6 @@
 import { cookies } from "next/headers";
 import { DEMO_AUTH_COOKIE, isDemoAuthorizedCookieValue } from "@/lib/demoAuth";
+import { getClientByApiKey, incrementUsageOrThrow } from "@/lib/apiKeyStore";
 
 export const runtime = "nodejs";
 
@@ -90,17 +91,43 @@ async function startPrediction(params: {
 }
 
 export async function POST(req: Request) {
-  const jar = await cookies();
-  if (!isDemoAuthorizedCookieValue(jar.get(DEMO_AUTH_COOKIE)?.value)) {
-    return Response.json({ error: "Unauthorized." }, { status: 401 });
+  // Auth option A: client API key (server-to-server or browser)
+  const clientApiKey =
+    req.headers.get("x-api-key") ||
+    req.headers.get("x-disquant-api-key") ||
+    (req.headers.get("authorization")?.startsWith("Bearer ")
+      ? req.headers.get("authorization")!.slice("Bearer ".length)
+      : null);
+
+  let fashnApiKey: string | null = null;
+  if (clientApiKey) {
+    const client = await getClientByApiKey(clientApiKey);
+    if (!client) return Response.json({ error: "Invalid API key." }, { status: 401 });
+    try {
+      await incrementUsageOrThrow(client.id);
+    } catch (e) {
+      return Response.json(
+        { error: e instanceof Error ? e.message : "Usage limit exceeded." },
+        { status: 403 },
+      );
+    }
+    fashnApiKey = client.fashnApiKey;
   }
 
-  const apiKey = process.env.FASHN_API_KEY;
-  if (!apiKey) {
-    return Response.json(
-      { error: "Missing FASHN_API_KEY. Add it to .env.local and restart the dev server." },
-      { status: 500 },
-    );
+  // Auth option B (demo UI): cookie gate + env FASHN_API_KEY
+  if (!fashnApiKey) {
+    const jar = await cookies();
+    if (!isDemoAuthorizedCookieValue(jar.get(DEMO_AUTH_COOKIE)?.value)) {
+      return Response.json({ error: "Unauthorized." }, { status: 401 });
+    }
+    const envKey = process.env.FASHN_API_KEY;
+    if (!envKey) {
+      return Response.json(
+        { error: "Missing FASHN_API_KEY. Add it to .env.local and restart the dev server." },
+        { status: 500 },
+      );
+    }
+    fashnApiKey = envKey;
   }
 
   let form: FormData;
@@ -134,7 +161,7 @@ export async function POST(req: Request) {
     firstModel === "tryon-v1.6" ? "tryon-max" : "tryon-v1.6";
 
   const first = await startPrediction({
-    apiKey,
+    apiKey: fashnApiKey,
     modelName: firstModel,
     mode,
     outputFormat,
@@ -149,7 +176,7 @@ export async function POST(req: Request) {
       return Response.json({ error: first.error }, { status: 502 });
     }
     const second = await startPrediction({
-      apiKey,
+      apiKey: fashnApiKey,
       modelName: secondModel,
       mode,
       outputFormat,

@@ -5,6 +5,7 @@ export type ClientApiKeyRecord = {
   id: string;
   clientName: string;
   key: string;
+  fashnApiKey: string;
   usageLimit: number;
   usageCount: number;
   createdAt: string; // ISO
@@ -12,9 +13,14 @@ export type ClientApiKeyRecord = {
 
 const KEY_INDEX = "disquant:clientKeys:index"; // list of ids (newest first)
 const KEY_PREFIX = "disquant:clientKeys:byId:"; // + id
+const KEY_BY_KEY_PREFIX = "disquant:clientKeys:byKey:"; // + apiKey -> id
 
 function recordKey(id: string) {
   return `${KEY_PREFIX}${id}`;
+}
+
+function keyLookupKey(apiKey: string) {
+  return `${KEY_BY_KEY_PREFIX}${apiKey}`;
 }
 
 let redisSingleton: Redis | null = null;
@@ -54,7 +60,11 @@ function generateKey() {
   return crypto.randomBytes(32).toString("base64url");
 }
 
-export async function createClientKey(params: { clientName: string; usageLimit: number }) {
+export async function createClientKey(params: {
+  clientName: string;
+  usageLimit: number;
+  fashnApiKey: string;
+}) {
   const clientName = params.clientName.trim();
   if (!clientName) throw new Error("Client name is required.");
   if (!Number.isFinite(params.usageLimit) || params.usageLimit <= 0) {
@@ -64,10 +74,14 @@ export async function createClientKey(params: { clientName: string; usageLimit: 
   const redis = getRedis();
   const now = new Date().toISOString();
 
+  const fashnApiKey = params.fashnApiKey.trim();
+  if (!fashnApiKey) throw new Error("Fashn.ai API key is required.");
+
   const rec: ClientApiKeyRecord = {
     id: crypto.randomUUID(),
     clientName,
     key: generateKey(),
+    fashnApiKey,
     usageLimit: Math.floor(params.usageLimit),
     usageCount: 0,
     createdAt: now,
@@ -75,6 +89,7 @@ export async function createClientKey(params: { clientName: string; usageLimit: 
 
   // Persist record + add to index.
   await redis.set(recordKey(rec.id), rec);
+  await redis.set(keyLookupKey(rec.key), rec.id);
   await redis.lpush(KEY_INDEX, rec.id);
   return rec;
 }
@@ -83,9 +98,30 @@ export async function deleteClientKey(id: string) {
   const redis = getRedis();
   if (!id) throw new Error("Key id is required.");
 
+  const rec = (await redis.get(recordKey(id))) as ClientApiKeyRecord | null;
+
   // Remove id from index and delete the record.
   await redis.lrem(KEY_INDEX, 0, id);
   await redis.del(recordKey(id));
+  if (rec?.key) await redis.del(keyLookupKey(rec.key));
   return { ok: true as const };
+}
+
+export async function getClientByApiKey(apiKey: string) {
+  const redis = getRedis();
+  const id = (await redis.get(keyLookupKey(apiKey))) as string | null;
+  if (!id) return null;
+  const rec = (await redis.get(recordKey(id))) as ClientApiKeyRecord | null;
+  return rec;
+}
+
+export async function incrementUsageOrThrow(id: string) {
+  const redis = getRedis();
+  const rec = (await redis.get(recordKey(id))) as ClientApiKeyRecord | null;
+  if (!rec) throw new Error("Client key not found.");
+  if (rec.usageCount >= rec.usageLimit) throw new Error("Usage limit exceeded.");
+  const next: ClientApiKeyRecord = { ...rec, usageCount: rec.usageCount + 1 };
+  await redis.set(recordKey(id), next);
+  return next;
 }
 
