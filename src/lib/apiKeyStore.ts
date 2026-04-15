@@ -1,6 +1,5 @@
-import { promises as fs } from "node:fs";
-import path from "node:path";
 import crypto from "node:crypto";
+import { kv } from "@vercel/kv";
 
 export type ClientApiKeyRecord = {
   id: string;
@@ -11,30 +10,20 @@ export type ClientApiKeyRecord = {
   createdAt: string; // ISO
 };
 
-type StoreFile = {
-  version: 1;
-  keys: ClientApiKeyRecord[];
-};
+const KEY_INDEX = "disquant:clientKeys:index"; // list of ids (newest first)
+const KEY_PREFIX = "disquant:clientKeys:byId:"; // + id
 
-const STORE_PATH = path.join(process.cwd(), "data", "api-keys.json");
-
-async function readStore(): Promise<StoreFile> {
-  const raw = await fs.readFile(STORE_PATH, "utf8");
-  const parsed = JSON.parse(raw) as StoreFile;
-  if (!parsed || parsed.version !== 1 || !Array.isArray(parsed.keys)) {
-    throw new Error("Invalid api-keys.json format");
-  }
-  return parsed;
-}
-
-async function writeStore(next: StoreFile) {
-  await fs.mkdir(path.dirname(STORE_PATH), { recursive: true });
-  await fs.writeFile(STORE_PATH, JSON.stringify(next, null, 2) + "\n", "utf8");
+function recordKey(id: string) {
+  return `${KEY_PREFIX}${id}`;
 }
 
 export async function listClientKeys() {
-  const store = await readStore();
-  return store.keys;
+  // Read IDs from index, then mget full records.
+  const ids = (await kv.lrange<string>(KEY_INDEX, 0, 499)) ?? [];
+  if (ids.length === 0) return [];
+
+  const keys = await kv.mget(...ids.map((id: string) => recordKey(id)));
+  return (keys ?? []).filter(Boolean) as ClientApiKeyRecord[];
 }
 
 function generateKey() {
@@ -49,7 +38,6 @@ export async function createClientKey(params: { clientName: string; usageLimit: 
     throw new Error("Usage limit must be a positive number.");
   }
 
-  const store = await readStore();
   const now = new Date().toISOString();
 
   const rec: ClientApiKeyRecord = {
@@ -61,8 +49,9 @@ export async function createClientKey(params: { clientName: string; usageLimit: 
     createdAt: now,
   };
 
-  store.keys.unshift(rec);
-  await writeStore(store);
+  // Persist record + add to index.
+  await kv.set(recordKey(rec.id), rec);
+  await kv.lpush(KEY_INDEX, rec.id);
   return rec;
 }
 
