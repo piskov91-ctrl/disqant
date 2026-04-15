@@ -115,6 +115,13 @@ export async function getClientByApiKey(apiKey: string) {
   return rec;
 }
 
+export async function assertClientCanUseByApiKey(apiKey: string) {
+  const client = await getClientByApiKey(apiKey);
+  if (!client) throw new Error("Invalid API key.");
+  if (client.usageCount >= client.usageLimit) throw new Error("Usage limit exceeded.");
+  return client;
+}
+
 export async function incrementUsageOrThrow(id: string) {
   const redis = getRedis();
   const rec = (await redis.get(recordKey(id))) as ClientApiKeyRecord | null;

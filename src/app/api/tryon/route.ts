@@ -1,6 +1,5 @@
 import { cookies } from "next/headers";
-import { DEMO_AUTH_COOKIE, isDemoAuthorizedCookieValue } from "@/lib/demoAuth";
-import { getClientByApiKey, incrementUsageOrThrow } from "@/lib/apiKeyStore";
+import { assertClientCanUseByApiKey, incrementUsageOrThrow } from "@/lib/apiKeyStore";
 
 export const runtime = "nodejs";
 
@@ -91,7 +90,6 @@ async function startPrediction(params: {
 }
 
 export async function POST(req: Request) {
-  // Auth option A: client API key (server-to-server or browser)
   const clientApiKey =
     req.headers.get("x-api-key") ||
     req.headers.get("x-disquant-api-key") ||
@@ -99,36 +97,20 @@ export async function POST(req: Request) {
       ? req.headers.get("authorization")!.slice("Bearer ".length)
       : null);
 
-  let fashnApiKey: string | null = null;
-  if (clientApiKey) {
-    const client = await getClientByApiKey(clientApiKey);
-    if (!client) return Response.json({ error: "Invalid API key." }, { status: 401 });
-    try {
-      await incrementUsageOrThrow(client.id);
-    } catch (e) {
-      return Response.json(
-        { error: e instanceof Error ? e.message : "Usage limit exceeded." },
-        { status: 403 },
-      );
-    }
-    fashnApiKey = client.fashnApiKey;
+  if (!clientApiKey) {
+    return Response.json({ error: "Missing client API key." }, { status: 401 });
   }
 
-  // Auth option B (demo UI): cookie gate + env FASHN_API_KEY
-  if (!fashnApiKey) {
-    const jar = await cookies();
-    if (!isDemoAuthorizedCookieValue(jar.get(DEMO_AUTH_COOKIE)?.value)) {
-      return Response.json({ error: "Unauthorized." }, { status: 401 });
-    }
-    const envKey = process.env.FASHN_API_KEY;
-    if (!envKey) {
-      return Response.json(
-        { error: "Missing FASHN_API_KEY. Add it to .env.local and restart the dev server." },
-        { status: 500 },
-      );
-    }
-    fashnApiKey = envKey;
+  let client: Awaited<ReturnType<typeof assertClientCanUseByApiKey>>;
+  try {
+    client = await assertClientCanUseByApiKey(clientApiKey);
+  } catch (e) {
+    const msg = e instanceof Error ? e.message : "Unauthorized.";
+    return Response.json({ error: msg }, { status: msg === "Usage limit exceeded." ? 403 : 401 });
   }
+
+  // Note: /demo page itself is still access-code gated, but this API now requires a client API key.
+  await cookies();
 
   let form: FormData;
   try {
@@ -161,7 +143,7 @@ export async function POST(req: Request) {
     firstModel === "tryon-v1.6" ? "tryon-max" : "tryon-v1.6";
 
   const first = await startPrediction({
-    apiKey: fashnApiKey,
+    apiKey: client.fashnApiKey,
     modelName: firstModel,
     mode,
     outputFormat,
@@ -176,7 +158,7 @@ export async function POST(req: Request) {
       return Response.json({ error: first.error }, { status: 502 });
     }
     const second = await startPrediction({
-      apiKey: fashnApiKey,
+      apiKey: client.fashnApiKey,
       modelName: secondModel,
       mode,
       outputFormat,
@@ -186,7 +168,7 @@ export async function POST(req: Request) {
     });
     if (!second.ok) return Response.json({ error: second.error }, { status: 502 });
 
-    return await pollUntilDone({
+    const result = await pollUntilDone({
       id: second.id,
       headers: second.headers,
       baseUrl: second.baseUrl,
@@ -194,9 +176,17 @@ export async function POST(req: Request) {
       pollMs: second.isMax ? 2000 : 1200,
       tryOnType,
     });
+    if (result.ok) {
+      try {
+        await incrementUsageOrThrow(client.id);
+      } catch {
+        // Usage enforcement is checked before starting; ignore rare race here.
+      }
+    }
+    return result.response;
   }
 
-  return await pollUntilDone({
+  const result = await pollUntilDone({
     id: first.id,
     headers: first.headers,
     baseUrl: first.baseUrl,
@@ -204,6 +194,14 @@ export async function POST(req: Request) {
     pollMs: first.isMax ? 2000 : 1200,
     tryOnType,
   });
+  if (result.ok) {
+    try {
+      await incrementUsageOrThrow(client.id);
+    } catch {
+      // Usage enforcement is checked before starting; ignore rare race here.
+    }
+  }
+  return result.response;
 }
 
 async function pollUntilDone(params: {
@@ -213,41 +211,59 @@ async function pollUntilDone(params: {
   timeoutMs: number;
   pollMs: number;
   tryOnType: "shoes" | "clothing";
-}) {
+}): Promise<{ ok: true; response: Response } | { ok: false; response: Response }> {
   const { id, headers, baseUrl, timeoutMs, pollMs, tryOnType } = params;
   const startedAt = Date.now();
 
   while (true) {
     if (Date.now() - startedAt > timeoutMs) {
-      return Response.json(
+      return {
+        ok: false,
+        response: Response.json(
         { error: "Timed out waiting for try-on result. Please try again." },
         { status: 504 },
-      );
+        ),
+      };
     }
 
     const statusRes = await fetch(`${baseUrl}/status/${id}`, { headers });
     if (!statusRes.ok) {
       const text = await statusRes.text().catch(() => "");
-      return Response.json(
+      return {
+        ok: false,
+        response: Response.json(
         { error: `FASHN /status failed (${statusRes.status}). ${text || ""}`.trim() },
         { status: 502 },
-      );
+        ),
+      };
     }
 
     const statusData = (await statusRes.json()) as FashnStatusResponse;
     if (statusData.status === "completed") {
       const out = statusData.output?.[0];
       if (!out) {
-        return Response.json({ error: "FASHN completed but returned no output." }, { status: 502 });
+        return {
+          ok: false,
+          response: Response.json(
+            { error: "FASHN completed but returned no output." },
+            { status: 502 },
+          ),
+        };
       }
-      return Response.json({ id, output: statusData.output, tryOnType });
+      return {
+        ok: true,
+        response: Response.json({ id, output: statusData.output, tryOnType }),
+      };
     }
 
     if (statusData.status === "failed") {
-      return Response.json(
-        { error: statusData.error || "Try-on failed." },
-        { status: 502 },
-      );
+      return {
+        ok: false,
+        response: Response.json(
+          { error: statusData.error || "Try-on failed." },
+          { status: 502 },
+        ),
+      };
     }
 
     await sleep(pollMs);
