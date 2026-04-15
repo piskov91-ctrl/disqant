@@ -16,6 +16,7 @@ export default function AdminClient() {
   const [keys, setKeys] = useState<KeyRecord[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
 
   const [clientName, setClientName] = useState("");
   const [usageLimit, setUsageLimit] = useState("1000");
@@ -84,6 +85,28 @@ export default function AdminClient() {
     window.location.reload();
   }
 
+  async function deleteKey(id: string) {
+    const ok = window.confirm("Delete this API key? This cannot be undone.");
+    if (!ok) return;
+
+    setError(null);
+    setDeletingId(id);
+    try {
+      const res = await fetch(`/api/admin/keys/${encodeURIComponent(id)}`, { method: "DELETE" });
+      const data = (await res.json()) as { ok?: true; error?: string };
+      if (!res.ok) {
+        if (data.error === "Unauthorized.") window.location.reload();
+        setError(data.error || "Failed to delete key.");
+        return;
+      }
+      setKeys((prev) => prev.filter((k) => k.id !== id));
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Failed to delete key.");
+    } finally {
+      setDeletingId(null);
+    }
+  }
+
   return (
     <div className="min-h-dvh bg-surface">
       <header className="border-b border-surface-border bg-surface/80 backdrop-blur-xl">
@@ -116,7 +139,7 @@ export default function AdminClient() {
               Admin · API keys
             </h1>
             <p className="mt-4 text-zinc-400">
-              Create client API keys with usage limits. Keys are stored in a local JSON file.
+              Create client API keys with usage limits. Keys are stored in Redis (Upstash/Vercel).
             </p>
 
             <form onSubmit={createKey} className="mt-8 space-y-5">
@@ -181,9 +204,10 @@ export default function AdminClient() {
               <div className="mt-6 overflow-hidden rounded-xl border border-surface-border">
                 <div className="grid grid-cols-12 gap-2 border-b border-surface-border bg-zinc-950/40 px-4 py-3 text-xs text-zinc-500">
                   <div className="col-span-3">Client</div>
-                  <div className="col-span-5">Key</div>
+                  <div className="col-span-4">Key</div>
                   <div className="col-span-2 text-right">Used</div>
                   <div className="col-span-2 text-right">Limit</div>
+                  <div className="col-span-1 text-right">Actions</div>
                 </div>
                 <div className="divide-y divide-surface-border">
                   {loading ? (
@@ -199,11 +223,22 @@ export default function AdminClient() {
                         className="grid grid-cols-12 gap-2 px-4 py-3 text-sm text-zinc-200"
                       >
                         <div className="col-span-3 truncate text-white">{k.clientName}</div>
-                        <div className="col-span-5 truncate font-mono text-xs text-zinc-300">
+                        <div className="col-span-4 truncate font-mono text-xs text-zinc-300">
                           {k.key}
                         </div>
                         <div className="col-span-2 text-right text-zinc-300">{k.usageCount}</div>
                         <div className="col-span-2 text-right text-zinc-300">{k.usageLimit}</div>
+                        <div className="col-span-1 flex justify-end">
+                          <button
+                            type="button"
+                            onClick={() => deleteKey(k.id)}
+                            disabled={deletingId === k.id}
+                            className="rounded-md border border-surface-border bg-transparent px-2 py-1 text-xs text-zinc-300 transition hover:border-red-500/40 hover:bg-red-500/10 hover:text-red-200 disabled:cursor-not-allowed disabled:opacity-60"
+                            aria-label={`Delete key for ${k.clientName}`}
+                          >
+                            {deletingId === k.id ? "…" : "Delete"}
+                          </button>
+                        </div>
                       </div>
                     ))
                   )}
@@ -211,7 +246,7 @@ export default function AdminClient() {
               </div>
 
               <p className="mt-4 text-xs text-zinc-500">
-                Stored at <span className="font-mono">data/api-keys.json</span>.
+                Stored in Redis under <span className="font-mono">disquant:clientKeys:*</span>.
               </p>
             </div>
           </div>

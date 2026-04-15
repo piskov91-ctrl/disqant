@@ -79,3 +79,13 @@ export async function createClientKey(params: { clientName: string; usageLimit: 
   return rec;
 }
 
+export async function deleteClientKey(id: string) {
+  const redis = getRedis();
+  if (!id) throw new Error("Key id is required.");
+
+  // Remove id from index and delete the record.
+  await redis.lrem(KEY_INDEX, 0, id);
+  await redis.del(recordKey(id));
+  return { ok: true as const };
+}
+
