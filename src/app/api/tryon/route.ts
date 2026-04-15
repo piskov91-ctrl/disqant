@@ -1,5 +1,5 @@
 import { cookies } from "next/headers";
-import { assertClientCanUseByApiKey, incrementUsageOrThrow } from "@/lib/apiKeyStore";
+import { assertClientCanUseByApiKey, incrementUsageOrThrow, listClientKeys } from "@/lib/apiKeyStore";
 
 export const runtime = "nodejs";
 
@@ -97,7 +97,13 @@ export async function POST(req: Request) {
       ? req.headers.get("authorization")!.slice("Bearer ".length)
       : null);
 
-  const effectiveClientApiKey = clientApiKey || process.env.DISQUANT_DEMO_TEST_CLIENT_KEY || null;
+  let effectiveClientApiKey = clientApiKey || process.env.DISQUANT_DEMO_TEST_CLIENT_KEY || null;
+  if (!effectiveClientApiKey) {
+    // Final fallback for /demo: use the newest key in the DB so the demo works
+    // without exposing keys in the UI or URL.
+    const keys = await listClientKeys();
+    effectiveClientApiKey = keys[0]?.key ?? null;
+  }
   if (!effectiveClientApiKey) {
     return Response.json({ error: "Missing client API key." }, { status: 401 });
   }
