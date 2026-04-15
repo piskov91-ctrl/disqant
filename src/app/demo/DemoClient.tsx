@@ -125,7 +125,14 @@ export default function DemoClient() {
       const data = (await res.json()) as TryOnResponse;
 
       if (!res.ok) {
-        setError("error" in data ? data.error : "Try-on failed.");
+        const raw = "error" in data ? data.error : "Try-on failed.";
+        if (res.status === 403 && /usage limit exceeded/i.test(raw)) {
+          setError(
+            "You've explored all our demo try-ons! Ready to bring this to your store? Contact us at hello@disqant.com to get started",
+          );
+          return;
+        }
+        setError(raw);
         return;
       }
 
