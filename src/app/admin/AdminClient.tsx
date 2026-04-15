@@ -132,7 +132,7 @@ export default function AdminClient() {
         </div>
       </header>
 
-      <main className="mx-auto max-w-6xl px-6 py-12 md:py-16">
+      <main className="mx-auto max-w-7xl px-6 py-12 md:py-16">
         <div className="flex flex-col gap-10 lg:flex-row lg:items-start lg:gap-12">
           <div className="lg:w-[420px]">
             <h1 className="text-balance text-3xl font-semibold tracking-tight text-white md:text-4xl">
@@ -202,12 +202,12 @@ export default function AdminClient() {
               </div>
 
               <div className="mt-6 overflow-hidden rounded-xl border border-surface-border">
-                <div className="grid grid-cols-12 gap-2 border-b border-surface-border bg-zinc-950/40 px-4 py-3 text-xs text-zinc-500">
+                <div className="grid grid-cols-12 gap-4 border-b border-surface-border bg-zinc-950/40 px-6 py-3 text-xs text-zinc-500">
                   <div className="col-span-3">Client</div>
                   <div className="col-span-4">Key</div>
                   <div className="col-span-2 text-right">Used</div>
-                  <div className="col-span-2 text-right">Limit</div>
-                  <div className="col-span-1 text-right">Actions</div>
+                  <div className="col-span-2 pr-4 text-right">Limit</div>
+                  <div className="col-span-1 pl-4 text-right">Actions</div>
                 </div>
                 <div className="divide-y divide-surface-border">
                   {loading ? (
@@ -220,15 +220,15 @@ export default function AdminClient() {
                     keys.map((k) => (
                       <div
                         key={k.id}
-                        className="grid grid-cols-12 gap-2 px-4 py-3 text-sm text-zinc-200"
+                        className="grid grid-cols-12 gap-4 px-6 py-3 text-sm text-zinc-200"
                       >
                         <div className="col-span-3 truncate text-white">{k.clientName}</div>
                         <div className="col-span-4 truncate font-mono text-xs text-zinc-300">
                           {k.key}
                         </div>
                         <div className="col-span-2 text-right text-zinc-300">{k.usageCount}</div>
-                        <div className="col-span-2 text-right text-zinc-300">{k.usageLimit}</div>
-                        <div className="col-span-1 flex justify-end pl-2">
+                        <div className="col-span-2 pr-4 text-right text-zinc-300">{k.usageLimit}</div>
+                        <div className="col-span-1 flex justify-end pl-4">
                           <button
                             type="button"
                             onClick={() => deleteKey(k.id)}
