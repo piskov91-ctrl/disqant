@@ -245,58 +245,74 @@ export default function AdminClient() {
               </div>
 
               <div className="mt-6 overflow-hidden rounded-xl border border-surface-border">
-                <div className="grid grid-cols-12 gap-4 border-b border-surface-border bg-zinc-950/40 px-6 py-3 text-xs text-zinc-500">
-                  <div className="col-span-3">Client</div>
-                  <div className="col-span-3">Key</div>
-                  <div className="col-span-2 text-right">Used</div>
-                  <div className="col-span-2 pr-4 text-right">Limit</div>
-                  <div className="col-span-2 pl-4 text-right">Actions</div>
-                </div>
-                <div className="divide-y divide-surface-border">
-                  {loading ? (
-                    <div className="px-4 py-10 text-center text-sm text-zinc-500">Loading…</div>
-                  ) : keys.length === 0 ? (
-                    <div className="px-4 py-10 text-center text-sm text-zinc-500">
-                      No keys yet.
-                    </div>
-                  ) : (
-                    keys.map((k) => (
-                      <div
-                        key={k.id}
-                        className="grid grid-cols-12 gap-4 px-6 py-3 text-sm text-zinc-200"
-                      >
-                        <div className="col-span-3 truncate text-white">{k.clientName}</div>
-                        <div className="col-span-3 truncate font-mono text-xs text-zinc-300">
-                          {k.key}
-                        </div>
-                        <div className="col-span-2 text-right text-zinc-300">{k.usageCount}</div>
-                        <div className="col-span-2 pr-4 text-right text-zinc-300">{k.usageLimit}</div>
-                        <div className="col-span-2 flex justify-end pl-4">
-                          <div className="flex w-full flex-nowrap items-center justify-end gap-2 whitespace-nowrap">
-                            <button
-                              type="button"
-                              onClick={() => resetKeyUsage(k.id)}
-                              disabled={resettingId === k.id}
-                              className="inline-flex h-9 items-center justify-center rounded-full border border-surface-border bg-surface-raised/30 px-4 text-sm font-semibold text-white transition hover:border-zinc-600 hover:bg-surface-raised disabled:cursor-not-allowed disabled:opacity-60"
-                              aria-label={`Reset usage for ${k.clientName}`}
-                            >
-                              {resettingId === k.id ? "Resetting…" : "Reset"}
-                            </button>
-                            <button
-                              type="button"
-                              onClick={() => deleteKey(k.id)}
-                              disabled={deletingId === k.id}
-                              className="inline-flex h-9 items-center justify-center rounded-full border border-red-500/50 bg-red-500/15 px-4 text-sm font-semibold text-red-100 transition hover:border-red-400/70 hover:bg-red-500/25 disabled:cursor-not-allowed disabled:opacity-60"
-                              aria-label={`Delete key for ${k.clientName}`}
-                            >
-                              {deletingId === k.id ? "Deleting…" : "Delete"}
-                            </button>
+                {loading ? (
+                  <div className="px-6 py-14 text-center text-sm text-zinc-500">Loading…</div>
+                ) : keys.length === 0 ? (
+                  <div className="px-6 py-14 text-center text-sm text-zinc-500">No keys yet.</div>
+                ) : (
+                  <div className="grid gap-4 p-4 sm:grid-cols-2 xl:grid-cols-3">
+                    {keys.map((k) => {
+                      const pct =
+                        k.usageLimit > 0
+                          ? Math.min(100, Math.round((k.usageCount / k.usageLimit) * 100))
+                          : 0;
+                      return (
+                        <article
+                          key={k.id}
+                          className="flex min-h-[220px] flex-col rounded-2xl border border-surface-border bg-surface-raised/20 p-5"
+                        >
+                          <div className="flex items-start justify-between gap-3">
+                            <div className="min-w-0">
+                              <p className="truncate text-sm font-semibold text-white">
+                                {k.clientName}
+                              </p>
+                              <p className="mt-1 truncate font-mono text-xs text-zinc-400">
+                                {k.key}
+                              </p>
+                            </div>
+                            <div className="shrink-0 rounded-full border border-surface-border bg-surface px-3 py-1 text-xs text-zinc-300">
+                              {k.usageCount}/{k.usageLimit}
+                            </div>
                           </div>
-                        </div>
-                      </div>
-                    ))
-                  )}
-                </div>
+
+                          <div className="mt-5">
+                            <div className="flex items-center justify-between text-xs text-zinc-500">
+                              <span>Usage</span>
+                              <span>{pct}%</span>
+                            </div>
+                            <div className="mt-2 h-2 w-full overflow-hidden rounded-full border border-surface-border bg-surface">
+                              <div
+                                className="h-full rounded-full bg-accent"
+                                style={{ width: `${pct}%` }}
+                              />
+                            </div>
+                          </div>
+
+                          <div className="mt-auto pt-5">
+                            <div className="flex justify-end gap-2">
+                              <button
+                                type="button"
+                                onClick={() => resetKeyUsage(k.id)}
+                                disabled={resettingId === k.id}
+                                className="inline-flex h-9 items-center justify-center rounded-full border border-surface-border bg-surface-raised/30 px-4 text-sm font-semibold text-white transition hover:border-zinc-600 hover:bg-surface-raised disabled:cursor-not-allowed disabled:opacity-60"
+                              >
+                                {resettingId === k.id ? "Resetting…" : "Reset"}
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => deleteKey(k.id)}
+                                disabled={deletingId === k.id}
+                                className="inline-flex h-9 items-center justify-center rounded-full border border-red-500/50 bg-red-500/15 px-4 text-sm font-semibold text-red-100 transition hover:border-red-400/70 hover:bg-red-500/25 disabled:cursor-not-allowed disabled:opacity-60"
+                              >
+                                {deletingId === k.id ? "Deleting…" : "Delete"}
+                              </button>
+                            </div>
+                          </div>
+                        </article>
+                      );
+                    })}
+                  </div>
+                )}
               </div>
 
               <p className="mt-4 text-xs text-zinc-500">
