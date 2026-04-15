@@ -113,7 +113,18 @@ export async function POST(req: Request) {
     client = await assertClientCanUseByApiKey(effectiveClientApiKey);
   } catch (e) {
     const msg = e instanceof Error ? e.message : "Unauthorized.";
-    return Response.json({ error: msg }, { status: msg === "Usage limit exceeded." ? 403 : 401 });
+    const isUsage = msg === "Usage limit exceeded.";
+    if (isUsage) {
+      return Response.json(
+        {
+          error: msg,
+          code: "USAGE_LIMIT",
+          keyKind: clientApiKey ? "client" : "demo",
+        },
+        { status: 403 },
+      );
+    }
+    return Response.json({ error: msg }, { status: 401 });
   }
 
   // Note: /demo page itself is still access-code gated, but this API now requires a client API key.

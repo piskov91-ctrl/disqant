@@ -6,7 +6,7 @@ import { useSearchParams } from "next/navigation";
 
 type TryOnResponse =
   | { id: string; output: string[]; tryOnType?: "shoes" | "clothing" }
-  | { error: string };
+  | { error: string; code?: string; keyKind?: "demo" | "client" };
 
 function formatBytes(bytes: number) {
   if (!Number.isFinite(bytes)) return "";
@@ -126,10 +126,18 @@ export default function DemoClient() {
 
       if (!res.ok) {
         const raw = "error" in data ? data.error : "Try-on failed.";
-        if (res.status === 403 && /usage limit exceeded/i.test(raw)) {
-          setError(
-            "You've explored all our demo try-ons! Ready to bring this to your store? Contact us at hello@disqant.com to get started",
-          );
+        if (
+          res.status === 403 &&
+          "code" in data &&
+          data.code === "USAGE_LIMIT"
+        ) {
+          if (data.keyKind === "demo") {
+            setError(
+              "You've explored all our demo try-ons! Ready to bring this to your store? Contact us at hello@disqant.com to get started",
+            );
+            return;
+          }
+          setError("Virtual try-on temporarily unavailable. Please try again later");
           return;
         }
         setError(raw);
