@@ -17,6 +17,7 @@ export default function AdminClient() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [resettingId, setResettingId] = useState<string | null>(null);
 
   const [clientName, setClientName] = useState("");
   const [fashnApiKey, setFashnApiKey] = useState("");
@@ -107,6 +108,32 @@ export default function AdminClient() {
       setError(e instanceof Error ? e.message : "Failed to delete key.");
     } finally {
       setDeletingId(null);
+    }
+  }
+
+  async function resetKeyUsage(id: string) {
+    const ok = window.confirm("Reset usage counter to 0 for this client?");
+    if (!ok) return;
+
+    setError(null);
+    setResettingId(id);
+    try {
+      const res = await fetch(`/api/admin/keys/${encodeURIComponent(id)}/reset`, {
+        method: "POST",
+      });
+      const data = (await res.json()) as { ok?: true; usageCount?: number; error?: string };
+      if (!res.ok) {
+        if (data.error === "Unauthorized.") window.location.reload();
+        setError(data.error || "Failed to reset usage.");
+        return;
+      }
+      setKeys((prev) =>
+        prev.map((k) => (k.id === id ? { ...k, usageCount: 0 } : k)),
+      );
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Failed to reset usage.");
+    } finally {
+      setResettingId(null);
     }
   }
 
@@ -245,15 +272,26 @@ export default function AdminClient() {
                         <div className="col-span-2 text-right text-zinc-300">{k.usageCount}</div>
                         <div className="col-span-2 pr-4 text-right text-zinc-300">{k.usageLimit}</div>
                         <div className="col-span-1 flex justify-end pl-4">
-                          <button
-                            type="button"
-                            onClick={() => deleteKey(k.id)}
-                            disabled={deletingId === k.id}
-                            className="inline-flex h-9 items-center justify-center rounded-full border border-red-500/50 bg-red-500/15 px-4 text-sm font-semibold text-red-100 transition hover:border-red-400/70 hover:bg-red-500/25 disabled:cursor-not-allowed disabled:opacity-60"
-                            aria-label={`Delete key for ${k.clientName}`}
-                          >
-                            {deletingId === k.id ? "Deleting…" : "Delete"}
-                          </button>
+                          <div className="flex items-center gap-2">
+                            <button
+                              type="button"
+                              onClick={() => resetKeyUsage(k.id)}
+                              disabled={resettingId === k.id}
+                              className="inline-flex h-9 items-center justify-center rounded-full border border-surface-border bg-surface-raised/30 px-4 text-sm font-semibold text-white transition hover:border-zinc-600 hover:bg-surface-raised disabled:cursor-not-allowed disabled:opacity-60"
+                              aria-label={`Reset usage for ${k.clientName}`}
+                            >
+                              {resettingId === k.id ? "Resetting…" : "Reset"}
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => deleteKey(k.id)}
+                              disabled={deletingId === k.id}
+                              className="inline-flex h-9 items-center justify-center rounded-full border border-red-500/50 bg-red-500/15 px-4 text-sm font-semibold text-red-100 transition hover:border-red-400/70 hover:bg-red-500/25 disabled:cursor-not-allowed disabled:opacity-60"
+                              aria-label={`Delete key for ${k.clientName}`}
+                            >
+                              {deletingId === k.id ? "Deleting…" : "Delete"}
+                            </button>
+                          </div>
                         </div>
                       </div>
                     ))

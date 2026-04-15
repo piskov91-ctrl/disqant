@@ -125,3 +125,12 @@ export async function incrementUsageOrThrow(id: string) {
   return next;
 }
 
+export async function resetUsage(id: string) {
+  const redis = getRedis();
+  const rec = (await redis.get(recordKey(id))) as ClientApiKeyRecord | null;
+  if (!rec) throw new Error("Client key not found.");
+  const next: ClientApiKeyRecord = { ...rec, usageCount: 0 };
+  await redis.set(recordKey(id), next);
+  return next;
+}
+
