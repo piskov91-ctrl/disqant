@@ -22,13 +22,12 @@ let redisSingleton: Redis | null = null;
 function getRedis() {
   if (redisSingleton) return redisSingleton;
 
-  const url = process.env.STORAGE_KV_REST_API_URL;
-  const token = process.env.STORAGE_KV_REST_API_TOKEN;
-  const readOnlyToken = process.env.STORAGE_KV_REST_API_READ_ONLY_TOKEN;
+  const url = process.env.KV_REST_API_URL;
+  const token = process.env.KV_REST_API_TOKEN;
 
   if (!url || !token) {
     throw new Error(
-      "Missing Upstash Redis env vars. Set STORAGE_KV_REST_API_URL and STORAGE_KV_REST_API_TOKEN.",
+      "Missing Redis env vars. Set KV_REST_API_URL and KV_REST_API_TOKEN.",
     );
   }
 
