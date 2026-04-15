@@ -247,10 +247,10 @@ export default function AdminClient() {
               <div className="mt-6 overflow-hidden rounded-xl border border-surface-border">
                 <div className="grid grid-cols-12 gap-4 border-b border-surface-border bg-zinc-950/40 px-6 py-3 text-xs text-zinc-500">
                   <div className="col-span-3">Client</div>
-                  <div className="col-span-4">Key</div>
+                  <div className="col-span-3">Key</div>
                   <div className="col-span-2 text-right">Used</div>
                   <div className="col-span-2 pr-4 text-right">Limit</div>
-                  <div className="col-span-1 pl-4 text-right">Actions</div>
+                  <div className="col-span-2 pl-4 text-right">Actions</div>
                 </div>
                 <div className="divide-y divide-surface-border">
                   {loading ? (
@@ -266,13 +266,13 @@ export default function AdminClient() {
                         className="grid grid-cols-12 gap-4 px-6 py-3 text-sm text-zinc-200"
                       >
                         <div className="col-span-3 truncate text-white">{k.clientName}</div>
-                        <div className="col-span-4 truncate font-mono text-xs text-zinc-300">
+                        <div className="col-span-3 truncate font-mono text-xs text-zinc-300">
                           {k.key}
                         </div>
                         <div className="col-span-2 text-right text-zinc-300">{k.usageCount}</div>
                         <div className="col-span-2 pr-4 text-right text-zinc-300">{k.usageLimit}</div>
-                        <div className="col-span-1 flex justify-end pl-4">
-                          <div className="flex items-center gap-2">
+                        <div className="col-span-2 flex justify-end pl-4">
+                          <div className="flex w-full flex-nowrap items-center justify-end gap-2 whitespace-nowrap">
                             <button
                               type="button"
                               onClick={() => resetKeyUsage(k.id)}
