@@ -59,7 +59,8 @@ const GARMENT_PRESETS: GarmentPreset[] = [
     kind: "clothing",
     imageUrl:
       // Clean black jacket on hanger.
-      "https://images.unsplash.com/photo-1591047139829-d91aecb6caea?w=400",
+      // Flat lay jacket (no model, no hanger).
+      "https://images.unsplash.com/photo-1551028719-00167b16eac5?auto=format&fit=crop&w=1400&q=80",
   },
 ];
 
