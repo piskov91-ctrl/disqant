@@ -30,18 +30,23 @@ async function fileToDataUrl(file: File) {
   return `data:${mime};base64,${base64}`;
 }
 
-const FASHN_CATEGORIES = new Set(["tops", "bottoms", "one-pieces", "shoes"]);
+type FashnCategory = "tops" | "bottoms" | "one-pieces" | "auto";
 
-function resolveFashnCategory(form: FormData): "tops" | "bottoms" | "one-pieces" | "shoes" {
+const FASHN_CATEGORIES = new Set<string>(["tops", "bottoms", "one-pieces", "auto"]);
+
+function resolveFashnCategory(form: FormData): FashnCategory {
   const fromForm = String(form.get("category") || "")
     .trim()
     .toLowerCase();
+  // Legacy clients / old demos (not valid on Fashn).
+  if (fromForm === "shoes") return "auto";
+  if (fromForm === "outerwear") return "tops";
   if (FASHN_CATEGORIES.has(fromForm)) {
-    return fromForm as "tops" | "bottoms" | "one-pieces" | "shoes";
+    return fromForm as FashnCategory;
   }
 
-  const tryOn = String(form.get("tryOnType") || "clothing").trim().toLowerCase();
-  if (tryOn === "shoes") return "shoes";
+  const tryOn = String(form.get("tryOnType") || "").trim().toLowerCase();
+  if (tryOn === "shoes") return "auto";
   return "tops";
 }
 
@@ -49,7 +54,7 @@ async function startPrediction(params: {
   apiKey: string;
   modelImage: string;
   garmentImage: string;
-  category: "tops" | "bottoms" | "one-pieces" | "shoes";
+  category: FashnCategory;
 }) {
   const { apiKey, modelImage, garmentImage, category } = params;
 
@@ -137,7 +142,6 @@ export async function POST(req: Request) {
   const modelFile = form.get("model");
   const garmentFile = form.get("garment");
   const category = resolveFashnCategory(form);
-  const tryOnType: "shoes" | "clothing" = category === "shoes" ? "shoes" : "clothing";
 
   if (!(modelFile instanceof File) || !(garmentFile instanceof File)) {
     return Response.json(
@@ -166,7 +170,7 @@ export async function POST(req: Request) {
     baseUrl: first.baseUrl,
     timeoutMs: 90_000,
     pollMs: 1200,
-    tryOnType,
+    category,
   });
   if (result.ok) {
     try {
@@ -184,9 +188,9 @@ async function pollUntilDone(params: {
   baseUrl: string;
   timeoutMs: number;
   pollMs: number;
-  tryOnType: "shoes" | "clothing";
+  category: FashnCategory;
 }): Promise<{ ok: true; response: Response } | { ok: false; response: Response }> {
-  const { id, headers, baseUrl, timeoutMs, pollMs, tryOnType } = params;
+  const { id, headers, baseUrl, timeoutMs, pollMs, category } = params;
   const startedAt = Date.now();
 
   while (true) {
@@ -226,7 +230,7 @@ async function pollUntilDone(params: {
       }
       return {
         ok: true,
-        response: Response.json({ id, output: statusData.output, tryOnType }),
+        response: Response.json({ id, output: statusData.output, category }),
       };
     }
 

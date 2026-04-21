@@ -220,7 +220,7 @@
   }
 
   function inferCategoryFromImage(img) {
-    // Default category when we don't detect footwear.
+    // Fashn try-on v1.6: tops | bottoms | one-pieces | auto (footwear → auto).
     var DEFAULT_CATEGORY = "tops";
 
     var keywords = [
@@ -249,7 +249,7 @@
     var haystack = normalizeText(parts.join(" "));
     for (var i = 0; i < keywords.length; i++) {
       var kw = keywords[i];
-      if (haystack.indexOf(kw) !== -1) return "shoes";
+      if (haystack.indexOf(kw) !== -1) return "auto";
     }
     return DEFAULT_CATEGORY;
   }
@@ -365,8 +365,8 @@
     var modelFile = null;
     var garmentFile = null;
     var stream = null;
-    // Toggle removed; keep the pre-inferred choice.
-    var selectedCategory = inferredCategory === "shoes" ? "shoes" : "tops";
+    var ALLOWED = { tops: 1, bottoms: 1, "one-pieces": 1, auto: 1 };
+    var selectedCategory = ALLOWED[inferredCategory] ? inferredCategory : "tops";
 
     var stage = document.createElement("div");
     stage.className = "dq-stage";
@@ -524,7 +524,7 @@
 
     (async function initGarment() {
       try {
-        // We still fetch the clicked image and send it as garment. Auto category is done via tryOnType=auto.
+        // Garment file from the clicked product image; category is sent separately (tops | auto | …).
         garmentFile = await garmentFilePromise;
       } catch (_e) {
         garmentFile = null;
@@ -590,10 +590,7 @@
         var fd = new FormData();
         fd.append("model", modelFile);
         fd.append("garment", garmentFile);
-        // Clothing => "tops", Shoes => "shoes"
         fd.append("category", selectedCategory);
-        // Keep backward compatibility with older servers expecting tryOnType.
-        fd.append("tryOnType", selectedCategory);
 
         var res = await fetch(API_ENDPOINT, {
           method: "POST",

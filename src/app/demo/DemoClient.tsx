@@ -4,8 +4,10 @@ import { useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 
+type FashnCategory = "tops" | "bottoms" | "one-pieces" | "auto";
+
 type TryOnResponse =
-  | { id: string; output: string[]; tryOnType?: "shoes" | "clothing" }
+  | { id: string; output: string[]; category?: FashnCategory }
   | { error: string; code?: string; keyKind?: "demo" | "client" };
 
 type DemoWidgetModalState = {
@@ -21,7 +23,8 @@ type GarmentPreset = {
   id: "sneakers" | "tee" | "sweater" | "jacket";
   label: "Sneakers" | "T-Shirt" | "Sweater" | "Jacket";
   name: string;
-  kind: "shoes" | "clothing";
+  /** Sent to Fashn as `inputs.category` */
+  category: FashnCategory;
   imageUrl: string;
 };
 
@@ -30,7 +33,7 @@ const GARMENT_PRESETS: GarmentPreset[] = [
     id: "sneakers",
     label: "Sneakers",
     name: "White clean sneakers",
-    kind: "shoes",
+    category: "auto",
     imageUrl:
       // White sneakers on a white background (product-style).
       "https://images.unsplash.com/photo-1625860191460-10a66c7384fb?auto=format&fit=crop&w=1400&q=80",
@@ -39,7 +42,7 @@ const GARMENT_PRESETS: GarmentPreset[] = [
     id: "tee",
     label: "T-Shirt",
     name: "Plain white t-shirt (flat lay)",
-    kind: "clothing",
+    category: "tops",
     imageUrl:
       "https://images.unsplash.com/photo-1620799139507-2a76f79a2f4d?auto=format&fit=crop&w=1400&q=80",
   },
@@ -47,7 +50,7 @@ const GARMENT_PRESETS: GarmentPreset[] = [
     id: "sweater",
     label: "Sweater",
     name: "Beige oversized knit sweater",
-    kind: "clothing",
+    category: "tops",
     imageUrl:
       // Beige knit sweater (full garment shot).
       "https://images.unsplash.com/photo-1687275161342-8699c61e4364?auto=format&fit=crop&w=1400&q=80",
@@ -56,7 +59,7 @@ const GARMENT_PRESETS: GarmentPreset[] = [
     id: "jacket",
     label: "Jacket",
     name: "Black jacket",
-    kind: "clothing",
+    category: "tops",
     imageUrl:
       "https://images.unsplash.com/photo-1608063615781-e2ef8c73d114?w=400",
   },
@@ -202,8 +205,7 @@ export default function DemoClient() {
       const fd = new FormData();
       fd.set("model", model);
       fd.set("garment", garment);
-      fd.set("category", selectedPreset.kind === "shoes" ? "shoes" : "tops");
-      fd.set("tryOnType", selectedPreset.kind);
+      fd.set("category", selectedPreset.category);
 
       const res = await fetch("/api/tryon", {
         method: "POST",
@@ -526,8 +528,8 @@ export default function DemoClient() {
 
               <p className="rounded-2xl border border-surface-border bg-surface-raised/30 p-4 text-xs text-zinc-500">
                 Try-on uses Fashn <span className="font-semibold text-zinc-300">balanced</span> mode.
-                {selectedPreset?.kind === "shoes"
-                  ? " Footwear uses category shoes; tops use category tops."
+                {selectedPreset?.category === "auto"
+                  ? " Sneakers use category auto; shirts and jackets use tops."
                   : ""}
               </p>
 
@@ -582,7 +584,7 @@ export default function DemoClient() {
 
                   <div className="overflow-hidden rounded-xl border border-surface-border bg-zinc-950/40">
                     <div className="border-b border-surface-border px-3 py-2 text-xs text-zinc-500">
-                      {selectedPreset?.kind === "shoes" ? "Shoes" : "Garment"}
+                      {selectedPreset?.id === "sneakers" ? "Shoes" : "Garment"}
                     </div>
                     <div className="aspect-[4/3] bg-black/30">
                       {garmentPreview ? (
