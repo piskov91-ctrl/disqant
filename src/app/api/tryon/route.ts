@@ -30,42 +30,15 @@ async function fileToDataUrl(file: File) {
   return `data:${mime};base64,${base64}`;
 }
 
-function parseOptionalBooleanFormField(form: FormData, key: string): boolean | undefined {
-  if (!form.has(key)) return undefined;
-  const raw = form.get(key);
-  if (raw === null) return undefined;
-  const s = String(raw).trim().toLowerCase();
-  if (s === "true" || s === "1" || s === "yes") return true;
-  if (s === "false" || s === "0" || s === "no") return false;
-  return undefined;
-}
-
 async function startPrediction(params: {
   apiKey: string;
-  modelName: "tryon-v1.6" | "tryon-max";
   mode: string;
   outputFormat: string;
   returnBase64: boolean;
   modelImage: string;
-  garmentOrProductImage: string;
-  category?: string;
-  coverFeet?: boolean;
-  adjustHands?: boolean;
-  restoreClothes?: boolean;
+  garmentImage: string;
 }) {
-  const {
-    apiKey,
-    modelName,
-    mode,
-    outputFormat,
-    returnBase64,
-    modelImage,
-    garmentOrProductImage,
-    category,
-    coverFeet,
-    adjustHands,
-    restoreClothes,
-  } = params;
+  const { apiKey, mode, outputFormat, returnBase64, modelImage, garmentImage } = params;
 
   const baseUrl = "https://api.fashn.ai/v1";
   const headers = {
@@ -73,37 +46,16 @@ async function startPrediction(params: {
     Authorization: `Bearer ${apiKey}`,
   };
 
-  const isMax = modelName === "tryon-max";
-  const extraInputs: Record<string, unknown> = {};
-  if (typeof category === "string" && category.trim()) extraInputs.category = category.trim();
-  if (typeof coverFeet === "boolean") extraInputs.cover_feet = coverFeet;
-  if (typeof adjustHands === "boolean") extraInputs.adjust_hands = adjustHands;
-  if (typeof restoreClothes === "boolean") extraInputs.restore_clothes = restoreClothes;
-
-  const body = isMax
-    ? {
-        model_name: "tryon-max",
-        inputs: {
-          model_image: modelImage,
-          product_image: garmentOrProductImage,
-          generation_mode: mode === "quality" ? "quality" : "balanced",
-          resolution: "1k",
-          output_format: outputFormat,
-          return_base64: returnBase64,
-          ...extraInputs,
-        },
-      }
-    : {
-        model_name: "tryon-v1.6",
-        inputs: {
-          model_image: modelImage,
-          garment_image: garmentOrProductImage,
-          mode,
-          output_format: outputFormat,
-          return_base64: returnBase64,
-          ...extraInputs,
-        },
-      };
+  const body = {
+    model_name: "tryon-v1.6",
+    inputs: {
+      model_image: modelImage,
+      garment_image: garmentImage,
+      mode,
+      output_format: outputFormat,
+      return_base64: returnBase64,
+    },
+  };
 
   const runRes = await fetch(`${baseUrl}/run`, {
     method: "POST",
@@ -119,7 +71,7 @@ async function startPrediction(params: {
   const runData = (await runRes.json()) as FashnRunResponse;
   const id = runData.id;
   if (!id) return { ok: false as const, error: "FASHN did not return a prediction id." };
-  return { ok: true as const, id, headers, baseUrl, isMax };
+  return { ok: true as const, id, headers, baseUrl };
 }
 
 export async function POST(req: Request) {
@@ -174,16 +126,9 @@ export async function POST(req: Request) {
   const garmentFile = form.get("garment");
   const tryOnTypeRaw = String(form.get("tryOnType") || "clothing");
   const tryOnType = tryOnTypeRaw === "shoes" ? "shoes" : "clothing";
-  const categoryRaw = form.get("category");
-  const category = typeof categoryRaw === "string" ? categoryRaw : null;
   const mode = String(form.get("mode") || "balanced");
   const outputFormat = String(form.get("outputFormat") || "png");
   const returnBase64 = String(form.get("returnBase64") || "true") === "true";
-
-  // Optional advanced controls (used by /demo for outerwear).
-  const coverFeet = parseOptionalBooleanFormField(form, "cover_feet");
-  const adjustHands = parseOptionalBooleanFormField(form, "adjust_hands");
-  const restoreClothes = parseOptionalBooleanFormField(form, "restore_clothes");
 
   if (!(modelFile instanceof File) || !(garmentFile instanceof File)) {
     return Response.json(
@@ -195,69 +140,25 @@ export async function POST(req: Request) {
   const modelImage = await fileToDataUrl(modelFile);
   const garmentImage = await fileToDataUrl(garmentFile);
 
-  const firstModel: "tryon-v1.6" | "tryon-max" =
-    tryOnType === "shoes" ? "tryon-max" : "tryon-v1.6";
-  const secondModel: "tryon-v1.6" | "tryon-max" =
-    firstModel === "tryon-v1.6" ? "tryon-max" : "tryon-v1.6";
-
   const first = await startPrediction({
     apiKey: client.fashnApiKey,
-    modelName: firstModel,
     mode,
     outputFormat,
     returnBase64,
     modelImage,
-    garmentOrProductImage: garmentImage,
-    category: category || undefined,
-    coverFeet,
-    adjustHands,
-    restoreClothes,
+    garmentImage,
   });
 
   if (!first.ok) {
-    // Shoes must stay on Try-On Max (foot placement). Clothing can fall back to Max if v1.6 fails.
-    if (tryOnType === "shoes") {
-      return Response.json({ error: first.error }, { status: 502 });
-    }
-    const second = await startPrediction({
-      apiKey: client.fashnApiKey,
-      modelName: secondModel,
-      mode,
-      outputFormat,
-      returnBase64,
-      modelImage,
-      garmentOrProductImage: garmentImage,
-      category: category || undefined,
-      coverFeet,
-      adjustHands,
-      restoreClothes,
-    });
-    if (!second.ok) return Response.json({ error: second.error }, { status: 502 });
-
-    const result = await pollUntilDone({
-      id: second.id,
-      headers: second.headers,
-      baseUrl: second.baseUrl,
-      timeoutMs: second.isMax ? 150_000 : 90_000,
-      pollMs: second.isMax ? 2000 : 1200,
-      tryOnType,
-    });
-    if (result.ok) {
-      try {
-        await incrementUsageOrThrow(client.id);
-      } catch {
-        // Usage enforcement is checked before starting; ignore rare race here.
-      }
-    }
-    return result.response;
+    return Response.json({ error: first.error }, { status: 502 });
   }
 
   const result = await pollUntilDone({
     id: first.id,
     headers: first.headers,
     baseUrl: first.baseUrl,
-    timeoutMs: first.isMax ? 150_000 : 90_000,
-    pollMs: first.isMax ? 2000 : 1200,
+    timeoutMs: 90_000,
+    pollMs: 1200,
     tryOnType,
   });
   if (result.ok) {

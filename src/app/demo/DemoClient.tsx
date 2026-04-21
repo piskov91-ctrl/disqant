@@ -205,18 +205,6 @@ export default function DemoClient() {
       const fd = new FormData();
       fd.set("model", model);
       fd.set("garment", garment);
-      const category =
-        selectedPreset.id === "sneakers"
-          ? "shoes"
-          : selectedPreset.id === "jacket"
-            ? "outerwear"
-            : "tops";
-      fd.set("category", category);
-      if (category === "outerwear") {
-        fd.set("cover_feet", "false");
-        fd.set("adjust_hands", "true");
-        fd.set("restore_clothes", "false");
-      }
       // Keep legacy field for older server versions.
       fd.set("tryOnType", selectedPreset.kind);
       fd.set("mode", mode);
