@@ -7,6 +7,7 @@
   var WIDGET_ATTR_KEY = "data-disquant-key";
   var WIDGET_ATTR_BOUND = "data-disquant-tryon-bound";
   var WIDGET_ATTR_PENDING = "data-disquant-tryon-pending-load";
+  var WIDGET_ATTR_SKIP = "data-disquant-tryon-skip";
 
   // Matches app route /api/try-on in this repo.
   var API_ENDPOINT = "/api/try-on";
@@ -251,6 +252,35 @@
       if (haystack.indexOf(kw) !== -1) return "shoes";
     }
     return DEFAULT_CATEGORY;
+  }
+
+  function shouldSkipAccessoryImage(img) {
+    var keywords = [
+      "hat", "cap", "beanie", "scarf", "scarves", "glove", "gloves",
+      "accessory", "accessories", "socks", "sunglasses"
+    ];
+
+    var parts = [];
+    try {
+      parts.push(img.getAttribute("alt") || "");
+      parts.push(img.getAttribute("title") || "");
+    } catch (_e) { }
+
+    var p = img && img.parentElement ? img.parentElement : null;
+    var hops = 0;
+    while (p && hops < 3) {
+      var t = "";
+      try { t = p.textContent || ""; } catch (_e2) { }
+      if (t) parts.push(t);
+      p = p.parentElement;
+      hops++;
+    }
+
+    var haystack = normalizeText(parts.join(" "));
+    for (var i = 0; i < keywords.length; i++) {
+      if (haystack.indexOf(keywords[i]) !== -1) return true;
+    }
+    return false;
   }
 
   function createModal() {
@@ -602,6 +632,11 @@
 
   function bindImage(img) {
     if (img.getAttribute(WIDGET_ATTR_BOUND) === "1") return;
+    if (img.getAttribute(WIDGET_ATTR_SKIP) === "1") return;
+    if (shouldSkipAccessoryImage(img)) {
+      img.setAttribute(WIDGET_ATTR_SKIP, "1");
+      return;
+    }
     var par = img.parentElement;
     if (!par) return;
 
@@ -651,6 +686,7 @@
     injectStyles();
     var imgs = Array.prototype.slice.call(document.images || []);
     imgs.forEach(function (img) {
+      if (img.getAttribute(WIDGET_ATTR_SKIP) === "1") return;
       if (isEligibleImage(img)) {
         bindImage(img);
         return;
