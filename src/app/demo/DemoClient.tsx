@@ -10,6 +10,7 @@ type TryOnResponse =
 
 type GarmentPreset = {
   id: "sneakers" | "tee" | "sweater" | "jacket";
+  label: "Sneakers" | "T-Shirt" | "Sweater" | "Jacket";
   name: string;
   kind: "shoes" | "clothing";
   imageUrl: string;
@@ -18,6 +19,7 @@ type GarmentPreset = {
 const GARMENT_PRESETS: GarmentPreset[] = [
   {
     id: "sneakers",
+    label: "Sneakers",
     name: "White clean sneakers",
     kind: "shoes",
     imageUrl:
@@ -25,6 +27,7 @@ const GARMENT_PRESETS: GarmentPreset[] = [
   },
   {
     id: "tee",
+    label: "T-Shirt",
     name: "Plain white t-shirt (flat lay)",
     kind: "clothing",
     imageUrl:
@@ -32,6 +35,7 @@ const GARMENT_PRESETS: GarmentPreset[] = [
   },
   {
     id: "sweater",
+    label: "Sweater",
     name: "Beige oversized knit sweater",
     kind: "clothing",
     imageUrl:
@@ -39,6 +43,7 @@ const GARMENT_PRESETS: GarmentPreset[] = [
   },
   {
     id: "jacket",
+    label: "Jacket",
     name: "Black jacket",
     kind: "clothing",
     imageUrl:
@@ -159,6 +164,9 @@ export default function DemoClient() {
       const fd = new FormData();
       fd.set("model", model);
       fd.set("garment", garment);
+      const category = selectedPreset.id === "sneakers" ? "shoes" : "tops";
+      fd.set("category", category);
+      // Keep legacy field for older server versions.
       fd.set("tryOnType", selectedPreset.kind);
       fd.set("mode", mode);
       fd.set("outputFormat", outputFormat);
@@ -366,9 +374,7 @@ export default function DemoClient() {
                         </div>
                         <div className="p-4">
                           <p className="text-sm font-semibold text-white">{p.name}</p>
-                          <p className="mt-1 text-xs text-zinc-400">
-                            {p.kind === "shoes" ? "Shoes" : "Clothing"}
-                          </p>
+                          <p className="mt-1 text-xs font-semibold text-zinc-300">{p.label}</p>
                         </div>
                       </button>
                     );
