@@ -111,6 +111,14 @@
       + "padding:12px 12px;border-bottom:1px solid rgba(15,15,20,.08);background:#fff;}"
       + ".dq-head-title{font:900 13px/1 system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;"
       + "letter-spacing:.25px;color:#0f0f14;}"
+      + ".dq-head-right{display:flex;align-items:center;gap:10px;}"
+      + ".dq-toggle{display:inline-flex;gap:6px;padding:4px;border-radius:999px;"
+      + "background:rgba(15,15,20,.06);border:1px solid rgba(15,15,20,.08);}"
+      + ".dq-toggle button{appearance:none;border:0;background:transparent;color:rgba(15,15,20,.72);"
+      + "padding:8px 10px;border-radius:999px;font:900 12px/1 system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;"
+      + "cursor:pointer;transition:background .14s ease,color .14s ease, transform .14s ease;}"
+      + ".dq-toggle button:hover{transform:translateY(-1px);}"
+      + ".dq-toggle button[aria-pressed=\"true\"]{background:#fff;color:#0f0f14;box-shadow:0 8px 18px rgba(0,0,0,.10);}"
       + ".dq-x{appearance:none;border:1px solid rgba(15,15,20,.12);background:#fff;color:#0f0f14;"
       + "border-radius:12px;padding:8px 10px;cursor:pointer;box-shadow:0 10px 22px rgba(0,0,0,.08);"
       + "transition:transform .16s ease, box-shadow .16s ease;}"
@@ -269,6 +277,25 @@
     headTitle.className = "dq-head-title";
     headTitle.textContent = "Try On";
 
+    var headRight = document.createElement("div");
+    headRight.className = "dq-head-right";
+
+    var toggle = document.createElement("div");
+    toggle.className = "dq-toggle";
+
+    var toggleClothing = document.createElement("button");
+    toggleClothing.type = "button";
+    toggleClothing.textContent = "Clothing";
+    toggleClothing.setAttribute("aria-pressed", "true");
+
+    var toggleShoes = document.createElement("button");
+    toggleShoes.type = "button";
+    toggleShoes.textContent = "Shoes";
+    toggleShoes.setAttribute("aria-pressed", "false");
+
+    toggle.appendChild(toggleClothing);
+    toggle.appendChild(toggleShoes);
+
     var close = document.createElement("button");
     close.className = "dq-x";
     close.type = "button";
@@ -276,7 +303,9 @@
     close.textContent = "✕";
 
     head.appendChild(headTitle);
-    head.appendChild(close);
+    headRight.appendChild(toggle);
+    headRight.appendChild(close);
+    head.appendChild(headRight);
 
     var body = document.createElement("div");
     body.className = "dq-body";
@@ -315,14 +344,20 @@
     document.addEventListener("keydown", onKeyDown);
 
     window.setTimeout(function () { backdrop.classList.add("dq-open"); }, 0);
-    return { backdrop: backdrop, body: body, close: teardown };
+    return {
+      backdrop: backdrop,
+      body: body,
+      close: teardown,
+      toggleClothing: toggleClothing,
+      toggleShoes: toggleShoes
+    };
   }
 
   function buildTryOnUI(opts) {
     var garmentImgEl = opts.garmentImgEl;
     var garmentFilePromise = opts.garmentFilePromise;
     var clientKey = opts.clientKey;
-    var category = opts.category || "tops";
+    var inferredCategory = opts.category || "tops";
 
     var m = createModal();
     document.body.appendChild(m.backdrop);
@@ -332,6 +367,7 @@
     var modelFile = null;
     var garmentFile = null;
     var stream = null;
+    var selectedCategory = inferredCategory === "shoes" ? "shoes" : "tops";
 
     var stage = document.createElement("div");
     stage.className = "dq-stage";
@@ -425,6 +461,16 @@
     body.appendChild(videoWrap);
     body.appendChild(generateBtn);
     body.appendChild(saveBtn);
+
+    function setCategory(next) {
+      selectedCategory = next === "shoes" ? "shoes" : "tops";
+      if (m.toggleClothing) m.toggleClothing.setAttribute("aria-pressed", selectedCategory === "tops" ? "true" : "false");
+      if (m.toggleShoes) m.toggleShoes.setAttribute("aria-pressed", selectedCategory === "shoes" ? "true" : "false");
+    }
+
+    if (m.toggleClothing) m.toggleClothing.addEventListener("click", function () { setCategory("tops"); });
+    if (m.toggleShoes) m.toggleShoes.addEventListener("click", function () { setCategory("shoes"); });
+    setCategory(selectedCategory);
 
     function setStageImage(url, alt) {
       if (!url) return;
@@ -555,10 +601,10 @@
         var fd = new FormData();
         fd.append("model", modelFile);
         fd.append("garment", garmentFile);
-        // Per spec: fully automatic category chosen from page context.
-        fd.append("category", category);
-        // Keep backward compatibility with existing API implementations.
-        fd.append("tryOnType", category);
+        // Clothing => "tops", Shoes => "shoes"
+        fd.append("category", selectedCategory);
+        // Keep backward compatibility with older servers expecting tryOnType.
+        fd.append("tryOnType", selectedCategory);
         fd.append("mode", "balanced");
         fd.append("outputFormat", "png");
         fd.append("returnBase64", "true");
