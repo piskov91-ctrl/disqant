@@ -8,6 +8,44 @@ type TryOnResponse =
   | { id: string; output: string[]; tryOnType?: "shoes" | "clothing" }
   | { error: string; code?: string; keyKind?: "demo" | "client" };
 
+type GarmentPreset = {
+  id: "sneakers" | "tee" | "sweater" | "jacket";
+  name: string;
+  kind: "shoes" | "clothing";
+  imageUrl: string;
+};
+
+const GARMENT_PRESETS: GarmentPreset[] = [
+  {
+    id: "sneakers",
+    name: "White clean sneakers",
+    kind: "shoes",
+    imageUrl:
+      "https://images.unsplash.com/photo-1618354691373-d851c5c3a990?auto=format&fit=crop&w=1400&q=80",
+  },
+  {
+    id: "tee",
+    name: "Plain white t-shirt (flat lay)",
+    kind: "clothing",
+    imageUrl:
+      "https://images.unsplash.com/photo-1620799140408-edc6dcb6d633?auto=format&fit=crop&w=1400&q=80",
+  },
+  {
+    id: "sweater",
+    name: "Beige oversized knit sweater",
+    kind: "clothing",
+    imageUrl:
+      "https://images.unsplash.com/photo-1687269966646-4c9b502d7a8b?auto=format&fit=crop&w=1400&q=80",
+  },
+  {
+    id: "jacket",
+    name: "Black jacket",
+    kind: "clothing",
+    imageUrl:
+      "https://images.unsplash.com/photo-1479064555552-3ef4979f8908?auto=format&fit=crop&w=1400&q=80",
+  },
+];
+
 function formatBytes(bytes: number) {
   if (!Number.isFinite(bytes)) return "";
   const units = ["B", "KB", "MB", "GB"];
@@ -52,12 +90,20 @@ async function compressImageToMax1000px(file: File) {
   }
 }
 
+async function fetchUrlAsFile(url: string, name: string) {
+  const res = await fetch(url, { mode: "cors" });
+  if (!res.ok) throw new Error("Failed to fetch preset garment image.");
+  const blob = await res.blob();
+  return new File([blob], name, { type: blob.type || "image/jpeg" });
+}
+
 export default function DemoClient() {
   const searchParams = useSearchParams();
   const urlKey = searchParams.get("key");
   const [model, setModel] = useState<File | null>(null);
-  const [garment, setGarment] = useState<File | null>(null);
-  const [tryOnType, setTryOnType] = useState<"clothing" | "shoes">("clothing");
+  const [selectedPresetId, setSelectedPresetId] = useState<GarmentPreset["id"]>(
+    GARMENT_PRESETS[0]?.id ?? "tee",
+  );
   const [mode, setMode] = useState<"performance" | "balanced" | "quality">("balanced");
   const [outputFormat, setOutputFormat] = useState<"png" | "jpeg">("png");
 
@@ -71,7 +117,11 @@ export default function DemoClient() {
   const modelFileInputRef = useRef<HTMLInputElement | null>(null);
 
   const modelPreview = useMemo(() => (model ? URL.createObjectURL(model) : null), [model]);
-  const garmentPreview = useMemo(() => (garment ? URL.createObjectURL(garment) : null), [garment]);
+  const selectedPreset = useMemo(
+    () => GARMENT_PRESETS.find((p) => p.id === selectedPresetId) ?? null,
+    [selectedPresetId],
+  );
+  const garmentPreview = selectedPreset?.imageUrl ?? null;
 
   async function setModelFromFile(file: File | null) {
     setError(null);
@@ -86,35 +136,30 @@ export default function DemoClient() {
     setCompressing(null);
   }
 
-  async function setGarmentFromFile(file: File | null) {
-    setError(null);
-    setResult(null);
-    if (!file) {
-      setGarment(null);
-      return;
-    }
-    setCompressing("garment");
-    const compressed = await compressImageToMax1000px(file);
-    setGarment(compressed);
-    setCompressing(null);
-  }
-
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
     setResult(null);
     setShowUnavailableModal(false);
-    if (!model || !garment) {
-      setError("Please choose both a person photo and a garment image.");
+    if (!model || !selectedPreset) {
+      setError("Please upload a person photo and select a sample product.");
       return;
     }
 
     setLoading(true);
     try {
+      setCompressing("garment");
+      const garmentRaw = await fetchUrlAsFile(
+        selectedPreset.imageUrl,
+        `${selectedPreset.id}.jpg`,
+      );
+      const garment = await compressImageToMax1000px(garmentRaw);
+      setCompressing(null);
+
       const fd = new FormData();
       fd.set("model", model);
       fd.set("garment", garment);
-      fd.set("tryOnType", tryOnType);
+      fd.set("tryOnType", selectedPreset.kind);
       fd.set("mode", mode);
       fd.set("outputFormat", outputFormat);
       fd.set("returnBase64", "true");
@@ -159,6 +204,7 @@ export default function DemoClient() {
       setError(err instanceof Error ? err.message : "Unexpected error.");
     } finally {
       setLoading(false);
+      setCompressing(null);
     }
   }
 
@@ -232,44 +278,11 @@ export default function DemoClient() {
               Virtual try-on demo
             </h1>
             <p className="mt-4 text-zinc-400">
-              Upload a person photo and an item image. We auto-compress to max 1000px before
-              generating.
+              Select a sample product and upload a person photo. We auto-compress to max 1000px
+              before generating.
             </p>
 
             <form onSubmit={onSubmit} className="mt-8 space-y-5">
-              <div className="rounded-2xl border border-surface-border bg-surface-raised/30 p-5">
-                <label className="block text-sm font-medium text-white">Try-on type</label>
-                <p className="mt-1 text-xs text-zinc-500">
-                  Clothing uses fast try-on (v1.6). Shoes use Try-On Max so footwear lands on the feet.
-                </p>
-                <div className="mt-3 grid gap-3 sm:grid-cols-2">
-                  <button
-                    type="button"
-                    onClick={() => setTryOnType("clothing")}
-                    className={`inline-flex h-11 items-center justify-center rounded-full border text-sm font-semibold transition ${
-                      tryOnType === "clothing"
-                        ? "border-accent/60 bg-accent/15 text-white"
-                        : "border-surface-border bg-transparent text-zinc-300 hover:border-zinc-600 hover:bg-surface-raised"
-                    }`}
-                    disabled={loading || compressing !== null}
-                  >
-                    Clothing
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setTryOnType("shoes")}
-                    className={`inline-flex h-11 items-center justify-center rounded-full border text-sm font-semibold transition ${
-                      tryOnType === "shoes"
-                        ? "border-accent/60 bg-accent/15 text-white"
-                        : "border-surface-border bg-transparent text-zinc-300 hover:border-zinc-600 hover:bg-surface-raised"
-                    }`}
-                    disabled={loading || compressing !== null}
-                  >
-                    Shoes
-                  </button>
-                </div>
-              </div>
-
               <div className="rounded-2xl border border-surface-border bg-surface-raised/30 p-5">
                 <label className="block text-sm font-medium text-white">Person photo</label>
                 <p className="mt-1 text-xs text-zinc-500">
@@ -322,31 +335,49 @@ export default function DemoClient() {
               </div>
 
               <div className="rounded-2xl border border-surface-border bg-surface-raised/30 p-5">
-                <label className="block text-sm font-medium text-white">
-                  {tryOnType === "shoes" ? "Shoe image" : "Garment image"}
-                </label>
+                <label className="block text-sm font-medium text-white">Sample products</label>
                 <p className="mt-1 text-xs text-zinc-500">
-                  {tryOnType === "shoes"
-                    ? "Product shoe photos work best (side view, clean background)."
-                    : "Flat-lay or mannequin photos are ideal."}{" "}
-                  We auto-compress to max 1000px.
+                  Pick a preset garment. No upload needed.
                 </p>
-                <div className="mt-3">
-                  <input
-                    type="file"
-                    accept="image/*"
-                    onChange={(e) => setGarmentFromFile(e.target.files?.[0] ?? null)}
-                    className="block w-full cursor-pointer rounded-lg border border-surface-border bg-surface px-3 py-2 text-sm text-zinc-200 file:mr-4 file:rounded-md file:border-0 file:bg-zinc-800 file:px-3 file:py-2 file:text-sm file:font-medium file:text-white hover:border-zinc-700"
-                  />
-                  {garment && (
-                    <p className="mt-2 text-xs text-zinc-500">
-                      {garment.name} · {formatBytes(garment.size)}
-                    </p>
-                  )}
-                  {compressing === "garment" && (
-                    <p className="mt-2 text-xs text-zinc-500">Compressing garment image…</p>
-                  )}
+
+                <div className="mt-4 grid gap-3 sm:grid-cols-2">
+                  {GARMENT_PRESETS.map((p) => {
+                    const selected = p.id === selectedPresetId;
+                    return (
+                      <button
+                        key={p.id}
+                        type="button"
+                        onClick={() => setSelectedPresetId(p.id)}
+                        className={`group overflow-hidden rounded-2xl border text-left transition ${
+                          selected
+                            ? "border-accent/60 bg-accent/10"
+                            : "border-surface-border bg-transparent hover:border-zinc-600 hover:bg-surface-raised/30"
+                        }`}
+                        disabled={loading || compressing !== null}
+                      >
+                        <div className="aspect-[4/3] bg-black/30">
+                          {/* eslint-disable-next-line @next/next/no-img-element */}
+                          <img
+                            src={p.imageUrl}
+                            alt={p.name}
+                            className="h-full w-full object-cover transition duration-300 group-hover:scale-[1.02]"
+                            loading="lazy"
+                          />
+                        </div>
+                        <div className="p-4">
+                          <p className="text-sm font-semibold text-white">{p.name}</p>
+                          <p className="mt-1 text-xs text-zinc-400">
+                            {p.kind === "shoes" ? "Shoes" : "Clothing"}
+                          </p>
+                        </div>
+                      </button>
+                    );
+                  })}
                 </div>
+
+                {compressing === "garment" && (
+                  <p className="mt-3 text-xs text-zinc-500">Preparing preset garment…</p>
+                )}
               </div>
 
               <div className="grid gap-4 sm:grid-cols-2">
@@ -364,8 +395,8 @@ export default function DemoClient() {
                     <option value="quality">quality</option>
                   </select>
                   <p className="mt-2 text-xs text-zinc-500">
-                    {tryOnType === "shoes"
-                      ? "Shoes use Try-On Max; expect ~20–120s depending on load."
+                    {selectedPreset?.kind === "shoes"
+                      ? "Shoes can take longer; expect ~20–120s depending on load."
                       : "Quality takes longer (12–17s)."}
                   </p>
                 </div>
@@ -435,7 +466,7 @@ export default function DemoClient() {
 
                   <div className="overflow-hidden rounded-xl border border-surface-border bg-zinc-950/40">
                     <div className="border-b border-surface-border px-3 py-2 text-xs text-zinc-500">
-                      {tryOnType === "shoes" ? "Shoes" : "Garment"}
+                      {selectedPreset?.kind === "shoes" ? "Shoes" : "Garment"}
                     </div>
                     <div className="aspect-[4/3] bg-black/30">
                       {garmentPreview ? (
@@ -443,11 +474,11 @@ export default function DemoClient() {
                         <img
                           src={garmentPreview}
                           alt="Garment preview"
-                          className="h-full w-full object-cover"
+                          className="h-full w-full object-contain"
                         />
                       ) : (
                         <div className="flex h-full items-center justify-center text-sm text-zinc-600">
-                          No image selected
+                          Select a sample product
                         </div>
                       )}
                     </div>

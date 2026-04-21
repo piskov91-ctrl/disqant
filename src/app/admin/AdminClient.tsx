@@ -19,6 +19,10 @@ export default function AdminClient() {
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [resettingId, setResettingId] = useState<string | null>(null);
   const [copiedId, setCopiedId] = useState<string | null>(null);
+  const [editing, setEditing] = useState<KeyRecord | null>(null);
+  const [editClientName, setEditClientName] = useState("");
+  const [editUsageLimit, setEditUsageLimit] = useState("");
+  const [savingEdit, setSavingEdit] = useState(false);
 
   const [clientName, setClientName] = useState("");
   const [fashnApiKey, setFashnApiKey] = useState("");
@@ -161,8 +165,122 @@ export default function AdminClient() {
     }
   }
 
+  function openEditModal(rec: KeyRecord) {
+    setError(null);
+    setEditing(rec);
+    setEditClientName(rec.clientName);
+    setEditUsageLimit(String(rec.usageLimit));
+  }
+
+  function closeEditModal() {
+    setEditing(null);
+    setEditClientName("");
+    setEditUsageLimit("");
+    setSavingEdit(false);
+  }
+
+  async function saveEdit() {
+    if (!editing) return;
+    setError(null);
+    setSavingEdit(true);
+    try {
+      const res = await fetch(`/api/admin/keys/${encodeURIComponent(editing.id)}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          clientName: editClientName,
+          usageLimit: Number(editUsageLimit),
+        }),
+      });
+      const data = (await res.json()) as { key?: KeyRecord; error?: string };
+      if (!res.ok) {
+        if (data.error === "Unauthorized.") window.location.reload();
+        setError(data.error || "Failed to update key.");
+        return;
+      }
+      if (data.key) {
+        setKeys((prev) => prev.map((k) => (k.id === data.key!.id ? data.key! : k)));
+      }
+      closeEditModal();
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Failed to update key.");
+    } finally {
+      setSavingEdit(false);
+    }
+  }
+
   return (
     <div className="min-h-dvh bg-surface">
+      {editing && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-6"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="edit-title"
+        >
+          <div className="w-full max-w-md rounded-2xl border border-surface-border bg-surface-raised p-6 shadow-2xl shadow-black/40">
+            <div className="flex items-start justify-between gap-4">
+              <div className="min-w-0">
+                <p id="edit-title" className="text-base font-semibold text-white">
+                  Edit client
+                </p>
+                <p className="mt-1 text-sm text-zinc-400">
+                  Update client name and usage limit.
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={closeEditModal}
+                className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-surface-border bg-transparent text-white transition hover:border-zinc-600 hover:bg-surface-raised"
+                aria-label="Close"
+              >
+                ✕
+              </button>
+            </div>
+
+            <div className="mt-6 space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-white">Client name</label>
+                <input
+                  value={editClientName}
+                  onChange={(e) => setEditClientName(e.target.value)}
+                  className="mt-3 block w-full rounded-xl border border-surface-border bg-surface px-4 py-3 text-sm text-zinc-200 outline-none transition focus:border-accent/60"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-white">Usage limit</label>
+                <input
+                  value={editUsageLimit}
+                  onChange={(e) => setEditUsageLimit(e.target.value)}
+                  inputMode="numeric"
+                  className="mt-3 block w-full rounded-xl border border-surface-border bg-surface px-4 py-3 text-sm text-zinc-200 outline-none transition focus:border-accent/60"
+                />
+              </div>
+            </div>
+
+            <div className="mt-7 flex gap-3">
+              <button
+                type="button"
+                onClick={closeEditModal}
+                disabled={savingEdit}
+                className="inline-flex h-11 flex-1 items-center justify-center rounded-full border border-surface-border bg-transparent text-sm font-semibold text-white transition hover:border-zinc-600 hover:bg-surface-raised disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={saveEdit}
+                disabled={
+                  savingEdit || editClientName.trim().length === 0 || Number(editUsageLimit) <= 0
+                }
+                className="inline-flex h-11 flex-1 items-center justify-center rounded-full bg-accent px-5 text-sm font-semibold text-white transition hover:bg-accent-muted disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                {savingEdit ? "Saving…" : "Save"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
       <header className="border-b border-surface-border bg-surface/80 backdrop-blur-xl">
         <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-6">
           <Link href="/" className="flex items-center gap-2 text-lg font-semibold tracking-tight">
@@ -314,6 +432,13 @@ export default function AdminClient() {
 
                           <div className="mt-auto pt-5">
                             <div className="flex flex-wrap justify-end gap-2">
+                              <button
+                                type="button"
+                                onClick={() => openEditModal(k)}
+                                className="inline-flex h-9 items-center justify-center rounded-full border border-surface-border bg-surface-raised/30 px-4 text-sm font-semibold text-white transition hover:border-zinc-600 hover:bg-surface-raised"
+                              >
+                                Edit
+                              </button>
                               <button
                                 type="button"
                                 onClick={() => copyWidgetCode(k.key, k.id)}

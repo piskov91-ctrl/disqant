@@ -141,3 +141,30 @@ export async function resetUsage(id: string) {
   return next;
 }
 
+export async function updateClientKey(params: {
+  id: string;
+  clientName: string;
+  usageLimit: number;
+}) {
+  const redis = getRedis();
+  const id = params.id;
+  if (!id) throw new Error("Key id is required.");
+
+  const clientName = params.clientName.trim();
+  if (!clientName) throw new Error("Client name is required.");
+  if (!Number.isFinite(params.usageLimit) || params.usageLimit <= 0) {
+    throw new Error("Usage limit must be a positive number.");
+  }
+
+  const rec = (await redis.get(recordKey(id))) as ClientApiKeyRecord | null;
+  if (!rec) throw new Error("Client key not found.");
+
+  const next: ClientApiKeyRecord = {
+    ...rec,
+    clientName,
+    usageLimit: Math.floor(params.usageLimit),
+  };
+  await redis.set(recordKey(id), next);
+  return next;
+}
+

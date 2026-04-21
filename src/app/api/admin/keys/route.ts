@@ -15,7 +15,11 @@ export async function GET() {
   if (!(await requireAdmin())) return Response.json({ error: "Unauthorized." }, { status: 401 });
   const keys = await listClientKeys();
   // Do not send raw Fashn keys to the browser.
-  const redacted = keys.map(({ fashnApiKey: _f, ...rest }) => rest);
+  const redacted = keys.map((k) => {
+    const { fashnApiKey, ...rest } = k;
+    void fashnApiKey;
+    return rest;
+  });
   return Response.json({ keys: redacted });
 }
 
@@ -42,7 +46,8 @@ export async function POST(req: Request) {
 
   try {
     const rec = await createClientKey({ clientName, usageLimit: usageLimitNum, fashnApiKey });
-    const { fashnApiKey: _f, ...rest } = rec;
+    const { fashnApiKey: rawFashn, ...rest } = rec;
+    void rawFashn;
     return Response.json({ key: rest });
   } catch (e) {
     return Response.json(
