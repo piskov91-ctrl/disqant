@@ -38,9 +38,24 @@ async function startPrediction(params: {
   returnBase64: boolean;
   modelImage: string;
   garmentOrProductImage: string;
+  category?: string;
+  coverFeet?: boolean;
+  adjustHands?: boolean;
+  restoreClothes?: boolean;
 }) {
-  const { apiKey, modelName, mode, outputFormat, returnBase64, modelImage, garmentOrProductImage } =
-    params;
+  const {
+    apiKey,
+    modelName,
+    mode,
+    outputFormat,
+    returnBase64,
+    modelImage,
+    garmentOrProductImage,
+    category,
+    coverFeet,
+    adjustHands,
+    restoreClothes,
+  } = params;
 
   const baseUrl = "https://api.fashn.ai/v1";
   const headers = {
@@ -49,6 +64,12 @@ async function startPrediction(params: {
   };
 
   const isMax = modelName === "tryon-max";
+  const extraInputs: Record<string, unknown> = {};
+  if (typeof category === "string" && category.trim()) extraInputs.category = category.trim();
+  if (typeof coverFeet === "boolean") extraInputs.cover_feet = coverFeet;
+  if (typeof adjustHands === "boolean") extraInputs.adjust_hands = adjustHands;
+  if (typeof restoreClothes === "boolean") extraInputs.restore_clothes = restoreClothes;
+
   const body = isMax
     ? {
         model_name: "tryon-max",
@@ -59,6 +80,7 @@ async function startPrediction(params: {
           resolution: "1k",
           output_format: outputFormat,
           return_base64: returnBase64,
+          ...extraInputs,
         },
       }
     : {
@@ -69,6 +91,7 @@ async function startPrediction(params: {
           mode,
           output_format: outputFormat,
           return_base64: returnBase64,
+          ...extraInputs,
         },
       };
 
@@ -141,9 +164,21 @@ export async function POST(req: Request) {
   const garmentFile = form.get("garment");
   const tryOnTypeRaw = String(form.get("tryOnType") || "clothing");
   const tryOnType = tryOnTypeRaw === "shoes" ? "shoes" : "clothing";
+  const categoryRaw = form.get("category");
+  const category = typeof categoryRaw === "string" ? categoryRaw : null;
   const mode = String(form.get("mode") || "balanced");
   const outputFormat = String(form.get("outputFormat") || "png");
   const returnBase64 = String(form.get("returnBase64") || "true") === "true";
+
+  // Optional advanced controls (used by /demo for outerwear).
+  const coverFeet =
+    form.get("cover_feet") === null ? undefined : String(form.get("cover_feet")) === "true";
+  const adjustHands =
+    form.get("adjust_hands") === null ? undefined : String(form.get("adjust_hands")) === "true";
+  const restoreClothes =
+    form.get("restore_clothes") === null
+      ? undefined
+      : String(form.get("restore_clothes")) === "true";
 
   if (!(modelFile instanceof File) || !(garmentFile instanceof File)) {
     return Response.json(
@@ -168,6 +203,10 @@ export async function POST(req: Request) {
     returnBase64,
     modelImage,
     garmentOrProductImage: garmentImage,
+    category: category || undefined,
+    coverFeet,
+    adjustHands,
+    restoreClothes,
   });
 
   if (!first.ok) {
@@ -183,6 +222,10 @@ export async function POST(req: Request) {
       returnBase64,
       modelImage,
       garmentOrProductImage: garmentImage,
+      category: category || undefined,
+      coverFeet,
+      adjustHands,
+      restoreClothes,
     });
     if (!second.ok) return Response.json({ error: second.error }, { status: 502 });
 

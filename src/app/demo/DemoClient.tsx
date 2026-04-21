@@ -212,6 +212,11 @@ export default function DemoClient() {
             ? "outerwear"
             : "tops";
       fd.set("category", category);
+      if (category === "outerwear") {
+        fd.set("cover_feet", "false");
+        fd.set("adjust_hands", "true");
+        fd.set("restore_clothes", "false");
+      }
       // Keep legacy field for older server versions.
       fd.set("tryOnType", selectedPreset.kind);
       fd.set("mode", mode);
