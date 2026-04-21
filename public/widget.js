@@ -210,6 +210,48 @@
     return span;
   }
 
+  function normalizeText(s) {
+    return String(s || "")
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, " ")
+      .trim();
+  }
+
+  function inferCategoryFromImage(img) {
+    // Default category when we don't detect footwear.
+    var DEFAULT_CATEGORY = "tops";
+
+    var keywords = [
+      "shoe", "shoes", "trainer", "trainers", "sneaker", "sneakers",
+      "boot", "boots", "footwear", "nike", "adidas", "jordan", "heel", "heels"
+    ];
+
+    var parts = [];
+    try {
+      parts.push(img.currentSrc || img.src || "");
+      parts.push(img.getAttribute("alt") || "");
+      parts.push(img.getAttribute("title") || "");
+    } catch (_e) { }
+
+    // Include nearby parent text (limited to avoid scanning huge pages).
+    var p = img && img.parentElement ? img.parentElement : null;
+    var hops = 0;
+    while (p && hops < 3) {
+      var t = "";
+      try { t = p.textContent || ""; } catch (_e2) { }
+      if (t) parts.push(t);
+      p = p.parentElement;
+      hops++;
+    }
+
+    var haystack = normalizeText(parts.join(" "));
+    for (var i = 0; i < keywords.length; i++) {
+      var kw = keywords[i];
+      if (haystack.indexOf(kw) !== -1) return "shoes";
+    }
+    return DEFAULT_CATEGORY;
+  }
+
   function createModal() {
     injectStyles();
 
@@ -280,6 +322,7 @@
     var garmentImgEl = opts.garmentImgEl;
     var garmentFilePromise = opts.garmentFilePromise;
     var clientKey = opts.clientKey;
+    var category = opts.category || "tops";
 
     var m = createModal();
     document.body.appendChild(m.backdrop);
@@ -512,7 +555,10 @@
         var fd = new FormData();
         fd.append("model", modelFile);
         fd.append("garment", garmentFile);
-        fd.append("tryOnType", "auto"); // auto-detect garment type (no toggle buttons)
+        // Per spec: fully automatic category chosen from page context.
+        fd.append("category", category);
+        // Keep backward compatibility with existing API implementations.
+        fd.append("tryOnType", category);
         fd.append("mode", "balanced");
         fd.append("outputFormat", "png");
         fd.append("returnBase64", "true");
@@ -581,11 +627,13 @@
       var key = getClientKey();
       var src = img.currentSrc || img.src;
       var garmentFilePromise = fetchImageAsFile(src, "garment.jpg");
+      var category = inferCategoryFromImage(img);
 
       buildTryOnUI({
         garmentImgEl: img,
         garmentFilePromise: garmentFilePromise,
-        clientKey: key
+        clientKey: key,
+        category: category
       });
     });
   }
