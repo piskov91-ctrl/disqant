@@ -100,9 +100,6 @@
 
       + ".dq-head{display:flex;justify-content:flex-end;align-items:center;padding:12px 12px;border-bottom:1px solid rgba(15,15,20,.08);background:#fff;gap:10px;}"
       + ".dq-head-right{display:flex;align-items:center;gap:10px;}"
-      + ".dq-mode{display:inline-flex;gap:6px;padding:4px;border-radius:999px;background:rgba(15,15,20,.06);border:1px solid rgba(15,15,20,.08);}"
-      + ".dq-mode button{appearance:none;border:0;background:transparent;color:rgba(15,15,20,.72);padding:8px 10px;border-radius:999px;font:800 12px/1 system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;cursor:pointer;transition:background .14s ease,color .14s ease;}"
-      + ".dq-mode button[aria-pressed=\"true\"]{background:#fff;color:#0f0f14;box-shadow:0 6px 18px rgba(0,0,0,.10);}"
       + ".dq-close{appearance:none;border:1px solid rgba(15,15,20,.12);background:#fff;color:#0f0f14;border-radius:12px;padding:8px 10px;cursor:pointer;box-shadow:0 8px 20px rgba(0,0,0,.08);}"
       + ".dq-close:hover{transform:translateY(-1px);}"
 
@@ -116,7 +113,7 @@
       + ".dq-primary:hover{transform:translateY(-1px) scale(1.01);}"
 
       + ".dq-stage{position:relative;width:100%;height:min(70vh,560px);border-radius:18px;border:1px solid rgba(15,15,20,.10);background:linear-gradient(180deg,#ffffff,#fbfbfd);box-shadow:0 18px 50px rgba(0,0,0,.08);overflow:hidden;}"
-      + ".dq-stage img{width:100%;height:100%;object-fit:contain;display:block;background:#fff;}"
+      + ".dq-stage img{width:100%;height:100%;object-fit:contain;object-position:center center;display:block;background:#fff;}"
       + ".dq-stage-empty{height:100%;display:flex;flex-direction:column;gap:8px;align-items:center;justify-content:center;color:rgba(15,15,20,.55);font:800 12px/1.2 system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;}"
       + ".dq-stage-hint{font:600 12px/1.3 system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;color:rgba(15,15,20,.55);}"
       + ".dq-branding{position:absolute;left:12px;bottom:12px;z-index:3;font:900 12px/1 system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;color:#0f0f14;letter-spacing:.25px;padding:8px 10px;border-radius:999px;background:rgba(255,255,255,.88);border:1px solid rgba(15,15,20,.10);backdrop-filter:blur(10px);}"
@@ -174,27 +171,10 @@
     var headRight = document.createElement("div");
     headRight.className = "dq-head-right";
 
-    var modeWrap = document.createElement("div");
-    modeWrap.className = "dq-mode";
-
-    var modeClothing = document.createElement("button");
-    modeClothing.type = "button";
-    modeClothing.textContent = "Clothing";
-    modeClothing.setAttribute("aria-pressed", "true");
-
-    var modeShoes = document.createElement("button");
-    modeShoes.type = "button";
-    modeShoes.textContent = "Shoes";
-    modeShoes.setAttribute("aria-pressed", "false");
-
-    modeWrap.appendChild(modeClothing);
-    modeWrap.appendChild(modeShoes);
-
     var close = document.createElement("button");
     close.className = "dq-close";
     close.type = "button";
     close.textContent = "✕";
-    headRight.appendChild(modeWrap);
     headRight.appendChild(close);
     head.appendChild(headRight);
 
@@ -230,9 +210,7 @@
     return {
       backdrop: backdrop,
       body: body,
-      close: teardown,
-      modeClothingBtn: modeClothing,
-      modeShoesBtn: modeShoes
+      close: teardown
     };
   }
 
@@ -249,7 +227,7 @@
     var modelFile = null;
     var garmentFile = null;
     var stream = null;
-    var tryOnType = "clothing";
+    var tryOnType = "auto";
 
     // Stage (single column)
     var stage = document.createElement("div");
@@ -457,15 +435,6 @@
         // No-op (minimal UI). Try-on will error if garment is unavailable.
       }
     })();
-
-    function setTryOnType(next) {
-      tryOnType = next === "shoes" ? "shoes" : "clothing";
-      if (m.modeClothingBtn) m.modeClothingBtn.setAttribute("aria-pressed", tryOnType === "clothing" ? "true" : "false");
-      if (m.modeShoesBtn) m.modeShoesBtn.setAttribute("aria-pressed", tryOnType === "shoes" ? "true" : "false");
-    }
-
-    if (m.modeClothingBtn) m.modeClothingBtn.addEventListener("click", function () { setTryOnType("clothing"); });
-    if (m.modeShoesBtn) m.modeShoesBtn.addEventListener("click", function () { setTryOnType("shoes"); });
 
     takeBtn.addEventListener("click", async function () {
       if (!clientKey) {
