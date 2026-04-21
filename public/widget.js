@@ -220,12 +220,15 @@
   }
 
   function inferCategoryFromImage(img) {
-    // Hint for /api/try-on (echoed in JSON): tops vs shoes. Fashn Try-On Max has no category field.
+    // Hint for /api/try-on (echoed in JSON): tops | shoes | bottoms. Fashn Try-On Max has no category field.
     var DEFAULT_CATEGORY = "tops";
 
-    var keywords = [
+    var shoeKeywords = [
       "shoe", "shoes", "trainer", "trainers", "sneaker", "sneakers",
       "boot", "boots", "footwear", "nike", "adidas", "jordan", "heel", "heels"
+    ];
+    var bottomsKeywords = [
+      "jeans", "denim", "trousers", "chinos", "dungaree", "joggers", "slacks"
     ];
 
     var parts = [];
@@ -247,9 +250,11 @@
     }
 
     var haystack = normalizeText(parts.join(" "));
-    for (var i = 0; i < keywords.length; i++) {
-      var kw = keywords[i];
-      if (haystack.indexOf(kw) !== -1) return "shoes";
+    for (var si = 0; si < shoeKeywords.length; si++) {
+      if (haystack.indexOf(shoeKeywords[si]) !== -1) return "shoes";
+    }
+    for (var bi = 0; bi < bottomsKeywords.length; bi++) {
+      if (haystack.indexOf(bottomsKeywords[bi]) !== -1) return "bottoms";
     }
     return DEFAULT_CATEGORY;
   }
@@ -365,7 +370,12 @@
     var modelFile = null;
     var garmentFile = null;
     var stream = null;
-    var selectedCategory = inferredCategory === "shoes" ? "shoes" : "tops";
+    var selectedCategory =
+      inferredCategory === "shoes"
+        ? "shoes"
+        : inferredCategory === "bottoms"
+          ? "bottoms"
+          : "tops";
 
     var stage = document.createElement("div");
     stage.className = "dq-stage";

@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 
 /** Echoed from FormData; Try-On Max infers product type from images (no Fashn `category` param). */
-type GarmentCategoryHint = "tops" | "shoes";
+type GarmentCategoryHint = "tops" | "shoes" | "bottoms";
 
 type TryOnResponse =
   | { id: string; output: string[]; category?: GarmentCategoryHint }
@@ -21,8 +21,8 @@ type DemoWidgetModalState = {
 };
 
 type GarmentPreset = {
-  id: "sneakers" | "tee" | "sweater" | "jacket";
-  label: "Sneakers" | "T-Shirt" | "Sweater" | "Jacket";
+  id: "sneakers" | "tee" | "sweater" | "jacket" | "jacket_leather" | "jeans";
+  label: string;
   name: string;
   /** Hint for `/api/try-on` (echoed in JSON); maps to sneakers → shoes, apparel → tops */
   category: GarmentCategoryHint;
@@ -63,6 +63,24 @@ const GARMENT_PRESETS: GarmentPreset[] = [
     category: "tops",
     imageUrl:
       "https://images.unsplash.com/photo-1608063615781-e2ef8c73d114?w=400",
+  },
+  {
+    id: "jacket_leather",
+    label: "Leather jacket",
+    name: "Black leather jacket (flat lay, no model)",
+    category: "tops",
+    // Lea Øchel — black leather zip-up on white textile (product / flat lay).
+    imageUrl:
+      "https://images.unsplash.com/photo-1551028719-00167b16eac5?auto=format&fit=crop&w=1400&q=80",
+  },
+  {
+    id: "jeans",
+    label: "Blue jeans",
+    name: "Blue denim jeans (flat lay, no model)",
+    category: "bottoms",
+    // TuanAnh Blue — pair of blue jeans on a box (product-style denim).
+    imageUrl:
+      "https://images.unsplash.com/photo-1714143136361-386dae5672e2?auto=format&fit=crop&w=1400&q=80",
   },
 ];
 
@@ -586,7 +604,11 @@ export default function DemoClient() {
 
                   <div className="overflow-hidden rounded-xl border border-surface-border bg-zinc-950/40">
                     <div className="border-b border-surface-border px-3 py-2 text-xs text-zinc-500">
-                      {selectedPreset?.id === "sneakers" ? "Shoes" : "Garment"}
+                      {selectedPreset?.id === "sneakers"
+                        ? "Shoes"
+                        : selectedPreset?.id === "jeans"
+                          ? "Jeans"
+                          : "Garment"}
                     </div>
                     <div className="aspect-[4/3] bg-black/30">
                       {garmentPreview ? (

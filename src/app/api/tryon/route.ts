@@ -35,16 +35,18 @@ async function fileToDataUrl(file: File) {
  * Try-On Max (`/v1/run`) does not document a `category` input; product type is inferred from images.
  * @see https://docs.fashn.ai/api-reference/tryon-max
  */
-type GarmentCategoryHint = "tops" | "shoes";
+type GarmentCategoryHint = "tops" | "shoes" | "bottoms";
 
 function resolveGarmentCategoryHint(form: FormData): GarmentCategoryHint {
   const fromForm = String(form.get("category") || "")
     .trim()
     .toLowerCase();
   if (fromForm === "shoes") return "shoes";
+  if (fromForm === "bottoms") return "bottoms";
 
   const tryOn = String(form.get("tryOnType") || "").trim().toLowerCase();
   if (tryOn === "shoes") return "shoes";
+  if (tryOn === "bottoms") return "bottoms";
 
   return "tops";
 }
