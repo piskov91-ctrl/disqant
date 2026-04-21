@@ -4,10 +4,11 @@ import { useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 
-type TryOnMaxCategory = "tops" | "shoes";
+/** Echoed from FormData; Try-On Max infers product type from images (no Fashn `category` param). */
+type GarmentCategoryHint = "tops" | "shoes";
 
 type TryOnResponse =
-  | { id: string; output: string[]; category?: TryOnMaxCategory }
+  | { id: string; output: string[]; category?: GarmentCategoryHint }
   | { error: string; code?: string; keyKind?: "demo" | "client" };
 
 type DemoWidgetModalState = {
@@ -23,8 +24,8 @@ type GarmentPreset = {
   id: "sneakers" | "tee" | "sweater" | "jacket";
   label: "Sneakers" | "T-Shirt" | "Sweater" | "Jacket";
   name: string;
-  /** Sent to Fashn Try-On Max as `inputs.category` */
-  category: TryOnMaxCategory;
+  /** Hint for `/api/try-on` (echoed in JSON); maps to sneakers → shoes, apparel → tops */
+  category: GarmentCategoryHint;
   imageUrl: string;
 };
 
@@ -206,6 +207,7 @@ export default function DemoClient() {
       fd.set("model", model);
       fd.set("garment", garment);
       fd.set("category", selectedPreset.category);
+      fd.set("generationMode", "balanced");
 
       const res = await fetch("/api/tryon", {
         method: "POST",
@@ -529,7 +531,7 @@ export default function DemoClient() {
               <p className="rounded-2xl border border-surface-border bg-surface-raised/30 p-4 text-xs text-zinc-500">
                 Try-on uses Fashn <span className="font-semibold text-zinc-300">balanced</span> mode.
                 {selectedPreset?.id === "sneakers"
-                  ? " Sneakers use category shoes (tryon-max); shirts and jackets use tops."
+                  ? " Sneakers → shoes hint; tops for shirt/sweater/jacket. Try-On Max uses product_image + model_image per Fashn docs."
                   : ""}
               </p>
 

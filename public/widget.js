@@ -220,7 +220,7 @@
   }
 
   function inferCategoryFromImage(img) {
-    // Try-On Max: tops (clothing) vs shoes (footwear heuristics).
+    // Hint for /api/try-on (echoed in JSON): tops vs shoes. Fashn Try-On Max has no category field.
     var DEFAULT_CATEGORY = "tops";
 
     var keywords = [
@@ -590,6 +590,7 @@
         fd.append("model", modelFile);
         fd.append("garment", garmentFile);
         fd.append("category", selectedCategory);
+        fd.append("generationMode", "balanced");
 
         var res = await fetch(API_ENDPOINT, {
           method: "POST",

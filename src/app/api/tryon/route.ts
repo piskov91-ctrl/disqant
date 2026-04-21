@@ -30,10 +30,14 @@ async function fileToDataUrl(file: File) {
   return `data:${mime};base64,${base64}`;
 }
 
-/** Try-On Max: clothing vs footwear */
-type TryOnMaxCategory = "tops" | "shoes";
+/**
+ * Client garment hint for our JSON response only.
+ * Try-On Max (`/v1/run`) does not document a `category` input; product type is inferred from images.
+ * @see https://docs.fashn.ai/api-reference/tryon-max
+ */
+type GarmentCategoryHint = "tops" | "shoes";
 
-function resolveTryOnMaxCategory(form: FormData): TryOnMaxCategory {
+function resolveGarmentCategoryHint(form: FormData): GarmentCategoryHint {
   const fromForm = String(form.get("category") || "")
     .trim()
     .toLowerCase();
@@ -42,17 +46,23 @@ function resolveTryOnMaxCategory(form: FormData): TryOnMaxCategory {
   const tryOn = String(form.get("tryOnType") || "").trim().toLowerCase();
   if (tryOn === "shoes") return "shoes";
 
-  // Clothing (and legacy values like auto / bottoms / outerwear) → tops
   return "tops";
+}
+
+function parseGenerationMode(form: FormData): "balanced" | "quality" {
+  const raw = String(form.get("generationMode") || form.get("mode") || "balanced")
+    .trim()
+    .toLowerCase();
+  return raw === "quality" ? "quality" : "balanced";
 }
 
 async function startPrediction(params: {
   apiKey: string;
   modelImage: string;
-  garmentImage: string;
-  category: TryOnMaxCategory;
+  productImage: string;
+  generationMode: "balanced" | "quality";
 }) {
-  const { apiKey, modelImage, garmentImage, category } = params;
+  const { apiKey, modelImage, productImage, generationMode } = params;
 
   const baseUrl = "https://api.fashn.ai/v1";
   const headers = {
@@ -60,13 +70,13 @@ async function startPrediction(params: {
     Authorization: `Bearer ${apiKey}`,
   };
 
+  // Try-On Max: required `model_image`, `product_image`; optional `generation_mode`, etc.
   const body = {
     model_name: "tryon-max",
     inputs: {
       model_image: modelImage,
-      garment_image: garmentImage,
-      category,
-      mode: "balanced",
+      product_image: productImage,
+      generation_mode: generationMode,
     },
   };
 
@@ -137,7 +147,8 @@ export async function POST(req: Request) {
 
   const modelFile = form.get("model");
   const garmentFile = form.get("garment");
-  const category = resolveTryOnMaxCategory(form);
+  const category = resolveGarmentCategoryHint(form);
+  const generationMode = parseGenerationMode(form);
 
   if (!(modelFile instanceof File) || !(garmentFile instanceof File)) {
     return Response.json(
@@ -147,13 +158,13 @@ export async function POST(req: Request) {
   }
 
   const modelImage = await fileToDataUrl(modelFile);
-  const garmentImage = await fileToDataUrl(garmentFile);
+  const productImage = await fileToDataUrl(garmentFile);
 
   const first = await startPrediction({
     apiKey: client.fashnApiKey,
     modelImage,
-    garmentImage,
-    category,
+    productImage,
+    generationMode,
   });
 
   if (!first.ok) {
@@ -164,7 +175,7 @@ export async function POST(req: Request) {
     id: first.id,
     headers: first.headers,
     baseUrl: first.baseUrl,
-    timeoutMs: 90_000,
+    timeoutMs: 120_000,
     pollMs: 1200,
     category,
   });
@@ -184,7 +195,7 @@ async function pollUntilDone(params: {
   baseUrl: string;
   timeoutMs: number;
   pollMs: number;
-  category: TryOnMaxCategory;
+  category: GarmentCategoryHint;
 }): Promise<{ ok: true; response: Response } | { ok: false; response: Response }> {
   const { id, headers, baseUrl, timeoutMs, pollMs, category } = params;
   const startedAt = Date.now();
