@@ -30,6 +30,16 @@ async function fileToDataUrl(file: File) {
   return `data:${mime};base64,${base64}`;
 }
 
+function parseOptionalBooleanFormField(form: FormData, key: string): boolean | undefined {
+  if (!form.has(key)) return undefined;
+  const raw = form.get(key);
+  if (raw === null) return undefined;
+  const s = String(raw).trim().toLowerCase();
+  if (s === "true" || s === "1" || s === "yes") return true;
+  if (s === "false" || s === "0" || s === "no") return false;
+  return undefined;
+}
+
 async function startPrediction(params: {
   apiKey: string;
   modelName: "tryon-v1.6" | "tryon-max";
@@ -171,14 +181,9 @@ export async function POST(req: Request) {
   const returnBase64 = String(form.get("returnBase64") || "true") === "true";
 
   // Optional advanced controls (used by /demo for outerwear).
-  const coverFeet =
-    form.get("cover_feet") === null ? undefined : String(form.get("cover_feet")) === "true";
-  const adjustHands =
-    form.get("adjust_hands") === null ? undefined : String(form.get("adjust_hands")) === "true";
-  const restoreClothes =
-    form.get("restore_clothes") === null
-      ? undefined
-      : String(form.get("restore_clothes")) === "true";
+  const coverFeet = parseOptionalBooleanFormField(form, "cover_feet");
+  const adjustHands = parseOptionalBooleanFormField(form, "adjust_hands");
+  const restoreClothes = parseOptionalBooleanFormField(form, "restore_clothes");
 
   if (!(modelFile instanceof File) || !(garmentFile instanceof File)) {
     return Response.json(
