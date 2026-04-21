@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 
@@ -84,6 +84,94 @@ const GARMENT_PRESETS: GarmentPreset[] = [
   },
 ];
 
+/** Matches `public/widget.js` injectStyles (Wear Me + modal) for pixel-consistent /demo modal. */
+const DEMO_WEAR_MODAL_STYLE_ID = "disqant-demo-wear-modal-style";
+const DEMO_WEAR_MODAL_CSS =
+  ".dq-wrap{display:inline-block;position:relative;vertical-align:top;line-height:0;max-width:100%;}" +
+  ".dq-wrap>img{display:block;max-width:100%;height:auto;vertical-align:top;}" +
+  ".dq-overlay{position:absolute;inset:auto 12px 12px auto;z-index:2147483646;display:flex;align-items:center;pointer-events:auto;}" +
+  ".dq-wear-btn{position:relative;appearance:none;border:0;cursor:pointer;padding:10px 14px;border-radius:999px;color:#fff;font:900 13px/1 system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;letter-spacing:.2px;background:linear-gradient(135deg,#7c5cff 0%,#ff5ca8 55%,#ffb84a 100%);box-shadow:0 16px 34px rgba(124,92,255,.24),0 12px 30px rgba(255,92,168,.18);transform:translateY(0) scale(1);transition:transform .18s ease, filter .18s ease, box-shadow .18s ease;}" +
+  ".dq-wear-btn:hover{transform:translateY(-2px) scale(1.03);filter:saturate(1.08);box-shadow:0 22px 44px rgba(124,92,255,.26),0 18px 36px rgba(255,92,168,.22);}" +
+  ".dq-wear-btn:active{transform:translateY(-1px) scale(.99);}" +
+  ".dq-wear-btn::after{content:\"\";position:absolute;inset:-2px;border-radius:999px;opacity:0;box-shadow:0 0 0 0 rgba(255,184,74,.38);transition:opacity .18s ease;}" +
+  ".dq-wear-btn:hover::after{opacity:1;animation:dq-pulse 1.35s ease-out infinite;}" +
+  "@keyframes dq-pulse{0%{box-shadow:0 0 0 0 rgba(255,184,74,.32)}100%{box-shadow:0 0 0 16px rgba(255,184,74,0)}}" +
+  ".dq-backdrop{position:fixed;inset:0;z-index:2147483000;background:rgba(10,10,14,.55);display:flex;align-items:center;justify-content:center;padding:14px;opacity:0;transition:opacity .18s ease;}" +
+  ".dq-backdrop.dq-open{opacity:1;}" +
+  ".dq-modal{width:min(720px,100%);max-height:90vh;background:#fff;border:1px solid rgba(15,15,20,.08);border-radius:20px;overflow:hidden;box-shadow:0 30px 80px rgba(0,0,0,.30);display:flex;flex-direction:column;transform:translateY(10px) scale(.985);opacity:0;transition:transform .18s ease, opacity .18s ease;}" +
+  ".dq-backdrop.dq-open .dq-modal{transform:translateY(0) scale(1);opacity:1;}" +
+  ".dq-backdrop.dq-closing{opacity:0;}" +
+  ".dq-backdrop.dq-closing .dq-modal{transform:translateY(10px) scale(.985);opacity:0;}" +
+  ".dq-head{display:flex;align-items:center;justify-content:space-between;padding:12px 12px;border-bottom:1px solid rgba(15,15,20,.08);background:#fff;}" +
+  ".dq-head-title{font:900 13px/1 system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;letter-spacing:.25px;color:#0f0f14;}" +
+  ".dq-x{appearance:none;border:1px solid rgba(15,15,20,.12);background:#fff;color:#0f0f14;border-radius:12px;padding:8px 10px;cursor:pointer;box-shadow:0 10px 22px rgba(0,0,0,.08);transition:transform .16s ease, box-shadow .16s ease;}" +
+  ".dq-x:hover{transform:translateY(-1px);box-shadow:0 14px 28px rgba(0,0,0,.10);}" +
+  ".dq-body{padding:12px;display:flex;flex-direction:column;gap:12px;overflow:auto;-webkit-overflow-scrolling:touch;}" +
+  ".dq-stage{position:relative;width:100%;height:min(72vh,560px);border-radius:18px;border:1px solid rgba(15,15,20,.10);background:linear-gradient(180deg,#ffffff,#fbfbfd);box-shadow:0 18px 50px rgba(0,0,0,.08);overflow:hidden;}" +
+  ".dq-stage img{width:100%;height:100%;display:block;background:#fff;object-fit:contain;object-position:center center;}" +
+  ".dq-empty{height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;color:rgba(15,15,20,.55);text-align:center;padding:18px;}" +
+  ".dq-empty strong{color:#0f0f14;font:900 14px/1.2 system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;}" +
+  ".dq-empty span{font:600 12px/1.3 system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;}" +
+  ".dq-processing{position:absolute;inset:0;display:none;align-items:center;justify-content:center;flex-direction:column;gap:10px;z-index:4;background:rgba(255,255,255,.62);backdrop-filter:blur(8px);}" +
+  ".dq-processing.is-on{display:flex;}" +
+  ".dq-spin{width:34px;height:34px;border-radius:999px;border:3px solid rgba(15,15,20,.14);border-top-color:#7c5cff;animation:dqspin 1s linear infinite;}" +
+  "@keyframes dqspin{to{transform:rotate(360deg);}}" +
+  ".dq-processing-text{font:900 13px/1.25 system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;color:#0f0f14;text-align:center;max-width:420px;padding:0 14px;}" +
+  ".dq-progress{position:absolute;left:12px;right:12px;bottom:12px;z-index:5;height:10px;border-radius:999px;background:rgba(15,15,20,.10);overflow:hidden;display:none;}" +
+  ".dq-progress.is-on{display:block;}" +
+  ".dq-progress>span{display:block;height:100%;width:0%;background:linear-gradient(135deg,#7c5cff,#ff5ca8,#ffb84a);transition:width .12s ease;}" +
+  ".dq-row{display:flex;gap:10px;flex-wrap:wrap;}" +
+  ".dq-choice{flex:1;min-width:160px;display:flex;align-items:center;gap:10px;justify-content:center;padding:12px 12px;border-radius:16px;border:1px solid rgba(15,15,20,.10);background:#fff;color:#0f0f14;cursor:pointer;box-shadow:0 10px 26px rgba(0,0,0,.06);font:900 12px/1 system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;transition:transform .16s ease, box-shadow .16s ease;}" +
+  ".dq-choice:hover{transform:translateY(-1px);box-shadow:0 14px 30px rgba(0,0,0,.09);}" +
+  ".dq-ico{width:18px;height:18px;display:inline-block;opacity:.92;}" +
+  ".dq-primary{appearance:none;border:0;cursor:pointer;border-radius:16px;padding:12px 12px;background:linear-gradient(135deg,#7c5cff,#ff5ca8);color:#fff;font:900 13px/1 system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;box-shadow:0 16px 34px rgba(124,92,255,.20),0 12px 30px rgba(255,92,168,.14);transition:transform .16s ease, filter .16s ease, box-shadow .16s ease;}" +
+  ".dq-primary:hover{transform:translateY(-1px) scale(1.01);filter:saturate(1.05);}" +
+  ".dq-primary:disabled{opacity:.55;cursor:not-allowed;transform:none;filter:none;}" +
+  ".dq-save{appearance:none;border:1px solid rgba(15,15,20,.12);background:#fff;color:#0f0f14;cursor:pointer;border-radius:16px;padding:12px 12px;font:900 13px/1 system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;box-shadow:0 10px 26px rgba(0,0,0,.06);transition:transform .16s ease, box-shadow .16s ease;}" +
+  ".dq-save:hover{transform:translateY(-1px);box-shadow:0 14px 30px rgba(0,0,0,.09);}" +
+  ".dq-brand{padding:12px 12px;border-top:1px solid rgba(15,15,20,.08);display:flex;align-items:center;justify-content:flex-start;background:#fff;}" +
+  ".dq-brand span{font:900 12px/1 system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;color:#0f0f14;letter-spacing:.25px;}" +
+  ".dq-brand small{margin-left:8px;font:700 12px/1 system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;color:rgba(15,15,20,.55);}" +
+  "@media (max-width:420px){.dq-body{padding:10px}.dq-stage{height:min(74vh,520px)}.dq-choice{min-width:100%}}";
+
+function DqIconGallery() {
+  return (
+    <span className="dq-ico">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden>
+        <path
+          d="M7 3h10a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2Z"
+          stroke="currentColor"
+          strokeWidth="1.8"
+        />
+        <path d="M9 10.5a2 2 0 1 0 0-4 2 2 0 0 0 0 4Z" stroke="currentColor" strokeWidth="1.8" />
+        <path
+          d="m5.5 18 5-5 3.2 3.2 2-2L20 18"
+          stroke="currentColor"
+          strokeWidth="1.8"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        />
+      </svg>
+    </span>
+  );
+}
+
+function DqIconCamera() {
+  return (
+    <span className="dq-ico">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden>
+        <path
+          d="M7 7h2l1.2-2h3.6L15 7h2a3 3 0 0 1 3 3v7a3 3 0 0 1-3 3H7a3 3 0 0 1-3-3v-7a3 3 0 0 1 3-3Z"
+          stroke="currentColor"
+          strokeWidth="1.8"
+          strokeLinejoin="round"
+        />
+        <path d="M12 17a4 4 0 1 0 0-8 4 4 0 0 0 0 8Z" stroke="currentColor" strokeWidth="1.8" />
+      </svg>
+    </span>
+  );
+}
+
 function formatBytes(bytes: number) {
   if (!Number.isFinite(bytes)) return "";
   const units = ["B", "KB", "MB", "GB"];
@@ -158,6 +246,282 @@ export default function DemoClient() {
 
   const modelCameraInputRef = useRef<HTMLInputElement | null>(null);
   const modelFileInputRef = useRef<HTMLInputElement | null>(null);
+
+  const [wearOpen, setWearOpen] = useState(false);
+  const [wearBackdropOpen, setWearBackdropOpen] = useState(false);
+  const [wearClosing, setWearClosing] = useState(false);
+  const [wearPreset, setWearPreset] = useState<GarmentPreset | null>(null);
+  const [wearStageUrl, setWearStageUrl] = useState<string | null>(null);
+  const [wearHasPhoto, setWearHasPhoto] = useState(false);
+  const [wearModelFile, setWearModelFile] = useState<File | null>(null);
+  const [wearGarmentFile, setWearGarmentFile] = useState<File | null>(null);
+  const [wearGarmentLoading, setWearGarmentLoading] = useState(false);
+  const [wearProcessing, setWearProcessing] = useState(false);
+  const [wearProgressPct, setWearProgressPct] = useState(0);
+  const [wearShowProgress, setWearShowProgress] = useState(false);
+  const [wearSaveVisible, setWearSaveVisible] = useState(false);
+  const [wearShowVideo, setWearShowVideo] = useState(false);
+  const [wearGenerating, setWearGenerating] = useState(false);
+  const [wearError, setWearError] = useState<string | null>(null);
+
+  const wearGalleryInputRef = useRef<HTMLInputElement | null>(null);
+  const wearVideoRef = useRef<HTMLVideoElement | null>(null);
+  const wearStreamRef = useRef<MediaStream | null>(null);
+  const wearProgressTimerRef = useRef<number | null>(null);
+  const wearStageUrlRef = useRef<string | null>(null);
+
+  useEffect(() => {
+    wearStageUrlRef.current = wearStageUrl;
+  }, [wearStageUrl]);
+
+  useLayoutEffect(() => {
+    if (typeof document === "undefined") return;
+    if (document.getElementById(DEMO_WEAR_MODAL_STYLE_ID)) return;
+    const el = document.createElement("style");
+    el.id = DEMO_WEAR_MODAL_STYLE_ID;
+    el.textContent = DEMO_WEAR_MODAL_CSS;
+    document.head.appendChild(el);
+  }, []);
+
+  useEffect(() => {
+    if (!wearOpen || wearClosing) return;
+    const id = window.requestAnimationFrame(() => setWearBackdropOpen(true));
+    return () => window.cancelAnimationFrame(id);
+  }, [wearOpen, wearClosing]);
+
+  const stopWearStream = useCallback(() => {
+    const s = wearStreamRef.current;
+    if (s) {
+      try {
+        s.getTracks().forEach((t) => t.stop());
+      } catch {
+        /* ignore */
+      }
+    }
+    wearStreamRef.current = null;
+    if (wearVideoRef.current) wearVideoRef.current.srcObject = null;
+  }, []);
+
+  const clearWearProgressTimer = useCallback(() => {
+    if (wearProgressTimerRef.current != null) {
+      window.clearInterval(wearProgressTimerRef.current);
+      wearProgressTimerRef.current = null;
+    }
+  }, []);
+
+  const closeWearModal = useCallback(() => {
+    setWearClosing(true);
+    setWearBackdropOpen(false);
+    stopWearStream();
+    clearWearProgressTimer();
+    const snap = wearStageUrlRef.current;
+    if (snap?.startsWith("blob:")) URL.revokeObjectURL(snap);
+    window.setTimeout(() => {
+      setWearOpen(false);
+      setWearClosing(false);
+      setWearPreset(null);
+      setWearStageUrl(null);
+      setWearHasPhoto(false);
+      setWearModelFile(null);
+      setWearGarmentFile(null);
+      setWearGarmentLoading(false);
+      setWearProcessing(false);
+      setWearShowProgress(false);
+      setWearProgressPct(0);
+      setWearSaveVisible(false);
+      setWearShowVideo(false);
+      setWearGenerating(false);
+      setWearError(null);
+    }, 220);
+  }, [clearWearProgressTimer, stopWearStream]);
+
+  useEffect(() => {
+    if (!wearOpen) return;
+    function onKeyDown(e: KeyboardEvent) {
+      if (e.key === "Escape") closeWearModal();
+    }
+    document.addEventListener("keydown", onKeyDown);
+    return () => document.removeEventListener("keydown", onKeyDown);
+  }, [wearOpen, closeWearModal]);
+
+  const openWearMe = useCallback(
+    (preset: GarmentPreset) => {
+      const prev = wearStageUrlRef.current;
+      if (prev?.startsWith("blob:")) URL.revokeObjectURL(prev);
+      stopWearStream();
+      clearWearProgressTimer();
+      setWearPreset(preset);
+      setWearError(null);
+      setWearSaveVisible(false);
+      setWearModelFile(null);
+      setWearGarmentFile(null);
+      setWearStageUrl(null);
+      setWearHasPhoto(false);
+      setWearShowVideo(false);
+      setWearProcessing(false);
+      setWearShowProgress(false);
+      setWearProgressPct(0);
+      setWearGenerating(false);
+      setWearBackdropOpen(false);
+      setWearClosing(false);
+      setWearOpen(true);
+      setSelectedPresetId(preset.id);
+      setWearGarmentLoading(true);
+      void (async () => {
+        try {
+          const raw = await fetchUrlAsFile(preset.imageUrl, `${preset.id}.jpg`);
+          const g = await compressImageToMax1000px(raw);
+          setWearGarmentFile(g);
+        } catch {
+          setWearError("Could not load sample product image.");
+        } finally {
+          setWearGarmentLoading(false);
+        }
+      })();
+    },
+    [clearWearProgressTimer, stopWearStream],
+  );
+
+  const onWearGalleryPick = useCallback(
+    (file: File | null) => {
+      if (!file) return;
+      setWearError(null);
+      setWearSaveVisible(false);
+      setWearModelFile(file);
+      setWearStageUrl((prev) => {
+        if (prev?.startsWith("blob:")) URL.revokeObjectURL(prev);
+        return URL.createObjectURL(file);
+      });
+      setWearHasPhoto(true);
+    },
+    [],
+  );
+
+  const onWearOpenCamera = useCallback(async () => {
+    setWearError(null);
+    try {
+      stopWearStream();
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: { facingMode: "user" },
+        audio: false,
+      });
+      wearStreamRef.current = stream;
+      if (wearVideoRef.current) wearVideoRef.current.srcObject = stream;
+      setWearShowVideo(true);
+    } catch {
+      /* user may deny; gallery still works */
+    }
+  }, [stopWearStream]);
+
+  const onWearCapturePhoto = useCallback(() => {
+    const video = wearVideoRef.current;
+    if (!video?.videoWidth) return;
+    const canvas = document.createElement("canvas");
+    canvas.width = video.videoWidth;
+    canvas.height = video.videoHeight;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return;
+    ctx.drawImage(video, 0, 0);
+    canvas.toBlob(
+      (blob) => {
+        if (!blob) return;
+        const f = new File([blob], "user.jpg", { type: blob.type || "image/jpeg" });
+        stopWearStream();
+        setWearShowVideo(false);
+        onWearGalleryPick(f);
+      },
+      "image/jpeg",
+      0.92,
+    );
+  }, [onWearGalleryPick, stopWearStream]);
+
+  const startWearFakeProgress = useCallback(() => {
+    clearWearProgressTimer();
+    let pct = 0;
+    wearProgressTimerRef.current = window.setInterval(() => {
+      if (pct < 92) {
+        pct += pct < 55 ? 6 : pct < 78 ? 3 : 1;
+        pct = Math.min(92, pct);
+        setWearProgressPct(pct);
+      }
+    }, 260);
+  }, [clearWearProgressTimer]);
+
+  const onWearGenerate = useCallback(async () => {
+    if (!wearModelFile || !wearGarmentFile || !wearPreset) return;
+    setWearError(null);
+    setWearGenerating(true);
+    setWearProcessing(true);
+    setWearShowProgress(true);
+    setWearProgressPct(0);
+    setWearSaveVisible(false);
+    startWearFakeProgress();
+    try {
+      const modelC = await compressImageToMax1000px(wearModelFile);
+      const garmentC = await compressImageToMax1000px(wearGarmentFile);
+      const fd = new FormData();
+      fd.set("model", modelC);
+      fd.set("garment", garmentC);
+      fd.set("category", wearPreset.category);
+      fd.set("generationMode", "balanced");
+      const res = await fetch("/api/tryon", {
+        method: "POST",
+        headers: urlKey ? { "x-api-key": urlKey } : undefined,
+        body: fd,
+      });
+      const data = (await res.json()) as TryOnResponse;
+      clearWearProgressTimer();
+      if (!res.ok) {
+        const msg = "error" in data ? data.error : "Try-on failed.";
+        setWearError(msg);
+        setWearProcessing(false);
+        setWearShowProgress(false);
+        return;
+      }
+      const out = "output" in data ? data.output?.[0] : null;
+      if (!out) {
+        setWearError("No output returned.");
+        setWearProcessing(false);
+        setWearShowProgress(false);
+        return;
+      }
+      setWearStageUrl((prev) => {
+        if (prev?.startsWith("blob:")) URL.revokeObjectURL(prev);
+        return out;
+      });
+      setWearHasPhoto(true);
+      setWearProgressPct(100);
+      window.setTimeout(() => {
+        setWearProcessing(false);
+        setWearShowProgress(false);
+        setWearSaveVisible(true);
+      }, 450);
+    } catch (e) {
+      clearWearProgressTimer();
+      setWearError(e instanceof Error ? e.message : "Unexpected error.");
+      setWearProcessing(false);
+      setWearShowProgress(false);
+    } finally {
+      setWearGenerating(false);
+    }
+  }, [
+    clearWearProgressTimer,
+    startWearFakeProgress,
+    urlKey,
+    wearGarmentFile,
+    wearModelFile,
+    wearPreset,
+  ]);
+
+  const onWearDownload = useCallback(() => {
+    if (!wearStageUrl) return;
+    const a = document.createElement("a");
+    a.href = wearStageUrl;
+    a.download = "disqant-tryon.png";
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+  }, [wearStageUrl]);
 
   const modelPreview = useMemo(() => (model ? URL.createObjectURL(model) : null), [model]);
   const selectedPreset = useMemo(
@@ -295,6 +659,129 @@ export default function DemoClient() {
 
   return (
     <div className="min-h-dvh bg-surface">
+      {wearOpen && (
+        <div
+          role="presentation"
+          className={`dq-backdrop${wearBackdropOpen && !wearClosing ? " dq-open" : ""}${wearClosing ? " dq-closing" : ""}`}
+          onMouseDown={(e) => {
+            if (e.target === e.currentTarget) closeWearModal();
+          }}
+        >
+          <div className="dq-modal" role="dialog" aria-modal="true" aria-label="Try on">
+            <div className="dq-head">
+              <div className="dq-head-title">Try On</div>
+              <button type="button" className="dq-x" aria-label="Close" onClick={closeWearModal}>
+                ✕
+              </button>
+            </div>
+
+            <div className="dq-body">
+              <div className="dq-stage">
+                {!wearHasPhoto && !wearProcessing ? (
+                  <div className="dq-empty">
+                    <strong>Upload a full-body photo</strong>
+                    <span>We’ll keep your full body visible (no cropping).</span>
+                  </div>
+                ) : null}
+                {wearStageUrl ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img
+                    src={wearStageUrl}
+                    alt={wearSaveVisible ? "Try-on result" : "Preview"}
+                    style={{ display: wearHasPhoto || wearProcessing ? "block" : "none" }}
+                  />
+                ) : null}
+
+                <div className={`dq-processing${wearProcessing ? " is-on" : ""}`}>
+                  <div className="dq-spin" />
+                  <div className="dq-processing-text">This may take 20-30 seconds, please wait ✨</div>
+                </div>
+
+                <div className={`dq-progress${wearShowProgress ? " is-on" : ""}`}>
+                  <span style={{ width: `${wearProgressPct}%` }} />
+                </div>
+              </div>
+
+              <div className="dq-row">
+                <button type="button" className="dq-choice" onClick={() => wearGalleryInputRef.current?.click()}>
+                  <DqIconGallery />
+                  Gallery
+                </button>
+                <button type="button" className="dq-choice" onClick={onWearOpenCamera}>
+                  <DqIconCamera />
+                  Camera
+                </button>
+              </div>
+
+              <input
+                ref={wearGalleryInputRef}
+                type="file"
+                accept="image/*"
+                className="hidden"
+                onChange={(e) => onWearGalleryPick(e.target.files?.[0] ?? null)}
+              />
+
+              {wearShowVideo ? (
+                <div>
+                  <video
+                    ref={wearVideoRef}
+                    autoPlay
+                    playsInline
+                    muted
+                    title="Camera preview"
+                    style={{
+                      width: "100%",
+                      borderRadius: "16px",
+                      border: "1px solid rgba(15,15,20,.10)",
+                      boxShadow: "0 18px 50px rgba(0,0,0,.08)",
+                    }}
+                  />
+                  <div style={{ height: 10 }} />
+                  <button type="button" className="dq-primary" onClick={onWearCapturePhoto}>
+                    Capture photo
+                  </button>
+                </div>
+              ) : null}
+
+              {wearGarmentLoading ? (
+                <p className="text-center text-xs text-zinc-500">Loading sample product…</p>
+              ) : null}
+              {wearError ? (
+                <p className="rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-center text-xs text-red-700">
+                  {wearError}
+                </p>
+              ) : null}
+
+              <button
+                type="button"
+                className="dq-primary"
+                disabled={
+                  !wearModelFile ||
+                  !wearGarmentFile ||
+                  wearGarmentLoading ||
+                  wearGenerating ||
+                  wearProcessing
+                }
+                onClick={() => void onWearGenerate()}
+              >
+                Generate
+              </button>
+
+              {wearSaveVisible ? (
+                <button type="button" className="dq-save" onClick={onWearDownload}>
+                  ⬇️ Save Photo
+                </button>
+              ) : null}
+            </div>
+
+            <div className="dq-brand">
+              <span>Disqant</span>
+              <small>virtual try-on</small>
+            </div>
+          </div>
+        </div>
+      )}
+
       {widgetModal.open && (
         <div
           className="fixed inset-0 z-[60] flex items-center justify-center bg-black/70 p-4"
@@ -512,18 +999,31 @@ export default function DemoClient() {
                   {GARMENT_PRESETS.map((p) => {
                     const selected = p.id === selectedPresetId;
                     return (
-                      <button
+                      <article
                         key={p.id}
-                        type="button"
-                        onClick={() => setSelectedPresetId(p.id)}
                         className={`group overflow-hidden rounded-2xl border text-left transition ${
                           selected
                             ? "border-accent/60 bg-accent/10"
                             : "border-surface-border bg-transparent hover:border-zinc-600 hover:bg-surface-raised/30"
                         }`}
-                        disabled={loading || compressing !== null}
                       >
-                        <div className="aspect-[4/3] bg-black/30">
+                        <div
+                          role="presentation"
+                          className="relative aspect-[4/3] cursor-pointer bg-black/30"
+                          onClick={() => setSelectedPresetId(p.id)}
+                        >
+                          <button
+                            type="button"
+                            className="dq-wear-btn absolute bottom-3 right-3 z-20 shadow-lg"
+                            aria-label="Wear Me"
+                            onClick={(e) => {
+                              e.preventDefault();
+                              e.stopPropagation();
+                              openWearMe(p);
+                            }}
+                          >
+                            Wear Me ✨
+                          </button>
                           {/* eslint-disable-next-line @next/next/no-img-element */}
                           <img
                             src={p.imageUrl}
@@ -532,11 +1032,15 @@ export default function DemoClient() {
                             loading="lazy"
                           />
                         </div>
-                        <div className="p-4">
+                        <div
+                          role="presentation"
+                          className="cursor-pointer p-4"
+                          onClick={() => setSelectedPresetId(p.id)}
+                        >
                           <p className="text-sm font-semibold text-white">{p.name}</p>
                           <p className="mt-1 text-xs font-semibold text-zinc-300">{p.label}</p>
                         </div>
-                      </button>
+                      </article>
                     );
                   })}
                 </div>
