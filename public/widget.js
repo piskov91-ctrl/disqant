@@ -594,9 +594,6 @@
         fd.append("category", selectedCategory);
         // Keep backward compatibility with older servers expecting tryOnType.
         fd.append("tryOnType", selectedCategory);
-        fd.append("mode", "balanced");
-        fd.append("outputFormat", "png");
-        fd.append("returnBase64", "true");
 
         var res = await fetch(API_ENDPOINT, {
           method: "POST",

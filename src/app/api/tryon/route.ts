@@ -30,15 +30,28 @@ async function fileToDataUrl(file: File) {
   return `data:${mime};base64,${base64}`;
 }
 
+const FASHN_CATEGORIES = new Set(["tops", "bottoms", "one-pieces", "shoes"]);
+
+function resolveFashnCategory(form: FormData): "tops" | "bottoms" | "one-pieces" | "shoes" {
+  const fromForm = String(form.get("category") || "")
+    .trim()
+    .toLowerCase();
+  if (FASHN_CATEGORIES.has(fromForm)) {
+    return fromForm as "tops" | "bottoms" | "one-pieces" | "shoes";
+  }
+
+  const tryOn = String(form.get("tryOnType") || "clothing").trim().toLowerCase();
+  if (tryOn === "shoes") return "shoes";
+  return "tops";
+}
+
 async function startPrediction(params: {
   apiKey: string;
-  mode: string;
-  outputFormat: string;
-  returnBase64: boolean;
   modelImage: string;
   garmentImage: string;
+  category: "tops" | "bottoms" | "one-pieces" | "shoes";
 }) {
-  const { apiKey, mode, outputFormat, returnBase64, modelImage, garmentImage } = params;
+  const { apiKey, modelImage, garmentImage, category } = params;
 
   const baseUrl = "https://api.fashn.ai/v1";
   const headers = {
@@ -51,9 +64,8 @@ async function startPrediction(params: {
     inputs: {
       model_image: modelImage,
       garment_image: garmentImage,
-      mode,
-      output_format: outputFormat,
-      return_base64: returnBase64,
+      category,
+      mode: "balanced",
     },
   };
 
@@ -124,11 +136,8 @@ export async function POST(req: Request) {
 
   const modelFile = form.get("model");
   const garmentFile = form.get("garment");
-  const tryOnTypeRaw = String(form.get("tryOnType") || "clothing");
-  const tryOnType = tryOnTypeRaw === "shoes" ? "shoes" : "clothing";
-  const mode = String(form.get("mode") || "balanced");
-  const outputFormat = String(form.get("outputFormat") || "png");
-  const returnBase64 = String(form.get("returnBase64") || "true") === "true";
+  const category = resolveFashnCategory(form);
+  const tryOnType: "shoes" | "clothing" = category === "shoes" ? "shoes" : "clothing";
 
   if (!(modelFile instanceof File) || !(garmentFile instanceof File)) {
     return Response.json(
@@ -142,11 +151,9 @@ export async function POST(req: Request) {
 
   const first = await startPrediction({
     apiKey: client.fashnApiKey,
-    mode,
-    outputFormat,
-    returnBase64,
     modelImage,
     garmentImage,
+    category,
   });
 
   if (!first.ok) {

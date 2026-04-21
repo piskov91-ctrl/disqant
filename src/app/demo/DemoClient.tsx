@@ -120,9 +120,6 @@ export default function DemoClient() {
   const [selectedPresetId, setSelectedPresetId] = useState<GarmentPreset["id"]>(
     GARMENT_PRESETS[0]?.id ?? "tee",
   );
-  const [mode, setMode] = useState<"performance" | "balanced" | "quality">("balanced");
-  const [outputFormat, setOutputFormat] = useState<"png" | "jpeg">("png");
-
   const [loading, setLoading] = useState(false);
   const [compressing, setCompressing] = useState<null | "model" | "garment">(null);
   const [error, setError] = useState<string | null>(null);
@@ -205,11 +202,8 @@ export default function DemoClient() {
       const fd = new FormData();
       fd.set("model", model);
       fd.set("garment", garment);
-      // Keep legacy field for older server versions.
+      fd.set("category", selectedPreset.kind === "shoes" ? "shoes" : "tops");
       fd.set("tryOnType", selectedPreset.kind);
-      fd.set("mode", mode);
-      fd.set("outputFormat", outputFormat);
-      fd.set("returnBase64", "true");
 
       const res = await fetch("/api/tryon", {
         method: "POST",
@@ -530,40 +524,12 @@ export default function DemoClient() {
                 )}
               </div>
 
-              <div className="grid gap-4 sm:grid-cols-2">
-                <div className="rounded-2xl border border-surface-border bg-surface-raised/30 p-5">
-                  <label className="block text-sm font-medium text-white">Mode</label>
-                  <select
-                    value={mode}
-                    onChange={(e) =>
-                      setMode(e.target.value as "performance" | "balanced" | "quality")
-                    }
-                    className="mt-3 block w-full rounded-lg border border-surface-border bg-surface px-3 py-2 text-sm text-zinc-200 hover:border-zinc-700"
-                  >
-                    <option value="performance">performance</option>
-                    <option value="balanced">balanced</option>
-                    <option value="quality">quality</option>
-                  </select>
-                  <p className="mt-2 text-xs text-zinc-500">
-                    {selectedPreset?.kind === "shoes"
-                      ? "Shoes can take longer; expect ~20–120s depending on load."
-                      : "Quality takes longer (12–17s)."}
-                  </p>
-                </div>
-
-                <div className="rounded-2xl border border-surface-border bg-surface-raised/30 p-5">
-                  <label className="block text-sm font-medium text-white">Output format</label>
-                  <select
-                    value={outputFormat}
-                    onChange={(e) => setOutputFormat(e.target.value as "png" | "jpeg")}
-                    className="mt-3 block w-full rounded-lg border border-surface-border bg-surface px-3 py-2 text-sm text-zinc-200 hover:border-zinc-700"
-                  >
-                    <option value="png">png</option>
-                    <option value="jpeg">jpeg</option>
-                  </select>
-                  <p className="mt-2 text-xs text-zinc-500">PNG is highest quality.</p>
-                </div>
-              </div>
+              <p className="rounded-2xl border border-surface-border bg-surface-raised/30 p-4 text-xs text-zinc-500">
+                Try-on uses Fashn <span className="font-semibold text-zinc-300">balanced</span> mode.
+                {selectedPreset?.kind === "shoes"
+                  ? " Footwear uses category shoes; tops use category tops."
+                  : ""}
+              </p>
 
               {error && (
                 <div className="rounded-xl border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-200">
