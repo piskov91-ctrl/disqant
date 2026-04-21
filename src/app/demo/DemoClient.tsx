@@ -8,6 +8,15 @@ type TryOnResponse =
   | { id: string; output: string[]; tryOnType?: "shoes" | "clothing" }
   | { error: string; code?: string; keyKind?: "demo" | "client" };
 
+type DemoWidgetModalState = {
+  open: boolean;
+  stageUrl: string | null;
+  stageAlt: string;
+  processing: boolean;
+  pct: number;
+  resultUrl: string | null;
+};
+
 type GarmentPreset = {
   id: "sneakers" | "tee" | "sweater" | "jacket";
   label: "Sneakers" | "T-Shirt" | "Sweater" | "Jacket";
@@ -50,7 +59,7 @@ const GARMENT_PRESETS: GarmentPreset[] = [
     kind: "clothing",
     imageUrl:
       // Clean black jacket on hanger.
-      "https://images.unsplash.com/photo-1585412459272-762fb93357c3?auto=format&fit=crop&w=1400&q=80",
+      "https://images.unsplash.com/photo-1551028719-00167b16eac5?w=400",
   },
 ];
 
@@ -120,6 +129,14 @@ export default function DemoClient() {
   const [error, setError] = useState<string | null>(null);
   const [result, setResult] = useState<string | null>(null);
   const [showUnavailableModal, setShowUnavailableModal] = useState(false);
+  const [widgetModal, setWidgetModal] = useState<DemoWidgetModalState>({
+    open: false,
+    stageUrl: null,
+    stageAlt: "Preview",
+    processing: false,
+    pct: 0,
+    resultUrl: null,
+  });
 
   const modelCameraInputRef = useRef<HTMLInputElement | null>(null);
   const modelFileInputRef = useRef<HTMLInputElement | null>(null);
@@ -156,6 +173,16 @@ export default function DemoClient() {
 
     setLoading(true);
     try {
+      // Open widget-style modal immediately with the person photo.
+      setWidgetModal({
+        open: true,
+        stageUrl: modelPreview,
+        stageAlt: "Your photo",
+        processing: true,
+        pct: 0,
+        resultUrl: null,
+      });
+
       setCompressing("garment");
       const garmentRaw = await fetchUrlAsFile(
         selectedPreset.imageUrl,
@@ -163,6 +190,18 @@ export default function DemoClient() {
       );
       const garment = await compressImageToMax1000px(garmentRaw);
       setCompressing(null);
+
+      // Fake progress while request runs (caps at 92%).
+      let cancelled = false;
+      let pct = 0;
+      const timer = window.setInterval(() => {
+        if (cancelled) return;
+        if (pct < 92) {
+          pct += pct < 55 ? 6 : pct < 78 ? 3 : 1;
+          pct = Math.min(92, pct);
+          setWidgetModal((m) => (m.open ? { ...m, pct } : m));
+        }
+      }, 260);
 
       const fd = new FormData();
       fd.set("model", model);
@@ -182,9 +221,13 @@ export default function DemoClient() {
       });
       const data = (await res.json()) as TryOnResponse;
 
+      cancelled = true;
+      window.clearInterval(timer);
+
       if (!res.ok) {
         if (res.status === 402) {
           setShowUnavailableModal(true);
+          setWidgetModal((m) => ({ ...m, processing: false }));
           return;
         }
         const raw = "error" in data ? data.error : "Try-on failed.";
@@ -197,22 +240,35 @@ export default function DemoClient() {
             setError(
               "You've explored all our demo try-ons! Ready to bring this to your store? Contact us at hello@disqant.com to get started",
             );
+            setWidgetModal((m) => ({ ...m, processing: false }));
             return;
           }
           setError("Virtual try-on temporarily unavailable. Please try again later");
+          setWidgetModal((m) => ({ ...m, processing: false }));
           return;
         }
         setError(raw);
+        setWidgetModal((m) => ({ ...m, processing: false }));
         return;
       }
 
       if ("output" in data && data.output?.[0]) {
         setResult(data.output[0]);
+        setWidgetModal((m) => ({
+          ...m,
+          processing: false,
+          pct: 100,
+          stageUrl: data.output[0],
+          stageAlt: "Try-on result",
+          resultUrl: data.output[0],
+        }));
       } else {
         setError("No output returned.");
+        setWidgetModal((m) => ({ ...m, processing: false }));
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : "Unexpected error.");
+      setWidgetModal((m) => ({ ...m, processing: false }));
     } finally {
       setLoading(false);
       setCompressing(null);
@@ -226,6 +282,94 @@ export default function DemoClient() {
 
   return (
     <div className="min-h-dvh bg-surface">
+      {widgetModal.open && (
+        <div
+          className="fixed inset-0 z-[60] flex items-center justify-center bg-black/70 p-4"
+          role="dialog"
+          aria-modal="true"
+          aria-label="Try on"
+          onMouseDown={(e) => {
+            if (e.target === e.currentTarget) {
+              setWidgetModal((m) => ({ ...m, open: false, processing: false }));
+            }
+          }}
+        >
+          <div className="w-full max-w-2xl overflow-hidden rounded-2xl bg-white shadow-2xl shadow-black/40">
+            <div className="flex items-center justify-between border-b border-zinc-200 px-4 py-3">
+              <div className="text-sm font-semibold text-[#0c0c0f]">Try On</div>
+              <button
+                type="button"
+                onClick={() => setWidgetModal((m) => ({ ...m, open: false, processing: false }))}
+                className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-zinc-200 bg-white text-[#0c0c0f] transition hover:bg-zinc-50"
+                aria-label="Close"
+              >
+                ✕
+              </button>
+            </div>
+
+            <div className="p-4">
+              <div className="relative overflow-hidden rounded-2xl border border-zinc-200 bg-zinc-50">
+                <div className="aspect-[4/3]">
+                  {widgetModal.stageUrl ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img
+                      src={widgetModal.stageUrl}
+                      alt={widgetModal.stageAlt}
+                      className="h-full w-full object-contain"
+                    />
+                  ) : (
+                    <div className="flex h-full items-center justify-center text-sm text-zinc-500">
+                      No photo selected
+                    </div>
+                  )}
+                </div>
+
+                {widgetModal.processing && (
+                  <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 bg-white/65 backdrop-blur">
+                    <div className="h-10 w-10 animate-spin rounded-full border-2 border-zinc-300 border-t-[#7c5cff]" />
+                    <p className="max-w-md px-6 text-center text-sm font-semibold text-[#0c0c0f]">
+                      This may take 20-30 seconds, please wait ✨
+                    </p>
+                  </div>
+                )}
+
+                <div className="absolute bottom-3 left-3 right-3">
+                  <div className="h-2 w-full overflow-hidden rounded-full bg-zinc-200">
+                    <div
+                      className="h-full rounded-full bg-gradient-to-r from-[#7c5cff] via-[#ff5ca8] to-[#ffb84a] transition-[width] duration-150"
+                      style={{ width: `${widgetModal.processing ? widgetModal.pct : widgetModal.resultUrl ? 100 : 0}%` }}
+                    />
+                  </div>
+                </div>
+
+                <div className="absolute left-3 top-3 rounded-full bg-white/85 px-3 py-1 text-xs font-semibold text-[#0c0c0f] backdrop-blur">
+                  Disqant
+                </div>
+              </div>
+
+              <div className="mt-4 flex gap-3">
+                {widgetModal.resultUrl ? (
+                  <a
+                    href={widgetModal.resultUrl}
+                    download
+                    className="inline-flex h-11 flex-1 items-center justify-center rounded-full bg-[#0c0c0f] px-5 text-sm font-semibold text-white transition hover:bg-zinc-800"
+                  >
+                    ⬇️ Save Photo
+                  </a>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => setWidgetModal((m) => ({ ...m, open: false, processing: false }))}
+                    className="inline-flex h-11 flex-1 items-center justify-center rounded-full border border-zinc-200 bg-white px-5 text-sm font-semibold text-[#0c0c0f] transition hover:bg-zinc-50"
+                  >
+                    Close
+                  </button>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
       {showUnavailableModal && (
         <div
           className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-6"
