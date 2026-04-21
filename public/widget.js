@@ -81,29 +81,60 @@
     var css = ""
       + ".dq-wrap{display:inline-block;position:relative;vertical-align:top;line-height:0;max-width:100%;}"
       + ".dq-wrap>img{display:block;max-width:100%;height:auto;vertical-align:top;}"
-      + ".dq-btn{appearance:none;border:1px solid rgba(255,255,255,.22);background:rgba(12,12,15,.92);color:#fff;font:600 13px/1.2 system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;padding:10px 14px;border-radius:999px;cursor:pointer;backdrop-filter:blur(10px);box-shadow:0 4px 18px rgba(0,0,0,.35);transition:all .15s ease;}"
-      + ".dq-btn:hover{border-color:rgba(255,255,255,.35);transform:translateY(-1px);}"
+      + ".dq-btn{appearance:none;border:1px solid rgba(255,255,255,.22);background:rgba(12,12,15,.92);color:#fff;font:600 13px/1.2 system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;padding:10px 14px;border-radius:999px;cursor:pointer;backdrop-filter:blur(10px);box-shadow:0 6px 22px rgba(0,0,0,.35);transition:transform .16s ease, box-shadow .16s ease, filter .16s ease, border-color .16s ease;}"
+      + ".dq-btn:hover{border-color:rgba(255,255,255,.35);transform:translateY(-1px);filter:saturate(1.1);}"
+      + ".dq-btn:active{transform:translateY(0px) scale(.98);}"
       + ".dq-overlay{position:absolute;inset:auto 10px 10px auto;z-index:2147483646;display:flex;gap:8px;align-items:center;pointer-events:auto;}"
-      + ".dq-backdrop{position:fixed;inset:0;z-index:2147483000;background:rgba(0,0,0,.72);display:flex;align-items:center;justify-content:center;padding:18px;}"
-      + ".dq-modal{width:100%;max-width:980px;background:#0c0c0f;border:1px solid rgba(255,255,255,.10);border-radius:18px;box-shadow:0 30px 80px rgba(0,0,0,.6);overflow:hidden;}"
-      + ".dq-head{display:flex;justify-content:space-between;align-items:center;padding:14px 16px;border-bottom:1px solid rgba(255,255,255,.08);background:rgba(18,18,26,.45);}"
-      + ".dq-title{color:#fff;font-weight:700;font-size:14px;letter-spacing:.2px;}"
-      + ".dq-close{appearance:none;border:1px solid rgba(255,255,255,.12);background:transparent;color:#fff;border-radius:10px;padding:8px 10px;cursor:pointer;}"
+      + ".dq-wear-btn{border:none;background:linear-gradient(135deg,#7c5cff,#ff5ca8);color:#fff;padding:10px 14px;font-weight:800;letter-spacing:.2px;box-shadow:0 14px 30px rgba(124,92,255,.26),0 10px 26px rgba(255,92,168,.18);}"
+      + ".dq-wear-btn:hover{transform:translateY(-2px) scale(1.02);box-shadow:0 18px 36px rgba(124,92,255,.30),0 14px 30px rgba(255,92,168,.22);}"
+      + ".dq-wear-btn::after{content:\"\";position:absolute;inset:-2px;border-radius:999px;opacity:.0;box-shadow:0 0 0 0 rgba(255,92,168,.38);transition:opacity .2s ease;}"
+      + ".dq-wear-btn:hover::after{opacity:1;animation:dqpulse 1.4s ease-out infinite;}"
+      + "@keyframes dqpulse{0%{box-shadow:0 0 0 0 rgba(255,92,168,.32)}100%{box-shadow:0 0 0 14px rgba(255,92,168,0)}}"
+
+      + ".dq-backdrop{position:fixed;inset:0;z-index:2147483000;background:rgba(10,10,14,.55);display:flex;align-items:center;justify-content:center;padding:18px;opacity:0;transition:opacity .18s ease;}"
+      + ".dq-backdrop.dq-open{opacity:1;}"
+      + ".dq-modal{width:100%;max-width:980px;background:#fff;border:1px solid rgba(15,15,20,.08);border-radius:22px;box-shadow:0 30px 80px rgba(0,0,0,.32);overflow:hidden;transform:translateY(10px) scale(.985);opacity:0;transition:transform .18s ease, opacity .18s ease;}"
+      + ".dq-backdrop.dq-open .dq-modal{transform:translateY(0) scale(1);opacity:1;}"
+      + ".dq-backdrop.dq-closing{opacity:0;}"
+      + ".dq-backdrop.dq-closing .dq-modal{transform:translateY(10px) scale(.985);opacity:0;}"
+
+      + ".dq-head{display:flex;justify-content:space-between;align-items:center;padding:14px 16px;border-bottom:1px solid rgba(15,15,20,.08);background:linear-gradient(180deg,rgba(255,255,255,1),rgba(250,250,252,1));}"
+      + ".dq-title{color:#0f0f14;font-weight:900;font-size:13px;letter-spacing:.3px;text-transform:none;display:flex;align-items:center;gap:10px;}"
+      + ".dq-title-badge{display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;border-radius:10px;background:linear-gradient(135deg,#7c5cff,#ff5ca8);color:#fff;font-weight:900;font-size:12px;}"
+      + ".dq-head-right{display:flex;align-items:center;gap:10px;}"
+      + ".dq-mode{display:inline-flex;gap:6px;padding:4px;border-radius:999px;background:rgba(15,15,20,.06);border:1px solid rgba(15,15,20,.08);}"
+      + ".dq-mode button{appearance:none;border:0;background:transparent;color:rgba(15,15,20,.72);padding:8px 10px;border-radius:999px;font:800 12px/1 system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;cursor:pointer;transition:background .14s ease,color .14s ease;}"
+      + ".dq-mode button[aria-pressed=\"true\"]{background:#fff;color:#0f0f14;box-shadow:0 6px 18px rgba(0,0,0,.10);}"
+      + ".dq-close{appearance:none;border:1px solid rgba(15,15,20,.12);background:#fff;color:#0f0f14;border-radius:12px;padding:8px 10px;cursor:pointer;box-shadow:0 8px 20px rgba(0,0,0,.08);}"
+      + ".dq-close:hover{transform:translateY(-1px);}"
+
       + ".dq-body{display:grid;grid-template-columns:1fr;gap:14px;padding:16px;}"
-      + "@media (min-width:880px){.dq-body{grid-template-columns:380px 1fr;}}"
-      + ".dq-panel{border:1px solid rgba(255,255,255,.10);border-radius:16px;background:rgba(18,18,26,.35);padding:14px;}"
-      + ".dq-label{color:#fff;font-size:12px;font-weight:700;margin-bottom:8px;}"
-      + ".dq-sub{color:rgba(255,255,255,.55);font-size:12px;margin-top:6px;}"
+      + "@media (min-width:880px){.dq-body{grid-template-columns:420px 1fr;}}"
+      + ".dq-panel{border:1px solid rgba(15,15,20,.10);border-radius:18px;background:linear-gradient(180deg,rgba(255,255,255,1),rgba(250,250,252,1));padding:14px;}"
+      + ".dq-label{color:rgba(15,15,20,.78);font-size:12px;font-weight:900;margin-bottom:10px;letter-spacing:.2px;}"
+      + ".dq-sub{color:rgba(15,15,20,.55);font-size:12px;margin-top:6px;}"
       + ".dq-row{display:flex;gap:10px;flex-wrap:wrap;}"
-      + ".dq-input{width:100%;display:block;border:1px solid rgba(255,255,255,.10);background:#0c0c0f;color:#fff;border-radius:12px;padding:10px 12px;font-size:13px;}"
-      + ".dq-primary{background:#7c5cff;border-color:rgba(124,92,255,.6);}"
-      + ".dq-primary:hover{background:#a89bff;}"
-      + ".dq-ghost{background:rgba(18,18,26,.35);}"
-      + ".dq-preview{width:100%;aspect-ratio:4/3;border-radius:14px;border:1px dashed rgba(255,255,255,.14);background:rgba(0,0,0,.25);display:flex;align-items:center;justify-content:center;color:rgba(255,255,255,.45);overflow:hidden;}"
+
+      + ".dq-choice{flex:1;min-width:160px;display:flex;align-items:center;gap:10px;justify-content:flex-start;padding:12px 12px;border-radius:16px;border:1px solid rgba(15,15,20,.10);background:#fff;color:#0f0f14;cursor:pointer;box-shadow:0 10px 26px rgba(0,0,0,.06);transition:transform .16s ease, box-shadow .16s ease;}"
+      + ".dq-choice:hover{transform:translateY(-1px);box-shadow:0 14px 30px rgba(0,0,0,.09);}"
+      + ".dq-ico{width:18px;height:18px;display:inline-block;color:#0f0f14;opacity:.9;}"
+      + ".dq-primary{border:none;background:linear-gradient(135deg,#7c5cff,#ff5ca8);color:#fff;font-weight:900;box-shadow:0 14px 30px rgba(124,92,255,.22),0 10px 26px rgba(255,92,168,.16);}"
+      + ".dq-primary:hover{transform:translateY(-1px) scale(1.01);}"
+
+      + ".dq-preview{width:100%;aspect-ratio:4/3;border-radius:16px;border:1px solid rgba(15,15,20,.10);background:linear-gradient(180deg,#ffffff,#fbfbfd);display:flex;align-items:center;justify-content:center;color:rgba(15,15,20,.45);overflow:hidden;}"
       + ".dq-preview img{max-width:100%;max-height:100%;object-fit:contain;}"
-      + ".dq-status{color:rgba(255,255,255,.65);font-size:12px;margin-top:10px;min-height:18px;}"
-      + ".dq-spin{width:22px;height:22px;border-radius:999px;border:2px solid rgba(255,255,255,.25);border-top-color:#7c5cff;animation:dqspin 1s linear infinite;}"
-      + "@keyframes dqspin{to{transform:rotate(360deg);}}";
+      + ".dq-status{color:rgba(15,15,20,.65);font-size:12px;margin-top:10px;min-height:18px;display:flex;align-items:center;gap:10px;}"
+
+      + ".dq-dots{display:inline-flex;gap:4px;align-items:center;}"
+      + ".dq-dots span{width:6px;height:6px;border-radius:999px;background:linear-gradient(135deg,#7c5cff,#ff5ca8);opacity:.35;animation:dqdots 1.0s infinite ease-in-out;}"
+      + ".dq-dots span:nth-child(2){animation-delay:.12s}"
+      + ".dq-dots span:nth-child(3){animation-delay:.24s}"
+      + "@keyframes dqdots{0%,80%,100%{transform:translateY(0);opacity:.35}40%{transform:translateY(-4px);opacity:1}}"
+
+      + ".dq-footer{padding:12px 16px;border-top:1px solid rgba(15,15,20,.08);display:flex;justify-content:center;align-items:center;background:#fff;}"
+      + ".dq-brand{font:800 12px/1 system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;color:rgba(15,15,20,.55);letter-spacing:.25px;}"
+      + ".dq-brand strong{color:#0f0f14;}"
+      + "@media (max-width:420px){.dq-choice{min-width:100%}.dq-body{padding:12px}.dq-panel{padding:12px}}";
 
     var style = document.createElement("style");
     style.id = "disquant-widget-style";
@@ -142,13 +173,41 @@
     head.className = "dq-head";
     var title = document.createElement("div");
     title.className = "dq-title";
-    title.textContent = "Disquant · Virtual try-on";
+    var badge = document.createElement("span");
+    badge.className = "dq-title-badge";
+    badge.textContent = "Dq";
+    var titleText = document.createElement("span");
+    titleText.textContent = "Disqant Try-On";
+    title.appendChild(badge);
+    title.appendChild(titleText);
+
+    var headRight = document.createElement("div");
+    headRight.className = "dq-head-right";
+
+    var modeWrap = document.createElement("div");
+    modeWrap.className = "dq-mode";
+
+    var modeClothing = document.createElement("button");
+    modeClothing.type = "button";
+    modeClothing.textContent = "Clothing";
+    modeClothing.setAttribute("aria-pressed", "true");
+
+    var modeShoes = document.createElement("button");
+    modeShoes.type = "button";
+    modeShoes.textContent = "Shoes";
+    modeShoes.setAttribute("aria-pressed", "false");
+
+    modeWrap.appendChild(modeClothing);
+    modeWrap.appendChild(modeShoes);
+
     var close = document.createElement("button");
     close.className = "dq-close";
     close.type = "button";
-    close.textContent = "Close";
+    close.textContent = "✕";
     head.appendChild(title);
-    head.appendChild(close);
+    headRight.appendChild(modeWrap);
+    headRight.appendChild(close);
+    head.appendChild(headRight);
 
     var body = document.createElement("div");
     body.className = "dq-body";
@@ -164,10 +223,22 @@
 
     modal.appendChild(head);
     modal.appendChild(body);
+
+    var footer = document.createElement("div");
+    footer.className = "dq-footer";
+    var brand = document.createElement("div");
+    brand.className = "dq-brand";
+    brand.innerHTML = "<strong>Disqant</strong> · virtual try-on";
+    footer.appendChild(brand);
+    modal.appendChild(footer);
     backdrop.appendChild(modal);
 
     function teardown() {
-      if (backdrop && backdrop.parentNode) backdrop.parentNode.removeChild(backdrop);
+      backdrop.classList.add("dq-closing");
+      backdrop.classList.remove("dq-open");
+      window.setTimeout(function () {
+        if (backdrop && backdrop.parentNode) backdrop.parentNode.removeChild(backdrop);
+      }, 220);
       document.removeEventListener("keydown", onKeyDown);
     }
 
@@ -181,7 +252,17 @@
     });
     document.addEventListener("keydown", onKeyDown);
 
-    return { backdrop: backdrop, left: left, right: right, close: teardown };
+    // Trigger open animation on next paint.
+    window.setTimeout(function () { backdrop.classList.add("dq-open"); }, 0);
+
+    return {
+      backdrop: backdrop,
+      left: left,
+      right: right,
+      close: teardown,
+      modeClothingBtn: modeClothing,
+      modeShoesBtn: modeShoes
+    };
   }
 
   function buildTryOnUI(opts) {
@@ -198,6 +279,7 @@
     var modelFile = null;
     var garmentFile = null;
     var stream = null;
+    var tryOnType = "clothing";
 
     var statusEl = document.createElement("div");
     statusEl.className = "dq-status";
@@ -205,20 +287,33 @@
     // Left: upload/camera
     var label1 = document.createElement("div");
     label1.className = "dq-label";
-    label1.textContent = "1) Your photo";
+    label1.textContent = "Your photo";
 
     var row = document.createElement("div");
     row.className = "dq-row";
 
-    var cameraBtn = document.createElement("button");
-    cameraBtn.className = "dq-btn dq-ghost";
-    cameraBtn.type = "button";
-    cameraBtn.textContent = "Use camera";
+    function makeIcon(kind) {
+      var span = document.createElement("span");
+      span.className = "dq-ico";
+      if (kind === "gallery") {
+        span.innerHTML = "<svg width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" fill=\"none\" xmlns=\"http://www.w3.org/2000/svg\"><path d=\"M7 3h10a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2Z\" stroke=\"currentColor\" stroke-width=\"1.8\"/><path d=\"M9 10.5a2 2 0 1 0 0-4 2 2 0 0 0 0 4Z\" stroke=\"currentColor\" stroke-width=\"1.8\"/><path d=\"m5.5 18 5-5 3.2 3.2 2-2L20 18\" stroke=\"currentColor\" stroke-width=\"1.8\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/></svg>";
+      } else if (kind === "camera") {
+        span.innerHTML = "<svg width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" fill=\"none\" xmlns=\"http://www.w3.org/2000/svg\"><path d=\"M7 7h2l1.2-2h3.6L15 7h2a3 3 0 0 1 3 3v7a3 3 0 0 1-3 3H7a3 3 0 0 1-3-3v-7a3 3 0 0 1 3-3Z\" stroke=\"currentColor\" stroke-width=\"1.8\" stroke-linejoin=\"round\"/><path d=\"M12 17a4 4 0 1 0 0-8 4 4 0 0 0 0 8Z\" stroke=\"currentColor\" stroke-width=\"1.8\"/></svg>";
+      }
+      return span;
+    }
 
     var uploadBtn = document.createElement("button");
-    uploadBtn.className = "dq-btn dq-ghost";
+    uploadBtn.className = "dq-choice";
     uploadBtn.type = "button";
-    uploadBtn.textContent = "Upload photo";
+    uploadBtn.appendChild(makeIcon("gallery"));
+    uploadBtn.appendChild(document.createTextNode("Upload from Gallery"));
+
+    var cameraBtn = document.createElement("button");
+    cameraBtn.className = "dq-choice";
+    cameraBtn.type = "button";
+    cameraBtn.appendChild(makeIcon("camera"));
+    cameraBtn.appendChild(document.createTextNode("Use Camera"));
 
     var fileInput = document.createElement("input");
     fileInput.type = "file";
@@ -228,7 +323,7 @@
     var takeBtn = document.createElement("button");
     takeBtn.className = "dq-btn dq-primary";
     takeBtn.type = "button";
-    takeBtn.textContent = "Generate try-on";
+    takeBtn.textContent = "Generate";
 
     var preview = document.createElement("div");
     preview.className = "dq-preview";
@@ -270,7 +365,7 @@
     // Right: garment + result
     var label2 = document.createElement("div");
     label2.className = "dq-label";
-    label2.textContent = "2) Garment & result";
+    label2.textContent = "Garment & result";
 
     var garmentPreview = document.createElement("div");
     garmentPreview.className = "dq-preview";
@@ -289,15 +384,13 @@
     right.appendChild(document.createElement("div")).style.height = "12px";
     right.appendChild(resultPreview);
 
-    function setStatus(msg, spinning) {
+    function setStatus(msg, loading) {
       statusEl.innerHTML = "";
-      if (spinning) {
-        var spin = document.createElement("span");
-        spin.className = "dq-spin";
-        spin.style.display = "inline-block";
-        spin.style.verticalAlign = "middle";
-        spin.style.marginRight = "10px";
-        statusEl.appendChild(spin);
+      if (loading) {
+        var dots = document.createElement("span");
+        dots.className = "dq-dots";
+        dots.innerHTML = "<span></span><span></span><span></span>";
+        statusEl.appendChild(dots);
       }
       var t = document.createElement("span");
       t.textContent = msg || "";
@@ -374,6 +467,15 @@
       }
     })();
 
+    function setTryOnType(next) {
+      tryOnType = next === "shoes" ? "shoes" : "clothing";
+      if (m.modeClothingBtn) m.modeClothingBtn.setAttribute("aria-pressed", tryOnType === "clothing" ? "true" : "false");
+      if (m.modeShoesBtn) m.modeShoesBtn.setAttribute("aria-pressed", tryOnType === "shoes" ? "true" : "false");
+    }
+
+    if (m.modeClothingBtn) m.modeClothingBtn.addEventListener("click", function () { setTryOnType("clothing"); });
+    if (m.modeShoesBtn) m.modeShoesBtn.addEventListener("click", function () { setTryOnType("shoes"); });
+
     takeBtn.addEventListener("click", async function () {
       if (!clientKey) {
         setStatus("Missing Disquant client key on the script tag.");
@@ -388,13 +490,13 @@
         return;
       }
 
-      setStatus("Generating try-on…", true);
+      setStatus("AI is working…", true);
       takeBtn.disabled = true;
       try {
         var fd = new FormData();
         fd.append("model", modelFile);
         fd.append("garment", garmentFile);
-        fd.append("tryOnType", "clothing"); // Widget default; you can enhance detection later.
+        fd.append("tryOnType", tryOnType);
         fd.append("mode", "balanced");
         fd.append("outputFormat", "png");
         fd.append("returnBase64", "true");
@@ -456,10 +558,10 @@
     overlay.className = "dq-overlay";
 
     var btn = document.createElement("button");
-    btn.className = "dq-btn dq-primary";
+    btn.className = "dq-btn dq-wear-btn";
     btn.type = "button";
     btn.setAttribute("aria-label", "Try On");
-    btn.textContent = "Try On 👗";
+    btn.textContent = "Wear Me 👗";
 
     overlay.appendChild(btn);
     wrapper.appendChild(overlay);
