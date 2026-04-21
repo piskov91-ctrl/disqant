@@ -23,7 +23,8 @@ const GARMENT_PRESETS: GarmentPreset[] = [
     name: "White clean sneakers",
     kind: "shoes",
     imageUrl:
-      "https://images.unsplash.com/photo-1618354691373-d851c5c3a990?auto=format&fit=crop&w=1400&q=80",
+      // White sneakers on a white background (product-style).
+      "https://images.unsplash.com/photo-1625860191460-10a66c7384fb?auto=format&fit=crop&w=1400&q=80",
   },
   {
     id: "tee",
@@ -31,7 +32,7 @@ const GARMENT_PRESETS: GarmentPreset[] = [
     name: "Plain white t-shirt (flat lay)",
     kind: "clothing",
     imageUrl:
-      "https://images.unsplash.com/photo-1620799140408-edc6dcb6d633?auto=format&fit=crop&w=1400&q=80",
+      "https://images.unsplash.com/photo-1620799139507-2a76f79a2f4d?auto=format&fit=crop&w=1400&q=80",
   },
   {
     id: "sweater",
@@ -39,7 +40,8 @@ const GARMENT_PRESETS: GarmentPreset[] = [
     name: "Beige oversized knit sweater",
     kind: "clothing",
     imageUrl:
-      "https://images.unsplash.com/photo-1687269966646-4c9b502d7a8b?auto=format&fit=crop&w=1400&q=80",
+      // Beige knit sweater (full garment shot).
+      "https://images.unsplash.com/photo-1687275161342-8699c61e4364?auto=format&fit=crop&w=1400&q=80",
   },
   {
     id: "jacket",
@@ -47,7 +49,8 @@ const GARMENT_PRESETS: GarmentPreset[] = [
     name: "Black jacket",
     kind: "clothing",
     imageUrl:
-      "https://images.unsplash.com/photo-1479064555552-3ef4979f8908?auto=format&fit=crop&w=1400&q=80",
+      // Clean black jacket on hanger.
+      "https://images.unsplash.com/photo-1585412459272-762fb93357c3?auto=format&fit=crop&w=1400&q=80",
   },
 ];
 
@@ -222,24 +225,24 @@ export default function DemoClient() {
   }
 
   return (
-    <div className="min-h-dvh bg-surface">
+    <div className="min-h-dvh bg-white text-[#0c0c0f]">
       {showUnavailableModal && (
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-6"
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-6"
           role="dialog"
           aria-modal="true"
           aria-labelledby="unavailable-title"
         >
-          <div className="w-full max-w-md rounded-2xl border border-amber-500/30 bg-surface-raised p-6 shadow-2xl shadow-black/40">
+          <div className="w-full max-w-md rounded-2xl border border-amber-500/30 bg-white p-6 shadow-2xl shadow-black/20">
             <div className="flex items-start gap-4">
               <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-amber-500/15 text-2xl text-amber-300">
                 ⚠️
               </div>
               <div className="min-w-0">
-                <p id="unavailable-title" className="text-base font-semibold text-white">
+                <p id="unavailable-title" className="text-base font-semibold text-[#0c0c0f]">
                   Virtual try-on temporarily unavailable
                 </p>
-                <p className="mt-1 text-sm text-zinc-400">
+                <p className="mt-1 text-sm text-zinc-600">
                   Please try again later or contact support.
                 </p>
               </div>
@@ -248,7 +251,7 @@ export default function DemoClient() {
               <button
                 type="button"
                 onClick={() => setShowUnavailableModal(false)}
-                className="inline-flex h-10 items-center justify-center rounded-full bg-amber-500 px-5 text-sm font-semibold text-surface transition hover:bg-amber-400"
+                className="inline-flex h-10 items-center justify-center rounded-full bg-[#0c0c0f] px-5 text-sm font-semibold text-white transition hover:bg-zinc-800"
               >
                 OK
               </button>
@@ -256,22 +259,25 @@ export default function DemoClient() {
           </div>
         </div>
       )}
-      <header className="border-b border-surface-border bg-surface/80 backdrop-blur-xl">
+      <header className="border-b border-zinc-200 bg-white/80 backdrop-blur-xl">
         <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-6">
-          <Link href="/" className="flex items-center gap-2 text-lg font-semibold tracking-tight">
-            <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-accent/20 text-accent">
+          <Link
+            href="/"
+            className="flex items-center gap-2 text-lg font-semibold tracking-tight text-[#0c0c0f]"
+          >
+            <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-black text-white">
               D
             </span>
             Disquant
           </Link>
           <div className="flex items-center gap-4">
-            <Link href="/" className="text-sm text-zinc-400 transition hover:text-white">
+            <Link href="/" className="text-sm text-zinc-600 transition hover:text-black">
               Back to landing
             </Link>
             <button
               type="button"
               onClick={logout}
-              className="text-sm text-zinc-400 transition hover:text-white"
+              className="text-sm text-zinc-600 transition hover:text-black"
             >
               Log out
             </button>
