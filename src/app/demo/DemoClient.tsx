@@ -225,24 +225,24 @@ export default function DemoClient() {
   }
 
   return (
-    <div className="min-h-dvh bg-white text-[#0c0c0f]">
+    <div className="min-h-dvh bg-surface">
       {showUnavailableModal && (
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-6"
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-6"
           role="dialog"
           aria-modal="true"
           aria-labelledby="unavailable-title"
         >
-          <div className="w-full max-w-md rounded-2xl border border-amber-500/30 bg-white p-6 shadow-2xl shadow-black/20">
+          <div className="w-full max-w-md rounded-2xl border border-amber-500/30 bg-surface-raised p-6 shadow-2xl shadow-black/40">
             <div className="flex items-start gap-4">
               <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-amber-500/15 text-2xl text-amber-300">
                 ⚠️
               </div>
               <div className="min-w-0">
-                <p id="unavailable-title" className="text-base font-semibold text-[#0c0c0f]">
+                <p id="unavailable-title" className="text-base font-semibold text-white">
                   Virtual try-on temporarily unavailable
                 </p>
-                <p className="mt-1 text-sm text-zinc-600">
+                <p className="mt-1 text-sm text-zinc-400">
                   Please try again later or contact support.
                 </p>
               </div>
@@ -251,7 +251,7 @@ export default function DemoClient() {
               <button
                 type="button"
                 onClick={() => setShowUnavailableModal(false)}
-                className="inline-flex h-10 items-center justify-center rounded-full bg-[#0c0c0f] px-5 text-sm font-semibold text-white transition hover:bg-zinc-800"
+                className="inline-flex h-10 items-center justify-center rounded-full bg-amber-500 px-5 text-sm font-semibold text-surface transition hover:bg-amber-400"
               >
                 OK
               </button>
@@ -259,25 +259,22 @@ export default function DemoClient() {
           </div>
         </div>
       )}
-      <header className="border-b border-zinc-200 bg-white/80 backdrop-blur-xl">
+      <header className="border-b border-surface-border bg-surface/80 backdrop-blur-xl">
         <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-6">
-          <Link
-            href="/"
-            className="flex items-center gap-2 text-lg font-semibold tracking-tight text-[#0c0c0f]"
-          >
-            <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-black text-white">
+          <Link href="/" className="flex items-center gap-2 text-lg font-semibold tracking-tight">
+            <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-accent/20 text-accent">
               D
             </span>
             Disquant
           </Link>
           <div className="flex items-center gap-4">
-            <Link href="/" className="text-sm text-zinc-600 transition hover:text-black">
+            <Link href="/" className="text-sm text-zinc-400 transition hover:text-white">
               Back to landing
             </Link>
             <button
               type="button"
               onClick={logout}
-              className="text-sm text-zinc-600 transition hover:text-black"
+              className="text-sm text-zinc-400 transition hover:text-white"
             >
               Log out
             </button>
