@@ -59,7 +59,7 @@ const GARMENT_PRESETS: GarmentPreset[] = [
     kind: "clothing",
     imageUrl:
       // Clean black jacket on hanger.
-      "https://images.unsplash.com/photo-1551028719-00167b16eac5?w=400",
+      "https://images.unsplash.com/photo-1591047139829-d91aecb6caea?w=400",
   },
 ];
 
