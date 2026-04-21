@@ -98,9 +98,7 @@
       + ".dq-backdrop.dq-closing{opacity:0;}"
       + ".dq-backdrop.dq-closing .dq-modal{transform:translateY(10px) scale(.985);opacity:0;}"
 
-      + ".dq-head{display:flex;justify-content:space-between;align-items:center;padding:14px 16px;border-bottom:1px solid rgba(15,15,20,.08);background:linear-gradient(180deg,rgba(255,255,255,1),rgba(250,250,252,1));}"
-      + ".dq-title{color:#0f0f14;font-weight:900;font-size:13px;letter-spacing:.3px;text-transform:none;display:flex;align-items:center;gap:10px;}"
-      + ".dq-title-badge{display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;border-radius:10px;background:linear-gradient(135deg,#7c5cff,#ff5ca8);color:#fff;font-weight:900;font-size:12px;}"
+      + ".dq-head{display:flex;justify-content:flex-end;align-items:center;padding:12px 12px;border-bottom:1px solid rgba(15,15,20,.08);background:#fff;gap:10px;}"
       + ".dq-head-right{display:flex;align-items:center;gap:10px;}"
       + ".dq-mode{display:inline-flex;gap:6px;padding:4px;border-radius:999px;background:rgba(15,15,20,.06);border:1px solid rgba(15,15,20,.08);}"
       + ".dq-mode button{appearance:none;border:0;background:transparent;color:rgba(15,15,20,.72);padding:8px 10px;border-radius:999px;font:800 12px/1 system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;cursor:pointer;transition:background .14s ease,color .14s ease;}"
@@ -108,11 +106,7 @@
       + ".dq-close{appearance:none;border:1px solid rgba(15,15,20,.12);background:#fff;color:#0f0f14;border-radius:12px;padding:8px 10px;cursor:pointer;box-shadow:0 8px 20px rgba(0,0,0,.08);}"
       + ".dq-close:hover{transform:translateY(-1px);}"
 
-      + ".dq-body{display:grid;grid-template-columns:1fr;gap:14px;padding:16px;overflow:auto;-webkit-overflow-scrolling:touch;}"
-      + "@media (min-width:880px){.dq-body{grid-template-columns:420px 1fr;}}"
-      + ".dq-panel{border:1px solid rgba(15,15,20,.10);border-radius:18px;background:linear-gradient(180deg,rgba(255,255,255,1),rgba(250,250,252,1));padding:14px;}"
-      + ".dq-label{color:rgba(15,15,20,.78);font-size:12px;font-weight:900;margin-bottom:10px;letter-spacing:.2px;}"
-      + ".dq-sub{color:rgba(15,15,20,.55);font-size:12px;margin-top:6px;}"
+      + ".dq-body{display:flex;flex-direction:column;gap:12px;padding:12px;overflow:auto;-webkit-overflow-scrolling:touch;}"
       + ".dq-row{display:flex;gap:10px;flex-wrap:wrap;}"
 
       + ".dq-choice{flex:1;min-width:160px;display:flex;align-items:center;gap:10px;justify-content:flex-start;padding:12px 12px;border-radius:16px;border:1px solid rgba(15,15,20,.10);background:#fff;color:#0f0f14;cursor:pointer;box-shadow:0 10px 26px rgba(0,0,0,.06);transition:transform .16s ease, box-shadow .16s ease;}"
@@ -121,9 +115,18 @@
       + ".dq-primary{border:none;background:linear-gradient(135deg,#7c5cff,#ff5ca8);color:#fff;font-weight:900;box-shadow:0 14px 30px rgba(124,92,255,.22),0 10px 26px rgba(255,92,168,.16);}"
       + ".dq-primary:hover{transform:translateY(-1px) scale(1.01);}"
 
-      + ".dq-preview{width:100%;height:280px;border-radius:16px;border:1px solid rgba(15,15,20,.10);background:linear-gradient(180deg,#ffffff,#fbfbfd);display:flex;align-items:center;justify-content:center;color:rgba(15,15,20,.45);overflow:hidden;}"
-      + ".dq-preview img{width:100%;height:100%;object-fit:contain;}"
-      + ".dq-status{color:rgba(15,15,20,.65);font-size:12px;margin-top:10px;min-height:18px;display:flex;align-items:center;gap:10px;}"
+      + ".dq-stage{position:relative;width:100%;height:min(70vh,560px);border-radius:18px;border:1px solid rgba(15,15,20,.10);background:linear-gradient(180deg,#ffffff,#fbfbfd);box-shadow:0 18px 50px rgba(0,0,0,.08);overflow:hidden;}"
+      + ".dq-stage img{width:100%;height:100%;object-fit:contain;display:block;background:#fff;}"
+      + ".dq-stage-empty{height:100%;display:flex;flex-direction:column;gap:8px;align-items:center;justify-content:center;color:rgba(15,15,20,.55);font:800 12px/1.2 system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;}"
+      + ".dq-stage-hint{font:600 12px/1.3 system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;color:rgba(15,15,20,.55);}"
+      + ".dq-branding{position:absolute;left:12px;bottom:12px;z-index:3;font:900 12px/1 system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;color:#0f0f14;letter-spacing:.25px;padding:8px 10px;border-radius:999px;background:rgba(255,255,255,.88);border:1px solid rgba(15,15,20,.10);backdrop-filter:blur(10px);}"
+      + ".dq-processing{position:absolute;inset:0;display:none;align-items:center;justify-content:center;flex-direction:column;gap:10px;z-index:4;background:rgba(255,255,255,.58);backdrop-filter:blur(8px);}"
+      + ".dq-processing.is-on{display:flex;}"
+      + ".dq-processing-text{font:900 13px/1.2 system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;color:#0f0f14;}"
+      + ".dq-processing-pct{font:800 12px/1 system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;color:rgba(15,15,20,.65);}"
+      + ".dq-progress{position:absolute;left:10px;right:10px;bottom:10px;z-index:5;height:10px;border-radius:999px;background:rgba(15,15,20,.10);overflow:hidden;display:none;}"
+      + ".dq-progress.is-on{display:block;}"
+      + ".dq-progress>span{display:block;height:100%;width:0%;background:linear-gradient(135deg,#7c5cff,#ff5ca8);transition:width .12s ease;}"
 
       + ".dq-dots{display:inline-flex;gap:4px;align-items:center;}"
       + ".dq-dots span{width:6px;height:6px;border-radius:999px;background:linear-gradient(135deg,#7c5cff,#ff5ca8);opacity:.35;animation:dqdots 1.0s infinite ease-in-out;}"
@@ -131,10 +134,7 @@
       + ".dq-dots span:nth-child(3){animation-delay:.24s}"
       + "@keyframes dqdots{0%,80%,100%{transform:translateY(0);opacity:.35}40%{transform:translateY(-4px);opacity:1}}"
 
-      + ".dq-footer{padding:12px 16px;border-top:1px solid rgba(15,15,20,.08);display:flex;justify-content:center;align-items:center;background:#fff;}"
-      + ".dq-brand{font:800 12px/1 system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;color:rgba(15,15,20,.55);letter-spacing:.25px;}"
-      + ".dq-brand strong{color:#0f0f14;}"
-      + "@media (max-width:420px){.dq-choice{min-width:100%}.dq-body{padding:12px}.dq-panel{padding:12px}.dq-preview{height:240px}}";
+      + "@media (max-width:420px){.dq-choice{min-width:100%}.dq-body{padding:10px}.dq-stage{height:min(72vh,520px)}}";
 
     var style = document.createElement("style");
     style.id = "disquant-widget-style";
@@ -171,16 +171,6 @@
 
     var head = document.createElement("div");
     head.className = "dq-head";
-    var title = document.createElement("div");
-    title.className = "dq-title";
-    var badge = document.createElement("span");
-    badge.className = "dq-title-badge";
-    badge.textContent = "Dq";
-    var titleText = document.createElement("span");
-    titleText.textContent = "Disqant Try-On";
-    title.appendChild(badge);
-    title.appendChild(titleText);
-
     var headRight = document.createElement("div");
     headRight.className = "dq-head-right";
 
@@ -204,7 +194,6 @@
     close.className = "dq-close";
     close.type = "button";
     close.textContent = "✕";
-    head.appendChild(title);
     headRight.appendChild(modeWrap);
     headRight.appendChild(close);
     head.appendChild(headRight);
@@ -212,25 +201,8 @@
     var body = document.createElement("div");
     body.className = "dq-body";
 
-    var left = document.createElement("div");
-    left.className = "dq-panel";
-
-    var right = document.createElement("div");
-    right.className = "dq-panel";
-
-    body.appendChild(left);
-    body.appendChild(right);
-
     modal.appendChild(head);
     modal.appendChild(body);
-
-    var footer = document.createElement("div");
-    footer.className = "dq-footer";
-    var brand = document.createElement("div");
-    brand.className = "dq-brand";
-    brand.innerHTML = "<strong>Disqant</strong> · virtual try-on";
-    footer.appendChild(brand);
-    modal.appendChild(footer);
     backdrop.appendChild(modal);
 
     function teardown() {
@@ -257,8 +229,7 @@
 
     return {
       backdrop: backdrop,
-      left: left,
-      right: right,
+      body: body,
       close: teardown,
       modeClothingBtn: modeClothing,
       modeShoesBtn: modeShoes
@@ -273,21 +244,51 @@
     var m = createModal();
     document.body.appendChild(m.backdrop);
 
-    var left = m.left;
-    var right = m.right;
+    var body = m.body;
 
     var modelFile = null;
     var garmentFile = null;
     var stream = null;
     var tryOnType = "clothing";
 
-    var statusEl = document.createElement("div");
-    statusEl.className = "dq-status";
+    // Stage (single column)
+    var stage = document.createElement("div");
+    stage.className = "dq-stage";
 
-    // Left: upload/camera
-    var label1 = document.createElement("div");
-    label1.className = "dq-label";
-    label1.textContent = "Your photo";
+    var stageEmpty = document.createElement("div");
+    stageEmpty.className = "dq-stage-empty";
+    stageEmpty.innerHTML = "<div>Select a photo to start</div><div class=\"dq-stage-hint\">Upload from Gallery or use your camera</div>";
+
+    var stageImg = document.createElement("img");
+    stageImg.alt = "Preview";
+    stageImg.style.display = "none";
+
+    var branding = document.createElement("div");
+    branding.className = "dq-branding";
+    branding.textContent = "Disqant";
+
+    var processing = document.createElement("div");
+    processing.className = "dq-processing";
+    var processingText = document.createElement("div");
+    processingText.className = "dq-processing-text";
+    processingText.textContent = "Processing…";
+    var processingPct = document.createElement("div");
+    processingPct.className = "dq-processing-pct";
+    processingPct.textContent = "0%";
+    processing.appendChild(processingText);
+    processing.appendChild(processingPct);
+
+    var progress = document.createElement("div");
+    progress.className = "dq-progress";
+    var progressFill = document.createElement("span");
+    progressFill.style.width = "0%";
+    progress.appendChild(progressFill);
+
+    stage.appendChild(stageEmpty);
+    stage.appendChild(stageImg);
+    stage.appendChild(branding);
+    stage.appendChild(processing);
+    stage.appendChild(progress);
 
     var row = document.createElement("div");
     row.className = "dq-row";
@@ -325,10 +326,6 @@
     takeBtn.type = "button";
     takeBtn.textContent = "Generate";
 
-    var preview = document.createElement("div");
-    preview.className = "dq-preview";
-    preview.textContent = "No photo selected";
-
     var videoWrap = document.createElement("div");
     videoWrap.style.display = "none";
     videoWrap.style.marginTop = "12px";
@@ -353,48 +350,52 @@
     row.appendChild(cameraBtn);
     row.appendChild(uploadBtn);
 
-    left.appendChild(label1);
-    left.appendChild(row);
-    left.appendChild(fileInput);
-    left.appendChild(preview);
-    left.appendChild(videoWrap);
-    left.appendChild(statusEl);
-    left.appendChild(document.createElement("div")).style.height = "10px";
-    left.appendChild(takeBtn);
+    body.appendChild(stage);
+    body.appendChild(row);
+    body.appendChild(fileInput);
+    body.appendChild(videoWrap);
+    body.appendChild(takeBtn);
 
-    // Right: garment + result
-    var label2 = document.createElement("div");
-    label2.className = "dq-label";
-    label2.textContent = "Garment & result";
+    function setStageImage(url, alt) {
+      if (!url) return;
+      stageImg.alt = alt || "Preview";
+      stageImg.src = url;
+      stageImg.style.display = "block";
+      stageEmpty.style.display = "none";
+    }
 
-    var garmentPreview = document.createElement("div");
-    garmentPreview.className = "dq-preview";
-    var garmentImg = document.createElement("img");
-    garmentImg.alt = "Garment";
-    garmentImg.src = garmentImgEl.currentSrc || garmentImgEl.src || "";
-    garmentPreview.innerHTML = "";
-    garmentPreview.appendChild(garmentImg);
+    var progressTimer = null;
+    var currentPct = 0;
 
-    var resultPreview = document.createElement("div");
-    resultPreview.className = "dq-preview";
-    resultPreview.textContent = "Result will appear here";
+    function setProgress(pct) {
+      currentPct = Math.max(0, Math.min(100, Math.round(pct)));
+      processingPct.textContent = currentPct + "%";
+      progressFill.style.width = currentPct + "%";
+    }
 
-    right.appendChild(label2);
-    right.appendChild(garmentPreview);
-    right.appendChild(document.createElement("div")).style.height = "12px";
-    right.appendChild(resultPreview);
+    function startProcessing() {
+      processingText.textContent = "Processing…";
+      processing.classList.add("is-on");
+      progress.classList.add("is-on");
+      setProgress(0);
+      if (progressTimer) window.clearInterval(progressTimer);
+      progressTimer = window.setInterval(function () {
+        // Fake progress up to 92% while waiting for server.
+        if (currentPct < 92) {
+          var bump = currentPct < 60 ? 6 : (currentPct < 80 ? 3 : 1);
+          setProgress(currentPct + bump);
+        }
+      }, 260);
+    }
 
-    function setStatus(msg, loading) {
-      statusEl.innerHTML = "";
-      if (loading) {
-        var dots = document.createElement("span");
-        dots.className = "dq-dots";
-        dots.innerHTML = "<span></span><span></span><span></span>";
-        statusEl.appendChild(dots);
-      }
-      var t = document.createElement("span");
-      t.textContent = msg || "";
-      statusEl.appendChild(t);
+    function stopProcessing(ok) {
+      if (progressTimer) window.clearInterval(progressTimer);
+      progressTimer = null;
+      if (ok) setProgress(100);
+      window.setTimeout(function () {
+        processing.classList.remove("is-on");
+        progress.classList.remove("is-on");
+      }, ok ? 450 : 0);
     }
 
     function stopStream() {
@@ -419,23 +420,17 @@
       var f = fileInput.files && fileInput.files[0];
       if (!f) return;
       modelFile = f;
-      preview.innerHTML = "";
-      var img = document.createElement("img");
-      img.alt = "Your photo";
-      img.src = URL.createObjectURL(f);
-      preview.appendChild(img);
-      setStatus("");
+      setStageImage(URL.createObjectURL(f), "Your photo");
     });
 
     cameraBtn.addEventListener("click", async function () {
-      setStatus("");
       try {
         stopStream();
         stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "user" }, audio: false });
         video.srcObject = stream;
         videoWrap.style.display = "block";
       } catch (e) {
-        setStatus("Camera unavailable. Please upload a photo instead.");
+        // Keep UI minimal; no additional status area.
       }
     });
 
@@ -449,11 +444,7 @@
       canvas.toBlob(function (blob) {
         if (!blob) return;
         modelFile = fileFromBlob(blob, "user.jpg");
-        preview.innerHTML = "";
-        var img = document.createElement("img");
-        img.alt = "Your photo";
-        img.src = URL.createObjectURL(blob);
-        preview.appendChild(img);
+        setStageImage(URL.createObjectURL(blob), "Your photo");
         stopStream();
         videoWrap.style.display = "none";
       }, "image/jpeg", 0.9);
@@ -463,7 +454,7 @@
       try {
         garmentFile = await garmentFilePromise;
       } catch (e) {
-        setStatus("Could not read product image. This site may block cross-origin images.");
+        // No-op (minimal UI). Try-on will error if garment is unavailable.
       }
     })();
 
@@ -478,19 +469,16 @@
 
     takeBtn.addEventListener("click", async function () {
       if (!clientKey) {
-        setStatus("Missing Disquant client key on the script tag.");
         return;
       }
       if (!modelFile) {
-        setStatus("Please upload a photo or use camera.");
         return;
       }
       if (!garmentFile) {
-        setStatus("Garment image unavailable (CORS).");
         return;
       }
 
-      setStatus("AI is working…", true);
+      startProcessing();
       takeBtn.disabled = true;
       try {
         var fd = new FormData();
@@ -519,19 +507,15 @@
 
         var out = data && data.output && data.output[0] ? data.output[0] : null;
         if (!out) {
-          setStatus("No output returned.");
+          stopProcessing(false);
           takeBtn.disabled = false;
           return;
         }
 
-        resultPreview.innerHTML = "";
-        var outImg = document.createElement("img");
-        outImg.alt = "Try-on result";
-        outImg.src = out;
-        resultPreview.appendChild(outImg);
-        setStatus("Done.");
+        setStageImage(out, "Try-on result");
+        stopProcessing(true);
       } catch (e) {
-        setStatus("Try-on failed. Please try again.");
+        stopProcessing(false);
       } finally {
         takeBtn.disabled = false;
       }
