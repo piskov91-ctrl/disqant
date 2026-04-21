@@ -10,6 +10,7 @@
 
   // Matches app route /api/try-on in this repo.
   var API_ENDPOINT = "/api/try-on";
+  var OPEN_MODAL = null;
 
   function qs(sel, root) {
     return (root || document).querySelector(sel);
@@ -111,14 +112,6 @@
       + "padding:12px 12px;border-bottom:1px solid rgba(15,15,20,.08);background:#fff;}"
       + ".dq-head-title{font:900 13px/1 system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;"
       + "letter-spacing:.25px;color:#0f0f14;}"
-      + ".dq-head-right{display:flex;align-items:center;gap:10px;}"
-      + ".dq-toggle{display:inline-flex;gap:6px;padding:4px;border-radius:999px;"
-      + "background:rgba(15,15,20,.06);border:1px solid rgba(15,15,20,.08);}"
-      + ".dq-toggle button{appearance:none;border:0;background:transparent;color:rgba(15,15,20,.72);"
-      + "padding:8px 10px;border-radius:999px;font:900 12px/1 system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;"
-      + "cursor:pointer;transition:background .14s ease,color .14s ease, transform .14s ease;}"
-      + ".dq-toggle button:hover{transform:translateY(-1px);}"
-      + ".dq-toggle button[aria-pressed=\"true\"]{background:#fff;color:#0f0f14;box-shadow:0 8px 18px rgba(0,0,0,.10);}"
       + ".dq-x{appearance:none;border:1px solid rgba(15,15,20,.12);background:#fff;color:#0f0f14;"
       + "border-radius:12px;padding:8px 10px;cursor:pointer;box-shadow:0 10px 22px rgba(0,0,0,.08);"
       + "transition:transform .16s ease, box-shadow .16s ease;}"
@@ -277,25 +270,6 @@
     headTitle.className = "dq-head-title";
     headTitle.textContent = "Try On";
 
-    var headRight = document.createElement("div");
-    headRight.className = "dq-head-right";
-
-    var toggle = document.createElement("div");
-    toggle.className = "dq-toggle";
-
-    var toggleClothing = document.createElement("button");
-    toggleClothing.type = "button";
-    toggleClothing.textContent = "Clothing";
-    toggleClothing.setAttribute("aria-pressed", "true");
-
-    var toggleShoes = document.createElement("button");
-    toggleShoes.type = "button";
-    toggleShoes.textContent = "Shoes";
-    toggleShoes.setAttribute("aria-pressed", "false");
-
-    toggle.appendChild(toggleClothing);
-    toggle.appendChild(toggleShoes);
-
     var close = document.createElement("button");
     close.className = "dq-x";
     close.type = "button";
@@ -303,9 +277,7 @@
     close.textContent = "✕";
 
     head.appendChild(headTitle);
-    headRight.appendChild(toggle);
-    headRight.appendChild(close);
-    head.appendChild(headRight);
+    head.appendChild(close);
 
     var body = document.createElement("div");
     body.className = "dq-body";
@@ -335,6 +307,7 @@
         if (backdrop && backdrop.parentNode) backdrop.parentNode.removeChild(backdrop);
       }, 220);
       document.removeEventListener("keydown", onKeyDown);
+      if (OPEN_MODAL && OPEN_MODAL.close === teardown) OPEN_MODAL = null;
     }
 
     close.addEventListener("click", teardown);
@@ -344,13 +317,7 @@
     document.addEventListener("keydown", onKeyDown);
 
     window.setTimeout(function () { backdrop.classList.add("dq-open"); }, 0);
-    return {
-      backdrop: backdrop,
-      body: body,
-      close: teardown,
-      toggleClothing: toggleClothing,
-      toggleShoes: toggleShoes
-    };
+    return { backdrop: backdrop, body: body, close: teardown };
   }
 
   function buildTryOnUI(opts) {
@@ -361,12 +328,14 @@
 
     var m = createModal();
     document.body.appendChild(m.backdrop);
+    OPEN_MODAL = m;
 
     var body = m.body;
 
     var modelFile = null;
     var garmentFile = null;
     var stream = null;
+    // Toggle removed; keep the pre-inferred choice.
     var selectedCategory = inferredCategory === "shoes" ? "shoes" : "tops";
 
     var stage = document.createElement("div");
@@ -461,16 +430,6 @@
     body.appendChild(videoWrap);
     body.appendChild(generateBtn);
     body.appendChild(saveBtn);
-
-    function setCategory(next) {
-      selectedCategory = next === "shoes" ? "shoes" : "tops";
-      if (m.toggleClothing) m.toggleClothing.setAttribute("aria-pressed", selectedCategory === "tops" ? "true" : "false");
-      if (m.toggleShoes) m.toggleShoes.setAttribute("aria-pressed", selectedCategory === "shoes" ? "true" : "false");
-    }
-
-    if (m.toggleClothing) m.toggleClothing.addEventListener("click", function () { setCategory("tops"); });
-    if (m.toggleShoes) m.toggleShoes.addEventListener("click", function () { setCategory("shoes"); });
-    setCategory(selectedCategory);
 
     function setStageImage(url, alt) {
       if (!url) return;
@@ -669,6 +628,10 @@
     btn.addEventListener("click", function (e) {
       e.preventDefault();
       e.stopPropagation();
+
+      if (OPEN_MODAL && typeof OPEN_MODAL.close === "function") {
+        try { OPEN_MODAL.close(); } catch (_e0) { }
+      }
 
       var key = getClientKey();
       var src = img.currentSrc || img.src;
