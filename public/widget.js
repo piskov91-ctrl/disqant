@@ -220,7 +220,7 @@
   }
 
   function inferCategoryFromImage(img) {
-    // Fashn try-on v2: tops | bottoms | one-pieces | auto | shoes (footwear → shoes).
+    // Try-On Max: tops (clothing) vs shoes (footwear heuristics).
     var DEFAULT_CATEGORY = "tops";
 
     var keywords = [
@@ -365,8 +365,7 @@
     var modelFile = null;
     var garmentFile = null;
     var stream = null;
-    var ALLOWED = { tops: 1, bottoms: 1, "one-pieces": 1, auto: 1, shoes: 1 };
-    var selectedCategory = ALLOWED[inferredCategory] ? inferredCategory : "tops";
+    var selectedCategory = inferredCategory === "shoes" ? "shoes" : "tops";
 
     var stage = document.createElement("div");
     stage.className = "dq-stage";

@@ -4,10 +4,10 @@ import { useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 
-type FashnCategory = "tops" | "bottoms" | "one-pieces" | "auto" | "shoes";
+type TryOnMaxCategory = "tops" | "shoes";
 
 type TryOnResponse =
-  | { id: string; output: string[]; category?: FashnCategory }
+  | { id: string; output: string[]; category?: TryOnMaxCategory }
   | { error: string; code?: string; keyKind?: "demo" | "client" };
 
 type DemoWidgetModalState = {
@@ -23,8 +23,8 @@ type GarmentPreset = {
   id: "sneakers" | "tee" | "sweater" | "jacket";
   label: "Sneakers" | "T-Shirt" | "Sweater" | "Jacket";
   name: string;
-  /** Sent to Fashn as `inputs.category` */
-  category: FashnCategory;
+  /** Sent to Fashn Try-On Max as `inputs.category` */
+  category: TryOnMaxCategory;
   imageUrl: string;
 };
 
@@ -529,7 +529,7 @@ export default function DemoClient() {
               <p className="rounded-2xl border border-surface-border bg-surface-raised/30 p-4 text-xs text-zinc-500">
                 Try-on uses Fashn <span className="font-semibold text-zinc-300">balanced</span> mode.
                 {selectedPreset?.id === "sneakers"
-                  ? " Sneakers use category shoes (tryon-v2); shirts and jackets use tops."
+                  ? " Sneakers use category shoes (tryon-max); shirts and jackets use tops."
                   : ""}
               </p>
 

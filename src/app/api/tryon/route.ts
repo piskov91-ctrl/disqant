@@ -30,27 +30,19 @@ async function fileToDataUrl(file: File) {
   return `data:${mime};base64,${base64}`;
 }
 
-type FashnCategory = "tops" | "bottoms" | "one-pieces" | "auto" | "shoes";
+/** Try-On Max: clothing vs footwear */
+type TryOnMaxCategory = "tops" | "shoes";
 
-const FASHN_CATEGORIES = new Set<string>([
-  "tops",
-  "bottoms",
-  "one-pieces",
-  "auto",
-  "shoes",
-]);
-
-function resolveFashnCategory(form: FormData): FashnCategory {
+function resolveTryOnMaxCategory(form: FormData): TryOnMaxCategory {
   const fromForm = String(form.get("category") || "")
     .trim()
     .toLowerCase();
-  if (fromForm === "outerwear") return "tops";
-  if (FASHN_CATEGORIES.has(fromForm)) {
-    return fromForm as FashnCategory;
-  }
+  if (fromForm === "shoes") return "shoes";
 
   const tryOn = String(form.get("tryOnType") || "").trim().toLowerCase();
   if (tryOn === "shoes") return "shoes";
+
+  // Clothing (and legacy values like auto / bottoms / outerwear) → tops
   return "tops";
 }
 
@@ -58,7 +50,7 @@ async function startPrediction(params: {
   apiKey: string;
   modelImage: string;
   garmentImage: string;
-  category: FashnCategory;
+  category: TryOnMaxCategory;
 }) {
   const { apiKey, modelImage, garmentImage, category } = params;
 
@@ -69,7 +61,7 @@ async function startPrediction(params: {
   };
 
   const body = {
-    model_name: "tryon-v2",
+    model_name: "tryon-max",
     inputs: {
       model_image: modelImage,
       garment_image: garmentImage,
@@ -145,7 +137,7 @@ export async function POST(req: Request) {
 
   const modelFile = form.get("model");
   const garmentFile = form.get("garment");
-  const category = resolveFashnCategory(form);
+  const category = resolveTryOnMaxCategory(form);
 
   if (!(modelFile instanceof File) || !(garmentFile instanceof File)) {
     return Response.json(
@@ -192,7 +184,7 @@ async function pollUntilDone(params: {
   baseUrl: string;
   timeoutMs: number;
   pollMs: number;
-  category: FashnCategory;
+  category: TryOnMaxCategory;
 }): Promise<{ ok: true; response: Response } | { ok: false; response: Response }> {
   const { id, headers, baseUrl, timeoutMs, pollMs, category } = params;
   const startedAt = Date.now();
