@@ -220,7 +220,7 @@
   }
 
   function inferCategoryFromImage(img) {
-    // Fashn try-on v1.6: tops | bottoms | one-pieces | auto (footwear → auto).
+    // Fashn try-on v2: tops | bottoms | one-pieces | auto | shoes (footwear → shoes).
     var DEFAULT_CATEGORY = "tops";
 
     var keywords = [
@@ -249,7 +249,7 @@
     var haystack = normalizeText(parts.join(" "));
     for (var i = 0; i < keywords.length; i++) {
       var kw = keywords[i];
-      if (haystack.indexOf(kw) !== -1) return "auto";
+      if (haystack.indexOf(kw) !== -1) return "shoes";
     }
     return DEFAULT_CATEGORY;
   }
@@ -365,7 +365,7 @@
     var modelFile = null;
     var garmentFile = null;
     var stream = null;
-    var ALLOWED = { tops: 1, bottoms: 1, "one-pieces": 1, auto: 1 };
+    var ALLOWED = { tops: 1, bottoms: 1, "one-pieces": 1, auto: 1, shoes: 1 };
     var selectedCategory = ALLOWED[inferredCategory] ? inferredCategory : "tops";
 
     var stage = document.createElement("div");

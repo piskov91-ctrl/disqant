@@ -4,7 +4,7 @@ import { useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 
-type FashnCategory = "tops" | "bottoms" | "one-pieces" | "auto";
+type FashnCategory = "tops" | "bottoms" | "one-pieces" | "auto" | "shoes";
 
 type TryOnResponse =
   | { id: string; output: string[]; category?: FashnCategory }
@@ -33,7 +33,7 @@ const GARMENT_PRESETS: GarmentPreset[] = [
     id: "sneakers",
     label: "Sneakers",
     name: "White clean sneakers",
-    category: "auto",
+    category: "shoes",
     imageUrl:
       // White sneakers on a white background (product-style).
       "https://images.unsplash.com/photo-1625860191460-10a66c7384fb?auto=format&fit=crop&w=1400&q=80",
@@ -528,8 +528,8 @@ export default function DemoClient() {
 
               <p className="rounded-2xl border border-surface-border bg-surface-raised/30 p-4 text-xs text-zinc-500">
                 Try-on uses Fashn <span className="font-semibold text-zinc-300">balanced</span> mode.
-                {selectedPreset?.category === "auto"
-                  ? " Sneakers use category auto; shirts and jackets use tops."
+                {selectedPreset?.id === "sneakers"
+                  ? " Sneakers use category shoes (tryon-v2); shirts and jackets use tops."
                   : ""}
               </p>
 

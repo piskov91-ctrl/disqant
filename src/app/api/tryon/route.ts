@@ -30,23 +30,27 @@ async function fileToDataUrl(file: File) {
   return `data:${mime};base64,${base64}`;
 }
 
-type FashnCategory = "tops" | "bottoms" | "one-pieces" | "auto";
+type FashnCategory = "tops" | "bottoms" | "one-pieces" | "auto" | "shoes";
 
-const FASHN_CATEGORIES = new Set<string>(["tops", "bottoms", "one-pieces", "auto"]);
+const FASHN_CATEGORIES = new Set<string>([
+  "tops",
+  "bottoms",
+  "one-pieces",
+  "auto",
+  "shoes",
+]);
 
 function resolveFashnCategory(form: FormData): FashnCategory {
   const fromForm = String(form.get("category") || "")
     .trim()
     .toLowerCase();
-  // Legacy clients / old demos (not valid on Fashn).
-  if (fromForm === "shoes") return "auto";
   if (fromForm === "outerwear") return "tops";
   if (FASHN_CATEGORIES.has(fromForm)) {
     return fromForm as FashnCategory;
   }
 
   const tryOn = String(form.get("tryOnType") || "").trim().toLowerCase();
-  if (tryOn === "shoes") return "auto";
+  if (tryOn === "shoes") return "shoes";
   return "tops";
 }
 
@@ -65,7 +69,7 @@ async function startPrediction(params: {
   };
 
   const body = {
-    model_name: "tryon-v1.6",
+    model_name: "tryon-v2",
     inputs: {
       model_image: modelImage,
       garment_image: garmentImage,
