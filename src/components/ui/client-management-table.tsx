@@ -52,7 +52,7 @@ function UsageProgress({ usage, limit }: { usage: number; limit: number }) {
   const pct = clampPct(usage, limit);
   return (
     <div className="flex items-center gap-3">
-      <div className="h-2 w-28 overflow-hidden rounded-full border border-surface-border bg-surface-muted">
+      <div className="h-2 w-44 overflow-hidden rounded-full border border-surface-border bg-surface-muted">
         <div
           className="h-full rounded-full bg-gradient-to-r from-[#7c3aed] to-[#ec4899]"
           style={{ width: `${pct}%` }}
@@ -102,19 +102,19 @@ export function ClientManagementTable({
         <div className="w-full">
           <table className="w-full table-fixed border-separate border-spacing-0">
             <colgroup>
-              <col style={{ width: "28%" }} />
-              <col style={{ width: "14%" }} />
               <col style={{ width: "30%" }} />
+              <col style={{ width: "14%" }} />
+              <col style={{ width: "26%" }} />
               <col style={{ width: "10%" }} />
-              <col style={{ width: "18%" }} />
+              <col style={{ width: "20%" }} />
             </colgroup>
             <thead>
               <tr className="text-left text-xs font-semibold uppercase tracking-wider text-zinc-500">
-                <th className="border-b border-surface-border px-4 py-3">Client Name</th>
-                <th className="border-b border-surface-border px-4 py-3">API Key</th>
-                <th className="border-b border-surface-border px-4 py-3">Usage / Limit</th>
-                <th className="border-b border-surface-border px-4 py-3">Status</th>
-                <th className="border-b border-surface-border px-4 py-3">Actions</th>
+                <th className="border-b border-surface-border px-6 py-3">Client Name</th>
+                <th className="border-b border-surface-border px-6 py-3">API Key</th>
+                <th className="border-b border-surface-border px-6 py-3">Usage / Limit</th>
+                <th className="border-b border-surface-border px-6 py-3">Status</th>
+                <th className="border-b border-surface-border px-6 py-3">Actions</th>
               </tr>
             </thead>
             <tbody className="text-sm">
@@ -129,34 +129,34 @@ export function ClientManagementTable({
                     className="align-middle"
                     whileHover={shouldReduceMotion ? undefined : { backgroundColor: "rgba(241,245,249,0.6)" }}
                   >
-                    <td className="border-b border-surface-border px-4 py-4">
+                    <td className="border-b border-surface-border px-6 py-5">
                       <div className="min-w-0">
-                        <p className="font-semibold text-zinc-900">{c.clientName}</p>
+                        <p className="truncate text-base font-semibold text-zinc-900">{c.clientName}</p>
                         <p className="mt-1 text-xs text-zinc-500">Created {c.createdDate}</p>
                       </div>
                     </td>
-                    <td className="border-b border-surface-border px-4 py-4">
+                    <td className="border-b border-surface-border px-6 py-5">
                       <span className="rounded-lg border border-surface-border bg-white px-2.5 py-1 font-mono text-xs text-zinc-700">
                         {c.apiKeyPrefix}…
                       </span>
                     </td>
-                    <td className="border-b border-surface-border px-4 py-4">
-                      <div className="flex items-center gap-3">
+                    <td className="border-b border-surface-border px-6 py-5">
+                      <div className="flex items-center gap-4">
                         <UsageProgress usage={c.usageCount} limit={c.usageLimit} />
                         <span className="text-xs font-semibold text-zinc-700">
                           {c.usageCount}/{c.usageLimit}
                         </span>
                       </div>
                     </td>
-                    <td className="border-b border-surface-border px-4 py-4">
+                    <td className="border-b border-surface-border px-6 py-5">
                       <StatusBadge status={status} />
                     </td>
-                    <td className="border-b border-surface-border px-4 py-4">
-                      <div className="flex flex-wrap items-center gap-2">
+                    <td className="border-b border-surface-border px-6 py-5">
+                      <div className="flex flex-nowrap items-center gap-2 whitespace-nowrap">
                         <button
                           type="button"
                           onClick={() => onEdit?.(c.id)}
-                          className="inline-flex h-9 items-center justify-center gap-2 rounded-full border border-surface-border bg-white px-4 text-sm font-semibold text-zinc-900 transition hover:border-zinc-300 hover:bg-surface-raised"
+                          className="inline-flex h-9 items-center justify-center gap-2 rounded-full border border-surface-border bg-white px-3 text-sm font-semibold text-zinc-900 transition hover:border-zinc-300 hover:bg-surface-raised"
                         >
                           <Pencil className="h-4 w-4" />
                           Edit
@@ -164,7 +164,7 @@ export function ClientManagementTable({
                         <button
                           type="button"
                           onClick={() => onCopyCode?.(c.id)}
-                          className="inline-flex h-9 items-center justify-center gap-2 rounded-full border border-surface-border bg-white px-4 text-sm font-semibold text-zinc-900 transition hover:border-zinc-300 hover:bg-surface-raised"
+                          className="inline-flex h-9 items-center justify-center gap-2 rounded-full border border-surface-border bg-white px-3 text-sm font-semibold text-zinc-900 transition hover:border-zinc-300 hover:bg-surface-raised"
                         >
                           <Copy className="h-4 w-4" />
                           Copy
@@ -172,7 +172,7 @@ export function ClientManagementTable({
                         <button
                           type="button"
                           onClick={() => onReset?.(c.id)}
-                          className="inline-flex h-9 items-center justify-center gap-2 rounded-full border border-surface-border bg-white px-4 text-sm font-semibold text-zinc-900 transition hover:border-zinc-300 hover:bg-surface-raised"
+                          className="inline-flex h-9 items-center justify-center gap-2 rounded-full border border-surface-border bg-white px-3 text-sm font-semibold text-zinc-900 transition hover:border-zinc-300 hover:bg-surface-raised"
                         >
                           <RotateCcw className="h-4 w-4" />
                           Reset
@@ -180,7 +180,7 @@ export function ClientManagementTable({
                         <button
                           type="button"
                           onClick={() => onDelete?.(c.id)}
-                          className="inline-flex h-9 items-center justify-center gap-2 rounded-full border border-red-200 bg-red-50 px-4 text-sm font-semibold text-red-700 transition hover:border-red-300 hover:bg-red-100"
+                          className="inline-flex h-9 items-center justify-center gap-2 rounded-full border border-red-200 bg-red-50 px-3 text-sm font-semibold text-red-700 transition hover:border-red-300 hover:bg-red-100"
                         >
                           <Trash2 className="h-4 w-4" />
                           Delete
