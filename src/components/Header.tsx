@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { HeaderNav } from "@/components/HeaderNav";
 
 export function Header() {
   return (
@@ -13,37 +14,7 @@ export function Header() {
           </span>
           Disquant
         </Link>
-        <nav className="hidden items-center gap-8 text-sm text-zinc-600 md:flex">
-          <Link href="/how-it-works" className="transition hover:text-zinc-900">
-            How it works
-          </Link>
-          <Link href="/product" className="transition hover:text-zinc-900">
-            What is Wear Me?
-          </Link>
-          <Link href="/pricing" className="transition hover:text-zinc-900">
-            Subscriptions
-          </Link>
-          <Link
-            href="/demo"
-            className="btn-accent-gradient inline-flex h-9 items-center px-4 text-sm font-semibold shadow-sm"
-          >
-            Wear Me
-          </Link>
-          <Link href="/about" className="transition hover:text-zinc-900">
-            About
-          </Link>
-        </nav>
-        <div className="flex items-center gap-3">
-          <a
-            href="#pricing"
-            className="hidden text-sm text-zinc-600 transition hover:text-zinc-900 sm:inline"
-          >
-            Sign in
-          </a>
-          <Link href="/demo" className="btn-accent-gradient h-10 px-5 text-sm font-semibold">
-            Try it now
-          </Link>
-        </div>
+        <HeaderNav />
       </div>
     </header>
   );
