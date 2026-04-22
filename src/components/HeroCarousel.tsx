@@ -4,46 +4,38 @@ import Image from "next/image";
 import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
 
-/**
- * Flat-lay + “worn” pairs (Unsplash). Worn shots use a top crop so the frame stays neck-down.
- */
+/** Exact Unsplash pairs (verified load). Left = product, right = worn. */
 const SLIDES = [
   {
     label: "Tops",
     blurb: "Your PDP photo on the left, their mirror snap on the right—no studio reshoot when the colourways change.",
-    productSrc:
-      "https://images.unsplash.com/photo-1586790170083-2f9ceadc732e?auto=format&fit=crop&w=900&h=1125&q=80",
-    wornSrc:
-      "https://images.unsplash.com/photo-1576566583147-3e2b4fd6c793?auto=format&fit=crop&w=900&h=1125&q=80",
-    productAlt: "White crew-neck T-shirt folded flat on a neutral background",
-    wornAlt: "Torso and arms in a plain white T-shirt, framed from the shoulders down",
+    productSrc: "https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?w=400",
+    wornSrc: "https://images.unsplash.com/photo-1503341504253-dff4815485f1?w=400",
+    productAlt: "White T-shirt flat lay",
+    wornAlt: "Person wearing a white T-shirt (framed without face)",
   },
   {
     label: "Denim",
     blurb: "Jeans are the worst thing to guess from a flat lay. Showing the drape on someone’s hips beats a size chart essay.",
-    productSrc:
-      "https://images.unsplash.com/photo-1542272604-787c3835535d?auto=format&fit=crop&w=900&h=1125&q=80",
-    wornSrc:
-      "https://images.unsplash.com/photo-1541099649102-f69e21d2c1b4?auto=format&fit=crop&w=900&h=1125&q=80",
-    productAlt: "Blue jeans laid flat, full length on a light background",
-    wornAlt: "Lower torso and legs in blue jeans, street-style framing without showing the face",
+    productSrc: "https://images.unsplash.com/photo-1542272604-787c3835535d?w=400",
+    wornSrc: "https://images.unsplash.com/photo-1541099649105-f69ad21f3246?w=400",
+    productAlt: "Blue jeans flat lay",
+    wornAlt: "Person wearing jeans (framed without face)",
   },
   {
     label: "Outerwear",
     blurb: "Jackets eat margin when they bounce back. A quick preview on their body trims the ‘looked different online’ messages.",
-    productSrc:
-      "https://images.unsplash.com/photo-1551028719-00167b16eac5?auto=format&fit=crop&w=900&h=1125&q=80",
-    wornSrc:
-      "https://images.unsplash.com/photo-1594938298603-c8148c4dae35?auto=format&fit=crop&w=900&h=1125&q=80",
-    productAlt: "Black leather-style jacket laid flat on a surface",
-    wornAlt: "Torso in a dark jacket, cropped below the chin",
+    productSrc: "https://images.unsplash.com/photo-1551028719-00167b16eac5?w=400",
+    wornSrc: "https://images.unsplash.com/photo-1548126032-079a0fb0099d?w=400",
+    productAlt: "Black jacket flat lay",
+    wornAlt: "Person wearing a black jacket (framed without face)",
   },
 ] as const;
 
 const AUTO_MS = 7000;
 
-/** Crops the top of “worn” frames so the frame stays neck-down. */
-function WornImage({
+/** Stable box for Next/Image `fill` — flex parents need explicit aspect + relative. */
+function SlidePhoto({
   src,
   alt,
   priority,
@@ -53,16 +45,13 @@ function WornImage({
   priority?: boolean;
 }) {
   return (
-    <div
-      className="relative h-full min-h-[200px] w-full overflow-hidden bg-zinc-100 md:min-h-0"
-      style={{ clipPath: "inset(14% 0 0 0)" }}
-    >
+    <div className="relative aspect-[4/5] w-full min-h-[200px] bg-zinc-100">
       <Image
         src={src}
         alt={alt}
         fill
-        className="object-cover object-[center_28%] sm:object-[center_30%]"
-        sizes="(max-width: 768px) 100vw, 33vw"
+        className="object-cover object-center"
+        sizes="(max-width: 768px) 100vw, 28vw"
         priority={priority}
       />
     </div>
@@ -144,42 +133,39 @@ export function HeroCarousel() {
           </a>
         </div>
         <p className="mt-4 text-xs leading-relaxed text-zinc-500">
-          Stock photos, neck-down on the right so the focus stays on the garment.
+          Example pairs use stock photos—the right column is cropped or shot so faces aren’t in frame.
         </p>
 
         <div className="relative mx-auto mt-12 w-full max-w-5xl">
           <div className="overflow-hidden rounded-2xl border border-surface-border bg-white shadow-xl shadow-zinc-200/70">
             <div className="flex flex-col md:flex-row md:items-stretch">
-              {/* Product (flat lay) */}
-              <figure className="relative flex min-h-[220px] flex-1 flex-col bg-zinc-50 md:min-h-[320px]">
+              {/* Product */}
+              <figure className="relative flex min-h-0 flex-1 flex-col bg-zinc-50">
                 <figcaption className="border-b border-surface-border bg-white px-3 py-2 text-center text-[11px] font-semibold uppercase tracking-wider text-zinc-500">
                   Product
                 </figcaption>
-                <div className="relative min-h-[220px] flex-1 md:min-h-[280px]">
-                  <Image
-                    src={slide.productSrc}
-                    alt={slide.productAlt}
-                    fill
-                    className="object-cover object-center"
-                    sizes="(max-width: 768px) 100vw, 33vw"
-                    priority={index === 0}
-                  />
-                </div>
+                <SlidePhoto
+                  src={slide.productSrc}
+                  alt={slide.productAlt}
+                  priority={index === 0}
+                />
               </figure>
 
-              {/* Arrow — column on mobile, row segment on desktop */}
-              <div className="flex items-center justify-center border-y border-surface-border bg-surface-muted/30 px-4 py-2 md:w-[5.5rem] md:shrink-0 md:flex-col md:border-x md:border-y-0 md:px-0 md:py-0">
+              {/* Arrow */}
+              <div className="flex shrink-0 items-center justify-center border-y border-surface-border bg-surface-muted/30 px-4 py-2 md:w-[5.5rem] md:flex-col md:border-x md:border-y-0 md:px-0 md:py-0">
                 <TransformArrow />
               </div>
 
-              {/* Worn (neck-down) */}
-              <figure className="relative flex min-h-[220px] flex-1 flex-col bg-zinc-50 md:min-h-[320px]">
+              {/* Result */}
+              <figure className="relative flex min-h-0 flex-1 flex-col bg-zinc-50">
                 <figcaption className="border-b border-surface-border bg-white px-3 py-2 text-center text-[11px] font-semibold uppercase tracking-wider text-zinc-500">
                   On you
                 </figcaption>
-                <div className="relative min-h-[220px] flex-1 md:min-h-[280px]">
-                  <WornImage src={slide.wornSrc} alt={slide.wornAlt} priority={index === 0} />
-                </div>
+                <SlidePhoto
+                  src={slide.wornSrc}
+                  alt={slide.wornAlt}
+                  priority={index === 0}
+                />
               </figure>
             </div>
 
