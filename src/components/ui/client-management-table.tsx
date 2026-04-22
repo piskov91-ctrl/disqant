@@ -52,13 +52,13 @@ function UsageProgress({ usage, limit }: { usage: number; limit: number }) {
   const pct = clampPct(usage, limit);
   return (
     <div className="flex items-center gap-3">
-      <div className="h-2 w-40 overflow-hidden rounded-full border border-surface-border bg-surface-muted">
+      <div className="h-2 w-28 overflow-hidden rounded-full border border-surface-border bg-surface-muted">
         <div
           className="h-full rounded-full bg-gradient-to-r from-[#7c3aed] to-[#ec4899]"
           style={{ width: `${pct}%` }}
         />
       </div>
-      <span className="min-w-[3.5rem] text-xs font-semibold text-zinc-600">{pct}%</span>
+      <span className="min-w-[3.25rem] text-xs font-semibold text-zinc-600">{pct}%</span>
     </div>
   );
 }
@@ -99,8 +99,15 @@ export function ClientManagementTable({
           <p className="text-xs text-zinc-500">Actions are available on each row.</p>
         </div>
 
-        <div className="w-full overflow-x-auto">
-          <table className="w-full min-w-[980px] border-separate border-spacing-0">
+        <div className="w-full">
+          <table className="w-full table-fixed border-separate border-spacing-0">
+            <colgroup>
+              <col style={{ width: "28%" }} />
+              <col style={{ width: "14%" }} />
+              <col style={{ width: "30%" }} />
+              <col style={{ width: "10%" }} />
+              <col style={{ width: "18%" }} />
+            </colgroup>
             <thead>
               <tr className="text-left text-xs font-semibold uppercase tracking-wider text-zinc-500">
                 <th className="border-b border-surface-border px-4 py-3">Client Name</th>
@@ -134,7 +141,7 @@ export function ClientManagementTable({
                       </span>
                     </td>
                     <td className="border-b border-surface-border px-4 py-4">
-                      <div className="flex items-center gap-4">
+                      <div className="flex items-center gap-3">
                         <UsageProgress usage={c.usageCount} limit={c.usageLimit} />
                         <span className="text-xs font-semibold text-zinc-700">
                           {c.usageCount}/{c.usageLimit}

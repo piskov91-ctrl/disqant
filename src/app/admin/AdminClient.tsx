@@ -331,8 +331,8 @@ export default function AdminClient() {
         </div>
       </header>
 
-      <main className="mx-auto w-full max-w-none px-6 py-10 md:px-10 md:py-14">
-        <div className="mx-auto w-full max-w-7xl">
+      <main className="w-full px-6 py-10 md:px-10 md:py-14">
+        <div className="w-full">
           <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
             <div>
               <h1 className="text-balance text-3xl font-semibold tracking-tight text-zinc-900 md:text-4xl">
