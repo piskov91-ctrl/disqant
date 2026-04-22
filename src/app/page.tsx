@@ -7,57 +7,55 @@ export default function Home() {
   return (
     <>
       <Header />
-      <main>
-        {/* HERO */}
-        <section className="relative overflow-hidden pt-28 pb-14 md:pt-36 md:pb-16">
-          <div className="pointer-events-none absolute inset-0 bg-hero-glow" />
-          <div
-            className="pointer-events-none absolute inset-0 bg-grid-fade bg-[length:64px_64px] opacity-40"
-            aria-hidden
-          />
+      <main className="pt-16">
+        {/* CINEMATIC HERO (full-bleed video + overlay) */}
+        <section aria-label="Home hero" className="relative left-1/2 w-screen -translate-x-1/2 overflow-hidden">
+          <div className="relative min-h-[70vh] w-full">
+            <video
+              src="/demo-video.mp4"
+              className="absolute inset-0 h-full w-full object-cover"
+              style={{ minHeight: "70vh" }}
+              autoPlay
+              muted
+              loop
+              playsInline
+              controls={false}
+              preload="auto"
+            />
 
-          <div className="relative mx-auto max-w-6xl px-6">
-            <p className="mb-5 inline-flex items-center gap-2 rounded-full border border-surface-border bg-surface-raised px-4 py-1.5 text-xs font-medium uppercase tracking-wider text-zinc-600">
-              <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(52,211,153,0.55)]" />
-              Virtual try-on for UK retailers
-            </p>
+            {/* Cinematic darkening + subtle grain + readable text area */}
+            <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/80 via-black/25 to-black/20" />
+            <div
+              className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_20%_10%,rgba(124,58,237,0.20),transparent_45%),radial-gradient(circle_at_80%_0%,rgba(236,72,153,0.20),transparent_50%)]"
+              aria-hidden
+            />
 
-            <h1 className="max-w-3xl text-balance text-4xl font-semibold tracking-tight text-zinc-900 md:text-6xl md:leading-[1.05]">
-              Let shoppers try before they buy
-            </h1>
-            <p className="mt-4 max-w-2xl text-lg leading-relaxed text-zinc-600 md:text-xl">
-              Add AI virtual try-on to your store in one line of code. No app. No friction.
-            </p>
+            <div className="absolute inset-0">
+              <div className="mx-auto flex h-full w-full max-w-6xl flex-col justify-end px-6 pb-10 pt-8 md:pb-14">
+                <div className="max-w-3xl">
+                  <h1 className="text-balance text-4xl font-semibold tracking-tight text-white [text-shadow:0_2px_40px_rgba(0,0,0,0.55)] md:text-6xl md:leading-[1.05]">
+                    Let shoppers try before they buy
+                  </h1>
+                  <p className="mt-4 max-w-2xl text-base leading-relaxed text-white/85 md:text-lg [text-shadow:0_2px_30px_rgba(0,0,0,0.45)]">
+                    Add AI virtual try-on to your store in one line of code. No app. No friction.
+                  </p>
 
-            <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:items-center">
-              <Link href="/demo" className="btn-accent-gradient h-12 px-8 text-center sm:inline-flex">
-                See it live
-              </Link>
-              <Link
-                href="/pricing"
-                className="inline-flex h-12 items-center justify-center rounded-full border border-surface-border bg-white px-8 text-sm font-medium text-zinc-800 shadow-sm transition hover:border-zinc-300 hover:bg-surface-raised"
-              >
-                Get started
-              </Link>
-            </div>
-          </div>
-        </section>
-
-        {/* VIDEO */}
-        <section aria-label="Product demo video" className="pb-18 md:pb-22">
-          <div className="mx-auto max-w-6xl px-6">
-            <div className="flex w-full justify-center">
-              <video
-                src="/demo-video.mp4"
-                className="block w-auto max-w-full rounded-2xl object-contain shadow-xl shadow-zinc-200/70"
-                style={{ maxHeight: "70vh" }}
-                autoPlay
-                muted
-                loop
-                playsInline
-                controls={false}
-                preload="auto"
-              />
+                  <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:items-center">
+                    <Link
+                      href="/demo"
+                      className="btn-accent-gradient h-12 px-8 text-center shadow-2xl shadow-black/30 sm:inline-flex"
+                    >
+                      See it live
+                    </Link>
+                    <Link
+                      href="/pricing"
+                      className="inline-flex h-12 items-center justify-center rounded-full border border-white/30 bg-white/10 px-8 text-sm font-semibold text-white shadow-lg shadow-black/20 backdrop-blur-md transition hover:bg-white/15"
+                    >
+                      Get started
+                    </Link>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
         </section>
