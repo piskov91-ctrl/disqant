@@ -23,21 +23,20 @@ export default function ProductPage() {
               What is Disqant?
             </h1>
             <p className="mt-4 max-w-2xl text-lg leading-relaxed text-zinc-600">
-              A virtual try-on widget that lets shoppers see themselves wearing your products — before they buy.
+              Disqant is a virtual try-on widget that helps shoppers see themselves wearing your products—before
+              they buy. It&apos;s built for UK online retailers who want an easy integration, fewer returns, and
+              more confident checkouts.
             </p>
-          </div>
-        </section>
-
-        {/* THE PROBLEM */}
-        <section className="bg-white py-16">
-          <div className="mx-auto max-w-6xl px-6">
-            <div className="rounded-3xl border border-surface-border bg-white p-10 shadow-sm md:p-12">
-              <h2 className="text-sm font-semibold uppercase tracking-widest text-accent">The problem</h2>
-              <p className="mt-4 text-balance text-2xl font-semibold tracking-tight text-zinc-900 md:text-3xl">
-                Most shoppers hesitate before buying clothes online. They can&apos;t try them on, they&apos;re
-                not sure how they&apos;ll look, and when it doesn&apos;t feel right — they return it. That costs
-                your store time, money, and trust.
-              </p>
+            <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:items-center">
+              <Link href="/demo" className="btn-accent-gradient h-12 px-8 text-center sm:inline-flex">
+                Try Demo
+              </Link>
+              <Link
+                href="/pricing"
+                className="inline-flex h-12 items-center justify-center rounded-full border border-surface-border bg-white px-8 text-sm font-medium text-zinc-800 shadow-sm transition hover:border-zinc-300 hover:bg-surface-raised"
+              >
+                Get started
+              </Link>
             </div>
           </div>
         </section>
@@ -49,7 +48,11 @@ export default function ProductPage() {
               How it works
             </h2>
             <p className="mx-auto mt-3 max-w-2xl text-center text-3xl font-semibold tracking-tight text-zinc-900 md:text-4xl">
-              Virtual try-on, without the friction
+              The simplest way to add virtual try-on
+            </p>
+            <p className="mx-auto mt-4 max-w-2xl text-center text-sm leading-relaxed text-zinc-600 md:text-base">
+              You don&apos;t need a new app, a new checkout, or a big rebuild. You just add the widget, and your
+              product pages do the rest.
             </p>
 
             <ol className="mt-14 grid gap-6 md:grid-cols-2">
@@ -58,9 +61,10 @@ export default function ProductPage() {
                   <Code2 className="h-6 w-6" aria-hidden />
                 </div>
                 <div>
-                  <h3 className="text-lg font-semibold text-zinc-900">You add one line of code to your store</h3>
+                  <h3 className="text-lg font-semibold text-zinc-900">Add one line of code</h3>
                   <p className="mt-2 text-sm leading-relaxed text-zinc-600">
-                    Drop in the snippet once, and you&apos;re ready to go—no long setup calls, no waiting around.
+                    Paste the install snippet into your store theme and you&apos;re done. That&apos;s the easy
+                    integration.
                   </p>
                 </div>
               </li>
@@ -71,10 +75,10 @@ export default function ProductPage() {
                 </div>
                 <div>
                   <h3 className="text-lg font-semibold text-zinc-900">
-                    A &apos;Wear Me&apos; button appears on every product image
+                    Your product pages get a “Wear Me” button
                   </h3>
                   <p className="mt-2 text-sm leading-relaxed text-zinc-600">
-                    Shoppers see it right where they&apos;re already browsing—on the PDP, next to the photos.
+                    It shows up where it matters—right next to your product photos—so shoppers actually use it.
                   </p>
                 </div>
               </li>
@@ -84,11 +88,9 @@ export default function ProductPage() {
                   <Camera className="h-6 w-6" aria-hidden />
                 </div>
                 <div>
-                  <h3 className="text-lg font-semibold text-zinc-900">
-                    Shoppers upload a photo or use their camera
-                  </h3>
+                  <h3 className="text-lg font-semibold text-zinc-900">Shoppers use camera or gallery</h3>
                   <p className="mt-2 text-sm leading-relaxed text-zinc-600">
-                    They can use a photo they already have or take one on the spot—whatever feels easiest.
+                    Some people prefer a quick camera photo. Others use a saved image. Either way is fine.
                   </p>
                 </div>
               </li>
@@ -98,11 +100,10 @@ export default function ProductPage() {
                   <Sparkles className="h-6 w-6" aria-hidden />
                 </div>
                 <div>
-                  <h3 className="text-lg font-semibold text-zinc-900">
-                    AI shows them wearing your product in seconds
-                  </h3>
+                  <h3 className="text-lg font-semibold text-zinc-900">They see the try-on in seconds</h3>
                   <p className="mt-2 text-sm leading-relaxed text-zinc-600">
-                    They get a quick, believable preview—so they feel confident clicking “buy”.
+                    Our AI fashion technology creates a realistic preview fast—helping you increase conversions
+                    and reduce returns.
                   </p>
                 </div>
               </li>
@@ -125,7 +126,7 @@ export default function ProductPage() {
                 </div>
                 <h3 className="mt-4 text-lg font-semibold text-zinc-900">Works on any website</h3>
                 <p className="mt-2 text-sm text-zinc-600">
-                  Add try-on without rebuilding your site—Shopify, WooCommerce, or custom.
+                  Keep your current setup. Disqant works with Shopify, WooCommerce, and custom stores.
                 </p>
               </div>
 
@@ -135,7 +136,8 @@ export default function ProductPage() {
                 </div>
                 <h3 className="mt-4 text-lg font-semibold text-zinc-900">No app needed</h3>
                 <p className="mt-2 text-sm text-zinc-600">
-                  Fewer drop-offs—shoppers stay on your product page and keep moving toward checkout.
+                  Shoppers don&apos;t have to download anything. That means fewer drop-offs and more completed
+                  try-ons.
                 </p>
               </div>
 
@@ -145,7 +147,7 @@ export default function ProductPage() {
                 </div>
                 <h3 className="mt-4 text-lg font-semibold text-zinc-900">Camera or gallery</h3>
                 <p className="mt-2 text-sm text-zinc-600">
-                  More people complete try-on when they can use the option that feels most comfortable.
+                  Let shoppers choose what&apos;s easiest. More try-ons usually means more confident purchases.
                 </p>
               </div>
 
@@ -155,7 +157,8 @@ export default function ProductPage() {
                 </div>
                 <h3 className="mt-4 text-lg font-semibold text-zinc-900">AI powered</h3>
                 <p className="mt-2 text-sm text-zinc-600">
-                  Give shoppers a believable preview that helps them buy with confidence.
+                  AI fashion technology that helps shoppers feel sure about fit and style—so you can increase
+                  conversions.
                 </p>
               </div>
 
@@ -165,7 +168,7 @@ export default function ProductPage() {
                 </div>
                 <h3 className="mt-4 text-lg font-semibold text-zinc-900">Usage tracking</h3>
                 <p className="mt-2 text-sm text-zinc-600">
-                  Stay in control of costs and performance with clear usage per client.
+                  See usage per client at a glance—so you can manage budgets and spot what&apos;s working.
                 </p>
               </div>
 
@@ -175,27 +178,30 @@ export default function ProductPage() {
                 </div>
                 <h3 className="mt-4 text-lg font-semibold text-zinc-900">One line of code</h3>
                 <p className="mt-2 text-sm text-zinc-600">
-                  Launch fast—perfect for lean teams that don&apos;t want a long integration project.
+                  Quick to launch, easy to maintain. Perfect when you want results without a long project.
                 </p>
               </div>
             </div>
           </div>
         </section>
 
-        {/* CODE EXAMPLE */}
+        {/* WHY IT MATTERS */}
         <section className="border-y border-surface-border bg-surface-muted/40 py-20">
           <div className="mx-auto max-w-6xl px-6">
-            <h2 className="text-sm font-semibold uppercase tracking-widest text-accent">Code example</h2>
-            <p className="mt-3 max-w-2xl text-2xl font-semibold tracking-tight text-zinc-900 md:text-3xl">
-              Install in seconds
-            </p>
-
-            <div className="mt-8 overflow-hidden rounded-2xl border border-zinc-800/60 bg-zinc-950 shadow-sm">
-              <pre className="overflow-x-auto p-6 text-sm leading-relaxed text-zinc-100">
-                <code>
-                  {`<script async src="https://www.disqant.com/widget.js" data-disqant-key="YOUR_KEY"></script>`}
-                </code>
-              </pre>
+            <div className="rounded-3xl border border-surface-border bg-white p-10 shadow-sm md:p-12">
+              <h2 className="text-sm font-semibold uppercase tracking-widest text-accent">
+                Why smart retailers are adding virtual try-on now
+              </h2>
+              <p className="mt-4 text-balance text-2xl font-semibold tracking-tight text-zinc-900 md:text-3xl">
+                We&apos;re seeing UK online retailers treat virtual try-on less like a “nice-to-have” and more
+                like part of a modern product page. When shoppers can quickly see a garment on themselves, they
+                hesitate less. That usually means you increase conversions, reduce returns, and build trust—because
+                customers feel like they know what they&apos;re buying.
+              </p>
+              <p className="mt-4 max-w-4xl text-sm leading-relaxed text-zinc-600 md:text-base">
+                Disqant is designed to make that upgrade feel easy: an easy integration, a familiar “Wear Me”
+                moment on the PDP, and AI fashion technology doing the heavy lifting in the background.
+              </p>
             </div>
           </div>
         </section>
@@ -212,13 +218,15 @@ export default function ProductPage() {
               <div className="rounded-2xl border border-surface-border bg-white p-7 shadow-sm">
                 <h3 className="text-lg font-semibold text-zinc-900">Does it work on mobile?</h3>
                 <p className="mt-2 text-sm text-zinc-600">
-                  Yes—mobile is fully supported. It works on iPhone, Android, tablets, and desktop.
+                  Yes. Most try-ons happen on mobile, so we made sure it works great on iPhone and Android (and
+                  of course tablet + desktop too).
                 </p>
               </div>
               <div className="rounded-2xl border border-surface-border bg-white p-7 shadow-sm">
                 <h3 className="text-lg font-semibold text-zinc-900">How long does it take to install?</h3>
                 <p className="mt-2 text-sm text-zinc-600">
-                  Usually under 5 minutes. If you can paste a snippet into your theme, you can install Disqant.
+                  Usually under 5 minutes. If you can paste a snippet into your theme (or ask your dev to), you
+                  can get it live.
                 </p>
               </div>
               <div className="rounded-2xl border border-surface-border bg-white p-7 shadow-sm">
@@ -226,15 +234,15 @@ export default function ProductPage() {
                   What happens when usage limit is reached?
                 </h3>
                 <p className="mt-2 text-sm text-zinc-600">
-                  We show a friendly message to shoppers and pause further try-ons for that key. You&apos;ll be
-                  notified so you can top up or upgrade—no surprises.
+                  We show a friendly message to shoppers and pause try-ons for that key, so nothing breaks on your
+                  site. Then you can top up or upgrade when you&apos;re ready.
                 </p>
               </div>
               <div className="rounded-2xl border border-surface-border bg-white p-7 shadow-sm">
                 <h3 className="text-lg font-semibold text-zinc-900">Is my API key safe?</h3>
                 <p className="mt-2 text-sm text-zinc-600">
-                  Yes. Your key is used to identify your store for usage and billing—your private provider keys
-                  stay on the server and aren&apos;t shown to shoppers.
+                  Yes. Your Disqant key identifies your store and tracks usage. Shoppers never see your private
+                  provider keys—they stay server-side.
                 </p>
               </div>
             </div>
@@ -251,7 +259,8 @@ export default function ProductPage() {
                     Ready to add virtual try-on to your store?
                   </h2>
                   <p className="mt-3 max-w-xl text-sm leading-relaxed text-zinc-600 md:text-base">
-                    Try the demo experience end-to-end and see how it fits your product pages.
+                    Try the demo and picture it on your product pages. It&apos;s the quickest way to see if it
+                    feels right for your brand.
                   </p>
                 </div>
                 <Link href="/demo" className="btn-accent-gradient h-12 px-8 text-center sm:inline-flex">
