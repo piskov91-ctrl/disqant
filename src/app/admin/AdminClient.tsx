@@ -308,8 +308,8 @@ export default function AdminClient() {
       </header>
 
       <main className="mx-auto max-w-7xl px-6 py-12 md:py-16">
-        <div className="flex flex-col gap-10 lg:flex-row lg:items-start lg:gap-12">
-          <div className="lg:w-[420px]">
+        <div className="grid gap-10 lg:grid-cols-[420px_1fr] lg:items-start lg:gap-12">
+          <div className="min-w-0">
             <h1 className="text-balance text-3xl font-semibold tracking-tight text-zinc-900 md:text-4xl">
               Admin · API keys
             </h1>
@@ -378,8 +378,8 @@ export default function AdminClient() {
             </form>
           </div>
 
-          <div className="flex-1">
-            <div className="rounded-2xl border border-surface-border bg-surface-muted/40 p-6">
+          <div className="min-w-0">
+            <div className="rounded-2xl border border-surface-border bg-surface-muted/40 p-6 md:p-7">
               <div className="flex flex-col gap-1 sm:flex-row sm:items-end sm:justify-between">
                 <div>
                   <p className="text-sm font-semibold text-zinc-900">Keys</p>
@@ -395,7 +395,7 @@ export default function AdminClient() {
                 ) : keys.length === 0 ? (
                   <div className="px-6 py-14 text-center text-sm text-zinc-500">No keys yet.</div>
                 ) : (
-                  <div className="grid gap-4 p-4 sm:grid-cols-2 xl:grid-cols-3">
+                  <div className="space-y-4 p-4">
                     {keys.map((k) => {
                       const pct =
                         k.usageLimit > 0
@@ -404,19 +404,17 @@ export default function AdminClient() {
                       return (
                         <article
                           key={k.id}
-                          className="flex min-h-[220px] flex-col rounded-2xl border border-surface-border bg-surface-muted/30 p-5"
+                          className="w-full rounded-2xl border border-surface-border bg-surface-muted/30 p-5"
                         >
-                          <div className="flex items-start justify-between gap-3">
+                          <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
                             <div className="min-w-0">
-                              <p className="truncate text-sm font-semibold text-zinc-900">
-                                {k.clientName}
-                              </p>
-                              <p className="mt-1 truncate font-mono text-xs text-zinc-500">
-                                {k.key}
-                              </p>
+                              <p className="text-base font-semibold text-zinc-900">{k.clientName}</p>
+                              <p className="mt-1 break-all font-mono text-xs text-zinc-500">{k.key}</p>
                             </div>
-                            <div className="shrink-0 rounded-full border border-surface-border bg-white px-3 py-1 text-xs text-zinc-700">
-                              {k.usageCount}/{k.usageLimit}
+                            <div className="shrink-0">
+                              <div className="inline-flex rounded-full border border-surface-border bg-white px-3 py-1 text-xs font-semibold text-zinc-700">
+                                {k.usageCount}/{k.usageLimit}
+                              </div>
                             </div>
                           </div>
 
@@ -433,39 +431,37 @@ export default function AdminClient() {
                             </div>
                           </div>
 
-                          <div className="mt-auto pt-5">
-                            <div className="flex flex-wrap justify-end gap-2">
-                              <button
-                                type="button"
-                                onClick={() => openEditModal(k)}
-                                className="inline-flex h-9 items-center justify-center rounded-full border border-surface-border bg-white px-4 text-sm font-semibold text-zinc-900 transition hover:border-zinc-300 hover:bg-surface-raised"
-                              >
-                                Edit
-                              </button>
-                              <button
-                                type="button"
-                                onClick={() => copyWidgetCode(k.key, k.id)}
-                                className="inline-flex h-9 items-center justify-center rounded-full border border-surface-border bg-white px-4 text-sm font-semibold text-zinc-900 transition hover:border-zinc-300 hover:bg-surface-raised"
-                              >
-                                {copiedId === k.id ? "Copied" : "Copy code"}
-                              </button>
-                              <button
-                                type="button"
-                                onClick={() => resetKeyUsage(k.id)}
-                                disabled={resettingId === k.id}
-                                className="inline-flex h-9 items-center justify-center rounded-full border border-surface-border bg-white px-4 text-sm font-semibold text-zinc-900 transition hover:border-zinc-300 hover:bg-surface-raised disabled:cursor-not-allowed disabled:opacity-60"
-                              >
-                                {resettingId === k.id ? "Resetting…" : "Reset"}
-                              </button>
-                              <button
-                                type="button"
-                                onClick={() => deleteKey(k.id)}
-                                disabled={deletingId === k.id}
-                                className="inline-flex h-9 items-center justify-center rounded-full border border-red-200 bg-red-50 px-4 text-sm font-semibold text-red-700 transition hover:border-red-300 hover:bg-red-100 disabled:cursor-not-allowed disabled:opacity-60"
-                              >
-                                {deletingId === k.id ? "Deleting…" : "Delete"}
-                              </button>
-                            </div>
+                          <div className="mt-5 grid grid-cols-2 gap-2 sm:grid-cols-4">
+                            <button
+                              type="button"
+                              onClick={() => openEditModal(k)}
+                              className="inline-flex h-10 items-center justify-center rounded-full border border-surface-border bg-white px-4 text-sm font-semibold text-zinc-900 transition hover:border-zinc-300 hover:bg-surface-raised"
+                            >
+                              Edit
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => copyWidgetCode(k.key, k.id)}
+                              className="inline-flex h-10 items-center justify-center rounded-full border border-surface-border bg-white px-4 text-sm font-semibold text-zinc-900 transition hover:border-zinc-300 hover:bg-surface-raised"
+                            >
+                              {copiedId === k.id ? "Copied" : "Copy code"}
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => resetKeyUsage(k.id)}
+                              disabled={resettingId === k.id}
+                              className="inline-flex h-10 items-center justify-center rounded-full border border-surface-border bg-white px-4 text-sm font-semibold text-zinc-900 transition hover:border-zinc-300 hover:bg-surface-raised disabled:cursor-not-allowed disabled:opacity-60"
+                            >
+                              {resettingId === k.id ? "Resetting…" : "Reset"}
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => deleteKey(k.id)}
+                              disabled={deletingId === k.id}
+                              className="inline-flex h-10 items-center justify-center rounded-full border border-red-200 bg-red-50 px-4 text-sm font-semibold text-red-700 transition hover:border-red-300 hover:bg-red-100 disabled:cursor-not-allowed disabled:opacity-60"
+                            >
+                              {deletingId === k.id ? "Deleting…" : "Delete"}
+                            </button>
                           </div>
                         </article>
                       );
