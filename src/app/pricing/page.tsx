@@ -1,6 +1,7 @@
 import { Footer } from "@/components/Footer";
 import { Header } from "@/components/Header";
 import { Pricing } from "@/components/Pricing";
+import { UsageLookup } from "@/components/UsageLookup";
 
 export default function PricingPage() {
   return (
@@ -18,6 +19,7 @@ export default function PricingPage() {
           </div>
         </section>
         <Pricing />
+        <UsageLookup />
       </main>
       <Footer />
     </>
