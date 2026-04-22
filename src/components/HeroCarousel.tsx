@@ -4,54 +4,90 @@ import Image from "next/image";
 import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
 
+/**
+ * Flat-lay + “worn” pairs (Unsplash). Worn shots use a top crop so the frame stays neck-down.
+ */
 const SLIDES = [
   {
-    headline: "Let shoppers see the jacket before they commit",
-    description:
-      "Pair a quick phone snap with any coat from your feed. They get a realistic preview; you get fewer “wrong colour” returns.",
-    beforeSrc:
-      "https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?auto=format&fit=crop&w=640&h=800&q=80",
-    afterSrc:
-      "https://images.unsplash.com/photo-1495385794364-5bde2b47701d?auto=format&fit=crop&w=640&h=800&q=80",
-    beforeAlt: "Woman in a plain top, neutral background",
-    afterAlt: "Woman in a styled outfit outdoors",
+    label: "Tops",
+    blurb: "Your PDP photo on the left, their mirror snap on the right—no studio reshoot when the colourways change.",
+    productSrc:
+      "https://images.unsplash.com/photo-1586790170083-2f9ceadc732e?auto=format&fit=crop&w=900&h=1125&q=80",
+    wornSrc:
+      "https://images.unsplash.com/photo-1576566583147-3e2b4fd6c793?auto=format&fit=crop&w=900&h=1125&q=80",
+    productAlt: "White crew-neck T-shirt folded flat on a neutral background",
+    wornAlt: "Torso and arms in a plain white T-shirt, framed from the shoulders down",
   },
   {
-    headline: "Same customer, new look—no reshoot",
-    description:
-      "When the brief changes mid-season, you shouldn’t need another studio day. Swap the garment in the flow and keep the page fresh.",
-    beforeSrc:
-      "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=640&h=800&q=80",
-    afterSrc:
-      "https://images.unsplash.com/photo-1617137968427-85924c2a50e2?auto=format&fit=crop&w=640&h=800&q=80",
-    beforeAlt: "Man in a simple casual shirt",
-    afterAlt: "Man in a layered outfit with jacket",
+    label: "Denim",
+    blurb: "Jeans are the worst thing to guess from a flat lay. Showing the drape on someone’s hips beats a size chart essay.",
+    productSrc:
+      "https://images.unsplash.com/photo-1542272604-787c3835535d?auto=format&fit=crop&w=900&h=1125&q=80",
+    wornSrc:
+      "https://images.unsplash.com/photo-1541099649102-f69e21d2c1b4?auto=format&fit=crop&w=900&h=1125&q=80",
+    productAlt: "Blue jeans laid flat, full length on a light background",
+    wornAlt: "Lower torso and legs in blue jeans, street-style framing without showing the face",
   },
   {
-    headline: "From “maybe” to “that’s the one”",
-    description:
-      "Denim fits are awkward online. Showing the drape on their body—not a model who’s six inches taller—quietly lifts conversion.",
-    beforeSrc:
-      "https://images.unsplash.com/photo-1434389677669-e08b4cac3105?auto=format&fit=crop&w=640&h=800&q=80",
-    afterSrc:
-      "https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?auto=format&fit=crop&w=640&h=800&q=80",
-    beforeAlt: "Person in a light top, studio-style shot",
-    afterAlt: "Person in full street-style outfit",
-  },
-  {
-    headline: "Outerwear without the guesswork",
-    description:
-      "Bulky layers are the worst to judge from a flat lay. A try-on preview answers the obvious question: how will this actually sit?",
-    beforeSrc:
-      "https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&w=640&h=800&q=80",
-    afterSrc:
-      "https://images.unsplash.com/photo-14839883588185-ef41fcf0acd4?auto=format&fit=crop&w=640&h=800&q=80",
-    beforeAlt: "Woman facing camera in a simple top",
-    afterAlt: "Woman in a coat outdoors",
+    label: "Outerwear",
+    blurb: "Jackets eat margin when they bounce back. A quick preview on their body trims the ‘looked different online’ messages.",
+    productSrc:
+      "https://images.unsplash.com/photo-1551028719-00167b16eac5?auto=format&fit=crop&w=900&h=1125&q=80",
+    wornSrc:
+      "https://images.unsplash.com/photo-1594938298603-c8148c4dae35?auto=format&fit=crop&w=900&h=1125&q=80",
+    productAlt: "Black leather-style jacket laid flat on a surface",
+    wornAlt: "Torso in a dark jacket, cropped below the chin",
   },
 ] as const;
 
-const AUTO_MS = 6500;
+const AUTO_MS = 7000;
+
+/** Crops the top of “worn” frames so the frame stays neck-down. */
+function WornImage({
+  src,
+  alt,
+  priority,
+}: {
+  src: string;
+  alt: string;
+  priority?: boolean;
+}) {
+  return (
+    <div
+      className="relative h-full min-h-[200px] w-full overflow-hidden bg-zinc-100 md:min-h-0"
+      style={{ clipPath: "inset(14% 0 0 0)" }}
+    >
+      <Image
+        src={src}
+        alt={alt}
+        fill
+        className="object-cover object-[center_28%] sm:object-[center_30%]"
+        sizes="(max-width: 768px) 100vw, 33vw"
+        priority={priority}
+      />
+    </div>
+  );
+}
+
+function TransformArrow() {
+  return (
+    <div className="flex flex-col items-center justify-center gap-2 py-2 md:min-h-[200px] md:py-4" aria-hidden>
+      <div className="hidden h-px w-10 bg-gradient-to-r from-zinc-200 via-[#7c3aed] to-[#ec4899] md:block" />
+      <div className="rounded-full bg-gradient-to-r from-[#7c3aed] to-[#ec4899] p-[2px] shadow-accent-glow">
+        <div className="flex h-11 w-11 items-center justify-center rounded-full bg-white md:h-12 md:w-12">
+          <span className="hidden bg-gradient-to-r from-[#7c3aed] to-[#ec4899] bg-clip-text text-2xl font-bold text-transparent animate-hero-arrow-x md:inline-block">
+            →
+          </span>
+          <span className="inline-block bg-gradient-to-b from-[#7c3aed] to-[#ec4899] bg-clip-text text-2xl font-bold text-transparent animate-hero-arrow-y md:hidden">
+            ↓
+          </span>
+        </div>
+      </div>
+      <div className="hidden h-px w-10 bg-gradient-to-r from-[#ec4899] via-[#7c3aed] to-zinc-200 md:block" />
+      <span className="text-[10px] font-semibold uppercase tracking-[0.18em] text-zinc-400">Try on</span>
+    </div>
+  );
+}
 
 export function HeroCarousel() {
   const [index, setIndex] = useState(0);
@@ -73,7 +109,7 @@ export function HeroCarousel() {
     <section
       className="relative overflow-hidden pt-28 pb-16 md:pt-36 md:pb-24"
       aria-roledescription="carousel"
-      aria-label="Product examples"
+      aria-label="Product try-on examples"
       onMouseEnter={() => setPaused(true)}
       onMouseLeave={() => setPaused(false)}
     >
@@ -89,94 +125,96 @@ export function HeroCarousel() {
           Virtual try-on for retailers
         </p>
 
-        <div className="grid items-center gap-10 lg:grid-cols-2 lg:gap-14">
-          <div className="min-w-0">
-            <h1 className="max-w-xl text-balance text-4xl font-semibold tracking-tight text-zinc-900 md:text-5xl md:leading-[1.12]">
-              {slide.headline}
-            </h1>
-            <p className="mt-5 max-w-lg text-lg leading-relaxed text-zinc-600 md:text-xl">
-              {slide.description}
-            </p>
+        <h1 className="max-w-3xl text-balance text-4xl font-semibold tracking-tight text-zinc-900 md:text-5xl md:leading-[1.12]">
+          See it on you before you buy it
+        </h1>
+        <p className="mt-4 max-w-2xl text-lg leading-relaxed text-zinc-600 md:text-xl">
+          <span className="font-medium text-zinc-800">{slide.label}.</span> {slide.blurb}
+        </p>
 
-            <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:items-center">
-              <Link href="/demo" className="btn-accent-gradient h-12 px-8 text-center sm:inline-flex">
-                Try the demo
-              </Link>
-              <a
-                href="#pricing"
-                className="inline-flex h-12 items-center justify-center rounded-full border border-surface-border bg-white px-8 text-sm font-medium text-zinc-800 shadow-sm transition hover:border-zinc-300 hover:bg-surface-raised"
-              >
-                See pricing
-              </a>
-            </div>
-            <p className="mt-6 text-xs leading-relaxed text-zinc-500">
-              Photos are stock examples to show the idea—your shoppers use their own picture and your SKU.
-            </p>
-          </div>
+        <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:items-center">
+          <Link href="/demo" className="btn-accent-gradient h-12 px-8 text-center sm:inline-flex">
+            Try the demo
+          </Link>
+          <a
+            href="#pricing"
+            className="inline-flex h-12 items-center justify-center rounded-full border border-surface-border bg-white px-8 text-sm font-medium text-zinc-800 shadow-sm transition hover:border-zinc-300 hover:bg-surface-raised"
+          >
+            See pricing
+          </a>
+        </div>
+        <p className="mt-4 text-xs leading-relaxed text-zinc-500">
+          Stock photos, neck-down on the right so the focus stays on the garment.
+        </p>
 
-          <div className="relative mx-auto w-full max-w-lg lg:max-w-none">
-            <div className="overflow-hidden rounded-2xl border border-surface-border bg-white shadow-xl shadow-zinc-200/70">
-              <div className="grid grid-cols-2 gap-px bg-zinc-200">
-                <figure className="relative aspect-[3/4] bg-zinc-100">
+        <div className="relative mx-auto mt-12 w-full max-w-5xl">
+          <div className="overflow-hidden rounded-2xl border border-surface-border bg-white shadow-xl shadow-zinc-200/70">
+            <div className="flex flex-col md:flex-row md:items-stretch">
+              {/* Product (flat lay) */}
+              <figure className="relative flex min-h-[220px] flex-1 flex-col bg-zinc-50 md:min-h-[320px]">
+                <figcaption className="border-b border-surface-border bg-white px-3 py-2 text-center text-[11px] font-semibold uppercase tracking-wider text-zinc-500">
+                  Product
+                </figcaption>
+                <div className="relative min-h-[220px] flex-1 md:min-h-[280px]">
                   <Image
-                    src={slide.beforeSrc}
-                    alt={slide.beforeAlt}
+                    src={slide.productSrc}
+                    alt={slide.productAlt}
                     fill
-                    className="object-cover"
-                    sizes="(max-width: 1024px) 50vw, 320px"
+                    className="object-cover object-center"
+                    sizes="(max-width: 768px) 100vw, 33vw"
                     priority={index === 0}
                   />
-                  <figcaption className="pointer-events-none absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/65 to-transparent px-3 pb-3 pt-10 text-center text-[11px] font-semibold uppercase tracking-wider text-white">
-                    Before
-                  </figcaption>
-                </figure>
-                <figure className="relative aspect-[3/4] bg-zinc-100">
-                  <Image
-                    src={slide.afterSrc}
-                    alt={slide.afterAlt}
-                    fill
-                    className="object-cover"
-                    sizes="(max-width: 1024px) 50vw, 320px"
-                    priority={index === 0}
-                  />
-                  <figcaption className="pointer-events-none absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/65 to-transparent px-3 pb-3 pt-10 text-center text-[11px] font-semibold uppercase tracking-wider text-white">
-                    After
-                  </figcaption>
-                </figure>
-              </div>
-              <div className="flex items-center justify-between gap-3 border-t border-surface-border bg-surface-muted/50 px-3 py-2.5">
-                <button
-                  type="button"
-                  onClick={() => go(-1)}
-                  className="inline-flex h-9 min-w-[2.25rem] items-center justify-center rounded-full border border-surface-border bg-white text-sm font-medium text-zinc-700 shadow-sm transition hover:bg-surface-raised"
-                  aria-label="Previous slide"
-                >
-                  ←
-                </button>
-                <div className="flex flex-1 items-center justify-center gap-1.5" role="tablist" aria-label="Slides">
-                  {SLIDES.map((_, i) => (
-                    <button
-                      key={i}
-                      type="button"
-                      role="tab"
-                      aria-selected={i === index}
-                      aria-label={`Slide ${i + 1}`}
-                      onClick={() => setIndex(i)}
-                      className={`h-2 rounded-full transition-all ${
-                        i === index ? "w-8 bg-gradient-to-r from-[#7c3aed] to-[#ec4899]" : "w-2 bg-zinc-300 hover:bg-zinc-400"
-                      }`}
-                    />
-                  ))}
                 </div>
-                <button
-                  type="button"
-                  onClick={() => go(1)}
-                  className="inline-flex h-9 min-w-[2.25rem] items-center justify-center rounded-full border border-surface-border bg-white text-sm font-medium text-zinc-700 shadow-sm transition hover:bg-surface-raised"
-                  aria-label="Next slide"
-                >
-                  →
-                </button>
+              </figure>
+
+              {/* Arrow — column on mobile, row segment on desktop */}
+              <div className="flex items-center justify-center border-y border-surface-border bg-surface-muted/30 px-4 py-2 md:w-[5.5rem] md:shrink-0 md:flex-col md:border-x md:border-y-0 md:px-0 md:py-0">
+                <TransformArrow />
               </div>
+
+              {/* Worn (neck-down) */}
+              <figure className="relative flex min-h-[220px] flex-1 flex-col bg-zinc-50 md:min-h-[320px]">
+                <figcaption className="border-b border-surface-border bg-white px-3 py-2 text-center text-[11px] font-semibold uppercase tracking-wider text-zinc-500">
+                  On you
+                </figcaption>
+                <div className="relative min-h-[220px] flex-1 md:min-h-[280px]">
+                  <WornImage src={slide.wornSrc} alt={slide.wornAlt} priority={index === 0} />
+                </div>
+              </figure>
+            </div>
+
+            <div className="flex items-center justify-between gap-3 border-t border-surface-border bg-surface-muted/50 px-3 py-2.5">
+              <button
+                type="button"
+                onClick={() => go(-1)}
+                className="inline-flex h-9 min-w-[2.25rem] items-center justify-center rounded-full border border-surface-border bg-white text-sm font-medium text-zinc-700 shadow-sm transition hover:bg-surface-raised"
+                aria-label="Previous slide"
+              >
+                ←
+              </button>
+              <div className="flex flex-1 items-center justify-center gap-1.5" role="tablist" aria-label="Slides">
+                {SLIDES.map((_, i) => (
+                  <button
+                    key={i}
+                    type="button"
+                    role="tab"
+                    aria-selected={i === index}
+                    aria-label={`${SLIDES[i].label} example`}
+                    onClick={() => setIndex(i)}
+                    className={`h-2 rounded-full transition-all ${
+                      i === index ? "w-8 bg-gradient-to-r from-[#7c3aed] to-[#ec4899]" : "w-2 bg-zinc-300 hover:bg-zinc-400"
+                    }`}
+                  />
+                ))}
+              </div>
+              <button
+                type="button"
+                onClick={() => go(1)}
+                className="inline-flex h-9 min-w-[2.25rem] items-center justify-center rounded-full border border-surface-border bg-white text-sm font-medium text-zinc-700 shadow-sm transition hover:bg-surface-raised"
+                aria-label="Next slide"
+              >
+                →
+              </button>
             </div>
           </div>
         </div>

@@ -43,6 +43,20 @@ const config: Config = {
         "accent-glow": "0 0 48px -12px rgba(124, 58, 237, 0.35)",
         "accent-card": "0 0 60px -20px rgba(124, 58, 237, 0.2)",
       },
+      keyframes: {
+        "hero-arrow-x": {
+          "0%, 100%": { transform: "translateX(0)", opacity: "0.75" },
+          "50%": { transform: "translateX(6px)", opacity: "1" },
+        },
+        "hero-arrow-y": {
+          "0%, 100%": { transform: "translateY(0)", opacity: "0.75" },
+          "50%": { transform: "translateY(6px)", opacity: "1" },
+        },
+      },
+      animation: {
+        "hero-arrow-x": "hero-arrow-x 1.35s ease-in-out infinite",
+        "hero-arrow-y": "hero-arrow-y 1.35s ease-in-out infinite",
+      },
     },
   },
   plugins: [],
