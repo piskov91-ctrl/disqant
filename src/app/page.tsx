@@ -32,28 +32,31 @@ export default function Home() {
             />
 
             <div className="absolute inset-0">
-              <div className="mx-auto flex h-full w-full max-w-6xl flex-col justify-end px-6 pb-10 pt-8 md:pb-14">
-                <div className="max-w-3xl pl-0 md:pl-12 lg:pl-16">
-                  <h1 className="text-balance text-4xl font-semibold tracking-tight text-white [text-shadow:0_2px_40px_rgba(0,0,0,0.55)] md:text-6xl md:leading-[1.05]">
-                    Let shoppers try before they buy
-                  </h1>
-                  <p className="mt-4 max-w-2xl text-base leading-relaxed text-white/85 md:text-lg [text-shadow:0_2px_30px_rgba(0,0,0,0.45)]">
-                    Add AI virtual try-on to your store in one line of code. No app. No friction.
-                  </p>
+              <div className="mx-auto flex h-full w-full max-w-6xl">
+                <div className="w-1/2 shrink-0" aria-hidden />
+                <div className="flex w-1/2 min-w-0 items-center justify-end px-4 py-8 sm:px-6 md:px-8">
+                  <div className="w-full max-w-3xl text-right">
+                    <h1 className="text-balance text-4xl font-semibold tracking-tight text-white [text-shadow:0_2px_40px_rgba(0,0,0,0.55)] md:text-6xl md:leading-[1.05]">
+                      Let shoppers try before they buy
+                    </h1>
+                    <p className="mt-4 ml-auto max-w-2xl text-base leading-relaxed text-white/85 md:text-lg [text-shadow:0_2px_30px_rgba(0,0,0,0.45)]">
+                      Add AI virtual try-on to your store in one line of code. No app. No friction.
+                    </p>
 
-                  <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:items-center">
-                    <Link
-                      href="/demo"
-                      className="btn-accent-gradient h-12 px-8 text-center shadow-2xl shadow-black/30 sm:inline-flex"
-                    >
-                      See it live
-                    </Link>
-                    <Link
-                      href="/pricing"
-                      className="inline-flex h-12 items-center justify-center rounded-full border border-white/30 bg-white/10 px-8 text-sm font-semibold text-white shadow-lg shadow-black/20 backdrop-blur-md transition hover:bg-white/15"
-                    >
-                      Get started
-                    </Link>
+                    <div className="mt-8 flex flex-col gap-3 self-end sm:flex-row sm:items-center sm:justify-end">
+                      <Link
+                        href="/demo"
+                        className="btn-accent-gradient h-12 px-8 text-center shadow-2xl shadow-black/30 sm:inline-flex"
+                      >
+                        See it live
+                      </Link>
+                      <Link
+                        href="/pricing"
+                        className="inline-flex h-12 items-center justify-center rounded-full border border-white/30 bg-white/10 px-8 text-sm font-semibold text-white shadow-lg shadow-black/20 backdrop-blur-md transition hover:bg-white/15"
+                      >
+                        Get started
+                      </Link>
+                    </div>
                   </div>
                 </div>
               </div>
