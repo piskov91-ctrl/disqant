@@ -34,8 +34,9 @@ export default function ProductPage() {
             <div className="rounded-3xl border border-surface-border bg-white p-10 shadow-sm md:p-12">
               <h2 className="text-sm font-semibold uppercase tracking-widest text-accent">The problem</h2>
               <p className="mt-4 text-balance text-2xl font-semibold tracking-tight text-zinc-900 md:text-3xl">
-                Up to 40% of online clothing purchases are returned because items don&apos;t look right on the
-                customer. Shoppers are guessing. You&apos;re paying for it.
+                Most shoppers hesitate before buying clothes online. They can&apos;t try them on, they&apos;re
+                not sure how they&apos;ll look, and when it doesn&apos;t feel right — they return it. That costs
+                your store time, money, and trust.
               </p>
             </div>
           </div>
@@ -59,7 +60,7 @@ export default function ProductPage() {
                 <div>
                   <h3 className="text-lg font-semibold text-zinc-900">You add one line of code to your store</h3>
                   <p className="mt-2 text-sm leading-relaxed text-zinc-600">
-                    Install the widget once and it&apos;s ready across your catalogue.
+                    Drop in the snippet once, and you&apos;re ready to go—no long setup calls, no waiting around.
                   </p>
                 </div>
               </li>
@@ -73,7 +74,7 @@ export default function ProductPage() {
                     A &apos;Wear Me&apos; button appears on every product image
                   </h3>
                   <p className="mt-2 text-sm leading-relaxed text-zinc-600">
-                    Shoppers can try-on from the product page—no redirect, no app.
+                    Shoppers see it right where they&apos;re already browsing—on the PDP, next to the photos.
                   </p>
                 </div>
               </li>
@@ -87,7 +88,7 @@ export default function ProductPage() {
                     Shoppers upload a photo or use their camera
                   </h3>
                   <p className="mt-2 text-sm leading-relaxed text-zinc-600">
-                    Camera or gallery upload—whatever they prefer.
+                    They can use a photo they already have or take one on the spot—whatever feels easiest.
                   </p>
                 </div>
               </li>
@@ -101,7 +102,7 @@ export default function ProductPage() {
                     AI shows them wearing your product in seconds
                   </h3>
                   <p className="mt-2 text-sm leading-relaxed text-zinc-600">
-                    A fast, believable preview that helps shoppers commit.
+                    They get a quick, believable preview—so they feel confident clicking “buy”.
                   </p>
                 </div>
               </li>
@@ -123,7 +124,9 @@ export default function ProductPage() {
                   <Globe className="h-5 w-5" aria-hidden />
                 </div>
                 <h3 className="mt-4 text-lg font-semibold text-zinc-900">Works on any website</h3>
-                <p className="mt-2 text-sm text-zinc-600">Shopify, WooCommerce, custom stores</p>
+                <p className="mt-2 text-sm text-zinc-600">
+                  Add try-on without rebuilding your site—Shopify, WooCommerce, or custom.
+                </p>
               </div>
 
               <div className="rounded-2xl border border-surface-border bg-white p-7 shadow-sm">
@@ -131,7 +134,9 @@ export default function ProductPage() {
                   <Laptop2 className="h-5 w-5" aria-hidden />
                 </div>
                 <h3 className="mt-4 text-lg font-semibold text-zinc-900">No app needed</h3>
-                <p className="mt-2 text-sm text-zinc-600">Runs directly in the browser</p>
+                <p className="mt-2 text-sm text-zinc-600">
+                  Fewer drop-offs—shoppers stay on your product page and keep moving toward checkout.
+                </p>
               </div>
 
               <div className="rounded-2xl border border-surface-border bg-white p-7 shadow-sm">
@@ -139,7 +144,9 @@ export default function ProductPage() {
                   <Upload className="h-5 w-5" aria-hidden />
                 </div>
                 <h3 className="mt-4 text-lg font-semibold text-zinc-900">Camera or gallery</h3>
-                <p className="mt-2 text-sm text-zinc-600">Shoppers choose how to upload</p>
+                <p className="mt-2 text-sm text-zinc-600">
+                  More people complete try-on when they can use the option that feels most comfortable.
+                </p>
               </div>
 
               <div className="rounded-2xl border border-surface-border bg-white p-7 shadow-sm">
@@ -147,7 +154,9 @@ export default function ProductPage() {
                   <Sparkles className="h-5 w-5" aria-hidden />
                 </div>
                 <h3 className="mt-4 text-lg font-semibold text-zinc-900">AI powered</h3>
-                <p className="mt-2 text-sm text-zinc-600">Built on industry-leading AI technology</p>
+                <p className="mt-2 text-sm text-zinc-600">
+                  Give shoppers a believable preview that helps them buy with confidence.
+                </p>
               </div>
 
               <div className="rounded-2xl border border-surface-border bg-white p-7 shadow-sm">
@@ -155,7 +164,9 @@ export default function ProductPage() {
                   <Gauge className="h-5 w-5" aria-hidden />
                 </div>
                 <h3 className="mt-4 text-lg font-semibold text-zinc-900">Usage tracking</h3>
-                <p className="mt-2 text-sm text-zinc-600">Monitor how many try-ons per client</p>
+                <p className="mt-2 text-sm text-zinc-600">
+                  Stay in control of costs and performance with clear usage per client.
+                </p>
               </div>
 
               <div className="rounded-2xl border border-surface-border bg-white p-7 shadow-sm">
@@ -163,7 +174,9 @@ export default function ProductPage() {
                   <Code2 className="h-5 w-5" aria-hidden />
                 </div>
                 <h3 className="mt-4 text-lg font-semibold text-zinc-900">One line of code</h3>
-                <p className="mt-2 text-sm text-zinc-600">Instant setup, no developer needed</p>
+                <p className="mt-2 text-sm text-zinc-600">
+                  Launch fast—perfect for lean teams that don&apos;t want a long integration project.
+                </p>
               </div>
             </div>
           </div>
@@ -198,23 +211,31 @@ export default function ProductPage() {
             <div className="mt-14 grid gap-6 md:grid-cols-2">
               <div className="rounded-2xl border border-surface-border bg-white p-7 shadow-sm">
                 <h3 className="text-lg font-semibold text-zinc-900">Does it work on mobile?</h3>
-                <p className="mt-2 text-sm text-zinc-600">Yes, works on all devices.</p>
+                <p className="mt-2 text-sm text-zinc-600">
+                  Yes—mobile is fully supported. It works on iPhone, Android, tablets, and desktop.
+                </p>
               </div>
               <div className="rounded-2xl border border-surface-border bg-white p-7 shadow-sm">
                 <h3 className="text-lg font-semibold text-zinc-900">How long does it take to install?</h3>
-                <p className="mt-2 text-sm text-zinc-600">Under 5 minutes.</p>
+                <p className="mt-2 text-sm text-zinc-600">
+                  Usually under 5 minutes. If you can paste a snippet into your theme, you can install Disqant.
+                </p>
               </div>
               <div className="rounded-2xl border border-surface-border bg-white p-7 shadow-sm">
                 <h3 className="text-lg font-semibold text-zinc-900">
                   What happens when usage limit is reached?
                 </h3>
                 <p className="mt-2 text-sm text-zinc-600">
-                  Shoppers see a friendly message, you get notified.
+                  We show a friendly message to shoppers and pause further try-ons for that key. You&apos;ll be
+                  notified so you can top up or upgrade—no surprises.
                 </p>
               </div>
               <div className="rounded-2xl border border-surface-border bg-white p-7 shadow-sm">
                 <h3 className="text-lg font-semibold text-zinc-900">Is my API key safe?</h3>
-                <p className="mt-2 text-sm text-zinc-600">Yes, keys are stored server-side only.</p>
+                <p className="mt-2 text-sm text-zinc-600">
+                  Yes. Your key is used to identify your store for usage and billing—your private provider keys
+                  stay on the server and aren&apos;t shown to shoppers.
+                </p>
               </div>
             </div>
           </div>
