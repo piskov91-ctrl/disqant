@@ -110,8 +110,8 @@ export default function ProductPage() {
                   </p>
                   <p className="mt-3 text-sm leading-relaxed text-zinc-600">
                     That matters because the best virtual try-on in the world doesn&apos;t help if shoppers never
-                    notice it. Wear Me is intentionally placed where intent is highest: someone is already looking
-                    at the item, sizing it up, imagining it on them.
+                    notice it. Wear Me is intentionally placed where intent is highest: someone is already looking at
+                    the item, sizing it up, imagining it on them.
                   </p>
                   <p className="mt-3 text-sm leading-relaxed text-zinc-600">
                     Keeping shoppers on the PDP also tends to reduce friction in the journey—which is a quiet but
@@ -148,8 +148,8 @@ export default function ProductPage() {
                 <div>
                   <h3 className="text-lg font-semibold text-zinc-900">They see the try-on in seconds</h3>
                   <p className="mt-2 text-sm leading-relaxed text-zinc-600">
-                    Our AI fashion technology creates a realistic preview fast—helping you increase conversions
-                    and reduce returns.
+                    Our AI fashion technology creates a realistic preview fast—helping you increase conversions and
+                    reduce returns.
                   </p>
                   <p className="mt-3 text-sm leading-relaxed text-zinc-600">
                     The preview doesn&apos;t need to be perfect to be useful—it needs to be believable enough that a
@@ -198,9 +198,7 @@ export default function ProductPage() {
                   on a handful of categories first—denim, dresses, outerwear—then expand once they like what they see
                   in the numbers.
                 </p>
-                <p className="mt-3 text-sm text-zinc-600">
-                  Wear Me fits that rollout style: easy integration now, room to grow later.
-                </p>
+                <p className="mt-3 text-sm text-zinc-600">Wear Me fits that rollout style: easy integration now, room to grow later.</p>
               </div>
 
               <div className="rounded-2xl border border-surface-border bg-white p-7 shadow-sm">
@@ -209,8 +207,7 @@ export default function ProductPage() {
                 </div>
                 <h3 className="mt-4 text-lg font-semibold text-zinc-900">No app needed</h3>
                 <p className="mt-2 text-sm text-zinc-600">
-                  Shoppers don&apos;t have to download anything. That means fewer drop-offs and more completed
-                  try-ons.
+                  Shoppers don&apos;t have to download anything. That means fewer drop-offs and more completed try-ons.
                 </p>
                 <p className="mt-3 text-sm text-zinc-600">
                   Every extra step is a chance for someone to bounce—especially on mobile. Wear Me keeps people on
@@ -291,8 +288,8 @@ export default function ProductPage() {
                   happy.
                 </p>
                 <p className="mt-3 text-sm text-zinc-600">
-                  That speed matters because retail moves fast—especially when seasons shift and you need wins on
-                  the board quickly.
+                  That speed matters because retail moves fast—especially when seasons shift and you need wins on the
+                  board quickly.
                 </p>
               </div>
             </div>
@@ -315,8 +312,8 @@ export default function ProductPage() {
             </p>
             <p className="mx-auto mt-4 max-w-3xl text-center text-sm leading-relaxed text-zinc-600 md:text-base">
               If you&apos;re on Shopify, you&apos;re usually iterating weekly on merchandising, drops, and campaigns.
-              If you&apos;re on WooCommerce, you want flexibility without a fragile custom build. Wear Me stays out
-              of your way in both cases—easy integration, then let virtual try-on do the persuasion work on the PDP.
+              If you&apos;re on WooCommerce, you want flexibility without a fragile custom build. Wear Me stays out of
+              your way in both cases—easy integration, then let virtual try-on do the persuasion work on the PDP.
             </p>
             <p className="mx-auto mt-4 max-w-3xl text-center text-sm leading-relaxed text-zinc-600 md:text-base">
               Independent boutiques win on taste and trust; sports retailers win on fit and function. Wear Me helps
@@ -334,10 +331,10 @@ export default function ProductPage() {
                 Why smart retailers are adding virtual try-on now
               </h2>
               <p className="mt-4 text-balance text-2xl font-semibold tracking-tight text-zinc-900 md:text-3xl">
-                We&apos;re seeing UK online retailers treat virtual try-on less like a “nice-to-have” and more
-                like part of a modern product page. When shoppers can quickly see a garment on themselves, they
-                hesitate less. That usually means you increase conversions, reduce returns, and build trust—because
-                customers feel like they know what they&apos;re buying.
+                We&apos;re seeing UK online retailers treat virtual try-on less like a “nice-to-have” and more like
+                part of a modern product page. When shoppers can quickly see a garment on themselves, they hesitate
+                less. That usually means you increase conversions, reduce returns, and build trust—because customers
+                feel like they know what they&apos;re buying.
               </p>
               <p className="mt-4 max-w-4xl text-sm leading-relaxed text-zinc-600 md:text-base">
                 Wear Me is designed to make that upgrade feel easy: an easy integration, a familiar “Wear Me” moment
@@ -372,8 +369,8 @@ export default function ProductPage() {
               <div className="rounded-2xl border border-surface-border bg-white p-7 shadow-sm">
                 <h3 className="text-lg font-semibold text-zinc-900">Does it work on mobile?</h3>
                 <p className="mt-2 text-sm text-zinc-600">
-                  Yes. Most try-ons happen on mobile, so we made sure it works great on iPhone and Android (and
-                  of course tablet + desktop too).
+                  Yes. Most try-ons happen on mobile, so we made sure it works great on iPhone and Android (and of
+                  course tablet + desktop too).
                 </p>
                 <p className="mt-3 text-sm text-zinc-600">
                   That&apos;s important because a lot of fashion browsing is idle scrolling that turns into a
@@ -388,8 +385,8 @@ export default function ProductPage() {
               <div className="rounded-2xl border border-surface-border bg-white p-7 shadow-sm">
                 <h3 className="text-lg font-semibold text-zinc-900">How long does it take to install?</h3>
                 <p className="mt-2 text-sm text-zinc-600">
-                  Usually under 5 minutes. If you can paste a snippet into your theme (or ask your dev to), you
-                  can get it live.
+                  Usually under 5 minutes. If you can paste a snippet into your theme (or ask your dev to), you can get
+                  it live.
                 </p>
                 <p className="mt-3 text-sm text-zinc-600">
                   Most teams do a simple sanity check first: install, open a product page, run a try-on, confirm it
@@ -401,16 +398,14 @@ export default function ProductPage() {
                 </p>
               </div>
               <div className="rounded-2xl border border-surface-border bg-white p-7 shadow-sm">
-                <h3 className="text-lg font-semibold text-zinc-900">
-                  What happens when usage limit is reached?
-                </h3>
+                <h3 className="text-lg font-semibold text-zinc-900">What happens when usage limit is reached?</h3>
                 <p className="mt-2 text-sm text-zinc-600">
                   We show a friendly message to shoppers and pause try-ons for that key, so nothing breaks on your
                   site. Then you can top up or upgrade when you&apos;re ready.
                 </p>
                 <p className="mt-3 text-sm text-zinc-600">
-                  The goal is to avoid a weird broken experience that makes your store look flaky. Shoppers should
-                  feel like the limit is normal and understandable—not like something went wrong.
+                  The goal is to avoid a weird broken experience that makes your store look flaky. Shoppers should feel
+                  like the limit is normal and understandable—not like something went wrong.
                 </p>
                 <p className="mt-3 text-sm text-zinc-600">
                   On your side, it&apos;s a clean signal too: you can see usage climbing and plan ahead, rather than
@@ -424,8 +419,8 @@ export default function ProductPage() {
                   provider keys—they stay server-side.
                 </p>
                 <p className="mt-3 text-sm text-zinc-600">
-                  Think of the Wear Me key like a storefront identifier: it tells the system which account to bill
-                  and how much virtual try-on you&apos;ve used. It isn&apos;t something shoppers need to understand.
+                  Think of the Wear Me key like a storefront identifier: it tells the system which account to bill and
+                  how much virtual try-on you&apos;ve used. It isn&apos;t something shoppers need to understand.
                 </p>
                 <p className="mt-3 text-sm text-zinc-600">
                   If you ever rotate keys, you can treat it like any other integration credential—swap the snippet,
@@ -446,8 +441,8 @@ export default function ProductPage() {
                     Ready to add virtual try-on to your store?
                   </h2>
                   <p className="mt-3 max-w-xl text-sm leading-relaxed text-zinc-600 md:text-base">
-                    Try the demo and picture it on your product pages. It&apos;s the quickest way to see if it
-                    feels right for your brand.
+                    Try the demo and picture it on your product pages. It&apos;s the quickest way to see if it feels
+                    right for your brand.
                   </p>
                   <p className="mt-4 max-w-xl text-sm leading-relaxed text-zinc-600 md:text-base">
                     If you like what you see, you can start small: pick a category where returns hurt the most, add
@@ -471,4 +466,3 @@ export default function ProductPage() {
     </>
   );
 }
-
