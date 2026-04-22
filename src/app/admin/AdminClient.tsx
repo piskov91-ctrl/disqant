@@ -409,15 +409,15 @@ export default function AdminClient() {
               <div className="px-6 py-10 text-sm text-zinc-500 md:px-8">No clients yet.</div>
             ) : (
               <div className="w-full">
-                <div className="grid w-full grid-cols-[minmax(0,1.35fr)_minmax(0,0.6fr)_minmax(0,1.6fr)_minmax(0,0.7fr)_minmax(0,0.35fr)_minmax(0,0.35fr)_minmax(0,0.35fr)_minmax(0,0.45fr)] gap-2 border-b border-surface-border px-4 py-2 text-[11px] font-semibold uppercase tracking-wider text-zinc-500 md:px-6">
+                <div className="grid w-full grid-cols-[minmax(0,1.35fr)_minmax(0,0.7fr)_minmax(0,1.6fr)_minmax(0,0.7fr)_minmax(0,0.55fr)_minmax(0,0.55fr)_minmax(0,0.6fr)_minmax(0,0.7fr)] gap-2 border-b border-surface-border px-4 py-3 text-xs font-semibold uppercase tracking-wider text-zinc-500 md:px-6">
                     <div>Client Name</div>
                     <div>API Key</div>
                     <div>Usage / Limit</div>
                     <div>Status</div>
-                    <div className="text-center">E</div>
-                    <div className="text-center">C</div>
-                    <div className="text-center">R</div>
-                    <div className="text-center">Del</div>
+                    <div className="text-center">EDIT</div>
+                    <div className="text-center">COPY</div>
+                    <div className="text-center">RESET</div>
+                    <div className="text-center">DELETE</div>
                   </div>
 
                   {keys.map((k) => {
@@ -430,15 +430,15 @@ export default function AdminClient() {
                     return (
                       <div
                         key={k.id}
-                        className="grid w-full grid-cols-[minmax(0,1.35fr)_minmax(0,0.6fr)_minmax(0,1.6fr)_minmax(0,0.7fr)_minmax(0,0.35fr)_minmax(0,0.35fr)_minmax(0,0.35fr)_minmax(0,0.45fr)] items-center gap-2 border-b border-surface-border px-4 py-3 md:px-6"
+                        className="grid w-full grid-cols-[minmax(0,1.35fr)_minmax(0,0.7fr)_minmax(0,1.6fr)_minmax(0,0.7fr)_minmax(0,0.55fr)_minmax(0,0.55fr)_minmax(0,0.6fr)_minmax(0,0.7fr)] items-center gap-2 border-b border-surface-border px-4 py-4 text-base md:px-6"
                       >
                         <div className="min-w-0">
-                          <div className="truncate text-sm font-semibold text-zinc-900">
+                          <div className="truncate font-semibold text-zinc-900">
                             {k.clientName}
                           </div>
                         </div>
                         <div>
-                          <span className="rounded-md border border-surface-border bg-white px-2 py-1 font-mono text-[11px] text-zinc-700">
+                          <span className="rounded-md border border-surface-border bg-white px-2 py-1 font-mono text-sm text-zinc-700">
                             {(k.key || "").slice(0, 8)}…
                           </span>
                         </div>
@@ -449,14 +449,14 @@ export default function AdminClient() {
                               style={{ width: `${pct}%` }}
                             />
                           </div>
-                          <span className="text-[11px] font-semibold text-zinc-700">
+                          <span className="text-sm font-semibold text-zinc-700">
                             {k.usageCount}/{k.usageLimit}
                           </span>
-                          <span className="text-[11px] font-semibold text-zinc-600">{pct}%</span>
+                          <span className="text-sm font-semibold text-zinc-600">{pct}%</span>
                         </div>
                         <div>
                           <span
-                            className={`inline-flex items-center rounded-full border px-2 py-1 text-[11px] font-semibold ${
+                            className={`inline-flex items-center rounded-full border px-2.5 py-1 text-sm font-semibold ${
                               blocked
                                 ? "border-amber-200 bg-amber-50 text-amber-800"
                                 : "border-emerald-200 bg-emerald-50 text-emerald-800"
@@ -469,44 +469,40 @@ export default function AdminClient() {
                           <button
                             type="button"
                             onClick={() => openEditModal(k)}
-                            className="inline-flex h-8 w-8 items-center justify-center rounded-full border border-surface-border bg-white text-[11px] font-semibold text-zinc-900 transition hover:border-zinc-300 hover:bg-surface-raised"
+                            className="inline-flex h-9 items-center justify-center rounded-full border border-surface-border bg-white px-3 text-sm font-semibold text-zinc-900 transition hover:border-zinc-300 hover:bg-surface-raised"
                             aria-label="Edit"
-                            title="Edit"
                           >
-                            ✎
+                            Edit
                           </button>
                         </div>
                         <div className="text-center">
                           <button
                             type="button"
                             onClick={() => void copyWidgetCode(k.key)}
-                            className="inline-flex h-8 w-8 items-center justify-center rounded-full border border-surface-border bg-white text-[11px] font-semibold text-zinc-900 transition hover:border-zinc-300 hover:bg-surface-raised"
+                            className="inline-flex h-9 items-center justify-center rounded-full border border-surface-border bg-white px-3 text-sm font-semibold text-zinc-900 transition hover:border-zinc-300 hover:bg-surface-raised"
                             aria-label="Copy code"
-                            title="Copy code"
                           >
-                            ⧉
+                            Copy
                           </button>
                         </div>
                         <div className="text-center">
                           <button
                             type="button"
                             onClick={() => void resetKeyUsage(k.id)}
-                            className="inline-flex h-8 w-8 items-center justify-center rounded-full border border-surface-border bg-white text-[11px] font-semibold text-zinc-900 transition hover:border-zinc-300 hover:bg-surface-raised"
+                            className="inline-flex h-9 items-center justify-center rounded-full border border-surface-border bg-white px-3 text-sm font-semibold text-zinc-900 transition hover:border-zinc-300 hover:bg-surface-raised"
                             aria-label="Reset"
-                            title="Reset"
                           >
-                            ↺
+                            Reset
                           </button>
                         </div>
                         <div className="text-center">
                           <button
                             type="button"
                             onClick={() => void deleteKey(k.id)}
-                            className="inline-flex h-8 items-center justify-center rounded-full border border-red-200 bg-red-50 px-2 text-[11px] font-semibold text-red-700 transition hover:border-red-300 hover:bg-red-100"
+                            className="inline-flex h-9 items-center justify-center rounded-full border border-red-200 bg-red-50 px-3 text-sm font-semibold text-red-700 transition hover:border-red-300 hover:bg-red-100"
                             aria-label="Delete"
-                            title="Delete"
                           >
-                            🗑
+                            Delete
                           </button>
                         </div>
                       </div>
