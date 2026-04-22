@@ -332,7 +332,7 @@ export default function AdminClient() {
       </header>
 
       <main className="mx-auto w-full max-w-none px-6 py-10 md:px-10 md:py-14">
-        <div className="mx-auto w-full max-w-6xl">
+        <div className="mx-auto w-full max-w-7xl">
           <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
             <div>
               <h1 className="text-balance text-3xl font-semibold tracking-tight text-zinc-900 md:text-4xl">
@@ -358,8 +358,8 @@ export default function AdminClient() {
               Create a client API key with a usage limit.
             </p>
 
-            <form onSubmit={createKey} className="mt-6 grid gap-4 md:grid-cols-6 md:items-end">
-              <div className="md:col-span-1">
+            <form onSubmit={createKey} className="mt-6 grid gap-4 md:grid-cols-12 md:items-end">
+              <div className="md:col-span-4">
                 <label className="block text-sm font-medium text-zinc-900">Client name</label>
                 <input
                   value={clientName}
@@ -368,7 +368,7 @@ export default function AdminClient() {
                   className="mt-2 block w-full rounded-xl border border-surface-border bg-white px-4 py-3 text-sm text-zinc-900 outline-none placeholder:text-zinc-400 transition focus:border-accent/60"
                 />
               </div>
-              <div className="md:col-span-3">
+              <div className="md:col-span-5">
                 <label className="block text-sm font-medium text-zinc-900">Fashn.ai API key</label>
                 <input
                   value={fashnApiKey}
@@ -379,7 +379,7 @@ export default function AdminClient() {
                   className="mt-2 block w-full rounded-xl border border-surface-border bg-white px-4 py-3 text-sm text-zinc-900 outline-none placeholder:text-zinc-400 transition focus:border-accent/60"
                 />
               </div>
-              <div className="md:col-span-1">
+              <div className="md:col-span-2">
                 <label className="block text-sm font-medium text-zinc-900">Usage limit</label>
                 <input
                   value={usageLimit}
@@ -389,7 +389,7 @@ export default function AdminClient() {
                   className="mt-2 block w-full rounded-xl border border-surface-border bg-white px-4 py-3 text-sm text-zinc-900 outline-none placeholder:text-zinc-400 transition focus:border-accent/60"
                 />
               </div>
-              <div className="md:col-span-1">
+              <div className="md:col-span-12">
                 <button
                   type="submit"
                   disabled={
@@ -398,7 +398,7 @@ export default function AdminClient() {
                     fashnApiKey.trim().length === 0 ||
                     Number(usageLimit) <= 0
                   }
-                  className="btn-accent-gradient h-12 w-full px-8 text-sm disabled:cursor-not-allowed disabled:opacity-60"
+                  className="btn-accent-gradient h-12 w-full px-8 text-sm disabled:cursor-not-allowed disabled:opacity-60 md:w-auto"
                 >
                   {creating ? "Creating…" : "Create API key"}
                 </button>
