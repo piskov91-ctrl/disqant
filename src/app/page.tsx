@@ -10,18 +10,19 @@ export default function Home() {
       <main className="pt-16">
         {/* CINEMATIC HERO (full-bleed video + overlay) */}
         <section aria-label="Home hero" className="relative left-1/2 w-screen -translate-x-1/2 overflow-hidden">
-          <div className="relative min-h-[70vh] w-full">
-            <video
-              src="/demo-video.mp4"
-              className="absolute inset-0 h-full w-full object-cover"
-              style={{ minHeight: "70vh" }}
-              autoPlay
-              muted
-              loop
-              playsInline
-              controls={false}
-              preload="auto"
-            />
+          <div className="relative min-h-[80vh] w-full bg-black">
+            <div className="pointer-events-none flex min-h-[80vh] w-full items-center justify-center">
+              <video
+                src="/demo-video.mp4"
+                className="h-auto w-full max-h-[80vh] object-contain"
+                autoPlay
+                muted
+                loop
+                playsInline
+                controls={false}
+                preload="auto"
+              />
+            </div>
 
             {/* Cinematic darkening + subtle grain + readable text area */}
             <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/80 via-black/25 to-black/20" />
