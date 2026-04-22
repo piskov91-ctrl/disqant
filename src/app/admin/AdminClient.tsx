@@ -23,9 +23,6 @@ export default function AdminClient() {
   const [keys, setKeys] = useState<KeyRecord[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [deletingId, setDeletingId] = useState<string | null>(null);
-  const [resettingId, setResettingId] = useState<string | null>(null);
-  const [copiedId, setCopiedId] = useState<string | null>(null);
   const [editing, setEditing] = useState<KeyRecord | null>(null);
   const [editClientName, setEditClientName] = useState("");
   const [editFashnApiKey, setEditFashnApiKey] = useState("");
@@ -119,7 +116,6 @@ export default function AdminClient() {
     if (!ok) return;
 
     setError(null);
-    setDeletingId(id);
     try {
       const res = await fetch(`/api/admin/keys/${encodeURIComponent(id)}`, { method: "DELETE" });
       const data = (await res.json()) as { ok?: true; error?: string };
@@ -131,8 +127,6 @@ export default function AdminClient() {
       setKeys((prev) => prev.filter((k) => k.id !== id));
     } catch (e) {
       setError(e instanceof Error ? e.message : "Failed to delete key.");
-    } finally {
-      setDeletingId(null);
     }
   }
 
@@ -141,7 +135,6 @@ export default function AdminClient() {
     if (!ok) return;
 
     setError(null);
-    setResettingId(id);
     try {
       const res = await fetch(`/api/admin/keys/${encodeURIComponent(id)}/reset`, {
         method: "POST",
@@ -157,18 +150,14 @@ export default function AdminClient() {
       );
     } catch (e) {
       setError(e instanceof Error ? e.message : "Failed to reset usage.");
-    } finally {
-      setResettingId(null);
     }
   }
 
-  async function copyWidgetCode(apiKey: string, id: string) {
+  async function copyWidgetCode(apiKey: string) {
     const origin = window.location.origin;
     const snippet = `<script async src=\"${origin}/widget.js\" data-disquant-key=\"${apiKey}\"></script>`;
     try {
       await navigator.clipboard.writeText(snippet);
-      setCopiedId(id);
-      window.setTimeout(() => setCopiedId(null), 1200);
     } catch {
       // Fallback for older browsers
       const ta = document.createElement("textarea");
@@ -180,8 +169,6 @@ export default function AdminClient() {
       ta.select();
       document.execCommand("copy");
       document.body.removeChild(ta);
-      setCopiedId(id);
-      window.setTimeout(() => setCopiedId(null), 1200);
     }
   }
 
@@ -449,7 +436,7 @@ export default function AdminClient() {
                   }}
                   onCopyCode={(id) => {
                     const rec = keys.find((k) => k.id === id);
-                    if (rec) void copyWidgetCode(rec.key, rec.id);
+                    if (rec) void copyWidgetCode(rec.key);
                   }}
                   onReset={(id) => {
                     void resetKeyUsage(id);
