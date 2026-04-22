@@ -153,6 +153,23 @@ export default function AdminClient() {
     }
   }
 
+  async function copyRawKey(apiKey: string) {
+    try {
+      await navigator.clipboard.writeText(apiKey);
+    } catch {
+      // Fallback for older browsers
+      const ta = document.createElement("textarea");
+      ta.value = apiKey;
+      ta.style.position = "fixed";
+      ta.style.left = "-9999px";
+      document.body.appendChild(ta);
+      ta.focus();
+      ta.select();
+      document.execCommand("copy");
+      document.body.removeChild(ta);
+    }
+  }
+
   function openEditModal(rec: KeyRecord) {
     setError(null);
     setEditing(rec);
@@ -409,13 +426,14 @@ export default function AdminClient() {
               <div className="px-6 py-10 text-sm text-zinc-500 md:px-8">No clients yet.</div>
             ) : (
               <div className="w-full">
-                <div className="grid w-full grid-cols-[minmax(0,1.35fr)_minmax(0,0.7fr)_minmax(0,1.6fr)_minmax(0,0.7fr)_minmax(0,0.55fr)_minmax(0,0.55fr)_minmax(0,0.6fr)_minmax(0,0.7fr)] gap-2 border-b border-surface-border px-4 py-3 text-xs font-semibold uppercase tracking-wider text-zinc-500 md:px-6">
+                <div className="grid w-full grid-cols-[minmax(0,1.35fr)_minmax(0,0.7fr)_minmax(0,1.6fr)_minmax(0,0.7fr)_minmax(0,0.55fr)_minmax(0,0.7fr)_minmax(0,0.55fr)_minmax(0,0.6fr)_minmax(0,0.7fr)] gap-2 border-b border-surface-border px-4 py-3 text-xs font-semibold uppercase tracking-wider text-zinc-500 md:px-6">
                     <div>Client Name</div>
                     <div>API Key</div>
                     <div>Usage / Limit</div>
                     <div>Status</div>
                     <div className="text-center">EDIT</div>
                     <div className="text-center">COPY</div>
+                    <div className="text-center">COPY KEY</div>
                     <div className="text-center">RESET</div>
                     <div className="text-center">DELETE</div>
                   </div>
@@ -430,7 +448,7 @@ export default function AdminClient() {
                     return (
                       <div
                         key={k.id}
-                        className="grid w-full grid-cols-[minmax(0,1.35fr)_minmax(0,0.7fr)_minmax(0,1.6fr)_minmax(0,0.7fr)_minmax(0,0.55fr)_minmax(0,0.55fr)_minmax(0,0.6fr)_minmax(0,0.7fr)] items-center gap-2 border-b border-surface-border px-4 py-4 text-base md:px-6"
+                        className="grid w-full grid-cols-[minmax(0,1.35fr)_minmax(0,0.7fr)_minmax(0,1.6fr)_minmax(0,0.7fr)_minmax(0,0.55fr)_minmax(0,0.7fr)_minmax(0,0.55fr)_minmax(0,0.6fr)_minmax(0,0.7fr)] items-center gap-2 border-b border-surface-border px-4 py-4 text-base md:px-6"
                       >
                         <div className="min-w-0">
                           <div className="truncate font-semibold text-zinc-900">
@@ -483,6 +501,16 @@ export default function AdminClient() {
                             aria-label="Copy code"
                           >
                             Copy
+                          </button>
+                        </div>
+                        <div className="text-center">
+                          <button
+                            type="button"
+                            onClick={() => void copyRawKey(k.key)}
+                            className="inline-flex h-9 items-center justify-center rounded-full border border-surface-border bg-white px-3 text-sm font-semibold text-zinc-900 transition hover:border-zinc-300 hover:bg-surface-raised"
+                            aria-label="Copy key"
+                          >
+                            Copy Key
                           </button>
                         </div>
                         <div className="text-center">
