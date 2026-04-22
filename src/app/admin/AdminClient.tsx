@@ -21,10 +21,12 @@ export default function AdminClient() {
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const [editing, setEditing] = useState<KeyRecord | null>(null);
   const [editClientName, setEditClientName] = useState("");
+  const [editFashnApiKey, setEditFashnApiKey] = useState("");
   const [editUsageLimit, setEditUsageLimit] = useState("");
   const [savingEdit, setSavingEdit] = useState(false);
 
   const [clientName, setClientName] = useState("");
+  const [fashnApiKey, setFashnApiKey] = useState("");
   const [usageLimit, setUsageLimit] = useState("1000");
   const [creating, setCreating] = useState(false);
 
@@ -67,6 +69,7 @@ export default function AdminClient() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           clientName,
+          fashnApiKey,
           usageLimit: Number(usageLimit),
         }),
       });
@@ -78,6 +81,7 @@ export default function AdminClient() {
       if (data.key) {
         setKeys((prev) => [data.key!, ...prev]);
         setClientName("");
+        setFashnApiKey("");
       }
     } catch (e) {
       setError(e instanceof Error ? e.message : "Failed to create key.");
@@ -167,11 +171,13 @@ export default function AdminClient() {
     setEditing(rec);
     setEditClientName(rec.clientName);
     setEditUsageLimit(String(rec.usageLimit));
+    setEditFashnApiKey("");
   }
 
   function closeEditModal() {
     setEditing(null);
     setEditClientName("");
+    setEditFashnApiKey("");
     setEditUsageLimit("");
     setSavingEdit(false);
   }
@@ -186,6 +192,7 @@ export default function AdminClient() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           clientName: editClientName,
+          ...(editFashnApiKey.trim() ? { fashnApiKey: editFashnApiKey.trim() } : null),
           usageLimit: Number(editUsageLimit),
         }),
       });
@@ -222,7 +229,7 @@ export default function AdminClient() {
                   Edit client
                 </p>
                 <p className="mt-1 text-sm text-zinc-600">
-                  Update client name and usage limit.
+                  Update client name, usage limit, and (optionally) replace the Fashn.ai API key.
                 </p>
               </div>
               <button
@@ -243,6 +250,20 @@ export default function AdminClient() {
                   onChange={(e) => setEditClientName(e.target.value)}
                   className="mt-3 block w-full rounded-xl border border-surface-border bg-white px-4 py-3 text-sm text-zinc-900 outline-none transition focus:border-accent/60"
                 />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-zinc-900">Fashn.ai API key</label>
+                <input
+                  value={editFashnApiKey}
+                  onChange={(e) => setEditFashnApiKey(e.target.value)}
+                  type="password"
+                  autoComplete="new-password"
+                  placeholder="Leave blank to keep current"
+                  className="mt-3 block w-full rounded-xl border border-surface-border bg-white px-4 py-3 text-sm text-zinc-900 outline-none transition focus:border-accent/60"
+                />
+                <p className="mt-2 text-xs text-zinc-500">
+                  For security, we never display the current key. Enter a new one only if you want to replace it.
+                </p>
               </div>
               <div>
                 <label className="block text-sm font-medium text-zinc-900">Usage limit</label>
@@ -328,16 +349,27 @@ export default function AdminClient() {
           <section className="mt-8 rounded-2xl border border-surface-border bg-white p-6 shadow-sm md:p-8">
             <h2 className="text-base font-semibold text-zinc-900">Create new client</h2>
             <p className="mt-1 text-sm text-zinc-600">
-              Client name and usage limit only. (Fashn key is configured server-side.)
+              Create a client API key with a usage limit.
             </p>
 
-            <form onSubmit={createKey} className="mt-6 grid gap-4 md:grid-cols-3 md:items-end">
+            <form onSubmit={createKey} className="mt-6 grid gap-4 md:grid-cols-6 md:items-end">
               <div className="md:col-span-1">
                 <label className="block text-sm font-medium text-zinc-900">Client name</label>
                 <input
                   value={clientName}
                   onChange={(e) => setClientName(e.target.value)}
                   placeholder="Acme Storefront"
+                  className="mt-2 block w-full rounded-xl border border-surface-border bg-white px-4 py-3 text-sm text-zinc-900 outline-none placeholder:text-zinc-400 transition focus:border-accent/60"
+                />
+              </div>
+              <div className="md:col-span-3">
+                <label className="block text-sm font-medium text-zinc-900">Fashn.ai API key</label>
+                <input
+                  value={fashnApiKey}
+                  onChange={(e) => setFashnApiKey(e.target.value)}
+                  type="password"
+                  autoComplete="new-password"
+                  placeholder="fa-…"
                   className="mt-2 block w-full rounded-xl border border-surface-border bg-white px-4 py-3 text-sm text-zinc-900 outline-none placeholder:text-zinc-400 transition focus:border-accent/60"
                 />
               </div>
@@ -354,10 +386,15 @@ export default function AdminClient() {
               <div className="md:col-span-1">
                 <button
                   type="submit"
-                  disabled={creating || clientName.trim().length === 0 || Number(usageLimit) <= 0}
+                  disabled={
+                    creating ||
+                    clientName.trim().length === 0 ||
+                    fashnApiKey.trim().length === 0 ||
+                    Number(usageLimit) <= 0
+                  }
                   className="btn-accent-gradient h-12 w-full px-8 text-sm disabled:cursor-not-allowed disabled:opacity-60"
                 >
-                  {creating ? "Creating…" : "Create client"}
+                  {creating ? "Creating…" : "Create API key"}
                 </button>
               </div>
             </form>
@@ -380,30 +417,39 @@ export default function AdminClient() {
             </div>
 
             <div className="w-full overflow-x-auto">
-              <table className="w-full min-w-[820px] border-separate border-spacing-0">
+              <table className="w-full min-w-[980px] border-separate border-spacing-0">
                 <thead>
                   <tr className="text-left text-xs font-semibold uppercase tracking-wider text-zinc-500">
                     <th className="border-b border-surface-border px-6 py-3 md:px-8">Client name</th>
-                    <th className="border-b border-surface-border px-6 py-3 md:px-8">Usage</th>
-                    <th className="border-b border-surface-border px-6 py-3 md:px-8">Limit</th>
+                    <th className="border-b border-surface-border px-6 py-3 md:px-8">
+                      Usage / Limit
+                    </th>
+                    <th className="border-b border-surface-border px-6 py-3 md:px-8">Usage %</th>
+                    <th className="border-b border-surface-border px-6 py-3 md:px-8">Status</th>
                     <th className="border-b border-surface-border px-6 py-3 md:px-8">Actions</th>
                   </tr>
                 </thead>
                 <tbody className="text-sm">
                   {loading ? (
                     <tr>
-                      <td className="px-6 py-10 text-zinc-500 md:px-8" colSpan={4}>
+                      <td className="px-6 py-10 text-zinc-500 md:px-8" colSpan={5}>
                         Loading…
                       </td>
                     </tr>
                   ) : keys.length === 0 ? (
                     <tr>
-                      <td className="px-6 py-10 text-zinc-500 md:px-8" colSpan={4}>
+                      <td className="px-6 py-10 text-zinc-500 md:px-8" colSpan={5}>
                         No clients yet.
                       </td>
                     </tr>
                   ) : (
-                    keys.map((k) => (
+                    keys.map((k) => {
+                      const pct =
+                        k.usageLimit > 0
+                          ? Math.min(100, Math.round((k.usageCount / k.usageLimit) * 100))
+                          : 0;
+                      const blocked = k.usageLimit > 0 && k.usageCount >= k.usageLimit;
+                      return (
                       <tr key={k.id} className="align-top">
                         <td className="border-b border-surface-border px-6 py-4 md:px-8">
                           <div className="min-w-0">
@@ -412,10 +458,31 @@ export default function AdminClient() {
                           </div>
                         </td>
                         <td className="border-b border-surface-border px-6 py-4 text-zinc-700 md:px-8">
-                          {k.usageCount}
+                          <span className="font-semibold text-zinc-900">{k.usageCount}</span>
+                          <span className="text-zinc-400">/</span>
+                          <span className="text-zinc-700">{k.usageLimit}</span>
                         </td>
-                        <td className="border-b border-surface-border px-6 py-4 text-zinc-700 md:px-8">
-                          {k.usageLimit}
+                        <td className="border-b border-surface-border px-6 py-4 md:px-8">
+                          <div className="flex items-center gap-3">
+                            <div className="h-2 w-40 overflow-hidden rounded-full border border-surface-border bg-surface-muted">
+                              <div
+                                className="h-full rounded-full bg-gradient-to-r from-[#7c3aed] to-[#ec4899]"
+                                style={{ width: `${pct}%` }}
+                              />
+                            </div>
+                            <span className="text-xs font-semibold text-zinc-600">{pct}%</span>
+                          </div>
+                        </td>
+                        <td className="border-b border-surface-border px-6 py-4 md:px-8">
+                          <span
+                            className={`inline-flex items-center rounded-full border px-2.5 py-1 text-xs font-semibold ${
+                              blocked
+                                ? "border-amber-200 bg-amber-50 text-amber-800"
+                                : "border-emerald-200 bg-emerald-50 text-emerald-800"
+                            }`}
+                          >
+                            {blocked ? "Blocked" : "Active"}
+                          </span>
                         </td>
                         <td className="border-b border-surface-border px-6 py-4 md:px-8">
                           <div className="flex flex-wrap gap-2">
@@ -452,7 +519,8 @@ export default function AdminClient() {
                           </div>
                         </td>
                       </tr>
-                    ))
+                      );
+                    })
                   )}
                 </tbody>
               </table>

@@ -149,6 +149,7 @@ export async function updateClientKey(params: {
   id: string;
   clientName: string;
   usageLimit: number;
+  fashnApiKey?: string;
 }) {
   const redis = getRedis();
   const id = params.id;
@@ -167,6 +168,9 @@ export async function updateClientKey(params: {
     ...rec,
     clientName,
     usageLimit: Math.floor(params.usageLimit),
+    ...(params.fashnApiKey && params.fashnApiKey.trim()
+      ? { fashnApiKey: params.fashnApiKey.trim() }
+      : null),
   };
   await redis.set(recordKey(id), next);
   return next;
