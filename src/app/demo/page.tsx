@@ -6,8 +6,8 @@ import { DEMO_AUTH_COOKIE, isDemoAuthorizedCookieValue } from "@/lib/demoAuth";
 
 function AccessCodeGate() {
   return (
-    <div className="min-h-dvh bg-white">
-      <header className="border-b border-surface-border bg-white/80 backdrop-blur-xl">
+    <div className="min-h-dvh bg-white pt-16">
+      <header className="fixed top-0 left-0 right-0 z-[2147483647] border-b border-surface-border bg-white/80 backdrop-blur-xl">
         <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-6">
           <Link
             href="/"
