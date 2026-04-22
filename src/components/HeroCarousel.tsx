@@ -40,20 +40,18 @@ export function HeroCarousel() {
         </div>
         <p className="mt-4 text-xs leading-relaxed text-zinc-500">Video is muted and loops by default.</p>
 
-        <div className="relative mx-auto mt-12 w-full max-w-5xl">
-          <div className="overflow-hidden rounded-2xl border border-surface-border bg-white shadow-xl shadow-zinc-200/70">
-            <div className="relative aspect-video w-full bg-zinc-100">
-              <video
-                src="/demo-video.mp4"
-                className="h-full w-full max-w-full rounded-2xl object-contain"
-                autoPlay
-                muted
-                loop
-                playsInline
-                controls={false}
-                preload="auto"
-              />
-            </div>
+        <div className="mt-12 w-full">
+          <div className="overflow-hidden rounded-2xl shadow-xl shadow-zinc-200/70">
+            <video
+              src="/demo-video.mp4"
+              className="block w-full max-w-full"
+              autoPlay
+              muted
+              loop
+              playsInline
+              controls={false}
+              preload="auto"
+            />
           </div>
         </div>
       </div>
