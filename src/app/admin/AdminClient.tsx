@@ -201,7 +201,7 @@ export default function AdminClient() {
   }
 
   return (
-    <div className="w-full p-8 bg-white">
+    <div className="w-full bg-white px-8">
       {editing && (
         <div
           className="fixed inset-0 z-50 flex items-center justify-center bg-zinc-900/40 p-6 backdrop-blur-sm"
@@ -312,8 +312,8 @@ export default function AdminClient() {
         </div>
       </header>
 
-      <main className="w-full">
-        <div className="w-full p-8">
+      <main className="w-full py-8">
+        <div className="w-full">
           <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
             <div>
               <h1 className="text-balance text-3xl font-semibold tracking-tight text-zinc-900 md:text-4xl">
@@ -333,7 +333,7 @@ export default function AdminClient() {
             </button>
           </div>
 
-          <section className="mt-8 rounded-2xl border border-surface-border bg-white p-6 shadow-sm md:p-8">
+          <section className="mt-8 w-full rounded-2xl border border-surface-border bg-white p-6 shadow-sm md:p-8 overflow-hidden">
             <h2 className="text-base font-semibold text-zinc-900">Create new client</h2>
             <p className="mt-1 text-sm text-zinc-600">
               Create a client API key with a usage limit.
@@ -393,7 +393,7 @@ export default function AdminClient() {
             ) : null}
           </section>
 
-          <section className="mt-8 rounded-2xl border border-surface-border bg-white p-0 shadow-sm">
+          <section className="mt-8 w-full rounded-2xl border border-surface-border bg-white p-0 shadow-sm overflow-hidden">
             <div className="flex flex-col gap-1 border-b border-surface-border px-6 py-5 md:flex-row md:items-end md:justify-between md:px-8">
               <div>
                 <h2 className="text-base font-semibold text-zinc-900">Clients</h2>
@@ -409,7 +409,7 @@ export default function AdminClient() {
               <div className="px-6 py-10 text-sm text-zinc-500 md:px-8">No clients yet.</div>
             ) : (
               <div className="w-full">
-                <div className="grid grid-cols-[minmax(160px,1fr)_110px_240px_96px_44px_44px_44px_56px] gap-2 border-b border-surface-border px-4 py-2 text-[11px] font-semibold uppercase tracking-wider text-zinc-500 md:px-6">
+                <div className="grid w-full grid-cols-[minmax(0,1.35fr)_minmax(0,0.6fr)_minmax(0,1.6fr)_minmax(0,0.7fr)_minmax(0,0.35fr)_minmax(0,0.35fr)_minmax(0,0.35fr)_minmax(0,0.45fr)] gap-2 border-b border-surface-border px-4 py-2 text-[11px] font-semibold uppercase tracking-wider text-zinc-500 md:px-6">
                     <div>Client Name</div>
                     <div>API Key</div>
                     <div>Usage / Limit</div>
@@ -430,7 +430,7 @@ export default function AdminClient() {
                     return (
                       <div
                         key={k.id}
-                        className="grid grid-cols-[minmax(160px,1fr)_110px_240px_96px_44px_44px_44px_56px] items-center gap-2 border-b border-surface-border px-4 py-3 md:px-6"
+                        className="grid w-full grid-cols-[minmax(0,1.35fr)_minmax(0,0.6fr)_minmax(0,1.6fr)_minmax(0,0.7fr)_minmax(0,0.35fr)_minmax(0,0.35fr)_minmax(0,0.35fr)_minmax(0,0.45fr)] items-center gap-2 border-b border-surface-border px-4 py-3 md:px-6"
                       >
                         <div className="min-w-0">
                           <div className="truncate text-sm font-semibold text-zinc-900">
@@ -443,7 +443,7 @@ export default function AdminClient() {
                           </span>
                         </div>
                         <div className="flex items-center gap-3">
-                          <div className="h-2 w-28 overflow-hidden rounded-full border border-surface-border bg-surface-muted">
+                          <div className="h-2 w-24 overflow-hidden rounded-full border border-surface-border bg-surface-muted">
                             <div
                               className="h-full rounded-full bg-gradient-to-r from-[#7c3aed] to-[#ec4899]"
                               style={{ width: `${pct}%` }}
