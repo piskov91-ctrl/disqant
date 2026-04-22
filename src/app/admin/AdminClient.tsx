@@ -293,7 +293,7 @@ export default function AdminClient() {
         </div>
       )}
       <header className="border-b border-surface-border bg-white/80 backdrop-blur-xl">
-        <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-6">
+        <div className="flex h-16 w-full items-center justify-between px-6 md:px-10">
           <Link
             href="/"
             className="flex items-center gap-2 text-lg font-semibold tracking-tight text-zinc-900"
