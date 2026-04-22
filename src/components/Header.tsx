@@ -20,14 +20,14 @@ export function Header() {
           <Link href="/product" className="transition hover:text-zinc-900">
             What is Wear Me?
           </Link>
-          <Link href="/about" className="transition hover:text-zinc-900">
-            About
-          </Link>
           <Link href="/pricing" className="transition hover:text-zinc-900">
             Pricing
           </Link>
           <Link href="/demo" className="transition hover:text-zinc-900">
             Demo
+          </Link>
+          <Link href="/about" className="transition hover:text-zinc-900">
+            About
           </Link>
         </nav>
         <div className="flex items-center gap-3">
