@@ -12,12 +12,6 @@ type KeyRecord = {
   createdAt: string;
 };
 
-function formatCreatedDate(iso: string) {
-  const d = new Date(iso);
-  if (Number.isNaN(d.getTime())) return iso;
-  return d.toLocaleDateString(undefined, { day: "2-digit", month: "short", year: "numeric" });
-}
-
 export default function AdminClient() {
   const [keys, setKeys] = useState<KeyRecord[]>([]);
   const [loading, setLoading] = useState(true);
@@ -319,7 +313,7 @@ export default function AdminClient() {
       </header>
 
       <main className="w-full px-6 py-10 md:px-10 md:py-14">
-        <div className="w-full">
+        <div className="mx-auto w-full max-w-[1200px]">
           <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
             <div>
               <h1 className="text-balance text-3xl font-semibold tracking-tight text-zinc-900 md:text-4xl">
@@ -414,22 +408,32 @@ export default function AdminClient() {
             ) : keys.length === 0 ? (
               <div className="px-6 py-10 text-sm text-zinc-500 md:px-8">No clients yet.</div>
             ) : (
-              <div className="w-full overflow-x-auto">
-                <table className="w-full min-w-[1280px] border-separate border-spacing-0">
+              <div className="w-full">
+                <table className="w-full table-fixed border-separate border-spacing-0">
+                  <colgroup>
+                    <col style={{ width: "28%" }} />
+                    <col style={{ width: "14%" }} />
+                    <col style={{ width: "28%" }} />
+                    <col style={{ width: "10%" }} />
+                    <col style={{ width: "5%" }} />
+                    <col style={{ width: "5%" }} />
+                    <col style={{ width: "5%" }} />
+                    <col style={{ width: "5%" }} />
+                  </colgroup>
                   <thead>
                     <tr className="text-left text-xs font-semibold uppercase tracking-wider text-zinc-500">
                       <th className="border-b border-surface-border px-6 py-3 md:px-8">
                         Client Name
-                      </th>
-                      <th className="border-b border-surface-border px-6 py-3 md:px-8">
-                        Created
                       </th>
                       <th className="border-b border-surface-border px-6 py-3 md:px-8">API Key</th>
                       <th className="border-b border-surface-border px-6 py-3 md:px-8">
                         Usage / Limit
                       </th>
                       <th className="border-b border-surface-border px-6 py-3 md:px-8">Status</th>
-                      <th className="border-b border-surface-border px-6 py-3 md:px-8">Actions</th>
+                      <th className="border-b border-surface-border px-2 py-3 text-center">Edit</th>
+                      <th className="border-b border-surface-border px-2 py-3 text-center">Copy</th>
+                      <th className="border-b border-surface-border px-2 py-3 text-center">Reset</th>
+                      <th className="border-b border-surface-border px-2 py-3 text-center">Delete</th>
                     </tr>
                   </thead>
                   <tbody className="text-sm">
@@ -439,7 +443,6 @@ export default function AdminClient() {
                           ? Math.min(100, Math.round((k.usageCount / k.usageLimit) * 100))
                           : 0;
                       const blocked = k.usageLimit > 0 && k.usageCount >= k.usageLimit;
-                      const created = formatCreatedDate(k.createdAt);
                       return (
                         <tr key={k.id} className="align-middle">
                           <td className="border-b border-surface-border px-6 py-5 md:px-8">
@@ -448,9 +451,6 @@ export default function AdminClient() {
                                 {k.clientName}
                               </p>
                             </div>
-                          </td>
-                          <td className="border-b border-surface-border px-6 py-5 text-sm text-zinc-700 md:px-8">
-                            {created}
                           </td>
                           <td className="border-b border-surface-border px-6 py-5 md:px-8">
                             <span className="rounded-lg border border-surface-border bg-white px-2.5 py-1 font-mono text-xs text-zinc-700">
@@ -482,37 +482,41 @@ export default function AdminClient() {
                               {blocked ? "Blocked" : "Active"}
                             </span>
                           </td>
-                          <td className="border-b border-surface-border px-6 py-5 md:px-8">
-                            <div className="flex flex-nowrap items-center gap-2 whitespace-nowrap">
-                              <button
-                                type="button"
-                                onClick={() => openEditModal(k)}
-                                className="inline-flex h-9 items-center justify-center rounded-full border border-surface-border bg-white px-3 text-sm font-semibold text-zinc-900 transition hover:border-zinc-300 hover:bg-surface-raised"
-                              >
-                                Edit
-                              </button>
-                              <button
-                                type="button"
-                                onClick={() => void copyWidgetCode(k.key)}
-                                className="inline-flex h-9 items-center justify-center rounded-full border border-surface-border bg-white px-3 text-sm font-semibold text-zinc-900 transition hover:border-zinc-300 hover:bg-surface-raised"
-                              >
-                                Copy
-                              </button>
-                              <button
-                                type="button"
-                                onClick={() => void resetKeyUsage(k.id)}
-                                className="inline-flex h-9 items-center justify-center rounded-full border border-surface-border bg-white px-3 text-sm font-semibold text-zinc-900 transition hover:border-zinc-300 hover:bg-surface-raised"
-                              >
-                                Reset
-                              </button>
-                              <button
-                                type="button"
-                                onClick={() => void deleteKey(k.id)}
-                                className="inline-flex h-9 items-center justify-center rounded-full border border-red-200 bg-red-50 px-3 text-sm font-semibold text-red-700 transition hover:border-red-300 hover:bg-red-100"
-                              >
-                                Delete
-                              </button>
-                            </div>
+                          <td className="border-b border-surface-border px-2 py-5 text-center">
+                            <button
+                              type="button"
+                              onClick={() => openEditModal(k)}
+                              className="inline-flex h-9 items-center justify-center rounded-full border border-surface-border bg-white px-3 text-xs font-semibold text-zinc-900 transition hover:border-zinc-300 hover:bg-surface-raised"
+                            >
+                              Edit
+                            </button>
+                          </td>
+                          <td className="border-b border-surface-border px-2 py-5 text-center">
+                            <button
+                              type="button"
+                              onClick={() => void copyWidgetCode(k.key)}
+                              className="inline-flex h-9 items-center justify-center rounded-full border border-surface-border bg-white px-3 text-xs font-semibold text-zinc-900 transition hover:border-zinc-300 hover:bg-surface-raised"
+                            >
+                              Copy
+                            </button>
+                          </td>
+                          <td className="border-b border-surface-border px-2 py-5 text-center">
+                            <button
+                              type="button"
+                              onClick={() => void resetKeyUsage(k.id)}
+                              className="inline-flex h-9 items-center justify-center rounded-full border border-surface-border bg-white px-3 text-xs font-semibold text-zinc-900 transition hover:border-zinc-300 hover:bg-surface-raised"
+                            >
+                              Reset
+                            </button>
+                          </td>
+                          <td className="border-b border-surface-border px-2 py-5 text-center">
+                            <button
+                              type="button"
+                              onClick={() => void deleteKey(k.id)}
+                              className="inline-flex h-9 items-center justify-center rounded-full border border-red-200 bg-red-50 px-3 text-xs font-semibold text-red-700 transition hover:border-red-300 hover:bg-red-100"
+                            >
+                              Delete
+                            </button>
                           </td>
                         </tr>
                       );
