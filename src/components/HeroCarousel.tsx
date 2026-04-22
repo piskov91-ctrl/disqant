@@ -41,10 +41,11 @@ export function HeroCarousel() {
         <p className="mt-4 text-xs leading-relaxed text-zinc-500">Video is muted and loops by default.</p>
 
         <div className="mt-12 w-full">
-          <div className="overflow-hidden rounded-2xl shadow-xl shadow-zinc-200/70">
+          <div className="flex w-full justify-center">
             <video
               src="/demo-video.mp4"
-              className="block w-full max-w-full"
+              className="block w-auto max-w-full rounded-2xl object-contain shadow-xl shadow-zinc-200/70"
+              style={{ maxHeight: "70vh" }}
               autoPlay
               muted
               loop
