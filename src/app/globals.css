@@ -3,8 +3,8 @@
 @tailwind utilities;
 
 :root {
-  --foreground: #f4f4f5;
-  --muted: #a1a1aa;
+  --foreground: #0f172a;
+  --muted: #64748b;
 }
 
 html {
@@ -13,11 +13,15 @@ html {
 
 body {
   color: var(--foreground);
-  background: #0c0c0f;
+  background: #ffffff;
 }
 
 @layer utilities {
   .text-balance {
     text-wrap: balance;
+  }
+
+  .btn-accent-gradient {
+    @apply inline-flex items-center justify-center rounded-full bg-accent-gradient bg-[length:100%_100%] text-sm font-semibold text-white shadow-accent-glow transition hover:opacity-[0.96] hover:shadow-lg active:scale-[0.99];
   }
 }

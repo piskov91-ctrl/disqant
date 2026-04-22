@@ -33,19 +33,19 @@ export default function AdminGateClient() {
   return (
     <form onSubmit={submit} className="mt-6 space-y-4">
       <div>
-        <label className="block text-sm font-medium text-white">Admin password</label>
+        <label className="block text-sm font-medium text-zinc-900">Admin password</label>
         <input
           value={password}
           onChange={(e) => setPassword(e.target.value)}
           autoFocus
           type="password"
           placeholder="Enter password"
-          className="mt-2 block w-full rounded-xl border border-surface-border bg-surface px-4 py-3 text-sm text-zinc-200 outline-none transition focus:border-accent/60"
+          className="mt-2 block w-full rounded-xl border border-surface-border bg-white px-4 py-3 text-sm text-zinc-900 outline-none placeholder:text-zinc-400 transition focus:border-accent/60"
         />
       </div>
 
       {error && (
-        <div className="rounded-xl border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-200">
+        <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800">
           {error}
         </div>
       )}
@@ -53,11 +53,10 @@ export default function AdminGateClient() {
       <button
         type="submit"
         disabled={loading || password.trim().length === 0}
-        className="inline-flex h-12 w-full items-center justify-center rounded-full bg-accent px-8 text-sm font-semibold text-white shadow-[0_0_48px_-12px_rgba(124,92,255,0.45)] transition hover:bg-accent-muted disabled:cursor-not-allowed disabled:opacity-60"
+        className="btn-accent-gradient h-12 w-full px-8 text-sm disabled:cursor-not-allowed disabled:opacity-60"
       >
         {loading ? "Checking…" : "Unlock admin"}
       </button>
     </form>
   );
 }
-

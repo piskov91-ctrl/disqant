@@ -210,28 +210,28 @@ export default function AdminClient() {
   }
 
   return (
-    <div className="min-h-dvh bg-surface">
+    <div className="min-h-dvh bg-white">
       {editing && (
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-6"
+          className="fixed inset-0 z-50 flex items-center justify-center bg-zinc-900/40 p-6 backdrop-blur-sm"
           role="dialog"
           aria-modal="true"
           aria-labelledby="edit-title"
         >
-          <div className="w-full max-w-md rounded-2xl border border-surface-border bg-surface-raised p-6 shadow-2xl shadow-black/40">
+          <div className="w-full max-w-md rounded-2xl border border-surface-border bg-white p-6 shadow-xl shadow-zinc-200/80">
             <div className="flex items-start justify-between gap-4">
               <div className="min-w-0">
-                <p id="edit-title" className="text-base font-semibold text-white">
+                <p id="edit-title" className="text-base font-semibold text-zinc-900">
                   Edit client
                 </p>
-                <p className="mt-1 text-sm text-zinc-400">
+                <p className="mt-1 text-sm text-zinc-600">
                   Update client name and usage limit.
                 </p>
               </div>
               <button
                 type="button"
                 onClick={closeEditModal}
-                className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-surface-border bg-transparent text-white transition hover:border-zinc-600 hover:bg-surface-raised"
+                className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-surface-border bg-white text-zinc-700 transition hover:border-zinc-300 hover:bg-surface-raised"
                 aria-label="Close"
               >
                 ✕
@@ -240,20 +240,20 @@ export default function AdminClient() {
 
             <div className="mt-6 space-y-4">
               <div>
-                <label className="block text-sm font-medium text-white">Client name</label>
+                <label className="block text-sm font-medium text-zinc-900">Client name</label>
                 <input
                   value={editClientName}
                   onChange={(e) => setEditClientName(e.target.value)}
-                  className="mt-3 block w-full rounded-xl border border-surface-border bg-surface px-4 py-3 text-sm text-zinc-200 outline-none transition focus:border-accent/60"
+                  className="mt-3 block w-full rounded-xl border border-surface-border bg-white px-4 py-3 text-sm text-zinc-900 outline-none transition focus:border-accent/60"
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-white">Usage limit</label>
+                <label className="block text-sm font-medium text-zinc-900">Usage limit</label>
                 <input
                   value={editUsageLimit}
                   onChange={(e) => setEditUsageLimit(e.target.value)}
                   inputMode="numeric"
-                  className="mt-3 block w-full rounded-xl border border-surface-border bg-surface px-4 py-3 text-sm text-zinc-200 outline-none transition focus:border-accent/60"
+                  className="mt-3 block w-full rounded-xl border border-surface-border bg-white px-4 py-3 text-sm text-zinc-900 outline-none transition focus:border-accent/60"
                 />
               </div>
             </div>
@@ -263,7 +263,7 @@ export default function AdminClient() {
                 type="button"
                 onClick={closeEditModal}
                 disabled={savingEdit}
-                className="inline-flex h-11 flex-1 items-center justify-center rounded-full border border-surface-border bg-transparent text-sm font-semibold text-white transition hover:border-zinc-600 hover:bg-surface-raised disabled:cursor-not-allowed disabled:opacity-60"
+                className="inline-flex h-11 flex-1 items-center justify-center rounded-full border border-surface-border bg-white text-sm font-semibold text-zinc-900 transition hover:border-zinc-300 hover:bg-surface-raised disabled:cursor-not-allowed disabled:opacity-60"
               >
                 Cancel
               </button>
@@ -273,7 +273,7 @@ export default function AdminClient() {
                 disabled={
                   savingEdit || editClientName.trim().length === 0 || Number(editUsageLimit) <= 0
                 }
-                className="inline-flex h-11 flex-1 items-center justify-center rounded-full bg-accent px-5 text-sm font-semibold text-white transition hover:bg-accent-muted disabled:cursor-not-allowed disabled:opacity-60"
+                className="btn-accent-gradient h-11 flex-1 px-5 text-sm disabled:cursor-not-allowed disabled:opacity-60"
               >
                 {savingEdit ? "Saving…" : "Save"}
               </button>
@@ -281,22 +281,25 @@ export default function AdminClient() {
           </div>
         </div>
       )}
-      <header className="border-b border-surface-border bg-surface/80 backdrop-blur-xl">
+      <header className="border-b border-surface-border bg-white/80 backdrop-blur-xl">
         <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-6">
-          <Link href="/" className="flex items-center gap-2 text-lg font-semibold tracking-tight">
-            <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-accent/20 text-accent">
+          <Link
+            href="/"
+            className="flex items-center gap-2 text-lg font-semibold tracking-tight text-zinc-900"
+          >
+            <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-accent/15 text-accent">
               D
             </span>
             Disquant
           </Link>
           <div className="flex items-center gap-4">
-            <Link href="/" className="text-sm text-zinc-400 transition hover:text-white">
+            <Link href="/" className="text-sm text-zinc-600 transition hover:text-zinc-900">
               Back to landing
             </Link>
             <button
               type="button"
               onClick={logout}
-              className="text-sm text-zinc-400 transition hover:text-white"
+              className="text-sm text-zinc-600 transition hover:text-zinc-900"
             >
               Log out
             </button>
@@ -307,51 +310,51 @@ export default function AdminClient() {
       <main className="mx-auto max-w-7xl px-6 py-12 md:py-16">
         <div className="flex flex-col gap-10 lg:flex-row lg:items-start lg:gap-12">
           <div className="lg:w-[420px]">
-            <h1 className="text-balance text-3xl font-semibold tracking-tight text-white md:text-4xl">
+            <h1 className="text-balance text-3xl font-semibold tracking-tight text-zinc-900 md:text-4xl">
               Admin · API keys
             </h1>
-            <p className="mt-4 text-zinc-400">
+            <p className="mt-4 text-zinc-600">
               Create client API keys with usage limits. Keys are stored in Redis (Upstash/Vercel).
             </p>
 
             <form onSubmit={createKey} className="mt-8 space-y-5">
-              <div className="rounded-2xl border border-surface-border bg-surface-raised/30 p-5">
-                <label className="block text-sm font-medium text-white">Client name</label>
+              <div className="rounded-2xl border border-surface-border bg-surface-muted/50 p-5">
+                <label className="block text-sm font-medium text-zinc-900">Client name</label>
                 <input
                   value={clientName}
                   onChange={(e) => setClientName(e.target.value)}
                   placeholder="Acme Storefront"
-                  className="mt-3 block w-full rounded-xl border border-surface-border bg-surface px-4 py-3 text-sm text-zinc-200 outline-none transition focus:border-accent/60"
+                  className="mt-3 block w-full rounded-xl border border-surface-border bg-white px-4 py-3 text-sm text-zinc-900 outline-none placeholder:text-zinc-400 transition focus:border-accent/60"
                 />
               </div>
 
-              <div className="rounded-2xl border border-surface-border bg-surface-raised/30 p-5">
-                <label className="block text-sm font-medium text-white">Fashn.ai API key</label>
+              <div className="rounded-2xl border border-surface-border bg-surface-muted/50 p-5">
+                <label className="block text-sm font-medium text-zinc-900">Fashn.ai API key</label>
                 <input
                   value={fashnApiKey}
                   onChange={(e) => setFashnApiKey(e.target.value)}
                   placeholder="fa-…"
-                  className="mt-3 block w-full rounded-xl border border-surface-border bg-surface px-4 py-3 text-sm text-zinc-200 outline-none transition focus:border-accent/60"
+                  className="mt-3 block w-full rounded-xl border border-surface-border bg-white px-4 py-3 text-sm text-zinc-900 outline-none placeholder:text-zinc-400 transition focus:border-accent/60"
                 />
                 <p className="mt-2 text-xs text-zinc-500">
                   Stored server-side only. Not shown in the UI after saving.
                 </p>
               </div>
 
-              <div className="rounded-2xl border border-surface-border bg-surface-raised/30 p-5">
-                <label className="block text-sm font-medium text-white">Usage limit</label>
+              <div className="rounded-2xl border border-surface-border bg-surface-muted/50 p-5">
+                <label className="block text-sm font-medium text-zinc-900">Usage limit</label>
                 <input
                   value={usageLimit}
                   onChange={(e) => setUsageLimit(e.target.value)}
                   inputMode="numeric"
                   placeholder="1000"
-                  className="mt-3 block w-full rounded-xl border border-surface-border bg-surface px-4 py-3 text-sm text-zinc-200 outline-none transition focus:border-accent/60"
+                  className="mt-3 block w-full rounded-xl border border-surface-border bg-white px-4 py-3 text-sm text-zinc-900 outline-none placeholder:text-zinc-400 transition focus:border-accent/60"
                 />
                 <p className="mt-2 text-xs text-zinc-500">Total allowed calls before blocking.</p>
               </div>
 
               {error && (
-                <div className="rounded-xl border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-200">
+                <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800">
                   {error}
                 </div>
               )}
@@ -359,7 +362,7 @@ export default function AdminClient() {
               <button
                 type="submit"
                 disabled={creating || clientName.trim().length === 0 || fashnApiKey.trim().length === 0}
-                className="inline-flex h-12 w-full items-center justify-center rounded-full bg-accent px-8 text-sm font-semibold text-white shadow-[0_0_48px_-12px_rgba(124,92,255,0.45)] transition hover:bg-accent-muted disabled:cursor-not-allowed disabled:opacity-60"
+                className="btn-accent-gradient h-12 w-full px-8 text-sm disabled:cursor-not-allowed disabled:opacity-60"
               >
                 {creating ? "Creating…" : "Create API key"}
               </button>
@@ -368,7 +371,7 @@ export default function AdminClient() {
                 type="button"
                 onClick={load}
                 disabled={loading}
-                className="inline-flex h-11 w-full items-center justify-center rounded-full border border-surface-border bg-transparent text-sm font-semibold text-white transition hover:border-zinc-600 hover:bg-surface-raised disabled:cursor-not-allowed disabled:opacity-60"
+                className="inline-flex h-11 w-full items-center justify-center rounded-full border border-surface-border bg-white text-sm font-semibold text-zinc-900 transition hover:border-zinc-300 hover:bg-surface-raised disabled:cursor-not-allowed disabled:opacity-60"
               >
                 Refresh list
               </button>
@@ -376,17 +379,17 @@ export default function AdminClient() {
           </div>
 
           <div className="flex-1">
-            <div className="rounded-2xl border border-surface-border bg-surface-raised/20 p-6">
+            <div className="rounded-2xl border border-surface-border bg-surface-muted/40 p-6">
               <div className="flex flex-col gap-1 sm:flex-row sm:items-end sm:justify-between">
                 <div>
-                  <p className="text-sm font-semibold text-white">Keys</p>
-                  <p className="mt-1 text-sm text-zinc-400">
+                  <p className="text-sm font-semibold text-zinc-900">Keys</p>
+                  <p className="mt-1 text-sm text-zinc-600">
                     {keys.length} total · Usage {remainingTotal.used}/{remainingTotal.limit}
                   </p>
                 </div>
               </div>
 
-              <div className="mt-6 overflow-hidden rounded-xl border border-surface-border">
+              <div className="mt-6 overflow-hidden rounded-xl border border-surface-border bg-white">
                 {loading ? (
                   <div className="px-6 py-14 text-center text-sm text-zinc-500">Loading…</div>
                 ) : keys.length === 0 ? (
@@ -401,18 +404,18 @@ export default function AdminClient() {
                       return (
                         <article
                           key={k.id}
-                          className="flex min-h-[220px] flex-col rounded-2xl border border-surface-border bg-surface-raised/20 p-5"
+                          className="flex min-h-[220px] flex-col rounded-2xl border border-surface-border bg-surface-muted/30 p-5"
                         >
                           <div className="flex items-start justify-between gap-3">
                             <div className="min-w-0">
-                              <p className="truncate text-sm font-semibold text-white">
+                              <p className="truncate text-sm font-semibold text-zinc-900">
                                 {k.clientName}
                               </p>
-                              <p className="mt-1 truncate font-mono text-xs text-zinc-400">
+                              <p className="mt-1 truncate font-mono text-xs text-zinc-500">
                                 {k.key}
                               </p>
                             </div>
-                            <div className="shrink-0 rounded-full border border-surface-border bg-surface px-3 py-1 text-xs text-zinc-300">
+                            <div className="shrink-0 rounded-full border border-surface-border bg-white px-3 py-1 text-xs text-zinc-700">
                               {k.usageCount}/{k.usageLimit}
                             </div>
                           </div>
@@ -422,9 +425,9 @@ export default function AdminClient() {
                               <span>Usage</span>
                               <span>{pct}%</span>
                             </div>
-                            <div className="mt-2 h-2 w-full overflow-hidden rounded-full border border-surface-border bg-surface">
+                            <div className="mt-2 h-2 w-full overflow-hidden rounded-full border border-surface-border bg-surface-muted">
                               <div
-                                className="h-full rounded-full bg-accent"
+                                className="h-full rounded-full bg-gradient-to-r from-[#7c3aed] to-[#ec4899]"
                                 style={{ width: `${pct}%` }}
                               />
                             </div>
@@ -435,14 +438,14 @@ export default function AdminClient() {
                               <button
                                 type="button"
                                 onClick={() => openEditModal(k)}
-                                className="inline-flex h-9 items-center justify-center rounded-full border border-surface-border bg-surface-raised/30 px-4 text-sm font-semibold text-white transition hover:border-zinc-600 hover:bg-surface-raised"
+                                className="inline-flex h-9 items-center justify-center rounded-full border border-surface-border bg-white px-4 text-sm font-semibold text-zinc-900 transition hover:border-zinc-300 hover:bg-surface-raised"
                               >
                                 Edit
                               </button>
                               <button
                                 type="button"
                                 onClick={() => copyWidgetCode(k.key, k.id)}
-                                className="inline-flex h-9 items-center justify-center rounded-full border border-surface-border bg-surface-raised/30 px-4 text-sm font-semibold text-white transition hover:border-zinc-600 hover:bg-surface-raised"
+                                className="inline-flex h-9 items-center justify-center rounded-full border border-surface-border bg-white px-4 text-sm font-semibold text-zinc-900 transition hover:border-zinc-300 hover:bg-surface-raised"
                               >
                                 {copiedId === k.id ? "Copied" : "Copy code"}
                               </button>
@@ -450,7 +453,7 @@ export default function AdminClient() {
                                 type="button"
                                 onClick={() => resetKeyUsage(k.id)}
                                 disabled={resettingId === k.id}
-                                className="inline-flex h-9 items-center justify-center rounded-full border border-surface-border bg-surface-raised/30 px-4 text-sm font-semibold text-white transition hover:border-zinc-600 hover:bg-surface-raised disabled:cursor-not-allowed disabled:opacity-60"
+                                className="inline-flex h-9 items-center justify-center rounded-full border border-surface-border bg-white px-4 text-sm font-semibold text-zinc-900 transition hover:border-zinc-300 hover:bg-surface-raised disabled:cursor-not-allowed disabled:opacity-60"
                               >
                                 {resettingId === k.id ? "Resetting…" : "Reset"}
                               </button>
@@ -458,7 +461,7 @@ export default function AdminClient() {
                                 type="button"
                                 onClick={() => deleteKey(k.id)}
                                 disabled={deletingId === k.id}
-                                className="inline-flex h-9 items-center justify-center rounded-full border border-red-500/50 bg-red-500/15 px-4 text-sm font-semibold text-red-100 transition hover:border-red-400/70 hover:bg-red-500/25 disabled:cursor-not-allowed disabled:opacity-60"
+                                className="inline-flex h-9 items-center justify-center rounded-full border border-red-200 bg-red-50 px-4 text-sm font-semibold text-red-700 transition hover:border-red-300 hover:bg-red-100 disabled:cursor-not-allowed disabled:opacity-60"
                               >
                                 {deletingId === k.id ? "Deleting…" : "Delete"}
                               </button>

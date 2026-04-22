@@ -81,13 +81,13 @@ const DEMO_WEAR_MODAL_CSS =
   ".dq-wrap{display:inline-block;position:relative;vertical-align:top;line-height:0;max-width:100%;}" +
   ".dq-wrap>img{display:block;max-width:100%;height:auto;vertical-align:top;}" +
   ".dq-overlay{position:absolute;inset:auto 12px 12px auto;z-index:2147483646;display:flex;align-items:center;pointer-events:auto;}" +
-  ".dq-wear-btn{position:relative;appearance:none;border:0;cursor:pointer;padding:10px 14px;border-radius:999px;color:#fff;font:900 13px/1 system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;letter-spacing:.2px;background:linear-gradient(135deg,#7c5cff 0%,#ff5ca8 55%,#ffb84a 100%);box-shadow:0 16px 34px rgba(124,92,255,.24),0 12px 30px rgba(255,92,168,.18);transform:translateY(0) scale(1);transition:transform .18s ease, filter .18s ease, box-shadow .18s ease;}" +
-  ".dq-wear-btn:hover{transform:translateY(-2px) scale(1.03);filter:saturate(1.08);box-shadow:0 22px 44px rgba(124,92,255,.26),0 18px 36px rgba(255,92,168,.22);}" +
+  ".dq-wear-btn{position:relative;appearance:none;border:0;cursor:pointer;padding:10px 14px;border-radius:999px;color:#fff;font:900 13px/1 system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;letter-spacing:.2px;background:linear-gradient(135deg,#7c3aed 0%,#ec4899 100%);box-shadow:0 16px 34px rgba(124,58,237,.22),0 12px 30px rgba(236,72,153,.16);transform:translateY(0) scale(1);transition:transform .18s ease, filter .18s ease, box-shadow .18s ease;}" +
+  ".dq-wear-btn:hover{transform:translateY(-2px) scale(1.03);filter:saturate(1.08);box-shadow:0 22px 44px rgba(124,58,237,.24),0 18px 36px rgba(236,72,153,.2);}" +
   ".dq-wear-btn:active{transform:translateY(-1px) scale(.99);}" +
-  ".dq-wear-btn::after{content:\"\";position:absolute;inset:-2px;border-radius:999px;opacity:0;box-shadow:0 0 0 0 rgba(255,184,74,.38);transition:opacity .18s ease;}" +
+  ".dq-wear-btn::after{content:\"\";position:absolute;inset:-2px;border-radius:999px;opacity:0;box-shadow:0 0 0 0 rgba(236,72,153,.38);transition:opacity .18s ease;}" +
   ".dq-wear-btn:hover::after{opacity:1;animation:dq-pulse 1.35s ease-out infinite;}" +
-  "@keyframes dq-pulse{0%{box-shadow:0 0 0 0 rgba(255,184,74,.32)}100%{box-shadow:0 0 0 16px rgba(255,184,74,0)}}" +
-  ".dq-backdrop{position:fixed;inset:0;z-index:2147483000;background:rgba(10,10,14,.55);display:flex;align-items:center;justify-content:center;padding:14px;opacity:0;transition:opacity .18s ease;}" +
+  "@keyframes dq-pulse{0%{box-shadow:0 0 0 0 rgba(236,72,153,.32)}100%{box-shadow:0 0 0 16px rgba(236,72,153,0)}}" +
+  ".dq-backdrop{position:fixed;inset:0;z-index:2147483000;background:rgba(15,23,42,.45);display:flex;align-items:center;justify-content:center;padding:14px;opacity:0;transition:opacity .18s ease;}" +
   ".dq-backdrop.dq-open{opacity:1;}" +
   ".dq-modal{width:min(720px,100%);max-height:90vh;background:#fff;border:1px solid rgba(15,15,20,.08);border-radius:20px;overflow:hidden;box-shadow:0 30px 80px rgba(0,0,0,.30);display:flex;flex-direction:column;transform:translateY(10px) scale(.985);opacity:0;transition:transform .18s ease, opacity .18s ease;}" +
   ".dq-backdrop.dq-open .dq-modal{transform:translateY(0) scale(1);opacity:1;}" +
@@ -105,17 +105,17 @@ const DEMO_WEAR_MODAL_CSS =
   ".dq-empty span{font:600 12px/1.3 system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;}" +
   ".dq-processing{position:absolute;inset:0;display:none;align-items:center;justify-content:center;flex-direction:column;gap:10px;z-index:4;background:rgba(255,255,255,.62);backdrop-filter:blur(8px);}" +
   ".dq-processing.is-on{display:flex;}" +
-  ".dq-spin{width:34px;height:34px;border-radius:999px;border:3px solid rgba(15,15,20,.14);border-top-color:#7c5cff;animation:dqspin 1s linear infinite;}" +
+  ".dq-spin{width:34px;height:34px;border-radius:999px;border:3px solid rgba(15,15,20,.14);border-top-color:#7c3aed;animation:dqspin 1s linear infinite;}" +
   "@keyframes dqspin{to{transform:rotate(360deg);}}" +
   ".dq-processing-text{font:900 13px/1.25 system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;color:#0f0f14;text-align:center;max-width:420px;padding:0 14px;}" +
   ".dq-progress{position:absolute;left:12px;right:12px;bottom:12px;z-index:5;height:10px;border-radius:999px;background:rgba(15,15,20,.10);overflow:hidden;display:none;}" +
   ".dq-progress.is-on{display:block;}" +
-  ".dq-progress>span{display:block;height:100%;width:0%;background:linear-gradient(135deg,#7c5cff,#ff5ca8,#ffb84a);transition:width .12s ease;}" +
+  ".dq-progress>span{display:block;height:100%;width:0%;background:linear-gradient(135deg,#7c3aed,#ec4899);transition:width .12s ease;}" +
   ".dq-row{display:flex;gap:10px;flex-wrap:wrap;}" +
   ".dq-choice{flex:1;min-width:160px;display:flex;align-items:center;gap:10px;justify-content:center;padding:12px 12px;border-radius:16px;border:1px solid rgba(15,15,20,.10);background:#fff;color:#0f0f14;cursor:pointer;box-shadow:0 10px 26px rgba(0,0,0,.06);font:900 12px/1 system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;transition:transform .16s ease, box-shadow .16s ease;}" +
   ".dq-choice:hover{transform:translateY(-1px);box-shadow:0 14px 30px rgba(0,0,0,.09);}" +
   ".dq-ico{width:18px;height:18px;display:inline-block;opacity:.92;}" +
-  ".dq-primary{appearance:none;border:0;cursor:pointer;border-radius:16px;padding:12px 12px;background:linear-gradient(135deg,#7c5cff,#ff5ca8);color:#fff;font:900 13px/1 system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;box-shadow:0 16px 34px rgba(124,92,255,.20),0 12px 30px rgba(255,92,168,.14);transition:transform .16s ease, filter .16s ease, box-shadow .16s ease;}" +
+  ".dq-primary{appearance:none;border:0;cursor:pointer;border-radius:16px;padding:12px 12px;background:linear-gradient(135deg,#7c3aed,#ec4899);color:#fff;font:900 13px/1 system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;box-shadow:0 16px 34px rgba(124,58,237,.18),0 12px 30px rgba(236,72,153,.14);transition:transform .16s ease, filter .16s ease, box-shadow .16s ease;}" +
   ".dq-primary:hover{transform:translateY(-1px) scale(1.01);filter:saturate(1.05);}" +
   ".dq-primary:disabled{opacity:.55;cursor:not-allowed;transform:none;filter:none;}" +
   ".dq-save{appearance:none;border:1px solid rgba(15,15,20,.12);background:#fff;color:#0f0f14;cursor:pointer;border-radius:16px;padding:12px 12px;font:900 13px/1 system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;box-shadow:0 10px 26px rgba(0,0,0,.06);transition:transform .16s ease, box-shadow .16s ease;}" +
@@ -522,7 +522,7 @@ export default function DemoClient() {
   }
 
   return (
-    <div className="min-h-dvh bg-surface">
+    <div className="min-h-dvh bg-white">
       {wearOpen && (
         <div
           role="presentation"
@@ -648,21 +648,21 @@ export default function DemoClient() {
 
       {showUnavailableModal && (
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-6"
+          className="fixed inset-0 z-50 flex items-center justify-center bg-zinc-900/40 p-6 backdrop-blur-sm"
           role="dialog"
           aria-modal="true"
           aria-labelledby="unavailable-title"
         >
-          <div className="w-full max-w-md rounded-2xl border border-amber-500/30 bg-surface-raised p-6 shadow-2xl shadow-black/40">
+          <div className="w-full max-w-md rounded-2xl border border-amber-200 bg-white p-6 shadow-xl shadow-zinc-200/80">
             <div className="flex items-start gap-4">
-              <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-amber-500/15 text-2xl text-amber-300">
+              <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-amber-100 text-2xl text-amber-700">
                 ⚠️
               </div>
               <div className="min-w-0">
-                <p id="unavailable-title" className="text-base font-semibold text-white">
+                <p id="unavailable-title" className="text-base font-semibold text-zinc-900">
                   Virtual try-on temporarily unavailable
                 </p>
-                <p className="mt-1 text-sm text-zinc-400">
+                <p className="mt-1 text-sm text-zinc-600">
                   Please try again later or contact support.
                 </p>
               </div>
@@ -671,7 +671,7 @@ export default function DemoClient() {
               <button
                 type="button"
                 onClick={() => setShowUnavailableModal(false)}
-                className="inline-flex h-10 items-center justify-center rounded-full bg-amber-500 px-5 text-sm font-semibold text-surface transition hover:bg-amber-400"
+                className="inline-flex h-10 items-center justify-center rounded-full bg-gradient-to-r from-[#7c3aed] to-[#ec4899] px-5 text-sm font-semibold text-white shadow-accent-glow transition hover:opacity-[0.96]"
               >
                 OK
               </button>
@@ -679,22 +679,25 @@ export default function DemoClient() {
           </div>
         </div>
       )}
-      <header className="border-b border-surface-border bg-surface/80 backdrop-blur-xl">
+      <header className="border-b border-surface-border bg-white/80 backdrop-blur-xl">
         <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-6">
-          <Link href="/" className="flex items-center gap-2 text-lg font-semibold tracking-tight">
-            <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-accent/20 text-accent">
+          <Link
+            href="/"
+            className="flex items-center gap-2 text-lg font-semibold tracking-tight text-zinc-900"
+          >
+            <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-accent/15 text-accent">
               D
             </span>
             Disquant
           </Link>
           <div className="flex items-center gap-4">
-            <Link href="/" className="text-sm text-zinc-400 transition hover:text-white">
+            <Link href="/" className="text-sm text-zinc-600 transition hover:text-zinc-900">
               Back to landing
             </Link>
             <button
               type="button"
               onClick={logout}
-              className="text-sm text-zinc-400 transition hover:text-white"
+              className="text-sm text-zinc-600 transition hover:text-zinc-900"
             >
               Log out
             </button>
@@ -703,16 +706,16 @@ export default function DemoClient() {
       </header>
 
       <main className="mx-auto max-w-4xl px-6 py-12 md:py-16">
-        <h1 className="text-balance text-3xl font-semibold tracking-tight text-white md:text-4xl">
+        <h1 className="text-balance text-3xl font-semibold tracking-tight text-zinc-900 md:text-4xl">
           Virtual try-on demo
         </h1>
-        <p className="mt-4 text-zinc-400">
-          Tap <span className="font-semibold text-zinc-200">Wear Me ✨</span> on a sample product, then upload your
+        <p className="mt-4 text-zinc-600">
+          Tap <span className="font-semibold text-zinc-900">Wear Me ✨</span> on a sample product, then upload your
           photo in the modal (gallery or camera), generate, and download your try-on.
         </p>
 
-        <div className="mt-8 rounded-2xl border border-surface-border bg-surface-raised/30 p-5">
-          <label className="block text-sm font-medium text-white">Sample products</label>
+        <div className="mt-8 rounded-2xl border border-surface-border bg-surface-muted/60 p-5">
+          <label className="block text-sm font-medium text-zinc-900">Sample products</label>
           <p className="mt-1 text-xs text-zinc-500">Pick a preset — highlighted card is your current selection.</p>
 
           <div className="mt-4 grid gap-3 sm:grid-cols-2">
@@ -721,15 +724,15 @@ export default function DemoClient() {
               return (
                 <article
                   key={p.id}
-                  className={`group overflow-hidden rounded-2xl border text-left transition ${
+                  className={`group overflow-hidden rounded-2xl border bg-white text-left shadow-sm transition ${
                     selected
-                      ? "border-accent/60 bg-accent/10"
-                      : "border-surface-border bg-transparent hover:border-zinc-600 hover:bg-surface-raised/30"
+                      ? "border-accent/50 ring-2 ring-accent/25"
+                      : "border-surface-border hover:border-zinc-300 hover:shadow-md"
                   }`}
                 >
                   <div
                     role="presentation"
-                    className="relative aspect-[4/3] cursor-pointer bg-black/30"
+                    className="relative aspect-[4/3] cursor-pointer bg-zinc-100"
                     onClick={() => setSelectedPresetId(p.id)}
                   >
                     {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -756,11 +759,11 @@ export default function DemoClient() {
                   </div>
                   <div
                     role="presentation"
-                    className="cursor-pointer p-4"
+                    className="cursor-pointer border-t border-surface-border bg-white p-4"
                     onClick={() => setSelectedPresetId(p.id)}
                   >
-                    <p className="text-sm font-semibold text-white">{p.name}</p>
-                    <p className="mt-1 text-xs font-semibold text-zinc-300">{p.label}</p>
+                    <p className="text-sm font-semibold text-zinc-900">{p.name}</p>
+                    <p className="mt-1 text-xs font-semibold text-zinc-600">{p.label}</p>
                   </div>
                 </article>
               );
@@ -768,8 +771,8 @@ export default function DemoClient() {
           </div>
         </div>
 
-        <p className="mt-6 rounded-2xl border border-surface-border bg-surface-raised/30 p-4 text-xs text-zinc-500">
-          Try-on uses Fashn <span className="font-semibold text-zinc-300">balanced</span> generation. Images are
+        <p className="mt-6 rounded-2xl border border-surface-border bg-surface-muted/50 p-4 text-xs text-zinc-600">
+          Try-on uses Fashn <span className="font-semibold text-zinc-800">balanced</span> generation. Images are
           auto-compressed to max 1000px before the API call.
           {selectedPreset?.id === "sneakers"
             ? " Sneakers use a shoes category hint; other presets use tops or bottoms as appropriate."

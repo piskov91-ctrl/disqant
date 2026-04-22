@@ -40,10 +40,10 @@ export function Pricing() {
         <h2 className="text-center text-sm font-semibold uppercase tracking-widest text-accent">
           Pricing
         </h2>
-        <p className="mx-auto mt-3 max-w-2xl text-center text-3xl font-semibold tracking-tight text-white md:text-4xl">
+        <p className="mx-auto mt-3 max-w-2xl text-center text-3xl font-semibold tracking-tight text-zinc-900 md:text-4xl">
           Plans that grow with your traffic
         </p>
-        <p className="mx-auto mt-4 max-w-xl text-center text-zinc-400">
+        <p className="mx-auto mt-4 max-w-xl text-center text-zinc-600">
           Transparent usage. Overage bundles available. Annual billing saves two months.
         </p>
         <div className="mt-16 grid gap-6 lg:grid-cols-3">
@@ -52,24 +52,24 @@ export function Pricing() {
               key={plan.name}
               className={`relative flex flex-col rounded-2xl border p-8 ${
                 plan.highlighted
-                  ? "border-accent/50 bg-surface-raised shadow-[0_0_60px_-20px_rgba(124,92,255,0.45)]"
-                  : "border-surface-border bg-surface-raised/30"
+                  ? "border-accent/40 bg-surface-raised shadow-accent-card"
+                  : "border-surface-border bg-white"
               }`}
             >
               {plan.highlighted && (
-                <span className="absolute -top-3 left-1/2 -translate-x-1/2 rounded-full bg-accent px-3 py-0.5 text-xs font-semibold text-white">
+                <span className="absolute -top-3 left-1/2 -translate-x-1/2 rounded-full bg-gradient-to-r from-[#7c3aed] to-[#ec4899] px-3 py-0.5 text-xs font-semibold text-white">
                   Most popular
                 </span>
               )}
-              <h3 className="text-lg font-semibold text-white">{plan.name}</h3>
-              <p className="mt-2 text-sm text-zinc-400">{plan.description}</p>
+              <h3 className="text-lg font-semibold text-zinc-900">{plan.name}</h3>
+              <p className="mt-2 text-sm text-zinc-600">{plan.description}</p>
               <div className="mt-6 flex items-baseline gap-1">
-                <span className="text-4xl font-semibold tracking-tight text-white">{plan.price}</span>
-                {plan.period && (
-                  <span className="text-sm text-zinc-500">{plan.period}</span>
-                )}
+                <span className="text-4xl font-semibold tracking-tight text-zinc-900">
+                  {plan.price}
+                </span>
+                {plan.period && <span className="text-sm text-zinc-500">{plan.period}</span>}
               </div>
-              <ul className="mt-8 flex-1 space-y-3 text-sm text-zinc-300">
+              <ul className="mt-8 flex-1 space-y-3 text-sm text-zinc-700">
                 {plan.features.map((f) => (
                   <li key={f} className="flex gap-2">
                     <span className="text-accent">✓</span>
@@ -81,8 +81,8 @@ export function Pricing() {
                 href={plan.highlighted ? "/demo" : "#"}
                 className={`mt-8 inline-flex h-11 items-center justify-center rounded-full text-sm font-semibold transition ${
                   plan.highlighted
-                    ? "bg-accent text-white hover:bg-accent-muted"
-                    : "border border-surface-border bg-transparent text-white hover:border-zinc-600 hover:bg-surface-raised"
+                    ? "bg-gradient-to-r from-[#7c3aed] to-[#ec4899] text-white shadow-accent-glow hover:opacity-[0.96]"
+                    : "border border-surface-border bg-white text-zinc-900 hover:border-zinc-300 hover:bg-surface-raised"
                 }`}
               >
                 {plan.cta}

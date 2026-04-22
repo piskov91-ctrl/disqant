@@ -20,17 +20,17 @@ export function Features() {
         <h2 className="text-center text-sm font-semibold uppercase tracking-widest text-accent">
           Why Disquant
         </h2>
-        <p className="mx-auto mt-3 max-w-2xl text-center text-3xl font-semibold tracking-tight text-white md:text-4xl">
+        <p className="mx-auto mt-3 max-w-2xl text-center text-3xl font-semibold tracking-tight text-zinc-900 md:text-4xl">
           Everything you need to sell with confidence online
         </p>
         <div className="mt-16 grid gap-6 md:grid-cols-3">
           {items.map((item) => (
             <article
               key={item.title}
-              className="rounded-2xl border border-surface-border bg-surface-raised/40 p-8 transition hover:border-zinc-700 hover:bg-surface-raised/60"
+              className="rounded-2xl border border-surface-border bg-surface-raised p-8 transition hover:border-zinc-300 hover:bg-surface-muted"
             >
-              <h3 className="text-lg font-semibold text-white">{item.title}</h3>
-              <p className="mt-3 text-sm leading-relaxed text-zinc-400">{item.body}</p>
+              <h3 className="text-lg font-semibold text-zinc-900">{item.title}</h3>
+              <p className="mt-3 text-sm leading-relaxed text-zinc-600">{item.body}</p>
             </article>
           ))}
         </div>
