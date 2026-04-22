@@ -138,16 +138,22 @@ export default function Home() {
           <div className="mx-auto max-w-6xl px-6">
             <div className="grid gap-6 md:grid-cols-3">
               <div className="rounded-2xl border border-surface-border bg-white p-8 shadow-sm">
-                <div className="text-4xl font-semibold tracking-tight text-zinc-900">30s</div>
-                <div className="mt-2 text-sm font-medium text-zinc-700">average try-on time</div>
+                <div className="text-4xl font-semibold tracking-tight text-zinc-900">Under 30 seconds</div>
+                <div className="mt-2 text-sm font-medium text-zinc-700">
+                  Average time for a shopper to try on a garment
+                </div>
               </div>
               <div className="rounded-2xl border border-surface-border bg-white p-8 shadow-sm">
-                <div className="text-4xl font-semibold tracking-tight text-zinc-900">1</div>
-                <div className="mt-2 text-sm font-medium text-zinc-700">line of code to install</div>
+                <div className="text-4xl font-semibold tracking-tight text-zinc-900">1 line of code</div>
+                <div className="mt-2 text-sm font-medium text-zinc-700">
+                  All it takes to add virtual try-on to your store
+                </div>
               </div>
               <div className="rounded-2xl border border-surface-border bg-white p-8 shadow-sm">
-                <div className="text-4xl font-semibold tracking-tight text-zinc-900">Any</div>
-                <div className="mt-2 text-sm font-medium text-zinc-700">website compatible</div>
+                <div className="text-4xl font-semibold tracking-tight text-zinc-900">Any website</div>
+                <div className="mt-2 text-sm font-medium text-zinc-700">
+                  Works with Shopify, WooCommerce, and custom stores
+                </div>
               </div>
             </div>
           </div>
