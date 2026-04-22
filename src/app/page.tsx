@@ -33,7 +33,7 @@ export default function Home() {
 
             <div className="absolute inset-0">
               <div className="mx-auto flex h-full w-full max-w-6xl flex-col justify-end px-6 pb-10 pt-8 md:pb-14">
-                <div className="max-w-3xl">
+                <div className="max-w-3xl pl-0 md:pl-12 lg:pl-16">
                   <h1 className="text-balance text-4xl font-semibold tracking-tight text-white [text-shadow:0_2px_40px_rgba(0,0,0,0.55)] md:text-6xl md:leading-[1.05]">
                     Let shoppers try before they buy
                   </h1>
