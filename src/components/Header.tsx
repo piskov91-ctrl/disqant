@@ -20,8 +20,8 @@ export function Header() {
           <Link href="/product" className="transition hover:text-zinc-900">
             What is Wear Me?
           </Link>
-          <Link href="/stories" className="transition hover:text-zinc-900">
-            Stories
+          <Link href="/about" className="transition hover:text-zinc-900">
+            About
           </Link>
           <Link href="/pricing" className="transition hover:text-zinc-900">
             Pricing
