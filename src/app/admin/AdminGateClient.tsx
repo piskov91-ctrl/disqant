@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 
-export default function AdminGateClient() {
+export default function AdminGateClient({ onSuccess }: { onSuccess?: () => void }) {
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -22,7 +22,7 @@ export default function AdminGateClient() {
         setError(data.error || "Invalid password.");
         return;
       }
-      window.location.reload();
+      onSuccess?.();
     } catch (e) {
       setError(e instanceof Error ? e.message : "Unexpected error.");
     } finally {
@@ -31,7 +31,7 @@ export default function AdminGateClient() {
   }
 
   return (
-    <form onSubmit={submit} className="mt-6 space-y-4">
+    <form onSubmit={submit} className="mt-6 space-y-4" autoComplete="off">
       <div>
         <label className="block text-sm font-medium text-zinc-900">Admin password</label>
         <input
@@ -39,6 +39,9 @@ export default function AdminGateClient() {
           onChange={(e) => setPassword(e.target.value)}
           autoFocus
           type="password"
+          autoComplete="new-password"
+          autoCorrect="off"
+          autoCapitalize="none"
           placeholder="Enter password"
           className="mt-2 block w-full rounded-xl border border-surface-border bg-white px-4 py-3 text-sm text-zinc-900 outline-none placeholder:text-zinc-400 transition focus:border-accent/60"
         />

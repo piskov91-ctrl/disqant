@@ -1,8 +1,5 @@
 import Link from "next/link";
-import { cookies } from "next/headers";
-import AdminClient from "./AdminClient";
-import AdminGateClient from "./AdminGateClient";
-import { ADMIN_AUTH_COOKIE, isAdminAuthorizedCookieValue } from "@/lib/adminAuth";
+import AdminPageClient from "./AdminPageClient";
 
 function AdminGate() {
   return (
@@ -32,7 +29,7 @@ function AdminGate() {
           <p className="mt-3 text-sm text-zinc-600">
             Enter the admin password to manage client API keys.
           </p>
-          <AdminGateClient />
+          <AdminPageClient />
         </div>
       </main>
     </div>
@@ -40,9 +37,6 @@ function AdminGate() {
 }
 
 export default async function AdminPage() {
-  const jar = await cookies();
-  const authed = isAdminAuthorizedCookieValue(jar.get(ADMIN_AUTH_COOKIE)?.value);
-  if (!authed) return <AdminGate />;
-  return <AdminClient />;
+  return <AdminGate />;
 }
 

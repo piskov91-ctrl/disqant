@@ -29,7 +29,8 @@ export async function POST(req: Request) {
     sameSite: "lax",
     secure: process.env.NODE_ENV === "production",
     path: "/",
-    maxAge: 60 * 60 * 24 * 7, // 7 days
+    // Session cookie only (no long-lived remember).
+    // /admin also clears this cookie on every page load.
   });
 
   return Response.json({ ok: true });
