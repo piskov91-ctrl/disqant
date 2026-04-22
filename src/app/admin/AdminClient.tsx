@@ -312,8 +312,8 @@ export default function AdminClient() {
         </div>
       </header>
 
-      <main className="w-full py-2">
-        <div className="w-full">
+      <main className="w-full">
+        <div className="w-full p-8">
           <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
             <div>
               <h1 className="text-balance text-3xl font-semibold tracking-tight text-zinc-900 md:text-4xl">
@@ -408,121 +408,104 @@ export default function AdminClient() {
             ) : keys.length === 0 ? (
               <div className="px-6 py-10 text-sm text-zinc-500 md:px-8">No clients yet.</div>
             ) : (
-              <div className="w-full">
-                <table className="w-full table-fixed border-separate border-spacing-0">
-                  <colgroup>
-                    <col style={{ width: "28%" }} />
-                    <col style={{ width: "14%" }} />
-                    <col style={{ width: "28%" }} />
-                    <col style={{ width: "10%" }} />
-                    <col style={{ width: "5%" }} />
-                    <col style={{ width: "5%" }} />
-                    <col style={{ width: "5%" }} />
-                    <col style={{ width: "5%" }} />
-                  </colgroup>
-                  <thead>
-                    <tr className="text-left text-xs font-semibold uppercase tracking-wider text-zinc-500">
-                      <th className="border-b border-surface-border px-6 py-3 md:px-8">
-                        Client Name
-                      </th>
-                      <th className="border-b border-surface-border px-6 py-3 md:px-8">API Key</th>
-                      <th className="border-b border-surface-border px-6 py-3 md:px-8">
-                        Usage / Limit
-                      </th>
-                      <th className="border-b border-surface-border px-6 py-3 md:px-8">Status</th>
-                      <th className="border-b border-surface-border px-2 py-3 text-center">Edit</th>
-                      <th className="border-b border-surface-border px-2 py-3 text-center">Copy</th>
-                      <th className="border-b border-surface-border px-2 py-3 text-center">Reset</th>
-                      <th className="border-b border-surface-border px-2 py-3 text-center">Delete</th>
-                    </tr>
-                  </thead>
-                  <tbody className="text-sm">
-                    {keys.map((k) => {
-                      const pct =
-                        k.usageLimit > 0
-                          ? Math.min(100, Math.round((k.usageCount / k.usageLimit) * 100))
-                          : 0;
-                      const blocked = k.usageLimit > 0 && k.usageCount >= k.usageLimit;
-                      return (
-                        <tr key={k.id} className="align-middle">
-                          <td className="border-b border-surface-border px-6 py-5 md:px-8">
-                            <div className="min-w-0">
-                              <p className="truncate text-base font-semibold text-zinc-900">
-                                {k.clientName}
-                              </p>
-                            </div>
-                          </td>
-                          <td className="border-b border-surface-border px-6 py-5 md:px-8">
-                            <span className="rounded-lg border border-surface-border bg-white px-2.5 py-1 font-mono text-xs text-zinc-700">
-                              {(k.key || "").slice(0, 8)}…
-                            </span>
-                          </td>
-                          <td className="border-b border-surface-border px-6 py-5 md:px-8">
-                            <div className="flex items-center gap-4">
-                              <div className="h-2 w-44 overflow-hidden rounded-full border border-surface-border bg-surface-muted">
-                                <div
-                                  className="h-full rounded-full bg-gradient-to-r from-[#7c3aed] to-[#ec4899]"
-                                  style={{ width: `${pct}%` }}
-                                />
-                              </div>
-                              <span className="text-xs font-semibold text-zinc-700">
-                                {k.usageCount}/{k.usageLimit}
-                              </span>
-                              <span className="text-xs font-semibold text-zinc-600">{pct}%</span>
-                            </div>
-                          </td>
-                          <td className="border-b border-surface-border px-6 py-5 md:px-8">
-                            <span
-                              className={`inline-flex items-center rounded-full border px-2.5 py-1 text-xs font-semibold ${
-                                blocked
-                                  ? "border-amber-200 bg-amber-50 text-amber-800"
-                                  : "border-emerald-200 bg-emerald-50 text-emerald-800"
-                              }`}
-                            >
-                              {blocked ? "Blocked" : "Active"}
-                            </span>
-                          </td>
-                          <td className="border-b border-surface-border px-2 py-5 text-center">
-                            <button
-                              type="button"
-                              onClick={() => openEditModal(k)}
-                              className="inline-flex h-9 items-center justify-center rounded-full border border-surface-border bg-white px-3 text-xs font-semibold text-zinc-900 transition hover:border-zinc-300 hover:bg-surface-raised"
-                            >
-                              Edit
-                            </button>
-                          </td>
-                          <td className="border-b border-surface-border px-2 py-5 text-center">
-                            <button
-                              type="button"
-                              onClick={() => void copyWidgetCode(k.key)}
-                              className="inline-flex h-9 items-center justify-center rounded-full border border-surface-border bg-white px-3 text-xs font-semibold text-zinc-900 transition hover:border-zinc-300 hover:bg-surface-raised"
-                            >
-                              Copy
-                            </button>
-                          </td>
-                          <td className="border-b border-surface-border px-2 py-5 text-center">
-                            <button
-                              type="button"
-                              onClick={() => void resetKeyUsage(k.id)}
-                              className="inline-flex h-9 items-center justify-center rounded-full border border-surface-border bg-white px-3 text-xs font-semibold text-zinc-900 transition hover:border-zinc-300 hover:bg-surface-raised"
-                            >
-                              Reset
-                            </button>
-                          </td>
-                          <td className="border-b border-surface-border px-2 py-5 text-center">
-                            <button
-                              type="button"
-                              onClick={() => void deleteKey(k.id)}
-                              className="inline-flex h-9 items-center justify-center rounded-full border border-red-200 bg-red-50 px-3 text-xs font-semibold text-red-700 transition hover:border-red-300 hover:bg-red-100"
-                            >
-                              Delete
-                            </button>
-                          </td>
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
+              <div className="w-full overflow-x-auto">
+                <div className="min-w-[1320px]">
+                  <div className="grid grid-cols-[minmax(220px,1.4fr)_140px_380px_120px_90px_90px_90px_100px] gap-3 border-b border-surface-border px-6 py-3 text-xs font-semibold uppercase tracking-wider text-zinc-500 md:px-8">
+                    <div>Client Name</div>
+                    <div>API Key</div>
+                    <div>Usage / Limit</div>
+                    <div>Status</div>
+                    <div className="text-center">Edit</div>
+                    <div className="text-center">Copy</div>
+                    <div className="text-center">Reset</div>
+                    <div className="text-center">Delete</div>
+                  </div>
+
+                  {keys.map((k) => {
+                    const pct =
+                      k.usageLimit > 0
+                        ? Math.min(100, Math.round((k.usageCount / k.usageLimit) * 100))
+                        : 0;
+                    const blocked = k.usageLimit > 0 && k.usageCount >= k.usageLimit;
+
+                    return (
+                      <div
+                        key={k.id}
+                        className="grid grid-cols-[minmax(220px,1.4fr)_140px_380px_120px_90px_90px_90px_100px] items-center gap-3 border-b border-surface-border px-6 py-4 md:px-8"
+                      >
+                        <div className="min-w-0">
+                          <div className="truncate text-base font-semibold text-zinc-900">
+                            {k.clientName}
+                          </div>
+                        </div>
+                        <div>
+                          <span className="rounded-lg border border-surface-border bg-white px-2.5 py-1 font-mono text-xs text-zinc-700">
+                            {(k.key || "").slice(0, 8)}…
+                          </span>
+                        </div>
+                        <div className="flex items-center gap-4">
+                          <div className="h-2 w-56 overflow-hidden rounded-full border border-surface-border bg-surface-muted">
+                            <div
+                              className="h-full rounded-full bg-gradient-to-r from-[#7c3aed] to-[#ec4899]"
+                              style={{ width: `${pct}%` }}
+                            />
+                          </div>
+                          <span className="text-xs font-semibold text-zinc-700">
+                            {k.usageCount}/{k.usageLimit}
+                          </span>
+                          <span className="text-xs font-semibold text-zinc-600">{pct}%</span>
+                        </div>
+                        <div>
+                          <span
+                            className={`inline-flex items-center rounded-full border px-2.5 py-1 text-xs font-semibold ${
+                              blocked
+                                ? "border-amber-200 bg-amber-50 text-amber-800"
+                                : "border-emerald-200 bg-emerald-50 text-emerald-800"
+                            }`}
+                          >
+                            {blocked ? "Blocked" : "Active"}
+                          </span>
+                        </div>
+                        <div className="text-center">
+                          <button
+                            type="button"
+                            onClick={() => openEditModal(k)}
+                            className="inline-flex h-9 items-center justify-center rounded-full border border-surface-border bg-white px-3 text-xs font-semibold text-zinc-900 transition hover:border-zinc-300 hover:bg-surface-raised"
+                          >
+                            Edit
+                          </button>
+                        </div>
+                        <div className="text-center">
+                          <button
+                            type="button"
+                            onClick={() => void copyWidgetCode(k.key)}
+                            className="inline-flex h-9 items-center justify-center rounded-full border border-surface-border bg-white px-3 text-xs font-semibold text-zinc-900 transition hover:border-zinc-300 hover:bg-surface-raised"
+                          >
+                            Copy
+                          </button>
+                        </div>
+                        <div className="text-center">
+                          <button
+                            type="button"
+                            onClick={() => void resetKeyUsage(k.id)}
+                            className="inline-flex h-9 items-center justify-center rounded-full border border-surface-border bg-white px-3 text-xs font-semibold text-zinc-900 transition hover:border-zinc-300 hover:bg-surface-raised"
+                          >
+                            Reset
+                          </button>
+                        </div>
+                        <div className="text-center">
+                          <button
+                            type="button"
+                            onClick={() => void deleteKey(k.id)}
+                            className="inline-flex h-9 items-center justify-center rounded-full border border-red-200 bg-red-50 px-3 text-xs font-semibold text-red-700 transition hover:border-red-300 hover:bg-red-100"
+                          >
+                            Delete
+                          </button>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
               </div>
             )}
 
