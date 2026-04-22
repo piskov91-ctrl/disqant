@@ -25,7 +25,6 @@ export default function AdminClient() {
   const [savingEdit, setSavingEdit] = useState(false);
 
   const [clientName, setClientName] = useState("");
-  const [fashnApiKey, setFashnApiKey] = useState("");
   const [usageLimit, setUsageLimit] = useState("1000");
   const [creating, setCreating] = useState(false);
 
@@ -68,7 +67,6 @@ export default function AdminClient() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           clientName,
-          fashnApiKey,
           usageLimit: Number(usageLimit),
         }),
       });
@@ -80,7 +78,6 @@ export default function AdminClient() {
       if (data.key) {
         setKeys((prev) => [data.key!, ...prev]);
         setClientName("");
-        setFashnApiKey("");
       }
     } catch (e) {
       setError(e instanceof Error ? e.message : "Failed to create key.");
@@ -307,142 +304,132 @@ export default function AdminClient() {
         </div>
       </header>
 
-      <main className="mx-auto max-w-7xl px-6 py-12 md:py-16">
-        <div className="grid gap-10 lg:grid-cols-[420px_1fr] lg:items-start lg:gap-12">
-          <div className="min-w-0">
-            <h1 className="text-balance text-3xl font-semibold tracking-tight text-zinc-900 md:text-4xl">
-              Admin · API keys
-            </h1>
-            <p className="mt-4 text-zinc-600">
-              Create client API keys with usage limits. Keys are stored in Redis (Upstash/Vercel).
+      <main className="mx-auto w-full max-w-none px-6 py-10 md:px-10 md:py-14">
+        <div className="mx-auto w-full max-w-6xl">
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
+            <div>
+              <h1 className="text-balance text-3xl font-semibold tracking-tight text-zinc-900 md:text-4xl">
+                Admin · Clients
+              </h1>
+              <p className="mt-2 text-sm text-zinc-600">
+                Create clients with usage limits. Keys are stored in Redis (Upstash/Vercel).
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={load}
+              disabled={loading}
+              className="inline-flex h-11 items-center justify-center rounded-full border border-surface-border bg-white px-5 text-sm font-semibold text-zinc-900 transition hover:border-zinc-300 hover:bg-surface-raised disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              Refresh
+            </button>
+          </div>
+
+          <section className="mt-8 rounded-2xl border border-surface-border bg-white p-6 shadow-sm md:p-8">
+            <h2 className="text-base font-semibold text-zinc-900">Create new client</h2>
+            <p className="mt-1 text-sm text-zinc-600">
+              Client name and usage limit only. (Fashn key is configured server-side.)
             </p>
 
-            <form onSubmit={createKey} className="mt-8 space-y-5">
-              <div className="rounded-2xl border border-surface-border bg-surface-muted/50 p-5">
+            <form onSubmit={createKey} className="mt-6 grid gap-4 md:grid-cols-3 md:items-end">
+              <div className="md:col-span-1">
                 <label className="block text-sm font-medium text-zinc-900">Client name</label>
                 <input
                   value={clientName}
                   onChange={(e) => setClientName(e.target.value)}
                   placeholder="Acme Storefront"
-                  className="mt-3 block w-full rounded-xl border border-surface-border bg-white px-4 py-3 text-sm text-zinc-900 outline-none placeholder:text-zinc-400 transition focus:border-accent/60"
+                  className="mt-2 block w-full rounded-xl border border-surface-border bg-white px-4 py-3 text-sm text-zinc-900 outline-none placeholder:text-zinc-400 transition focus:border-accent/60"
                 />
               </div>
-
-              <div className="rounded-2xl border border-surface-border bg-surface-muted/50 p-5">
-                <label className="block text-sm font-medium text-zinc-900">Fashn.ai API key</label>
-                <input
-                  value={fashnApiKey}
-                  onChange={(e) => setFashnApiKey(e.target.value)}
-                  placeholder="fa-…"
-                  className="mt-3 block w-full rounded-xl border border-surface-border bg-white px-4 py-3 text-sm text-zinc-900 outline-none placeholder:text-zinc-400 transition focus:border-accent/60"
-                />
-                <p className="mt-2 text-xs text-zinc-500">
-                  Stored server-side only. Not shown in the UI after saving.
-                </p>
-              </div>
-
-              <div className="rounded-2xl border border-surface-border bg-surface-muted/50 p-5">
+              <div className="md:col-span-1">
                 <label className="block text-sm font-medium text-zinc-900">Usage limit</label>
                 <input
                   value={usageLimit}
                   onChange={(e) => setUsageLimit(e.target.value)}
                   inputMode="numeric"
                   placeholder="1000"
-                  className="mt-3 block w-full rounded-xl border border-surface-border bg-white px-4 py-3 text-sm text-zinc-900 outline-none placeholder:text-zinc-400 transition focus:border-accent/60"
+                  className="mt-2 block w-full rounded-xl border border-surface-border bg-white px-4 py-3 text-sm text-zinc-900 outline-none placeholder:text-zinc-400 transition focus:border-accent/60"
                 />
-                <p className="mt-2 text-xs text-zinc-500">Total allowed calls before blocking.</p>
               </div>
-
-              {error && (
-                <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800">
-                  {error}
-                </div>
-              )}
-
-              <button
-                type="submit"
-                disabled={creating || clientName.trim().length === 0 || fashnApiKey.trim().length === 0}
-                className="btn-accent-gradient h-12 w-full px-8 text-sm disabled:cursor-not-allowed disabled:opacity-60"
-              >
-                {creating ? "Creating…" : "Create API key"}
-              </button>
-
-              <button
-                type="button"
-                onClick={load}
-                disabled={loading}
-                className="inline-flex h-11 w-full items-center justify-center rounded-full border border-surface-border bg-white text-sm font-semibold text-zinc-900 transition hover:border-zinc-300 hover:bg-surface-raised disabled:cursor-not-allowed disabled:opacity-60"
-              >
-                Refresh list
-              </button>
+              <div className="md:col-span-1">
+                <button
+                  type="submit"
+                  disabled={creating || clientName.trim().length === 0 || Number(usageLimit) <= 0}
+                  className="btn-accent-gradient h-12 w-full px-8 text-sm disabled:cursor-not-allowed disabled:opacity-60"
+                >
+                  {creating ? "Creating…" : "Create client"}
+                </button>
+              </div>
             </form>
-          </div>
 
-          <div className="min-w-0">
-            <div className="rounded-2xl border border-surface-border bg-surface-muted/40 p-6 md:p-7">
-              <div className="flex flex-col gap-1 sm:flex-row sm:items-end sm:justify-between">
-                <div>
-                  <p className="text-sm font-semibold text-zinc-900">Keys</p>
-                  <p className="mt-1 text-sm text-zinc-600">
-                    {keys.length} total · Usage {remainingTotal.used}/{remainingTotal.limit}
-                  </p>
-                </div>
+            {error ? (
+              <div className="mt-4 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800">
+                {error}
               </div>
+            ) : null}
+          </section>
 
-              <div className="mt-6 overflow-hidden rounded-xl border border-surface-border bg-white">
-                {loading ? (
-                  <div className="px-6 py-14 text-center text-sm text-zinc-500">Loading…</div>
-                ) : keys.length === 0 ? (
-                  <div className="px-6 py-14 text-center text-sm text-zinc-500">No keys yet.</div>
-                ) : (
-                  <div className="space-y-4 p-4">
-                    {keys.map((k) => {
-                      const pct =
-                        k.usageLimit > 0
-                          ? Math.min(100, Math.round((k.usageCount / k.usageLimit) * 100))
-                          : 0;
-                      return (
-                        <article
-                          key={k.id}
-                          className="w-full rounded-2xl border border-surface-border bg-surface-muted/30 p-5"
-                        >
-                          <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
-                            <div className="min-w-0">
-                              <p className="text-base font-semibold text-zinc-900">{k.clientName}</p>
-                              <p className="mt-1 break-all font-mono text-xs text-zinc-500">{k.key}</p>
-                            </div>
-                            <div className="shrink-0">
-                              <div className="inline-flex rounded-full border border-surface-border bg-white px-3 py-1 text-xs font-semibold text-zinc-700">
-                                {k.usageCount}/{k.usageLimit}
-                              </div>
-                            </div>
+          <section className="mt-8 rounded-2xl border border-surface-border bg-white p-0 shadow-sm">
+            <div className="flex flex-col gap-1 border-b border-surface-border px-6 py-5 md:flex-row md:items-end md:justify-between md:px-8">
+              <div>
+                <h2 className="text-base font-semibold text-zinc-900">Clients</h2>
+                <p className="mt-1 text-sm text-zinc-600">
+                  {keys.length} total · Usage {remainingTotal.used}/{remainingTotal.limit}
+                </p>
+              </div>
+            </div>
+
+            <div className="w-full overflow-x-auto">
+              <table className="w-full min-w-[820px] border-separate border-spacing-0">
+                <thead>
+                  <tr className="text-left text-xs font-semibold uppercase tracking-wider text-zinc-500">
+                    <th className="border-b border-surface-border px-6 py-3 md:px-8">Client name</th>
+                    <th className="border-b border-surface-border px-6 py-3 md:px-8">Usage</th>
+                    <th className="border-b border-surface-border px-6 py-3 md:px-8">Limit</th>
+                    <th className="border-b border-surface-border px-6 py-3 md:px-8">Actions</th>
+                  </tr>
+                </thead>
+                <tbody className="text-sm">
+                  {loading ? (
+                    <tr>
+                      <td className="px-6 py-10 text-zinc-500 md:px-8" colSpan={4}>
+                        Loading…
+                      </td>
+                    </tr>
+                  ) : keys.length === 0 ? (
+                    <tr>
+                      <td className="px-6 py-10 text-zinc-500 md:px-8" colSpan={4}>
+                        No clients yet.
+                      </td>
+                    </tr>
+                  ) : (
+                    keys.map((k) => (
+                      <tr key={k.id} className="align-top">
+                        <td className="border-b border-surface-border px-6 py-4 md:px-8">
+                          <div className="min-w-0">
+                            <p className="font-semibold text-zinc-900">{k.clientName}</p>
+                            <p className="mt-1 break-all font-mono text-xs text-zinc-500">{k.key}</p>
                           </div>
-
-                          <div className="mt-5">
-                            <div className="flex items-center justify-between text-xs text-zinc-500">
-                              <span>Usage</span>
-                              <span>{pct}%</span>
-                            </div>
-                            <div className="mt-2 h-2 w-full overflow-hidden rounded-full border border-surface-border bg-surface-muted">
-                              <div
-                                className="h-full rounded-full bg-gradient-to-r from-[#7c3aed] to-[#ec4899]"
-                                style={{ width: `${pct}%` }}
-                              />
-                            </div>
-                          </div>
-
-                          <div className="mt-5 grid grid-cols-2 gap-2 sm:grid-cols-4">
+                        </td>
+                        <td className="border-b border-surface-border px-6 py-4 text-zinc-700 md:px-8">
+                          {k.usageCount}
+                        </td>
+                        <td className="border-b border-surface-border px-6 py-4 text-zinc-700 md:px-8">
+                          {k.usageLimit}
+                        </td>
+                        <td className="border-b border-surface-border px-6 py-4 md:px-8">
+                          <div className="flex flex-wrap gap-2">
                             <button
                               type="button"
                               onClick={() => openEditModal(k)}
-                              className="inline-flex h-10 items-center justify-center rounded-full border border-surface-border bg-white px-4 text-sm font-semibold text-zinc-900 transition hover:border-zinc-300 hover:bg-surface-raised"
+                              className="inline-flex h-9 items-center justify-center rounded-full border border-surface-border bg-white px-4 text-sm font-semibold text-zinc-900 transition hover:border-zinc-300 hover:bg-surface-raised"
                             >
                               Edit
                             </button>
                             <button
                               type="button"
                               onClick={() => copyWidgetCode(k.key, k.id)}
-                              className="inline-flex h-10 items-center justify-center rounded-full border border-surface-border bg-white px-4 text-sm font-semibold text-zinc-900 transition hover:border-zinc-300 hover:bg-surface-raised"
+                              className="inline-flex h-9 items-center justify-center rounded-full border border-surface-border bg-white px-4 text-sm font-semibold text-zinc-900 transition hover:border-zinc-300 hover:bg-surface-raised"
                             >
                               {copiedId === k.id ? "Copied" : "Copy code"}
                             </button>
@@ -450,7 +437,7 @@ export default function AdminClient() {
                               type="button"
                               onClick={() => resetKeyUsage(k.id)}
                               disabled={resettingId === k.id}
-                              className="inline-flex h-10 items-center justify-center rounded-full border border-surface-border bg-white px-4 text-sm font-semibold text-zinc-900 transition hover:border-zinc-300 hover:bg-surface-raised disabled:cursor-not-allowed disabled:opacity-60"
+                              className="inline-flex h-9 items-center justify-center rounded-full border border-surface-border bg-white px-4 text-sm font-semibold text-zinc-900 transition hover:border-zinc-300 hover:bg-surface-raised disabled:cursor-not-allowed disabled:opacity-60"
                             >
                               {resettingId === k.id ? "Resetting…" : "Reset"}
                             </button>
@@ -458,23 +445,23 @@ export default function AdminClient() {
                               type="button"
                               onClick={() => deleteKey(k.id)}
                               disabled={deletingId === k.id}
-                              className="inline-flex h-10 items-center justify-center rounded-full border border-red-200 bg-red-50 px-4 text-sm font-semibold text-red-700 transition hover:border-red-300 hover:bg-red-100 disabled:cursor-not-allowed disabled:opacity-60"
+                              className="inline-flex h-9 items-center justify-center rounded-full border border-red-200 bg-red-50 px-4 text-sm font-semibold text-red-700 transition hover:border-red-300 hover:bg-red-100 disabled:cursor-not-allowed disabled:opacity-60"
                             >
                               {deletingId === k.id ? "Deleting…" : "Delete"}
                             </button>
                           </div>
-                        </article>
-                      );
-                    })}
-                  </div>
-                )}
-              </div>
-
-              <p className="mt-4 text-xs text-zinc-500">
-                Stored in Redis under <span className="font-mono">disquant:clientKeys:*</span>.
-              </p>
+                        </td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
             </div>
-          </div>
+
+            <p className="px-6 py-5 text-xs text-zinc-500 md:px-8">
+              Stored in Redis under <span className="font-mono">disquant:clientKeys:*</span>.
+            </p>
+          </section>
         </div>
       </main>
     </div>

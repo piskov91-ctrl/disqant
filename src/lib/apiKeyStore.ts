@@ -63,7 +63,7 @@ function generateKey() {
 export async function createClientKey(params: {
   clientName: string;
   usageLimit: number;
-  fashnApiKey: string;
+  fashnApiKey?: string;
 }) {
   const clientName = params.clientName.trim();
   if (!clientName) throw new Error("Client name is required.");
@@ -74,8 +74,12 @@ export async function createClientKey(params: {
   const redis = getRedis();
   const now = new Date().toISOString();
 
-  const fashnApiKey = params.fashnApiKey.trim();
-  if (!fashnApiKey) throw new Error("Fashn.ai API key is required.");
+  const fashnApiKey =
+    (params.fashnApiKey ? params.fashnApiKey.trim() : "") ||
+    (process.env.FASHN_API_KEY ? process.env.FASHN_API_KEY.trim() : "");
+  if (!fashnApiKey) {
+    throw new Error("Missing Fashn.ai API key. Set FASHN_API_KEY in the server environment.");
+  }
 
   const rec: ClientApiKeyRecord = {
     id: crypto.randomUUID(),

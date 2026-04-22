@@ -163,7 +163,7 @@ export async function POST(req: Request) {
   const productImage = await fileToDataUrl(garmentFile);
 
   const first = await startPrediction({
-    apiKey: client.fashnApiKey,
+    apiKey: client.fashnApiKey || process.env.FASHN_API_KEY || "",
     modelImage,
     productImage,
     generationMode,
