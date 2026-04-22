@@ -24,7 +24,7 @@ export function Header() {
             Subscriptions
           </Link>
           <Link href="/demo" className="transition hover:text-zinc-900">
-            Demo
+            Wear Me
           </Link>
           <Link href="/about" className="transition hover:text-zinc-900">
             About
