@@ -1,8 +1,8 @@
 "use client";
 
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
-import Link from "next/link";
 import { useSearchParams } from "next/navigation";
+import { Header } from "@/components/Header";
 
 /** Echoed from FormData; Try-On Max infers product type from images (no Fashn `category` param). */
 type GarmentCategoryHint = "tops" | "shoes" | "bottoms";
@@ -80,14 +80,14 @@ const DEMO_WEAR_MODAL_STYLE_ID = "disqant-demo-wear-modal-style";
 const DEMO_WEAR_MODAL_CSS =
   ".dq-wrap{display:inline-block;position:relative;vertical-align:top;line-height:0;max-width:100%;}" +
   ".dq-wrap>img{display:block;max-width:100%;height:auto;vertical-align:top;}" +
-  ".dq-overlay{position:absolute;inset:auto 12px 12px auto;z-index:2147483646;display:flex;align-items:center;pointer-events:auto;}" +
+  ".dq-overlay{position:absolute;inset:auto 12px 12px auto;z-index:20;display:flex;align-items:center;pointer-events:auto;}" +
   ".dq-wear-btn{position:relative;appearance:none;border:0;cursor:pointer;padding:10px 14px;border-radius:999px;color:#fff;font:900 13px/1 system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;letter-spacing:.2px;background:linear-gradient(135deg,#7c3aed 0%,#ec4899 100%);box-shadow:0 16px 34px rgba(124,58,237,.22),0 12px 30px rgba(236,72,153,.16);transform:translateY(0) scale(1);transition:transform .18s ease, filter .18s ease, box-shadow .18s ease;}" +
   ".dq-wear-btn:hover{transform:translateY(-2px) scale(1.03);filter:saturate(1.08);box-shadow:0 22px 44px rgba(124,58,237,.24),0 18px 36px rgba(236,72,153,.2);}" +
   ".dq-wear-btn:active{transform:translateY(-1px) scale(.99);}" +
   ".dq-wear-btn::after{content:\"\";position:absolute;inset:-2px;border-radius:999px;opacity:0;box-shadow:0 0 0 0 rgba(236,72,153,.38);transition:opacity .18s ease;}" +
   ".dq-wear-btn:hover::after{opacity:1;animation:dq-pulse 1.35s ease-out infinite;}" +
   "@keyframes dq-pulse{0%{box-shadow:0 0 0 0 rgba(236,72,153,.32)}100%{box-shadow:0 0 0 16px rgba(236,72,153,0)}}" +
-  ".dq-backdrop{position:fixed;inset:0;z-index:2147483000;background:rgba(15,23,42,.45);display:flex;align-items:center;justify-content:center;padding:14px;opacity:0;transition:opacity .18s ease;}" +
+  ".dq-backdrop{position:fixed;inset:0;z-index:50;background:rgba(15,23,42,.45);display:flex;align-items:center;justify-content:center;padding:14px;opacity:0;transition:opacity .18s ease;}" +
   ".dq-backdrop.dq-open{opacity:1;}" +
   ".dq-modal{width:min(720px,100%);max-height:90vh;background:#fff;border:1px solid rgba(15,15,20,.08);border-radius:20px;overflow:hidden;box-shadow:0 30px 80px rgba(0,0,0,.30);display:flex;flex-direction:column;transform:translateY(10px) scale(.985);opacity:0;transition:transform .18s ease, opacity .18s ease;}" +
   ".dq-backdrop.dq-open .dq-modal{transform:translateY(0) scale(1);opacity:1;}" +
@@ -522,7 +522,7 @@ export default function DemoClient() {
   }
 
   return (
-    <div className="min-h-dvh bg-white pt-16">
+    <div className="min-h-dvh bg-white">
       {wearOpen && (
         <div
           role="presentation"
@@ -679,33 +679,18 @@ export default function DemoClient() {
           </div>
         </div>
       )}
-      <header className="fixed top-0 left-0 right-0 z-[2147483647] border-b border-surface-border bg-white/80 backdrop-blur-xl">
-        <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-6">
-          <Link
-            href="/"
-            className="flex items-center gap-2 text-lg font-semibold tracking-tight text-zinc-900"
-          >
-            <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-accent/15 text-accent">
-              D
-            </span>
-            Disquant
-          </Link>
-          <div className="flex items-center gap-4">
-            <Link href="/" className="text-sm text-zinc-600 transition hover:text-zinc-900">
-              Back to landing
-            </Link>
-            <button
-              type="button"
-              onClick={logout}
-              className="text-sm text-zinc-600 transition hover:text-zinc-900"
-            >
-              Log out
-            </button>
-          </div>
-        </div>
-      </header>
+      <Header />
 
       <main className="mx-auto max-w-4xl px-6 py-12 md:py-16">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-end">
+          <button
+            type="button"
+            onClick={logout}
+            className="inline-flex h-10 items-center justify-center self-start rounded-full border border-surface-border bg-white px-4 text-sm font-semibold text-zinc-800 shadow-sm transition hover:border-zinc-300 hover:bg-surface-raised sm:self-auto"
+          >
+            Log out
+          </button>
+        </div>
         <h1 className="text-balance text-3xl font-semibold tracking-tight text-zinc-900 md:text-4xl">
           Virtual try-on demo
         </h1>
