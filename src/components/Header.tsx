@@ -14,8 +14,14 @@ export function Header() {
           Disquant
         </Link>
         <nav className="hidden items-center gap-8 text-sm text-zinc-600 md:flex">
+          <a href="#how-it-works" className="transition hover:text-zinc-900">
+            How it works
+          </a>
           <a href="#features" className="transition hover:text-zinc-900">
             Product
+          </a>
+          <a href="#testimonials" className="transition hover:text-zinc-900">
+            Stories
           </a>
           <a href="#pricing" className="transition hover:text-zinc-900">
             Pricing
