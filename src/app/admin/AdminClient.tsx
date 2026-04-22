@@ -201,7 +201,7 @@ export default function AdminClient() {
   }
 
   return (
-    <div className="min-h-dvh bg-white">
+    <div className="w-full min-h-screen p-8 bg-white">
       {editing && (
         <div
           className="fixed inset-0 z-50 flex items-center justify-center bg-zinc-900/40 p-6 backdrop-blur-sm"
@@ -312,7 +312,7 @@ export default function AdminClient() {
         </div>
       </header>
 
-      <main className="w-full px-8 py-10 md:py-14">
+      <main className="w-full py-2">
         <div className="w-full">
           <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
             <div>
