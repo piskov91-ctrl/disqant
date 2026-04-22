@@ -209,7 +209,7 @@ export default function AdminClient() {
           aria-modal="true"
           aria-labelledby="edit-title"
         >
-          <div className="w-full max-w-md rounded-2xl border border-surface-border bg-white p-6 shadow-xl shadow-zinc-200/80">
+          <div className="w-full rounded-2xl border border-surface-border bg-white p-6 shadow-xl shadow-zinc-200/80 md:w-[720px]">
             <div className="flex items-start justify-between gap-4">
               <div className="min-w-0">
                 <p id="edit-title" className="text-base font-semibold text-zinc-900">
@@ -312,8 +312,8 @@ export default function AdminClient() {
         </div>
       </header>
 
-      <main className="w-full px-6 py-10 md:px-10 md:py-14">
-        <div className="mx-auto w-full max-w-[1200px]">
+      <main className="w-full px-8 py-10 md:py-14">
+        <div className="w-full">
           <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
             <div>
               <h1 className="text-balance text-3xl font-semibold tracking-tight text-zinc-900 md:text-4xl">
