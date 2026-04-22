@@ -18,7 +18,7 @@ export function Header() {
             How it works
           </Link>
           <Link href="/product" className="transition hover:text-zinc-900">
-            Product
+            What is Wear Me?
           </Link>
           <Link href="/stories" className="transition hover:text-zinc-900">
             Stories
