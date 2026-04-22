@@ -21,7 +21,7 @@ export function Header() {
             What is Wear Me?
           </Link>
           <Link href="/pricing" className="transition hover:text-zinc-900">
-            Pricing
+            Subscriptions
           </Link>
           <Link href="/demo" className="transition hover:text-zinc-900">
             Demo
