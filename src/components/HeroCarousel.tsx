@@ -45,7 +45,7 @@ export function HeroCarousel() {
             <div className="relative aspect-video w-full bg-zinc-100">
               <video
                 src="/demo-video.mp4"
-                className="h-full w-full rounded-2xl object-cover"
+                className="h-full w-full max-w-full rounded-2xl object-contain"
                 autoPlay
                 muted
                 loop
