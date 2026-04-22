@@ -10,47 +10,52 @@ export default function Home() {
       <main className="pt-16">
         {/* CINEMATIC HERO (full-bleed video + overlay) */}
         <section aria-label="Home hero" className="relative left-1/2 w-screen -translate-x-1/2 overflow-hidden">
-          <div className="relative w-full bg-white">
-            <div className="flex min-h-[80vh] w-full flex-col md:flex-row">
-              {/* Text column (does not sit on top of the video on desktop) */}
-              <div className="w-full border-b border-surface-border bg-white/95 p-8 backdrop-blur-xl md:w-[min(520px,44vw)] md:border-b-0 md:border-r md:px-10 md:py-12 lg:px-12">
-                <div className="mx-auto max-w-md md:mx-0">
-                  <h1 className="text-balance text-4xl font-semibold tracking-tight text-zinc-900 md:text-5xl md:leading-[1.08] lg:text-6xl">
+          <div className="relative min-h-[80vh] w-full bg-black">
+            <div className="pointer-events-none flex min-h-[80vh] w-full items-center justify-center">
+              <video
+                src="/demo-video.mp4"
+                className="h-auto w-full max-h-[80vh] object-contain"
+                autoPlay
+                muted
+                loop
+                playsInline
+                controls={false}
+                preload="auto"
+              />
+            </div>
+
+            {/* Cinematic darkening + subtle grain + readable text area */}
+            <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/80 via-black/25 to-black/20" />
+            <div
+              className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_20%_10%,rgba(124,58,237,0.20),transparent_45%),radial-gradient(circle_at_80%_0%,rgba(236,72,153,0.20),transparent_50%)]"
+              aria-hidden
+            />
+
+            <div className="absolute inset-0">
+              <div className="mx-auto flex h-full w-full max-w-6xl flex-col justify-end px-6 pb-10 pt-8 md:pb-14">
+                <div className="max-w-3xl">
+                  <h1 className="text-balance text-4xl font-semibold tracking-tight text-white [text-shadow:0_2px_40px_rgba(0,0,0,0.55)] md:text-6xl md:leading-[1.05]">
                     Let shoppers try before they buy
                   </h1>
-                  <p className="mt-4 text-base leading-relaxed text-zinc-600 md:text-lg">
+                  <p className="mt-4 max-w-2xl text-base leading-relaxed text-white/85 md:text-lg [text-shadow:0_2px_30px_rgba(0,0,0,0.45)]">
                     Add AI virtual try-on to your store in one line of code. No app. No friction.
                   </p>
 
                   <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:items-center">
                     <Link
                       href="/demo"
-                      className="btn-accent-gradient h-12 px-8 text-center shadow-sm sm:inline-flex"
+                      className="btn-accent-gradient h-12 px-8 text-center shadow-2xl shadow-black/30 sm:inline-flex"
                     >
                       See it live
                     </Link>
                     <Link
                       href="/pricing"
-                      className="inline-flex h-12 items-center justify-center rounded-full border border-surface-border bg-white px-8 text-sm font-medium text-zinc-800 shadow-sm transition hover:border-zinc-300 hover:bg-surface-raised"
+                      className="inline-flex h-12 items-center justify-center rounded-full border border-white/30 bg-white/10 px-8 text-sm font-semibold text-white shadow-lg shadow-black/20 backdrop-blur-md transition hover:bg-white/15"
                     >
                       Get started
                     </Link>
                   </div>
                 </div>
-              </div>
-
-              {/* Video column (full visual, not covered by the text overlay) */}
-              <div className="relative flex min-h-[50vh] flex-1 items-center justify-center bg-black md:min-h-[80vh]">
-                <video
-                  src="/demo-video.mp4"
-                  className="h-auto w-full max-h-[80vh] object-contain"
-                  autoPlay
-                  muted
-                  loop
-                  playsInline
-                  controls={false}
-                  preload="auto"
-                />
               </div>
             </div>
           </div>
