@@ -415,11 +415,14 @@ export default function AdminClient() {
               <div className="px-6 py-10 text-sm text-zinc-500 md:px-8">No clients yet.</div>
             ) : (
               <div className="w-full overflow-x-auto">
-                <table className="w-full min-w-[980px] border-separate border-spacing-0">
+                <table className="w-full min-w-[1280px] border-separate border-spacing-0">
                   <thead>
                     <tr className="text-left text-xs font-semibold uppercase tracking-wider text-zinc-500">
                       <th className="border-b border-surface-border px-6 py-3 md:px-8">
                         Client Name
+                      </th>
+                      <th className="border-b border-surface-border px-6 py-3 md:px-8">
+                        Created
                       </th>
                       <th className="border-b border-surface-border px-6 py-3 md:px-8">API Key</th>
                       <th className="border-b border-surface-border px-6 py-3 md:px-8">
@@ -436,6 +439,7 @@ export default function AdminClient() {
                           ? Math.min(100, Math.round((k.usageCount / k.usageLimit) * 100))
                           : 0;
                       const blocked = k.usageLimit > 0 && k.usageCount >= k.usageLimit;
+                      const created = formatCreatedDate(k.createdAt);
                       return (
                         <tr key={k.id} className="align-middle">
                           <td className="border-b border-surface-border px-6 py-5 md:px-8">
@@ -443,10 +447,10 @@ export default function AdminClient() {
                               <p className="truncate text-base font-semibold text-zinc-900">
                                 {k.clientName}
                               </p>
-                              <p className="mt-1 text-xs text-zinc-500">
-                                Created {formatCreatedDate(k.createdAt)}
-                              </p>
                             </div>
+                          </td>
+                          <td className="border-b border-surface-border px-6 py-5 text-sm text-zinc-700 md:px-8">
+                            {created}
                           </td>
                           <td className="border-b border-surface-border px-6 py-5 md:px-8">
                             <span className="rounded-lg border border-surface-border bg-white px-2.5 py-1 font-mono text-xs text-zinc-700">
