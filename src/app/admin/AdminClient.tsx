@@ -201,7 +201,7 @@ export default function AdminClient() {
   }
 
   return (
-    <div className="w-full min-h-screen p-8 bg-white">
+    <div className="w-full p-8 bg-white">
       {editing && (
         <div
           className="fixed inset-0 z-50 flex items-center justify-center bg-zinc-900/40 p-6 backdrop-blur-sm"
