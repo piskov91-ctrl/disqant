@@ -23,7 +23,10 @@ export function Header() {
           <Link href="/pricing" className="transition hover:text-zinc-900">
             Subscriptions
           </Link>
-          <Link href="/demo" className="transition hover:text-zinc-900">
+          <Link
+            href="/demo"
+            className="btn-accent-gradient inline-flex h-9 items-center px-4 text-sm font-semibold shadow-sm"
+          >
             Wear Me
           </Link>
           <Link href="/about" className="transition hover:text-zinc-900">
