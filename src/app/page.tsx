@@ -33,7 +33,7 @@ export default function Home() {
 
             <div className="absolute inset-0">
               <div className="mx-auto flex h-full w-full max-w-6xl flex-col md:flex-row">
-                <div className="flex w-full min-w-0 max-md:flex-1 max-md:flex-col max-md:items-center max-md:justify-center max-md:px-5 max-md:py-6 md:w-1/2 md:items-center md:justify-start md:py-8 md:pl-[calc(2rem+50px)] md:pr-8">
+                <div className="flex w-full min-w-0 max-md:flex-1 max-md:flex-col max-md:items-center max-md:justify-center max-md:px-5 max-md:py-6 md:w-1/2 md:items-center md:justify-start md:py-8 md:pl-[calc(2rem+150px)] md:pr-8">
                   <div className="w-full max-w-lg max-md:mx-auto max-md:text-pretty max-md:text-center md:max-w-3xl md:text-left">
                     <h1 className="text-balance text-4xl font-semibold tracking-tight text-white [text-shadow:0_2px_40px_rgba(0,0,0,0.55)] md:text-6xl md:leading-[1.05]">
                       Let shoppers try before they buy
