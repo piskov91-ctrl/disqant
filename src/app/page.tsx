@@ -33,7 +33,10 @@ export default function Home() {
 
             <div className="absolute inset-0">
               <div className="absolute left-[5%] top-1/2 w-full max-w-[300px] -translate-y-1/2">
-                <h1 className="text-balance text-5xl font-extrabold tracking-tight text-transparent bg-gradient-to-r from-[#7c3aed] to-[#ec4899] bg-clip-text [text-shadow:0_2px_40px_rgba(0,0,0,0.55)] md:text-7xl md:leading-[1.02]">
+                <h1
+                  className="text-balance text-4xl font-extrabold tracking-tight text-transparent bg-gradient-to-r from-[#7c3aed] to-[#ec4899] bg-clip-text [text-shadow:0_2px_40px_rgba(0,0,0,0.55)] md:text-6xl md:leading-[1.02]"
+                  style={{ fontFamily: "Georgia, serif" }}
+                >
                   Welcome to your online fitting room
                 </h1>
                 <p className="mt-4 max-w-2xl text-lg leading-relaxed text-white/90 [text-shadow:0_2px_30px_rgba(0,0,0,0.45)] max-md:mx-auto md:text-xl md:leading-relaxed">
