@@ -173,7 +173,7 @@ export default function Home() {
                   </p>
                 </div>
                 <Link href="/demo" className="btn-accent-gradient h-12 px-8 text-center sm:inline-flex">
-                  Try Demo
+                  Try Wear Me
                 </Link>
               </div>
             </div>

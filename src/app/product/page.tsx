@@ -38,9 +38,6 @@ export default function ProductPage() {
               enough that you can roll it out across your catalogue without turning it into a months-long project.
             </p>
             <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:items-center">
-              <Link href="/demo" className="btn-accent-gradient h-12 px-8 text-center sm:inline-flex">
-                Try Demo
-              </Link>
               <Link
                 href="/pricing"
                 className="inline-flex h-12 items-center justify-center rounded-full border border-surface-border bg-white px-8 text-sm font-medium text-zinc-800 shadow-sm transition hover:border-zinc-300 hover:bg-surface-raised"
@@ -455,7 +452,7 @@ export default function ProductPage() {
                   </p>
                 </div>
                 <Link href="/demo" className="btn-accent-gradient h-12 px-8 text-center sm:inline-flex">
-                  Try Demo
+                  Try Wear Me
                 </Link>
               </div>
             </div>

@@ -1,6 +1,5 @@
 import { Footer } from "@/components/Footer";
 import { Header } from "@/components/Header";
-import Link from "next/link";
 
 export default function AboutPage() {
   return (
@@ -144,11 +143,6 @@ export default function AboutPage() {
                 >
                   hello@disqant.com
                 </a>
-              </div>
-              <div className="mt-8">
-                <Link href="/demo" className="btn-accent-gradient h-12 px-8 text-center sm:inline-flex">
-                  Try the demo
-                </Link>
               </div>
             </div>
           </div>
