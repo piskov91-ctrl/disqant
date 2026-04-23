@@ -134,9 +134,11 @@
       // Camera view + flip button
       + ".dq-camview{position:relative;width:100%;}"
       + ".dq-camflip{position:absolute;top:10px;right:10px;z-index:6;"
-      + "width:38px;height:38px;display:inline-flex;align-items:center;justify-content:center;"
+      + "height:38px;display:inline-flex;align-items:center;justify-content:center;gap:6px;"
+      + "padding:0 10px;"
       + "border-radius:12px;border:1px solid rgba(15,15,20,.14);"
       + "background:rgba(255,255,255,.82);color:#0f0f14;cursor:pointer;"
+      + "font:900 12px/1 system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;"
       + "backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);"
       + "box-shadow:0 12px 26px rgba(0,0,0,.12);transition:transform .16s ease, opacity .16s ease;}"
       + ".dq-camflip:hover{transform:translateY(-1px);}"
@@ -471,7 +473,7 @@
     flipBtn.type = "button";
     flipBtn.className = "dq-camflip";
     flipBtn.setAttribute("aria-label", "Flip camera");
-    flipBtn.textContent = "🔄";
+    flipBtn.textContent = "🔄 Flip";
     flipBtn.style.display = "none";
 
     camView.appendChild(video);
@@ -523,11 +525,14 @@
       }
     }
 
-    async function startCamera() {
+    async function startCamera(useExact) {
       try {
         stopStream();
+        var facing = facingMode;
         stream = await navigator.mediaDevices.getUserMedia({
-          video: { facingMode: facingMode },
+          video: {
+            facingMode: useExact ? { exact: facing } : facing
+          },
           audio: false
         });
       } catch (_e1) {
@@ -558,7 +563,7 @@
     cameraBtn.addEventListener("click", async function () {
       try {
         facingMode = "environment";
-        await startCamera();
+        await startCamera(true);
       } catch (_e) {
         // Minimal UI: ignore (user can use gallery).
       }
@@ -569,7 +574,7 @@
       e.stopPropagation();
       try {
         facingMode = facingMode === "user" ? "environment" : "user";
-        await startCamera();
+        await startCamera(false);
       } catch (_e) {
         // If flip fails, keep current stream.
       }
