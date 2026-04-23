@@ -34,10 +34,10 @@ export default function Home() {
             <div className="absolute inset-0">
               <div className="absolute left-[5%] top-1/2 w-full max-w-[300px] -translate-y-1/2">
                 <h1 className="text-balance text-4xl font-semibold tracking-tight text-white [text-shadow:0_2px_40px_rgba(0,0,0,0.55)] md:text-6xl md:leading-[1.05]">
-                  Let shoppers try before they buy
+                  Welcome to your online fitting room
                 </h1>
                 <p className="mt-4 max-w-2xl text-base leading-relaxed text-white/85 [text-shadow:0_2px_30px_rgba(0,0,0,0.45)] max-md:mx-auto md:text-lg">
-                  Add AI virtual try-on to your store in one line of code. No app. No friction.
+                  Give your shoppers the confidence to buy. AI-powered virtual try-on that works on any online store — no app, no rebuild, just one line of code.
                 </p>
 
                 <div className="mt-8 flex w-full max-w-sm flex-col items-stretch gap-3 self-center sm:flex-row sm:items-center sm:justify-center md:max-w-none md:self-start md:justify-start">
