@@ -131,6 +131,18 @@
       + ".dq-empty strong{color:#0f0f14;font:900 14px/1.2 system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;}"
       + ".dq-empty span{font:600 12px/1.3 system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;}"
 
+      // Camera view + flip button
+      + ".dq-camview{position:relative;width:100%;}"
+      + ".dq-camflip{position:absolute;top:10px;right:10px;z-index:6;"
+      + "width:38px;height:38px;display:inline-flex;align-items:center;justify-content:center;"
+      + "border-radius:12px;border:1px solid rgba(15,15,20,.14);"
+      + "background:rgba(255,255,255,.82);color:#0f0f14;cursor:pointer;"
+      + "backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);"
+      + "box-shadow:0 12px 26px rgba(0,0,0,.12);transition:transform .16s ease, opacity .16s ease;}"
+      + ".dq-camflip:hover{transform:translateY(-1px);}"
+      + ".dq-camflip:active{transform:translateY(0);opacity:.92;}"
+      + ".dq-camflip svg{width:18px;height:18px;display:block;opacity:.92;}"
+
       // Processing overlay + spinner + progress
       + ".dq-processing{position:absolute;inset:0;display:none;align-items:center;justify-content:center;"
       + "flex-direction:column;gap:10px;z-index:4;background:rgba(255,255,255,.62);backdrop-filter:blur(8px);}"
@@ -208,6 +220,8 @@
       span.innerHTML = "<svg width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" fill=\"none\" xmlns=\"http://www.w3.org/2000/svg\"><path d=\"M7 3h10a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2Z\" stroke=\"currentColor\" stroke-width=\"1.8\"/><path d=\"M9 10.5a2 2 0 1 0 0-4 2 2 0 0 0 0 4Z\" stroke=\"currentColor\" stroke-width=\"1.8\"/><path d=\"m5.5 18 5-5 3.2 3.2 2-2L20 18\" stroke=\"currentColor\" stroke-width=\"1.8\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/></svg>";
     } else if (kind === "camera") {
       span.innerHTML = "<svg width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" fill=\"none\" xmlns=\"http://www.w3.org/2000/svg\"><path d=\"M7 7h2l1.2-2h3.6L15 7h2a3 3 0 0 1 3 3v7a3 3 0 0 1-3 3H7a3 3 0 0 1-3-3v-7a3 3 0 0 1 3-3Z\" stroke=\"currentColor\" stroke-width=\"1.8\" stroke-linejoin=\"round\"/><path d=\"M12 17a4 4 0 1 0 0-8 4 4 0 0 0 0 8Z\" stroke=\"currentColor\" stroke-width=\"1.8\"/></svg>";
+    } else if (kind === "flip") {
+      span.innerHTML = "<svg width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" fill=\"none\" xmlns=\"http://www.w3.org/2000/svg\"><path d=\"M4 7h6\" stroke=\"currentColor\" stroke-width=\"1.8\" stroke-linecap=\"round\"/><path d=\"M7 4l3 3-3 3\" stroke=\"currentColor\" stroke-width=\"1.8\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/><path d=\"M20 17h-6\" stroke=\"currentColor\" stroke-width=\"1.8\" stroke-linecap=\"round\"/><path d=\"M17 14l-3 3 3 3\" stroke=\"currentColor\" stroke-width=\"1.8\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/><path d=\"M10 7c2.5 0 4.5 2 4.5 4.5S12.5 16 10 16\" stroke=\"currentColor\" stroke-width=\"1.8\" stroke-linecap=\"round\"/></svg>";
     }
     return span;
   }
@@ -370,6 +384,7 @@
     var modelFile = null;
     var garmentFile = null;
     var stream = null;
+    var facingMode = "user";
     var selectedCategory =
       inferredCategory === "shoes"
         ? "shoes"
@@ -434,6 +449,9 @@
     var videoWrap = document.createElement("div");
     videoWrap.style.display = "none";
 
+    var camView = document.createElement("div");
+    camView.className = "dq-camview";
+
     var video = document.createElement("video");
     video.autoplay = true;
     video.playsInline = true;
@@ -448,7 +466,16 @@
     captureBtn.type = "button";
     captureBtn.textContent = "Capture photo";
 
-    videoWrap.appendChild(video);
+    var flipBtn = document.createElement("button");
+    flipBtn.type = "button";
+    flipBtn.className = "dq-camflip";
+    flipBtn.setAttribute("aria-label", "Flip camera");
+    flipBtn.appendChild(makeIcon("flip").firstChild);
+    flipBtn.style.display = "none";
+
+    camView.appendChild(video);
+    camView.appendChild(flipBtn);
+    videoWrap.appendChild(camView);
     videoWrap.appendChild(document.createElement("div")).style.height = "10px";
     videoWrap.appendChild(captureBtn);
 
@@ -487,6 +514,30 @@
       stream = null;
     }
 
+    function isMobile() {
+      try {
+        return window.matchMedia && window.matchMedia("(max-width: 768px)").matches;
+      } catch (_e) {
+        return false;
+      }
+    }
+
+    async function startCamera() {
+      try {
+        stopStream();
+        stream = await navigator.mediaDevices.getUserMedia({
+          video: { facingMode: facingMode },
+          audio: false
+        });
+      } catch (_e1) {
+        // Fallback for browsers that don't honor facingMode.
+        stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: false });
+      }
+      video.srcObject = stream;
+      videoWrap.style.display = "block";
+      flipBtn.style.display = isMobile() ? "inline-flex" : "none";
+    }
+
     // stop stream on close
     var originalClose = m.close;
     m.close = function () {
@@ -505,12 +556,21 @@
 
     cameraBtn.addEventListener("click", async function () {
       try {
-        stopStream();
-        stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "user" }, audio: false });
-        video.srcObject = stream;
-        videoWrap.style.display = "block";
+        facingMode = "user";
+        await startCamera();
       } catch (_e) {
         // Minimal UI: ignore (user can use gallery).
+      }
+    });
+
+    flipBtn.addEventListener("click", async function (e) {
+      e.preventDefault();
+      e.stopPropagation();
+      try {
+        facingMode = facingMode === "user" ? "environment" : "user";
+        await startCamera();
+      } catch (_e) {
+        // If flip fails, keep current stream.
       }
     });
 
@@ -528,6 +588,7 @@
         setStageImage(URL.createObjectURL(blob), "Your photo");
         stopStream();
         videoWrap.style.display = "none";
+        flipBtn.style.display = "none";
       }, "image/jpeg", 0.92);
     });
 
