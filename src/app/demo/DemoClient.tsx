@@ -516,11 +516,6 @@ export default function DemoClient() {
     [selectedPresetId],
   );
 
-  async function logout() {
-    await fetch("/api/demo-auth", { method: "DELETE" });
-    window.location.reload();
-  }
-
   return (
     <div className="min-h-dvh bg-white">
       {wearOpen && (
@@ -682,15 +677,6 @@ export default function DemoClient() {
       <Header />
 
       <main className="mx-auto max-w-4xl px-6 py-12 md:py-16">
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-end">
-          <button
-            type="button"
-            onClick={logout}
-            className="inline-flex h-10 items-center justify-center self-start rounded-full border border-surface-border bg-white px-4 text-sm font-semibold text-zinc-800 shadow-sm transition hover:border-zinc-300 hover:bg-surface-raised sm:self-auto"
-          >
-            Log out
-          </button>
-        </div>
         <h1 className="text-balance text-3xl font-semibold tracking-tight text-zinc-900 md:text-4xl">
           Virtual try-on demo
         </h1>
