@@ -455,29 +455,17 @@
     var camView = document.createElement("div");
     camView.className = "dq-camview";
 
-    var video = document.createElement("video");
-    video.autoplay = true;
-    video.playsInline = true;
-    video.muted = true;
-    video.style.width = "100%";
-    video.style.borderRadius = "16px";
-    video.style.border = "1px solid rgba(15,15,20,.10)";
-    video.style.boxShadow = "0 18px 50px rgba(0,0,0,.08)";
+    // Lazy-created when the camera opens.
+    var video = null;
 
     var captureBtn = document.createElement("button");
     captureBtn.className = "dq-primary";
     captureBtn.type = "button";
     captureBtn.textContent = "Capture photo";
 
-    var flipBtn = document.createElement("button");
-    flipBtn.type = "button";
-    flipBtn.className = "dq-camflip";
-    flipBtn.setAttribute("aria-label", "Flip camera");
-    flipBtn.textContent = "🔄 Flip";
-    flipBtn.style.display = "none";
+    // Lazy-created when the camera opens.
+    var flipBtn = null;
 
-    camView.appendChild(video);
-    camView.appendChild(flipBtn);
     videoWrap.appendChild(camView);
     videoWrap.appendChild(document.createElement("div")).style.height = "10px";
     videoWrap.appendChild(captureBtn);
@@ -525,10 +513,45 @@
       }
     }
 
+    function ensureCameraElements() {
+      if (!video) {
+        video = document.createElement("video");
+        video.autoplay = true;
+        video.playsInline = true;
+        video.muted = true;
+        video.style.width = "100%";
+        video.style.borderRadius = "16px";
+        video.style.border = "1px solid rgba(15,15,20,.10)";
+        video.style.boxShadow = "0 18px 50px rgba(0,0,0,.08)";
+        camView.insertBefore(video, camView.firstChild);
+      }
+      if (!flipBtn) {
+        flipBtn = document.createElement("button");
+        flipBtn.type = "button";
+        flipBtn.className = "dq-camflip";
+        flipBtn.setAttribute("aria-label", "Flip camera");
+        flipBtn.textContent = "🔄 Flip";
+        flipBtn.style.display = "none";
+        camView.appendChild(flipBtn);
+
+        flipBtn.addEventListener("click", async function (e) {
+          e.preventDefault();
+          e.stopPropagation();
+          try {
+            facingMode = facingMode === "user" ? "environment" : "user";
+            await startCamera(false);
+          } catch (_e) {
+            // If flip fails, keep current stream.
+          }
+        });
+      }
+    }
+
     async function startCamera(useExact) {
       try {
         stopStream();
         var facing = facingMode;
+        ensureCameraElements();
         stream = await navigator.mediaDevices.getUserMedia({
           video: {
             facingMode: useExact ? { exact: facing } : facing
@@ -541,7 +564,7 @@
       }
       video.srcObject = stream;
       videoWrap.style.display = "block";
-      flipBtn.style.display = "inline-flex";
+      if (flipBtn) flipBtn.style.display = "inline-flex";
     }
 
     // stop stream on close
@@ -569,17 +592,6 @@
       }
     });
 
-    flipBtn.addEventListener("click", async function (e) {
-      e.preventDefault();
-      e.stopPropagation();
-      try {
-        facingMode = facingMode === "user" ? "environment" : "user";
-        await startCamera(false);
-      } catch (_e) {
-        // If flip fails, keep current stream.
-      }
-    });
-
     captureBtn.addEventListener("click", function () {
       if (!video.videoWidth) return;
       var canvas = document.createElement("canvas");
@@ -594,7 +606,7 @@
         setStageImage(URL.createObjectURL(blob), "Your photo");
         stopStream();
         videoWrap.style.display = "none";
-        flipBtn.style.display = "none";
+        if (flipBtn) flipBtn.style.display = "none";
       }, "image/jpeg", 0.92);
     });
 
