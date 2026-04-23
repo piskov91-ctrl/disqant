@@ -384,7 +384,8 @@
     var modelFile = null;
     var garmentFile = null;
     var stream = null;
-    var facingMode = "user";
+    // Default to back camera on mobile.
+    var facingMode = "environment";
     var selectedCategory =
       inferredCategory === "shoes"
         ? "shoes"
@@ -470,7 +471,7 @@
     flipBtn.type = "button";
     flipBtn.className = "dq-camflip";
     flipBtn.setAttribute("aria-label", "Flip camera");
-    flipBtn.appendChild(makeIcon("flip").firstChild);
+    flipBtn.textContent = "🔄";
     flipBtn.style.display = "none";
 
     camView.appendChild(video);
@@ -535,7 +536,7 @@
       }
       video.srcObject = stream;
       videoWrap.style.display = "block";
-      flipBtn.style.display = isMobile() ? "inline-flex" : "none";
+      flipBtn.style.display = "inline-flex";
     }
 
     // stop stream on close
@@ -556,7 +557,7 @@
 
     cameraBtn.addEventListener("click", async function () {
       try {
-        facingMode = "user";
+        facingMode = "environment";
         await startCamera();
       } catch (_e) {
         // Minimal UI: ignore (user can use gallery).
