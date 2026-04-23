@@ -145,6 +145,24 @@
       + ".dq-camflip:active{transform:translateY(0);opacity:.92;}"
       + ".dq-camflip svg{width:18px;height:18px;display:block;opacity:.92;}"
 
+      // Camera overlay (mobile-first)
+      + ".dq-cam-ol{position:fixed;inset:0;z-index:2147483647;background:rgba(15,23,42,.72);"
+      + "display:flex;align-items:center;justify-content:center;padding:14px;}"
+      + ".dq-cam-sheet{position:relative;width:min(720px,100%);height:min(88vh,720px);"
+      + "background:#000;border-radius:18px;overflow:hidden;box-shadow:0 30px 80px rgba(0,0,0,.45);}"
+      + ".dq-cam-video{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;}"
+      + ".dq-cam-top{position:absolute;top:10px;left:10px;right:10px;z-index:2;display:flex;justify-content:space-between;gap:10px;}"
+      + ".dq-cam-btn{appearance:none;border:0;cursor:pointer;min-height:48px;min-width:48px;"
+      + "padding:0 14px;border-radius:14px;background:rgba(255,255,255,.92);color:#0f0f14;"
+      + "font:900 13px/1 system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;"
+      + "box-shadow:0 12px 26px rgba(0,0,0,.20);}"
+      + ".dq-cam-btn:active{opacity:.92;}"
+      + ".dq-cam-bottom{position:absolute;left:0;right:0;bottom:14px;z-index:2;display:flex;justify-content:center;pointer-events:none;}"
+      + ".dq-cam-shot{pointer-events:auto;min-height:54px;min-width:220px;padding:0 18px;border-radius:999px;"
+      + "background:linear-gradient(135deg,#7c3aed,#ec4899);color:#fff;"
+      + "font:900 14px/1 system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;"
+      + "box-shadow:0 18px 40px rgba(124,58,237,.22),0 14px 34px rgba(236,72,153,.18);}"
+
       // Processing overlay + spinner + progress
       + ".dq-processing{position:absolute;inset:0;display:none;align-items:center;justify-content:center;"
       + "flex-direction:column;gap:10px;z-index:4;background:rgba(255,255,255,.62);backdrop-filter:blur(8px);}"
@@ -386,8 +404,7 @@
     var modelFile = null;
     var garmentFile = null;
     var stream = null;
-    // Default to back camera on mobile.
-    var facingMode = "environment";
+    var camFacingMode = "environment";
     var selectedCategory =
       inferredCategory === "shoes"
         ? "shoes"
@@ -439,7 +456,7 @@
     cameraBtn.className = "dq-choice";
     cameraBtn.type = "button";
     cameraBtn.appendChild(makeIcon("camera"));
-    cameraBtn.appendChild(document.createTextNode("Camera"));
+    cameraBtn.appendChild(document.createTextNode("Use Camera"));
 
     row.appendChild(uploadBtn);
     row.appendChild(cameraBtn);
@@ -448,27 +465,6 @@
     fileInput.type = "file";
     fileInput.accept = "image/*";
     fileInput.style.display = "none";
-
-    var videoWrap = document.createElement("div");
-    videoWrap.style.display = "none";
-
-    var camView = document.createElement("div");
-    camView.className = "dq-camview";
-
-    // Lazy-created when the camera opens.
-    var video = null;
-
-    var captureBtn = document.createElement("button");
-    captureBtn.className = "dq-primary";
-    captureBtn.type = "button";
-    captureBtn.textContent = "Capture photo";
-
-    // Lazy-created when the camera opens.
-    var flipBtn = null;
-
-    videoWrap.appendChild(camView);
-    videoWrap.appendChild(document.createElement("div")).style.height = "10px";
-    videoWrap.appendChild(captureBtn);
 
     var generateBtn = document.createElement("button");
     generateBtn.className = "dq-primary";
@@ -484,7 +480,6 @@
     body.appendChild(stage);
     body.appendChild(row);
     body.appendChild(fileInput);
-    body.appendChild(videoWrap);
     body.appendChild(generateBtn);
     body.appendChild(saveBtn);
 
@@ -505,66 +500,122 @@
       stream = null;
     }
 
-    function isMobile() {
+    function dataUrlToBlob(dataUrl) {
+      var parts = String(dataUrl || "").split(",");
+      if (parts.length < 2) return null;
+      var meta = parts[0] || "";
+      var b64 = parts[1] || "";
+      var m = /data:([^;]+);base64/.exec(meta);
+      var mime = m && m[1] ? m[1] : "image/jpeg";
       try {
-        return window.matchMedia && window.matchMedia("(max-width: 768px)").matches;
+        var bin = atob(b64);
+        var len = bin.length;
+        var arr = new Uint8Array(len);
+        for (var i = 0; i < len; i++) arr[i] = bin.charCodeAt(i);
+        return new Blob([arr], { type: mime });
       } catch (_e) {
-        return false;
+        return null;
       }
     }
 
-    function ensureCameraElements() {
-      if (!video) {
-        video = document.createElement("video");
-        video.autoplay = true;
-        video.playsInline = true;
-        video.muted = true;
-        video.style.width = "100%";
-        video.style.borderRadius = "16px";
-        video.style.border = "1px solid rgba(15,15,20,.10)";
-        video.style.boxShadow = "0 18px 50px rgba(0,0,0,.08)";
-        camView.insertBefore(video, camView.firstChild);
-      }
-      if (!flipBtn) {
-        flipBtn = document.createElement("button");
-        flipBtn.type = "button";
-        flipBtn.className = "dq-camflip";
-        flipBtn.setAttribute("aria-label", "Flip camera");
-        flipBtn.textContent = "🔄 Flip";
-        flipBtn.style.display = "none";
-        camView.appendChild(flipBtn);
+    function openCameraOverlay() {
+      if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) return;
 
-        flipBtn.addEventListener("click", async function (e) {
-          e.preventDefault();
-          e.stopPropagation();
-          try {
-            facingMode = facingMode === "user" ? "environment" : "user";
-            await startCamera(false);
-          } catch (_e) {
-            // If flip fails, keep current stream.
-          }
-        });
-      }
-    }
+      var ol = document.createElement("div");
+      ol.className = "dq-cam-ol";
 
-    async function startCamera(useExact) {
-      try {
+      var sheet = document.createElement("div");
+      sheet.className = "dq-cam-sheet";
+
+      var v = document.createElement("video");
+      v.className = "dq-cam-video";
+      v.autoplay = true;
+      v.playsInline = true;
+      v.muted = true;
+
+      var top = document.createElement("div");
+      top.className = "dq-cam-top";
+
+      var cancelBtn = document.createElement("button");
+      cancelBtn.type = "button";
+      cancelBtn.className = "dq-cam-btn";
+      cancelBtn.textContent = "✕ Cancel";
+
+      var switchBtn = document.createElement("button");
+      switchBtn.type = "button";
+      switchBtn.className = "dq-cam-btn";
+      switchBtn.textContent = "🔄 Switch Camera";
+
+      top.appendChild(cancelBtn);
+      top.appendChild(switchBtn);
+
+      var bottom = document.createElement("div");
+      bottom.className = "dq-cam-bottom";
+
+      var shotBtn = document.createElement("button");
+      shotBtn.type = "button";
+      shotBtn.className = "dq-cam-shot";
+      shotBtn.textContent = "📸 Take Photo";
+
+      bottom.appendChild(shotBtn);
+
+      sheet.appendChild(v);
+      sheet.appendChild(top);
+      sheet.appendChild(bottom);
+      ol.appendChild(sheet);
+      document.body.appendChild(ol);
+
+      function closeOverlay() {
         stopStream();
-        var facing = facingMode;
-        ensureCameraElements();
-        stream = await navigator.mediaDevices.getUserMedia({
-          video: {
-            facingMode: useExact ? { exact: facing } : facing
-          },
-          audio: false
-        });
-      } catch (_e1) {
-        // Fallback for browsers that don't honor facingMode.
-        stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: false });
+        try {
+          if (ol && ol.parentNode) ol.parentNode.removeChild(ol);
+        } catch (_e) { }
       }
-      video.srcObject = stream;
-      videoWrap.style.display = "block";
-      if (flipBtn) flipBtn.style.display = "inline-flex";
+
+      async function startCam() {
+        stopStream();
+        try {
+          stream = await navigator.mediaDevices.getUserMedia({
+            video: { facingMode: camFacingMode },
+            audio: false
+          });
+        } catch (_e1) {
+          // Fallback for browsers that don't honor facingMode.
+          stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: false });
+        }
+        v.srcObject = stream;
+      }
+
+      cancelBtn.addEventListener("click", closeOverlay);
+      ol.addEventListener("click", function (e) {
+        if (e.target === ol) closeOverlay();
+      });
+
+      switchBtn.addEventListener("click", async function (e) {
+        e.preventDefault();
+        e.stopPropagation();
+        camFacingMode = camFacingMode === "environment" ? "user" : "environment";
+        try { await startCam(); } catch (_e) { }
+      });
+
+      shotBtn.addEventListener("click", function () {
+        if (!v.videoWidth) return;
+        var canvas = document.createElement("canvas");
+        canvas.width = v.videoWidth;
+        canvas.height = v.videoHeight;
+        var ctx = canvas.getContext("2d");
+        ctx.drawImage(v, 0, 0);
+        var dataUrl = canvas.toDataURL("image/jpeg", 0.92);
+        var blob = dataUrlToBlob(dataUrl);
+        if (blob) modelFile = fileFromBlob(blob, "user.jpg");
+        saveBtn.style.display = "none";
+        setStageImage(dataUrl, "Your photo");
+        closeOverlay();
+      });
+
+      // Start with back camera.
+      camFacingMode = "environment";
+      startCam();
     }
 
     // stop stream on close
@@ -585,29 +636,10 @@
 
     cameraBtn.addEventListener("click", async function () {
       try {
-        facingMode = "environment";
-        await startCamera(true);
+        openCameraOverlay();
       } catch (_e) {
         // Minimal UI: ignore (user can use gallery).
       }
-    });
-
-    captureBtn.addEventListener("click", function () {
-      if (!video.videoWidth) return;
-      var canvas = document.createElement("canvas");
-      canvas.width = video.videoWidth;
-      canvas.height = video.videoHeight;
-      var ctx = canvas.getContext("2d");
-      ctx.drawImage(video, 0, 0);
-      canvas.toBlob(function (blob) {
-        if (!blob) return;
-        modelFile = fileFromBlob(blob, "user.jpg");
-        saveBtn.style.display = "none";
-        setStageImage(URL.createObjectURL(blob), "Your photo");
-        stopStream();
-        videoWrap.style.display = "none";
-        if (flipBtn) flipBtn.style.display = "none";
-      }, "image/jpeg", 0.92);
     });
 
     (async function initGarment() {
