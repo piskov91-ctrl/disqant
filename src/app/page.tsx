@@ -37,10 +37,10 @@ export default function Home() {
                   className="text-balance text-4xl font-extrabold tracking-tight text-transparent bg-gradient-to-r from-[#7c3aed] to-[#ec4899] bg-clip-text [text-shadow:0_2px_40px_rgba(0,0,0,0.55)] md:text-6xl md:leading-[1.02]"
                   style={{ fontFamily: "Georgia, serif" }}
                 >
-                  Welcome to your online fitting room
+                  Your online fitting room
                 </h1>
                 <p className="mt-4 max-w-2xl text-lg leading-relaxed text-white/90 [text-shadow:0_2px_30px_rgba(0,0,0,0.45)] max-md:mx-auto md:text-xl md:leading-relaxed">
-                  Give your shoppers the confidence to buy. AI-powered virtual try-on that works on any online store — no app, no rebuild, just one line of code.
+                  Shoppers try on clothes before they buy. You get fewer returns and more sales. One line of code.
                 </p>
 
                 <div className="mt-8 flex w-full max-w-sm flex-col items-stretch gap-3 self-center sm:flex-row sm:items-center sm:justify-center md:max-w-none md:self-start md:justify-start">
