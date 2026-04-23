@@ -32,33 +32,28 @@ export default function Home() {
             />
 
             <div className="absolute inset-0">
-              <div className="mx-auto flex h-full w-full max-w-6xl flex-col md:flex-row">
-                <div className="flex w-full min-w-0 max-md:flex-1 max-md:flex-col max-md:items-center max-md:justify-center max-md:px-5 max-md:py-6 md:w-1/2 md:items-center md:justify-start md:py-8 md:pl-[calc(2rem+250px)] md:pr-8">
-                  <div className="w-full max-w-lg max-md:mx-auto max-md:text-pretty max-md:text-center md:ml-[100px] md:max-w-3xl md:text-left">
-                    <h1 className="text-balance text-4xl font-semibold tracking-tight text-white [text-shadow:0_2px_40px_rgba(0,0,0,0.55)] md:text-6xl md:leading-[1.05]">
-                      Let shoppers try before they buy
-                    </h1>
-                    <p className="mt-4 max-w-2xl text-base leading-relaxed text-white/85 [text-shadow:0_2px_30px_rgba(0,0,0,0.45)] max-md:mx-auto md:text-lg">
-                      Add AI virtual try-on to your store in one line of code. No app. No friction.
-                    </p>
+              <div className="absolute left-[5%] top-1/2 w-full max-w-[300px] -translate-y-1/2">
+                <h1 className="text-balance text-4xl font-semibold tracking-tight text-white [text-shadow:0_2px_40px_rgba(0,0,0,0.55)] md:text-6xl md:leading-[1.05]">
+                  Let shoppers try before they buy
+                </h1>
+                <p className="mt-4 max-w-2xl text-base leading-relaxed text-white/85 [text-shadow:0_2px_30px_rgba(0,0,0,0.45)] max-md:mx-auto md:text-lg">
+                  Add AI virtual try-on to your store in one line of code. No app. No friction.
+                </p>
 
-                    <div className="mt-8 flex w-full max-w-sm flex-col items-stretch gap-3 self-center sm:flex-row sm:items-center sm:justify-center md:max-w-none md:self-start md:justify-start">
-                      <Link
-                        href="/demo"
-                        className="btn-accent-gradient h-12 w-full justify-center px-8 text-center shadow-2xl shadow-black/30 sm:w-auto sm:inline-flex"
-                      >
-                        See it live
-                      </Link>
-                      <Link
-                        href="/pricing"
-                        className="inline-flex h-12 w-full items-center justify-center rounded-full border border-white/30 bg-white/10 px-8 text-sm font-semibold text-white shadow-lg shadow-black/20 backdrop-blur-md transition hover:bg-white/15 sm:w-auto"
-                      >
-                        Get started
-                      </Link>
-                    </div>
-                  </div>
+                <div className="mt-8 flex w-full max-w-sm flex-col items-stretch gap-3 self-center sm:flex-row sm:items-center sm:justify-center md:max-w-none md:self-start md:justify-start">
+                  <Link
+                    href="/demo"
+                    className="btn-accent-gradient h-12 w-full justify-center px-8 text-center shadow-2xl shadow-black/30 sm:w-auto sm:inline-flex"
+                  >
+                    See it live
+                  </Link>
+                  <Link
+                    href="/pricing"
+                    className="inline-flex h-12 w-full items-center justify-center rounded-full border border-white/30 bg-white/10 px-8 text-sm font-semibold text-white shadow-lg shadow-black/20 backdrop-blur-md transition hover:bg-white/15 sm:w-auto"
+                  >
+                    Get started
+                  </Link>
                 </div>
-                <div className="hidden w-1/2 shrink-0 md:block" aria-hidden />
               </div>
             </div>
           </div>
