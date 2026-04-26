@@ -260,6 +260,28 @@ export default function DemoClient() {
     return () => window.cancelAnimationFrame(id);
   }, [wearOpen, wearClosing]);
 
+  // Lock page scroll while the try-on modal is open (remains through close animation until `wearOpen` is false).
+  useEffect(() => {
+    if (typeof document === "undefined") return;
+    if (!wearOpen) return;
+    const html = document.documentElement;
+    const body = document.body;
+    const prev = {
+      html: html.style.overflow,
+      body: body.style.overflow,
+      htmlOverscroll: html.style.overscrollBehavior,
+    };
+    html.style.overflow = "hidden";
+    body.style.overflow = "hidden";
+    html.style.overscrollBehavior = "none";
+
+    return () => {
+      html.style.overflow = prev.html;
+      body.style.overflow = prev.body;
+      html.style.overscrollBehavior = prev.htmlOverscroll;
+    };
+  }, [wearOpen]);
+
   // `<video>` is not mounted until `wearShowVideo` is true, so after `getUserMedia` the ref is often still null
   // on the first open. Attach the pending stream once the preview is in the tree.
   useLayoutEffect(() => {
