@@ -2,10 +2,10 @@
 
 import { usePathname } from "next/navigation";
 import { useEffect } from "react";
-import { EtherealShadowBackground } from "@/components/EtherealShadowBackground";
+import { AmbientBlobsBackground } from "@/components/AmbientBlobsBackground";
 
 /**
- * Renders the 21st.dev ethereal-shadow layer on all routes except `/`, and
+ * Renders a dark animated blob layer on all routes except `/`, and
  * toggles `body.site-ambient` for light-on-dark text styles (see `globals.css`).
  */
 export function SiteAmbient() {
@@ -27,7 +27,7 @@ export function SiteAmbient() {
 
   return (
     <div className="pointer-events-none fixed inset-0 z-[1]" aria-hidden>
-      <EtherealShadowBackground />
+      <AmbientBlobsBackground />
     </div>
   );
 }

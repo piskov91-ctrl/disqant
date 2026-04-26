@@ -17,12 +17,157 @@ body {
 }
 
 /**
- * Light text + translucent surfaces on top of the ethereal background (all pages except home).
+ * Light text + translucent surfaces on top of the ambient background (all pages except home).
  * Uses targeted overrides for common `text-zinc-*` / `bg-white` patterns.
  */
 body.site-ambient {
   color: #f4f4f5;
   background: #030712;
+}
+
+/* Slow purple/blue gradient blobs (non-home `SiteAmbient` layer) */
+.site-ambient-blobs {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  contain: layout style paint;
+}
+
+.site-ambient-blobs__base {
+  position: absolute;
+  inset: 0;
+  background: #030712;
+}
+
+.site-ambient-blobs__blob {
+  position: absolute;
+  width: min(90vw, 55rem);
+  height: min(90vw, 55rem);
+  border-radius: 50%;
+  filter: blur(80px);
+  will-change: transform;
+  transform: translate3d(0, 0, 0);
+  opacity: 0.5;
+  mix-blend-mode: screen;
+  pointer-events: none;
+}
+
+.site-ambient-blobs__blob--1 {
+  left: -15%;
+  top: 10%;
+  background: radial-gradient(
+    circle at 30% 40%,
+    rgb(88 28 135 / 0.85) 0%,
+    rgb(30 64 175 / 0.35) 50%,
+    transparent 70%
+  );
+  animation: site-ambient-blob-1 38s ease-in-out infinite;
+}
+
+.site-ambient-blobs__blob--2 {
+  right: -20%;
+  top: 35%;
+  background: radial-gradient(
+    circle at 60% 50%,
+    rgb(59 130 246 / 0.75) 0%,
+    rgb(99 102 241 / 0.4) 45%,
+    transparent 68%
+  );
+  animation: site-ambient-blob-2 44s ease-in-out infinite;
+}
+
+.site-ambient-blobs__blob--3 {
+  left: 5%;
+  bottom: -10%;
+  width: min(100vw, 60rem);
+  height: min(100vw, 60rem);
+  background: radial-gradient(
+    circle at 50% 30%,
+    rgb(67 56 202 / 0.7) 0%,
+    rgb(88 28 135 / 0.35) 50%,
+    transparent 70%
+  );
+  animation: site-ambient-blob-3 52s ease-in-out infinite;
+}
+
+.site-ambient-blobs__blob--4 {
+  right: 10%;
+  top: -5%;
+  width: min(80vw, 45rem);
+  height: min(80vw, 45rem);
+  background: radial-gradient(
+    circle at 40% 60%,
+    rgb(29 78 216 / 0.6) 0%,
+    rgb(75 0 130 / 0.45) 50%,
+    transparent 65%
+  );
+  animation: site-ambient-blob-4 42s ease-in-out infinite;
+}
+
+@keyframes site-ambient-blob-1 {
+  0%,
+  100% {
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+  25% {
+    transform: translate3d(8%, 4%, 0) scale(1.06);
+  }
+  50% {
+    transform: translate3d(3%, 10%, 0) scale(0.95);
+  }
+  75% {
+    transform: translate3d(-5%, 2%, 0) scale(1.03);
+  }
+}
+
+@keyframes site-ambient-blob-2 {
+  0%,
+  100% {
+    transform: translate3d(0, 0, 0) scale(1.02);
+  }
+  33% {
+    transform: translate3d(-10%, 6%, 0) scale(0.94);
+  }
+  66% {
+    transform: translate3d(4%, -8%, 0) scale(1.08);
+  }
+}
+
+@keyframes site-ambient-blob-3 {
+  0%,
+  100% {
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+  20% {
+    transform: translate3d(6%, -4%, 0) scale(1.05);
+  }
+  45% {
+    transform: translate3d(-4%, 8%, 0) scale(0.92);
+  }
+  70% {
+    transform: translate3d(10%, 3%, 0) scale(1.04);
+  }
+}
+
+@keyframes site-ambient-blob-4 {
+  0%,
+  100% {
+    transform: translate3d(0, 0, 0) scale(0.98);
+  }
+  40% {
+    transform: translate3d(-6%, -5%, 0) scale(1.1);
+  }
+  80% {
+    transform: translate3d(5%, 9%, 0) scale(0.96);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .site-ambient-blobs__blob {
+    animation: none;
+    filter: blur(64px);
+    opacity: 0.35;
+  }
 }
 
 body.site-ambient .text-zinc-900,
