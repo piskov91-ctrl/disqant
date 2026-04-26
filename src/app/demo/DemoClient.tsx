@@ -14,7 +14,16 @@ type TryOnResponse =
   | { error: string; code?: string; keyKind?: "demo" | "client" };
 
 type GarmentPreset = {
-  id: "sneakers" | "tee" | "sweater" | "jacket" | "jacket_leather" | "jeans" | "cap" | "beanie";
+  id:
+    | "sneakers"
+    | "tee"
+    | "sweater"
+    | "jacket"
+    | "jacket_leather"
+    | "jeans"
+    | "cap"
+    | "beanie"
+    | "sunglasses";
   label: string;
   name: string;
   /** Hint for `/api/try-on` (echoed in JSON); maps to sneakers → shoes, apparel → tops */
@@ -92,6 +101,15 @@ const GARMENT_PRESETS: GarmentPreset[] = [
     // Soft knit beanie, neutral product-style image for cold-weather try-on.
     imageUrl:
       "https://images.unsplash.com/photo-1618354691371-d2e48c818c10?auto=format&fit=crop&w=1400&q=80",
+  },
+  {
+    id: "sunglasses",
+    label: "Sunglasses",
+    name: "Classic sunglasses (product shot)",
+    category: "tops",
+    // Sunglasses on a light surface; clean catalog-style product image.
+    imageUrl:
+      "https://images.unsplash.com/photo-1572635196237-14b3f281503f?auto=format&fit=crop&w=1400&q=80",
   },
 ];
 
@@ -973,7 +991,7 @@ export default function DemoClient() {
           Try-on uses Fashn <span className="font-semibold text-zinc-800">balanced</span> generation. Images are
           auto-compressed to max 1000px before the API call.
           {selectedPreset?.id === "sneakers"
-            ? " Sneakers use a shoes category hint; other presets (including the cap and beanie) use tops or bottoms as appropriate."
+            ? " Sneakers use a shoes category hint; other presets (including the cap, beanie, and sunglasses) use tops or bottoms as appropriate."
             : ""}
         </p>
       </main>
