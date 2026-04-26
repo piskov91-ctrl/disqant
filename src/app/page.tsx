@@ -1,25 +1,22 @@
 import { Footer } from "@/components/Footer";
 import { Header } from "@/components/Header";
-import { AnimatedShaderBackground } from "@/components/AnimatedShaderBackground";
+import { HomeHeroWnjoojxBackground } from "@/components/HomeHeroWnjoojxBackground";
 import Link from "next/link";
 
 export default function Home() {
   return (
     <>
-      <div className="pointer-events-none fixed inset-0 z-0" aria-hidden>
-        <AnimatedShaderBackground />
-      </div>
-      <div className="relative z-10">
-        <Header />
-        <main className="pt-16">
-          <section
-            aria-label="Home hero"
-            className="relative min-h-[calc(100dvh-4rem)] overflow-hidden text-white"
-          >
-            <div
-              className="pointer-events-none absolute inset-0 z-[2] bg-[radial-gradient(ellipse_90%_80%_at_50%_45%,transparent_25%,rgba(0,0,0,0.5)_100%)]"
-              aria-hidden
-            />
+      <Header />
+      <main className="pt-16">
+        <section
+          aria-label="Home hero"
+          className="relative min-h-[calc(100dvh-4rem)] overflow-hidden text-white"
+        >
+          <HomeHeroWnjoojxBackground />
+          <div
+            className="pointer-events-none absolute inset-0 z-[2] bg-[radial-gradient(ellipse_90%_80%_at_50%_45%,transparent_25%,rgba(0,0,0,0.5)_100%)]"
+            aria-hidden
+          />
             <div className="relative z-10 mx-auto max-w-6xl px-6 py-20 md:py-24 lg:py-28">
               <div className="grid min-h-[min(70vh,640px)] items-center gap-20 md:grid-cols-[0.82fr_1.45fr] md:items-center md:gap-28 lg:gap-32">
                 <div className="flex min-h-0 max-w-xl flex-col justify-center pr-2 md:-ml-1 md:pr-8 lg:-ml-2 lg:pr-12">
@@ -54,10 +51,9 @@ export default function Home() {
                 </div>
               </div>
             </div>
-          </section>
-        </main>
-        <Footer />
-      </div>
+        </section>
+      </main>
+      <Footer />
     </>
   );
 }
