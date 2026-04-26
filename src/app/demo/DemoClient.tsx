@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { useSearchParams } from "next/navigation";
+import { SwitchCamera } from "lucide-react";
 import { Header } from "@/components/Header";
 
 /** Echoed from FormData; Try-On Max infers product type from images (no Fashn `category` param). */
@@ -123,6 +124,11 @@ const DEMO_WEAR_MODAL_CSS =
   ".dq-brand{padding:12px 12px;border-top:1px solid rgba(15,15,20,.08);display:flex;align-items:center;justify-content:flex-start;background:#fff;}" +
   ".dq-brand span{font:900 12px/1 system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;color:#0f0f14;letter-spacing:.25px;}" +
   ".dq-brand small{margin-left:8px;font:700 12px/1 system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;color:rgba(15,15,20,.55);}" +
+  ".dq-cam-row{display:flex;gap:10px;align-items:stretch;}" +
+  ".dq-flip{flex:0 0 auto;display:inline-flex;align-items:center;gap:8px;padding:12px 14px;border-radius:16px;border:1px solid rgba(15,15,20,.10);background:#fff;color:#0f0f14;cursor:pointer;box-shadow:0 10px 26px rgba(0,0,0,.06);font:900 12px/1 system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;transition:transform .16s ease, box-shadow .16s ease;}" +
+  ".dq-flip:hover{transform:translateY(-1px);box-shadow:0 14px 30px rgba(0,0,0,.09);}" +
+  ".dq-flip:disabled{opacity:.55;cursor:not-allowed;transform:none;}" +
+  ".dq-cam-row .dq-primary{flex:1;min-width:0;}" +
   "@media (max-width:420px){.dq-body{padding:10px}.dq-stage{height:min(74vh,520px)}.dq-choice{min-width:100%}}";
 
 function DqIconGallery() {
@@ -224,6 +230,8 @@ export default function DemoClient() {
   const [wearShowProgress, setWearShowProgress] = useState(false);
   const [wearSaveVisible, setWearSaveVisible] = useState(false);
   const [wearShowVideo, setWearShowVideo] = useState(false);
+  const [wearCameraFacing, setWearCameraFacing] = useState<"user" | "environment">("user");
+  const [wearFlippingCamera, setWearFlippingCamera] = useState(false);
   const [wearGenerating, setWearGenerating] = useState(false);
   const [wearError, setWearError] = useState<string | null>(null);
 
@@ -275,6 +283,8 @@ export default function DemoClient() {
   const closeWearModal = useCallback(() => {
     setWearClosing(true);
     setWearBackdropOpen(false);
+    setWearCameraFacing("user");
+    setWearFlippingCamera(false);
     stopWearStream();
     clearWearProgressTimer();
     const snap = wearStageUrlRef.current;
@@ -328,6 +338,8 @@ export default function DemoClient() {
       setWearBackdropOpen(false);
       setWearClosing(false);
       setWearOpen(true);
+      setWearCameraFacing("user");
+      setWearFlippingCamera(false);
       setSelectedPresetId(preset.id);
       setWearGarmentLoading(true);
       void (async () => {
@@ -365,16 +377,56 @@ export default function DemoClient() {
     try {
       stopWearStream();
       const stream = await navigator.mediaDevices.getUserMedia({
-        video: { facingMode: "user" },
+        video: { facingMode: { ideal: wearCameraFacing } },
         audio: false,
       });
       wearStreamRef.current = stream;
-      if (wearVideoRef.current) wearVideoRef.current.srcObject = stream;
+      if (wearVideoRef.current) {
+        wearVideoRef.current.srcObject = stream;
+        void wearVideoRef.current.play();
+      }
       setWearShowVideo(true);
     } catch {
       /* user may deny; gallery still works */
     }
-  }, [stopWearStream]);
+  }, [stopWearStream, wearCameraFacing]);
+
+  const onWearFlipCamera = useCallback(async () => {
+    if (!wearShowVideo) return;
+    setWearError(null);
+    const previous = wearCameraFacing;
+    const next: "user" | "environment" = previous === "user" ? "environment" : "user";
+    setWearFlippingCamera(true);
+    try {
+      stopWearStream();
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: { facingMode: { ideal: next } },
+        audio: false,
+      });
+      wearStreamRef.current = stream;
+      if (wearVideoRef.current) {
+        wearVideoRef.current.srcObject = stream;
+        void wearVideoRef.current.play();
+      }
+      setWearCameraFacing(next);
+    } catch {
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({
+          video: { facingMode: { ideal: previous } },
+          audio: false,
+        });
+        wearStreamRef.current = stream;
+        if (wearVideoRef.current) {
+          wearVideoRef.current.srcObject = stream;
+          void wearVideoRef.current.play();
+        }
+      } catch {
+        setWearError("Could not switch camera. Try again or use Gallery.");
+      }
+    } finally {
+      setWearFlippingCamera(false);
+    }
+  }, [wearShowVideo, wearCameraFacing, stopWearStream]);
 
   const onWearCapturePhoto = useCallback(() => {
     const video = wearVideoRef.current;
@@ -596,9 +648,39 @@ export default function DemoClient() {
                     }}
                   />
                   <div style={{ height: 10 }} />
-                  <button type="button" className="dq-primary" onClick={onWearCapturePhoto}>
-                    Capture photo
-                  </button>
+                  <div className="dq-cam-row">
+                    <button
+                      type="button"
+                      className="dq-flip"
+                      onClick={() => void onWearFlipCamera()}
+                      disabled={wearFlippingCamera}
+                      aria-label={
+                        wearCameraFacing === "user"
+                          ? "Switch to back camera"
+                          : "Switch to front camera"
+                      }
+                      title={
+                        wearCameraFacing === "user"
+                          ? "Use back camera"
+                          : "Use front camera"
+                      }
+                    >
+                      <SwitchCamera
+                        className="h-5 w-5 shrink-0 opacity-90"
+                        strokeWidth={2}
+                        aria-hidden
+                      />
+                      <span>Flip</span>
+                    </button>
+                    <button
+                      type="button"
+                      className="dq-primary"
+                      onClick={onWearCapturePhoto}
+                      disabled={wearFlippingCamera}
+                    >
+                      Capture photo
+                    </button>
+                  </div>
                 </div>
               ) : null}
 

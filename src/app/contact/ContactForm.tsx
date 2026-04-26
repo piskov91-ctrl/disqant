@@ -121,7 +121,7 @@ export function ContactForm() {
         <input
           id="contact-website"
           name="websiteUrl"
-          type="url"
+          type="text"
           inputMode="url"
           autoComplete="url"
           placeholder="https://yoursite.com"
