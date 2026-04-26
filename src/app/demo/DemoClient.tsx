@@ -6,7 +6,7 @@ import { SwitchCamera } from "lucide-react";
 import { Footer } from "@/components/Footer";
 import { Header } from "@/components/Header";
 
-/** Echoed from FormData; Fashn `tryon-v1.6` run payload in this app does not use our `garment_type` for routing — use tops/bottoms only. */
+/** Echoed from FormData; the API route always uses Fashn `tryon-v1.6` only. This hint is for our JSON, not a separate Fashn model — use tops/bottoms. */
 type GarmentCategoryHint = "tops" | "bottoms";
 
 type TryOnResponse =
@@ -997,9 +997,9 @@ export default function DemoClient() {
         </div>
 
         <p className="mt-6 rounded-2xl border border-surface-border bg-surface-muted/50 p-4 text-xs text-zinc-600">
-          Try-on uses Fashn <span className="font-semibold text-zinc-800">tryon-v1.6</span> with{" "}
-          <span className="font-semibold text-zinc-800">balanced</span> mode (about 1 credit per result in Fashn&apos;s
-          pricing). Images are auto-compressed to max 1000px before the API call.
+          All try-ons use Fashn <span className="font-semibold text-zinc-800">tryon-v1.6</span> (not Try-On Max) in{" "}
+          <span className="font-semibold text-zinc-800">balanced</span> mode—about 1 credit per result for clothing,
+          shoes, hats, and accessories. Images are auto-compressed to max 1000px before the API call.
           {selectedPreset?.id === "sneakers"
             ? " Sneakers use a bottoms category hint; other presets (including the cap, beanie, and sunglasses) use tops or bottoms as appropriate."
             : ""}

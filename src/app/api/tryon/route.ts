@@ -5,6 +5,9 @@ import { recordTryOnProductUsage } from "@/lib/tryOnAnalytics";
 
 export const runtime = "nodejs";
 
+/** Fashn virtual try-on model: single supported slug for this app (do not use `tryon-max` here). */
+const FASHN_TRYON_MODEL = "tryon-v1.6" as const;
+
 type FashnRunResponse = {
   id?: string;
   error?: unknown;
@@ -72,10 +75,10 @@ async function startPrediction(params: {
     Authorization: `Bearer ${apiKey}`,
   };
 
-  // tryon-v1.6: ~1 credit/output; uses `garment_image` + `mode` (not tryon-max’s `product_image` / `generation_mode` / `resolution`).
+  // v1.6: `model_image` + `garment_image` + `mode` (~1 credit/output for a single sample). Hats, shoes, accessories, etc. use the same model.
   // @see https://docs.fashn.ai/api-reference/tryon-v1-6
   const body = {
-    model_name: "tryon-v1.6",
+    model_name: FASHN_TRYON_MODEL,
     inputs: {
       model_image: modelImage,
       garment_image: productImage,
