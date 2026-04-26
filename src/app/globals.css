@@ -16,6 +16,76 @@ body {
   background: #ffffff;
 }
 
+/**
+ * Light text + translucent surfaces on top of the ethereal background (all pages except home).
+ * Uses targeted overrides for common `text-zinc-*` / `bg-white` patterns.
+ */
+body.site-ambient {
+  color: #f4f4f5;
+  background: #030712;
+}
+
+body.site-ambient .text-zinc-900,
+body.site-ambient .text-zinc-800 {
+  color: #fafafa !important;
+}
+
+body.site-ambient .text-zinc-700 {
+  color: #f4f4f5 !important;
+}
+
+body.site-ambient .text-zinc-600 {
+  color: #cbd5e1 !important;
+}
+
+body.site-ambient .text-zinc-500 {
+  color: #a1a1aa !important;
+}
+
+body.site-ambient .bg-white {
+  background-color: rgb(9 9 11 / 0.55) !important;
+}
+
+body.site-ambient .bg-white\/95,
+body.site-ambient .bg-white\/80 {
+  background-color: rgb(9 9 11 / 0.85) !important;
+}
+
+body.site-ambient .bg-surface-raised {
+  background-color: rgb(24 24 27 / 0.5) !important;
+}
+
+body.site-ambient .bg-surface-muted\/40 {
+  background-color: rgb(24 24 27 / 0.35) !important;
+}
+
+body.site-ambient .border-surface-border,
+body.site-ambient .border-b.border-surface-border,
+body.site-ambient .border-t.border-surface-border,
+body.site-ambient .border-y.border-surface-border {
+  border-color: rgb(255 255 255 / 0.1) !important;
+}
+
+body.site-ambient .shadow-sm,
+body.site-ambient .shadow-2xl {
+  --tw-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.3);
+  box-shadow: var(--tw-ring-offset-shadow, 0 0 #0000), var(--tw-ring-shadow, 0 0 #0000), var(--tw-shadow);
+}
+
+body.site-ambient header {
+  border-color: rgb(255 255 255 / 0.1) !important;
+  background-color: rgb(9 9 11 / 0.7) !important;
+  color: #f4f4f5;
+}
+
+body.site-ambient header a {
+  color: inherit;
+}
+
+body.site-ambient footer a:hover {
+  color: #fafafa !important;
+}
+
 @layer utilities {
   .text-balance {
     text-wrap: balance;
