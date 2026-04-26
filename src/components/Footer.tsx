@@ -14,12 +14,12 @@ export function Footer() {
           © {new Date().getFullYear()} Disquant. Virtual try-on infrastructure for modern commerce.
         </p>
         <div className="flex gap-6 text-sm text-zinc-600">
-          <a href="#" className="hover:text-zinc-900">
+          <Link href="/privacy" className="hover:text-zinc-900">
             Privacy
-          </a>
-          <a href="#" className="hover:text-zinc-900">
+          </Link>
+          <Link href="/terms" className="hover:text-zinc-900">
             Terms
-          </a>
+          </Link>
           <a href="#" className="hover:text-zinc-900">
             Status
           </a>
