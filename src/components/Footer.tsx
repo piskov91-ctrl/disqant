@@ -13,7 +13,10 @@ export function Footer() {
         <p className="text-center text-sm text-zinc-500 md:text-left">
           © {new Date().getFullYear()} Disquant. Virtual try-on infrastructure for modern commerce.
         </p>
-        <div className="flex gap-6 text-sm text-zinc-600">
+        <div className="flex flex-wrap justify-center gap-6 text-sm text-zinc-600 md:justify-end">
+          <Link href="/contact" className="hover:text-zinc-900">
+            Contact
+          </Link>
           <Link href="/privacy" className="hover:text-zinc-900">
             Privacy
           </Link>

@@ -58,6 +58,9 @@ export function HeaderNav() {
         <Link href="/about" className={navTextClass}>
           About
         </Link>
+        <Link href="/contact" className={navTextClass}>
+          Contact
+        </Link>
       </nav>
 
       {/* Right actions (always visible) */}
@@ -127,6 +130,9 @@ export function HeaderNav() {
               </Link>
               <Link href="/about" className={navStackClass} onClick={() => setOpen(false)}>
                 About
+              </Link>
+              <Link href="/contact" className={navStackClass} onClick={() => setOpen(false)}>
+                Contact
               </Link>
 
               <div className="my-2 h-px w-full bg-surface-border" />
