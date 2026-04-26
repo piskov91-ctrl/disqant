@@ -3,8 +3,8 @@
 @tailwind utilities;
 
 :root {
-  --foreground: #0f172a;
-  --muted: #64748b;
+  --foreground: #fafafa;
+  --muted: #a1a1aa;
 }
 
 html {
@@ -13,36 +13,25 @@ html {
 
 body {
   color: var(--foreground);
-  background: #ffffff;
+  background: #000000;
 }
 
-/**
- * Light text + translucent surfaces on top of the ambient background (all pages except home).
- * Uses targeted overrides for common `text-zinc-*` / `bg-white` patterns.
- */
-body.site-ambient {
-  color: #f4f4f5;
-  background: #030712;
-}
-
-/* Slow purple/blue gradient blobs (non-home `SiteAmbient` layer) */
-.site-ambient-blobs {
-  position: absolute;
-  inset: 0;
+/* Fixed layer: black + three slow purple/blue gradient blobs (see SiteBackground) */
+.app-bg {
   overflow: hidden;
   contain: layout style paint;
 }
 
-.site-ambient-blobs__base {
+.app-bg__base {
   position: absolute;
   inset: 0;
-  background: #030712;
+  background: #000000;
 }
 
-.site-ambient-blobs__blob {
+.app-bg__blob {
   position: absolute;
-  width: min(90vw, 55rem);
-  height: min(90vw, 55rem);
+  width: min(90vw, 50rem);
+  height: min(90vw, 50rem);
   border-radius: 50%;
   filter: blur(80px);
   will-change: transform;
@@ -52,59 +41,45 @@ body.site-ambient {
   pointer-events: none;
 }
 
-.site-ambient-blobs__blob--1 {
-  left: -15%;
-  top: 10%;
+.app-bg__blob--1 {
+  left: -12%;
+  top: 8%;
   background: radial-gradient(
     circle at 30% 40%,
     rgb(88 28 135 / 0.85) 0%,
     rgb(30 64 175 / 0.35) 50%,
     transparent 70%
   );
-  animation: site-ambient-blob-1 38s ease-in-out infinite;
+  animation: app-bg-blob-1 40s ease-in-out infinite;
 }
 
-.site-ambient-blobs__blob--2 {
-  right: -20%;
-  top: 35%;
+.app-bg__blob--2 {
+  right: -18%;
+  top: 30%;
   background: radial-gradient(
     circle at 60% 50%,
     rgb(59 130 246 / 0.75) 0%,
     rgb(99 102 241 / 0.4) 45%,
     transparent 68%
   );
-  animation: site-ambient-blob-2 44s ease-in-out infinite;
+  animation: app-bg-blob-2 48s ease-in-out infinite;
 }
 
-.site-ambient-blobs__blob--3 {
-  left: 5%;
-  bottom: -10%;
-  width: min(100vw, 60rem);
-  height: min(100vw, 60rem);
+.app-bg__blob--3 {
+  left: 8%;
+  bottom: -12%;
+  width: min(95vw, 58rem);
+  height: min(95vw, 58rem);
   background: radial-gradient(
     circle at 50% 30%,
     rgb(67 56 202 / 0.7) 0%,
     rgb(88 28 135 / 0.35) 50%,
     transparent 70%
   );
-  animation: site-ambient-blob-3 52s ease-in-out infinite;
+  animation: app-bg-blob-3 55s ease-in-out infinite;
 }
 
-.site-ambient-blobs__blob--4 {
-  right: 10%;
-  top: -5%;
-  width: min(80vw, 45rem);
-  height: min(80vw, 45rem);
-  background: radial-gradient(
-    circle at 40% 60%,
-    rgb(29 78 216 / 0.6) 0%,
-    rgb(75 0 130 / 0.45) 50%,
-    transparent 65%
-  );
-  animation: site-ambient-blob-4 42s ease-in-out infinite;
-}
-
-@keyframes site-ambient-blob-1 {
+@keyframes app-bg-blob-1 {
   0%,
   100% {
     transform: translate3d(0, 0, 0) scale(1);
@@ -120,7 +95,7 @@ body.site-ambient {
   }
 }
 
-@keyframes site-ambient-blob-2 {
+@keyframes app-bg-blob-2 {
   0%,
   100% {
     transform: translate3d(0, 0, 0) scale(1.02);
@@ -133,7 +108,7 @@ body.site-ambient {
   }
 }
 
-@keyframes site-ambient-blob-3 {
+@keyframes app-bg-blob-3 {
   0%,
   100% {
     transform: translate3d(0, 0, 0) scale(1);
@@ -149,86 +124,81 @@ body.site-ambient {
   }
 }
 
-@keyframes site-ambient-blob-4 {
-  0%,
-  100% {
-    transform: translate3d(0, 0, 0) scale(0.98);
-  }
-  40% {
-    transform: translate3d(-6%, -5%, 0) scale(1.1);
-  }
-  80% {
-    transform: translate3d(5%, 9%, 0) scale(0.96);
-  }
-}
-
 @media (prefers-reduced-motion: reduce) {
-  .site-ambient-blobs__blob {
+  .app-bg__blob {
     animation: none;
     filter: blur(64px);
-    opacity: 0.35;
+    opacity: 0.32;
   }
 }
 
-body.site-ambient .text-zinc-900,
-body.site-ambient .text-zinc-800 {
+/**
+ * Light text and translucent “cards” on the global dark background.
+ * Targets common Tailwind patterns used across the site.
+ */
+body .text-zinc-900,
+body .text-zinc-800 {
+  color: #ffffff !important;
+}
+
+body .text-zinc-700 {
   color: #fafafa !important;
 }
 
-body.site-ambient .text-zinc-700 {
-  color: #f4f4f5 !important;
+body .text-zinc-600 {
+  color: #e4e4e7 !important;
 }
 
-body.site-ambient .text-zinc-600 {
-  color: #cbd5e1 !important;
-}
-
-body.site-ambient .text-zinc-500 {
+body .text-zinc-500 {
   color: #a1a1aa !important;
 }
 
-body.site-ambient .bg-white {
+body .text-zinc-400 {
+  color: #d4d4d8 !important;
+}
+
+body .bg-white {
   background-color: rgb(9 9 11 / 0.55) !important;
 }
 
-body.site-ambient .bg-white\/95,
-body.site-ambient .bg-white\/80 {
+body .bg-white\/95,
+body .bg-white\/80 {
   background-color: rgb(9 9 11 / 0.85) !important;
 }
 
-body.site-ambient .bg-surface-raised {
+body .bg-surface-raised {
   background-color: rgb(24 24 27 / 0.5) !important;
 }
 
-body.site-ambient .bg-surface-muted\/40 {
+body .bg-surface-muted\/40 {
   background-color: rgb(24 24 27 / 0.35) !important;
 }
 
-body.site-ambient .border-surface-border,
-body.site-ambient .border-b.border-surface-border,
-body.site-ambient .border-t.border-surface-border,
-body.site-ambient .border-y.border-surface-border {
+body .border-surface-border,
+body .border-b.border-surface-border,
+body .border-t.border-surface-border,
+body .border-y.border-surface-border {
   border-color: rgb(255 255 255 / 0.1) !important;
 }
 
-body.site-ambient .shadow-sm,
-body.site-ambient .shadow-2xl {
+body .shadow-sm,
+body .shadow-2xl {
   --tw-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.3);
   box-shadow: var(--tw-ring-offset-shadow, 0 0 #0000), var(--tw-ring-shadow, 0 0 #0000), var(--tw-shadow);
 }
 
-body.site-ambient header {
+body header {
   border-color: rgb(255 255 255 / 0.1) !important;
   background-color: rgb(9 9 11 / 0.7) !important;
-  color: #f4f4f5;
+  color: #fafafa;
 }
 
-body.site-ambient header a {
+body header a {
   color: inherit;
 }
 
-body.site-ambient footer a:hover {
-  color: #fafafa !important;
+body footer a:hover {
+  color: #ffffff !important;
 }
 
 @layer utilities {
