@@ -15,8 +15,8 @@ export default function Home() {
           <HomeHeroWnjoojxBackground />
           <div className="pointer-events-none absolute inset-0 z-[2] bg-[radial-gradient(ellipse_90%_80%_at_50%_45%,transparent_25%,rgba(0,0,0,0.5)_100%)]" aria-hidden />
           <div className="relative z-10 mx-auto max-w-6xl px-6 py-20 md:py-24 lg:py-28">
-            <div className="grid min-h-[min(70vh,640px)] items-center gap-16 md:grid-cols-[0.86fr_1.4fr] md:items-center md:gap-20 lg:gap-24">
-              <div className="flex min-h-0 max-w-xl flex-col justify-center pr-2 md:pr-6 lg:pr-10">
+            <div className="grid min-h-[min(70vh,640px)] items-center gap-20 md:grid-cols-[0.82fr_1.45fr] md:items-center md:gap-28 lg:gap-32">
+              <div className="flex min-h-0 max-w-xl flex-col justify-center pr-2 md:-ml-1 md:pr-8 lg:-ml-2 lg:pr-12">
                 <h1 className="text-balance text-4xl font-semibold leading-[1.08] tracking-tight text-white sm:text-5xl">
                   Your online fitting room
                 </h1>
@@ -31,7 +31,7 @@ export default function Home() {
                 </Link>
               </div>
 
-              <div className="relative flex w-full min-w-0 justify-center pl-2 md:justify-end md:pl-12 lg:pl-20 xl:pl-24">
+              <div className="relative flex w-full min-w-0 justify-center pl-2 md:justify-end md:pl-16 lg:pl-24 xl:pl-28">
                 <video
                   className="h-auto w-full max-h-[min(41vh,476px)] object-contain sm:max-h-[min(45vh,532px)] md:max-h-[min(59.5vh,672px)]"
                   autoPlay
