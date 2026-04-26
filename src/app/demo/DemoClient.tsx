@@ -260,6 +260,21 @@ export default function DemoClient() {
     return () => window.cancelAnimationFrame(id);
   }, [wearOpen, wearClosing]);
 
+  // `<video>` is not mounted until `wearShowVideo` is true, so after `getUserMedia` the ref is often still null
+  // on the first open. Attach the pending stream once the preview is in the tree.
+  useLayoutEffect(() => {
+    if (!wearShowVideo) return;
+    const video = wearVideoRef.current;
+    const stream = wearStreamRef.current;
+    if (!video || !stream) return;
+    if (video.srcObject !== stream) {
+      video.srcObject = stream;
+    }
+    void video.play().catch(() => {
+      /* autoplay may be blocked; user interaction already occurred */
+    });
+  }, [wearShowVideo]);
+
   const stopWearStream = useCallback(() => {
     const s = wearStreamRef.current;
     if (s) {
