@@ -1,18 +1,14 @@
 import { Footer } from "@/components/Footer";
 import { Header } from "@/components/Header";
+import { TopProductThumbnails } from "@/components/TopProductThumbnails";
 import { getClientByApiKey } from "@/lib/apiKeyStore";
-import { getTopTryOnProducts, LOCAL_OR_UNKNOWN_PRODUCT } from "@/lib/tryOnAnalytics";
+import { getTopTryOnProducts } from "@/lib/tryOnAnalytics";
 
 export const runtime = "nodejs";
 
 type UsagePageProps = {
   searchParams: Promise<{ key?: string }>;
 };
-
-function formatProductLabel(url: string): string {
-  if (url === LOCAL_OR_UNKNOWN_PRODUCT) return "Uploaded image (no product URL)";
-  return url;
-}
 
 export default async function UsagePage(props: UsagePageProps) {
   const sp = await props.searchParams;
@@ -117,7 +113,7 @@ export default async function UsagePage(props: UsagePageProps) {
                 <div className="rounded-2xl border border-white/10 bg-zinc-900/40 p-8 backdrop-blur-sm">
                   <h2 className="text-lg font-semibold text-zinc-50">Top try-on product images</h2>
                   <p className="mt-2 text-sm text-zinc-400">
-                    Ranked by how often each product image URL was used in a successful try-on. Send{" "}
+                    Thumbnails show the product image URL from each try-on. Send{" "}
                     <span className="font-mono text-zinc-300">productImageUrl</span> in your API request to attribute
                     catalog images.
                   </p>
@@ -127,48 +123,7 @@ export default async function UsagePage(props: UsagePageProps) {
                       No data yet. Complete a try-on (with an optional product image URL) to see rankings here.
                     </p>
                   ) : (
-                    <ol className="mt-6 space-y-3">
-                      {topProducts.map((row, i) => {
-                        const display = formatProductLabel(row.productImageUrl);
-                        const isLink =
-                          row.productImageUrl !== LOCAL_OR_UNKNOWN_PRODUCT &&
-                          (row.productImageUrl.startsWith("http://") ||
-                            row.productImageUrl.startsWith("https://"));
-                        return (
-                          <li
-                            key={`${row.productImageUrl}-${i}`}
-                            className="flex flex-col gap-1 rounded-xl border border-white/10 bg-zinc-950/30 px-4 py-3 sm:flex-row sm:items-center sm:justify-between"
-                          >
-                            <div className="flex min-w-0 items-baseline gap-3">
-                              <span className="w-6 shrink-0 text-sm font-semibold text-zinc-500">
-                                {i + 1}.
-                              </span>
-                              <div className="min-w-0">
-                                {isLink ? (
-                                  <a
-                                    href={row.productImageUrl}
-                                    target="_blank"
-                                    rel="noreferrer"
-                                    className="break-all text-sm font-medium text-accent underline decoration-accent/40 underline-offset-2 hover:decoration-accent"
-                                    title={row.productImageUrl}
-                                  >
-                                    {display}
-                                  </a>
-                                ) : (
-                                  <p className="break-all text-sm text-zinc-200" title={display}>
-                                    {display}
-                                  </p>
-                                )}
-                              </div>
-                            </div>
-                            <p className="shrink-0 pl-9 text-sm text-zinc-400 sm:pl-0">
-                              {row.tryOnCount}{" "}
-                              {row.tryOnCount === 1 ? "try-on" : "try-ons"}
-                            </p>
-                          </li>
-                        );
-                      })}
-                    </ol>
+                    <TopProductThumbnails items={topProducts} />
                   )}
                 </div>
               </div>

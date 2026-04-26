@@ -1,7 +1,7 @@
 import { getRedis } from "./apiKeyStore";
+import { LOCAL_OR_UNKNOWN_PRODUCT } from "./tryOnConstants";
 
-/** Try-on with no `productImageUrl` (or invalid URL) is bucketed under this key. */
-export const LOCAL_OR_UNKNOWN_PRODUCT = "__local_upload__";
+export { LOCAL_OR_UNKNOWN_PRODUCT } from "./tryOnConstants";
 
 const PRODUCT_URL_MAX = 2000;
 const EVENTS_MAX = 10_000;
