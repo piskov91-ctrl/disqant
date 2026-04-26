@@ -96,11 +96,10 @@ const GARMENT_PRESETS: GarmentPreset[] = [
   {
     id: "beanie",
     label: "Beanie",
-    name: "Knit winter beanie (product shot)",
+    name: "Grey knit winter beanie (flat lay)",
     category: "tops",
-    // Soft knit beanie, neutral product-style image for cold-weather try-on.
-    imageUrl:
-      "https://images.unsplash.com/photo-1618354691371-d2e48c818c10?auto=format&fit=crop&w=1400&q=80",
+    // Served from /public (Andrijana Bozic, Unsplash: white/grey knit cap on paper) so the card always loads.
+    imageUrl: "/demo-beanie.jpg",
   },
   {
     id: "sunglasses",
