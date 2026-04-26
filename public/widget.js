@@ -653,6 +653,7 @@
 
     var progressTimer = null;
     var currentPct = 0;
+    var tryOnFetchInFlight = false;
 
     function setProgress(pct) {
       currentPct = Math.max(0, Math.min(100, Math.round(pct)));
@@ -698,9 +699,11 @@
     });
 
     generateBtn.addEventListener("click", async function () {
+      if (tryOnFetchInFlight) return;
       if (!clientKey) return;
       if (!modelFile) return;
       if (!garmentFile) return;
+      tryOnFetchInFlight = true;
 
       saveBtn.style.display = "none";
       generateBtn.disabled = true;
@@ -713,9 +716,17 @@
         fd.append("category", selectedCategory);
         fd.append("generationMode", "balanced");
 
+        var tryOnTrace =
+          globalThis.crypto && globalThis.crypto.randomUUID
+            ? globalThis.crypto.randomUUID()
+            : "tryon-" + Date.now() + "-" + Math.random();
+        console.log(
+          "[disquant] widget: about to fetch POST " + API_ENDPOINT + " (one per try-on; if 2+ per click, duplicate widget handlers)",
+          { tryOnTrace: tryOnTrace }
+        );
         var res = await fetch(API_ENDPOINT, {
           method: "POST",
-          headers: { "x-api-key": clientKey },
+          headers: { "x-api-key": clientKey, "x-tryon-trace": tryOnTrace },
           body: fd
         });
 
@@ -738,6 +749,7 @@
       } catch (_e) {
         stopLoading(false);
       } finally {
+        tryOnFetchInFlight = false;
         generateBtn.disabled = false;
       }
     });

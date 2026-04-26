@@ -1,3 +1,4 @@
+import { randomUUID } from "node:crypto";
 import { cookies } from "next/headers";
 import { assertClientCanUseByApiKey, incrementUsageOrThrow, listClientKeys } from "@/lib/apiKeyStore";
 import { recordTryOnProductUsage } from "@/lib/tryOnAnalytics";
@@ -64,8 +65,9 @@ async function startPrediction(params: {
   modelImage: string;
   productImage: string;
   generationMode: "balanced" | "quality";
+  serverTrace: string;
 }) {
-  const { apiKey, modelImage, productImage, generationMode } = params;
+  const { apiKey, modelImage, productImage, generationMode, serverTrace } = params;
 
   const baseUrl = "https://api.fashn.ai/v1";
   const headers = {
@@ -83,7 +85,13 @@ async function startPrediction(params: {
     },
   };
 
-  const runRes = await fetch(`${baseUrl}/run`, {
+  const runUrl = `${baseUrl}/run`;
+  // Billing: Fashn credits are consumed per /v1/run (not per /status poll).
+  console.log("[disquant][Fashn] about to call POST (creates one prediction job / charges credits)", {
+    runUrl,
+    serverTrace,
+  });
+  const runRes = await fetch(runUrl, {
     method: "POST",
     headers,
     body: JSON.stringify(body),
@@ -101,6 +109,13 @@ async function startPrediction(params: {
 }
 
 export async function POST(req: Request) {
+  const serverTrace = randomUUID();
+  const clientTrace = req.headers.get("x-tryon-trace")?.trim() || null;
+  console.log("[disquant][tryon] /api/tryon (or /api/try-on) handler invoked (HTTP POST) — if you see 2 of these for one user click, the client (or a proxy) sent duplicate requests", {
+    serverTrace,
+    clientTrace,
+  });
+
   const clientApiKey =
     req.headers.get("x-api-key") ||
     req.headers.get("x-disquant-api-key") ||
@@ -172,6 +187,7 @@ export async function POST(req: Request) {
     modelImage,
     productImage,
     generationMode,
+    serverTrace,
   });
 
   if (!first.ok) {
@@ -185,6 +201,7 @@ export async function POST(req: Request) {
     timeoutMs: 120_000,
     pollMs: 1200,
     category,
+    serverTrace,
   });
   if (result.ok) {
     const at = new Date().toISOString();
@@ -209,9 +226,12 @@ async function pollUntilDone(params: {
   timeoutMs: number;
   pollMs: number;
   category: GarmentCategoryHint;
+  serverTrace: string;
 }): Promise<{ ok: true; response: Response } | { ok: false; response: Response }> {
-  const { id, headers, baseUrl, timeoutMs, pollMs, category } = params;
+  const { id, headers, baseUrl, timeoutMs, pollMs, category, serverTrace } = params;
   const startedAt = Date.now();
+  let pollN = 0;
+  const isDev = process.env.NODE_ENV === "development";
 
   while (true) {
     if (Date.now() - startedAt > timeoutMs) {
@@ -224,7 +244,17 @@ async function pollUntilDone(params: {
       };
     }
 
-    const statusRes = await fetch(`${baseUrl}/status/${id}`, { headers });
+    pollN += 1;
+    const statusUrl = `${baseUrl}/status/${id}`;
+    if (isDev || pollN === 1) {
+      console.log("[disquant][Fashn] about to call GET (status poll; not the billed /run call)", {
+        statusUrl,
+        id,
+        serverTrace,
+        pollN,
+      });
+    }
+    const statusRes = await fetch(statusUrl, { headers });
     if (!statusRes.ok) {
       const text = await statusRes.text().catch(() => "");
       return {

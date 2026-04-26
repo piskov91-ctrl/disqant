@@ -597,9 +597,16 @@ export default function DemoClient() {
       fd.set("productImageUrl", wearPreset.imageUrl);
       fd.set("category", wearPreset.category);
       fd.set("generationMode", "balanced");
+      const tryOnTrace = globalThis.crypto?.randomUUID?.() ?? `tryon-${Date.now()}-${Math.random()}`;
+      const reqHeaders: Record<string, string> = { "x-tryon-trace": tryOnTrace };
+      if (urlKey) reqHeaders["x-api-key"] = urlKey;
+      console.log(
+        "[disquant] browser: about to fetch POST /api/tryon (one successful log per try-on; if you see 2+ per click, the client is firing more than one request before the in-flight ref blocks it)",
+        { tryOnTrace },
+      );
       const res = await fetch("/api/tryon", {
         method: "POST",
-        headers: urlKey ? { "x-api-key": urlKey } : undefined,
+        headers: reqHeaders,
         body: fd,
       });
       const data = (await res.json()) as TryOnResponse;
