@@ -22,7 +22,8 @@ type GarmentPreset = {
     | "jacket_leather"
     | "jeans"
     | "cap"
-    | "beanie";
+    | "beanie"
+    | "sunglasses";
   label: string;
   name: string;
   /** Hint for `/api/try-on` (echoed in JSON); maps to sneakers → shoes, apparel → tops */
@@ -99,6 +100,13 @@ const GARMENT_PRESETS: GarmentPreset[] = [
     category: "tops",
     // Served from /public (Andrijana Bozic, Unsplash: white/grey knit cap on paper) so the card always loads.
     imageUrl: "/demo-beanie.jpg",
+  },
+  {
+    id: "sunglasses",
+    label: "Sunglasses",
+    name: "Classic sunglasses (product shot)",
+    category: "tops",
+    imageUrl: "https://images.unsplash.com/photo-1511499767150-a48a237f0083?w=400",
   },
 ];
 
@@ -980,7 +988,7 @@ export default function DemoClient() {
           Try-on uses Fashn <span className="font-semibold text-zinc-800">balanced</span> generation. Images are
           auto-compressed to max 1000px before the API call.
           {selectedPreset?.id === "sneakers"
-            ? " Sneakers use a shoes category hint; other presets (including the cap and beanie) use tops or bottoms as appropriate."
+            ? " Sneakers use a shoes category hint; other presets (including the cap, beanie, and sunglasses) use tops or bottoms as appropriate."
             : ""}
         </p>
       </main>
