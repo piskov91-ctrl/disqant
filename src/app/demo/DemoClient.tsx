@@ -86,7 +86,7 @@ const WEAR_LOADING_MESSAGES: readonly string[] = [
   "Usually 20–30 seconds—worth the wait ✨",
 ];
 
-/** Fetch as blob so cross-origin `download` works and we can `navigator.share` a File on mobile. */
+/** Fetch as blob so cross-origin URLs still work with an object URL and `a[download]`. */
 async function fetchImageBlobFromUrl(url: string): Promise<Blob> {
   const r = await fetch(url, { mode: "cors" });
   if (!r.ok) throw new Error("Could not read image");
@@ -641,6 +641,7 @@ export default function DemoClient() {
     wearPreset,
   ]);
 
+  /** Triggers a direct file download (blob + `a[download]`) — no share sheet or extra menus. */
   const onWearSaveToGallery = useCallback(async () => {
     if (!wearStageUrl) return;
     setWearSaveLoading(true);
@@ -653,21 +654,6 @@ export default function DemoClient() {
       }
       const ext = blob.type?.includes("png") ? "png" : "jpeg";
       const fileName = `disqant-tryon.${ext}`;
-      const mime = blob.type && blob.type.startsWith("image/") ? blob.type : "image/jpeg";
-      const file = new File([blob], fileName, { type: mime });
-
-      if (typeof navigator !== "undefined" && "share" in navigator && "canShare" in navigator) {
-        const n = navigator as Navigator & { canShare: (d: ShareData) => boolean };
-        if (n.canShare({ files: [file] })) {
-          try {
-            const nav = navigator as Navigator & { share: (d: ShareData) => Promise<void> };
-            await nav.share({ files: [file], title: "Disqant try-on" });
-            return;
-          } catch (e) {
-            if (e && typeof e === "object" && (e as Error).name === "AbortError") return;
-          }
-        }
-      }
 
       const objectUrl = URL.createObjectURL(blob);
       const a = document.createElement("a");
@@ -678,7 +664,7 @@ export default function DemoClient() {
       document.body.appendChild(a);
       a.click();
       a.remove();
-      window.setTimeout(() => URL.revokeObjectURL(objectUrl), 3000);
+      window.setTimeout(() => URL.revokeObjectURL(objectUrl), 5000);
     } catch {
       setWearError("Could not save the image. Check your connection and try again.");
     } finally {
@@ -847,9 +833,9 @@ export default function DemoClient() {
                   onClick={() => void onWearSaveToGallery()}
                   disabled={wearSaveLoading}
                   aria-busy={wearSaveLoading}
-                  title="Saves without opening a preview — on phone, you can save to Photos from the share sheet"
+                  title="Downloads the try-on image to your device (e.g. Downloads or your default save location)"
                 >
-                  {wearSaveLoading ? "Preparing image…" : "Add to your gallery"}
+                  {wearSaveLoading ? "Saving…" : "Download image"}
                 </button>
               ) : null}
             </div>
