@@ -16,16 +16,50 @@ body {
   background: #ffffff;
 }
 
-@layer utilities {
-  @keyframes home-hero-grid {
-    0% {
-      background-position: 0 0, 0 0;
-    }
-    100% {
-      background-position: 64px 64px, 64px 64px;
-    }
+@layer components {
+  /**
+   * Home hero: slow-shifting dark purple / black (CSS-only, no JS).
+   * `background-size` > 100% lets `background-position` animate visibly.
+   */
+  .home-hero-gradient-bg {
+    background-color: #000000;
+    background-image: linear-gradient(
+      128deg,
+      #000000 0%,
+      #06030f 12%,
+      #12081f 26%,
+      #1a0f2e 38%,
+      #0c0618 50%,
+      #140a24 62%,
+      #000000 76%,
+      #10082a 88%,
+      #000000 100%
+    );
+    background-size: 300% 300%;
+    background-repeat: no-repeat;
+    animation: home-hero-gradient-shift 32s ease-in-out infinite;
   }
 
+  @media (prefers-reduced-motion: reduce) {
+    .home-hero-gradient-bg {
+      animation: none;
+      background-size: 100% 100%;
+      background-position: 50% 50%;
+    }
+  }
+}
+
+@keyframes home-hero-gradient-shift {
+  0%,
+  100% {
+    background-position: 0% 40%;
+  }
+  50% {
+    background-position: 100% 60%;
+  }
+}
+
+@layer utilities {
   .text-balance {
     text-wrap: balance;
   }
