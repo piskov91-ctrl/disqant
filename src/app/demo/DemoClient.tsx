@@ -13,6 +13,21 @@ type TryOnResponse =
   | { id: string; output: string[]; category?: GarmentCategoryHint }
   | { error: string; code?: string; keyKind?: "demo" | "client" };
 
+/** Fashn may return a structured `error` object; React cannot render it — always coerce to a string. */
+function formatTryOnApiError(err: unknown): string {
+  if (err == null) return "Try-on failed.";
+  if (typeof err === "string") return err;
+  if (err instanceof Error) return err.message;
+  if (typeof err === "object" && "message" in err && typeof (err as { message: unknown }).message === "string") {
+    return (err as { message: string }).message;
+  }
+  try {
+    return JSON.stringify(err);
+  } catch {
+    return "Try-on failed.";
+  }
+}
+
 type GarmentPreset = {
   id:
     | "sneakers"
@@ -648,7 +663,7 @@ export default function DemoClient() {
           setWearShowProgress(false);
           return;
         }
-        const msg = "error" in data ? data.error : "Try-on failed.";
+        const msg = "error" in data ? formatTryOnApiError((data as { error?: unknown }).error) : "Try-on failed.";
         setWearError(msg);
         setWearProcessing(false);
         setWearShowProgress(false);

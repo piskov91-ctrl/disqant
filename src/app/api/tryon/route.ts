@@ -41,6 +41,20 @@ async function fileToDataUrl(file: File) {
  */
 type GarmentCategoryHint = "tops" | "bottoms";
 
+function serializeFashnError(err: unknown): string {
+  if (err == null) return "Try-on failed.";
+  if (typeof err === "string") return err;
+  if (err instanceof Error) return err.message;
+  if (typeof err === "object" && "message" in err && typeof (err as { message: unknown }).message === "string") {
+    return (err as { message: string }).message;
+  }
+  try {
+    return JSON.stringify(err);
+  } catch {
+    return "Try-on failed.";
+  }
+}
+
 function resolveGarmentCategoryHint(form: FormData): GarmentCategoryHint {
   const fromForm = String(form.get("category") || "")
     .trim()
@@ -65,9 +79,11 @@ async function startPrediction(params: {
   modelImage: string;
   productImage: string;
   generationMode: "balanced" | "quality";
+  /** Hint for v1.6 `category` (shoes / sneakers → `bottoms`). Omitted in JSON when not needed, but we always set it for consistent routing. */
+  garmentCategory: GarmentCategoryHint;
   serverTrace: string;
 }) {
-  const { apiKey, modelImage, productImage, generationMode, serverTrace } = params;
+  const { apiKey, modelImage, productImage, generationMode, garmentCategory, serverTrace } = params;
 
   const baseUrl = "https://api.fashn.ai/v1";
   const headers = {
@@ -75,7 +91,8 @@ async function startPrediction(params: {
     Authorization: `Bearer ${apiKey}`,
   };
 
-  // v1.6: `model_image` + `garment_image` + `mode` (~1 credit/output for a single sample). Hats, shoes, accessories, etc. use the same model.
+  // v1.6: `model_image` + `garment_image` + `mode` + optional `category` (default `auto` if omitted).
+  // Footwear: there is no `shoes` value — use `category: "bottoms"` (see `garmentCategory` from form: sneakers map to bottoms).
   // @see https://docs.fashn.ai/api-reference/tryon-v1-6
   const body = {
     model_name: FASHN_TRYON_MODEL,
@@ -83,6 +100,7 @@ async function startPrediction(params: {
       model_image: modelImage,
       garment_image: productImage,
       mode: generationMode,
+      category: garmentCategory,
     },
   };
 
@@ -188,6 +206,7 @@ export async function POST(req: Request) {
     modelImage,
     productImage,
     generationMode,
+    garmentCategory: category,
     serverTrace,
   });
 
@@ -289,7 +308,7 @@ async function pollUntilDone(params: {
       return {
         ok: false,
         response: Response.json(
-          { error: statusData.error || "Try-on failed." },
+          { error: serializeFashnError(statusData.error) },
           { status: 502 },
         ),
       };
