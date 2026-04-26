@@ -1,5 +1,23 @@
 import Link from "next/link";
+import { Suspense } from "react";
 import { HeaderNav } from "@/components/HeaderNav";
+
+/** Renders with `usePathname()`; must be under Suspense in the App Router to avoid a client / static bailout and production “Application error” on prerender. */
+function HeaderNavSlot() {
+  return (
+    <Suspense
+      fallback={
+        <div className="flex min-w-0 flex-1 items-center justify-end gap-3" aria-hidden>
+          <div className="hidden h-9 w-[22rem] rounded-lg bg-zinc-200/80 md:block" />
+          <div className="h-9 w-24 rounded-full bg-zinc-200/80" />
+          <div className="h-9 w-10 rounded-full border border-surface-border bg-white" />
+        </div>
+      }
+    >
+      <HeaderNav />
+    </Suspense>
+  );
+}
 
 export function Header() {
   return (
@@ -14,7 +32,7 @@ export function Header() {
           </span>
           Disquant
         </Link>
-        <HeaderNav />
+        <HeaderNavSlot />
       </div>
     </header>
   );
