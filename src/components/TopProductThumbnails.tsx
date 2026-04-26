@@ -59,7 +59,7 @@ export function TopProductThumbnails({ items }: { items: TopProductRow[] }) {
             </span>
           </div>
           <p className="mt-2.5 text-center text-sm text-zinc-400">
-            {row.tryOnCount} {row.tryOnCount === 1 ? "try-on" : "try-ons"}
+            {row.tryOnCount} Wear Me
           </p>
         </li>
       ))}

@@ -32,7 +32,7 @@ export default async function UsagePage(props: UsagePageProps) {
               Usage
             </h1>
             <p className="mt-4 max-w-2xl text-lg leading-relaxed text-zinc-400">
-              Check your try-on usage and most tried-on product images with your API key.
+              Check your Wear Me usage and most used product images with your API key.
             </p>
           </div>
         </section>
@@ -81,7 +81,7 @@ export default async function UsagePage(props: UsagePageProps) {
 
                   <div className="mt-8 grid gap-6 md:grid-cols-3">
                     <div className="rounded-2xl border border-white/10 bg-zinc-950/30 p-6">
-                      <p className="text-sm font-medium text-zinc-400">Used try-ons</p>
+                      <p className="text-sm font-medium text-zinc-400">Wear Me uses</p>
                       <p className="mt-2 text-3xl font-semibold tracking-tight text-zinc-50">{used}</p>
                     </div>
                     <div className="rounded-2xl border border-white/10 bg-zinc-950/30 p-6">
@@ -111,16 +111,16 @@ export default async function UsagePage(props: UsagePageProps) {
                 </div>
 
                 <div className="rounded-2xl border border-white/10 bg-zinc-900/40 p-8 backdrop-blur-sm">
-                  <h2 className="text-lg font-semibold text-zinc-50">Top try-on product images</h2>
+                  <h2 className="text-lg font-semibold text-zinc-50">Top Wear Me product images</h2>
                   <p className="mt-2 text-sm text-zinc-400">
-                    Thumbnails show the product image URL from each try-on. Send{" "}
+                    Thumbnails show the product image URL from each Wear Me. Send{" "}
                     <span className="font-mono text-zinc-300">productImageUrl</span> in your API request to attribute
                     catalog images.
                   </p>
 
                   {topProducts.length === 0 ? (
                     <p className="mt-6 text-sm text-zinc-500">
-                      No data yet. Complete a try-on (with an optional product image URL) to see rankings here.
+                      No data yet. Complete a Wear Me (with an optional product image URL) to see rankings here.
                     </p>
                   ) : (
                     <TopProductThumbnails items={topProducts} />
