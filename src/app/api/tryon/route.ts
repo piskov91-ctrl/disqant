@@ -33,10 +33,8 @@ async function fileToDataUrl(file: File) {
 }
 
 /**
- * Coerced hint for our JSON only (`/api/tryon` response). We do **not** send this to Fashn:
- * `tryon-max` public inputs are `model_image`, `product_image`, and optional `generation_mode`, etc. — no `garment_type` in our body.
+ * Coerced hint for our JSON only (`/api/tryon` response). We do not send this to Fashn as a separate routing field; see `startPrediction` for the Fashn payload.
  * Map legacy `"shoes"` to `"bottoms"` so we never label a run with a separate shoe "category" (some UIs/keys may still POST `shoes` from old embeds).
- * @see https://docs.fashn.ai/api-reference/tryon-max
  */
 type GarmentCategoryHint = "tops" | "bottoms";
 
@@ -74,12 +72,13 @@ async function startPrediction(params: {
     Authorization: `Bearer ${apiKey}`,
   };
 
-  // Try-On Max: required `model_image`, `product_image`; optional `generation_mode`, etc.
+  // `tryon` + `1k` + `balanced` — lower per-run credit use than `tryon-max` at the same resolution/mode in common pricing tiers.
   const body = {
-    model_name: "tryon-max",
+    model_name: "tryon",
     inputs: {
       model_image: modelImage,
       product_image: productImage,
+      resolution: "1k",
       generation_mode: generationMode,
     },
   };

@@ -1,5 +1,5 @@
 /**
- * Heuristic: shoes → Fashn `tryon-max` (product_image); clothing → `tryon-v1.6` (garment_image).
+ * Heuristic: shoes vs clothing from filename/aspect (not used by the try-on API route, which always sends `tryon` with product+model images).
  * Uses filename keywords + aspect ratio from image dimensions.
  */
 

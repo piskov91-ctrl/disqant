@@ -254,7 +254,7 @@
   }
 
   function inferCategoryFromImage(img) {
-    // Hint for /api/try-on (echoed in JSON): tops | bottoms only (shoe images → "bottoms"). Fashn tryon-max run body in this app has no garment_type.
+    // Hint for /api/try-on (echoed in JSON): tops | bottoms only (shoe images → "bottoms"). Fashn `tryon` run body in this app has no garment_type.
     var DEFAULT_CATEGORY = "tops";
 
     var shoeKeywords = [
