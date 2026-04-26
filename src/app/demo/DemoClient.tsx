@@ -6,7 +6,7 @@ import { SwitchCamera } from "lucide-react";
 import { Footer } from "@/components/Footer";
 import { Header } from "@/components/Header";
 
-/** Echoed from FormData; the API route always uses Fashn `tryon-v1.6` only. This hint is for our JSON, not a separate Fashn model — use tops/bottoms. */
+/** Echoed from FormData; the API route uses Fashn Try-On Max. This hint is for our JSON only (tops/bottoms) — it is not a Try-On Max routing field. */
 type GarmentCategoryHint = "tops" | "bottoms";
 
 type TryOnResponse =
@@ -132,7 +132,7 @@ const WEAR_LOADING_MESSAGES: readonly string[] = [
   "Adding final touches...",
   "Blending the look on you...",
   "Tuning the fit and colors...",
-  "Usually 20–30 seconds—worth the wait ✨",
+  "Try-On Max can take up to a couple of minutes—worth the wait ✨",
 ];
 
 /** Fetch as blob so cross-origin URLs still work with an object URL and `a[download]`. */
@@ -1023,9 +1023,11 @@ export default function DemoClient() {
         </div>
 
         <p className="mt-6 rounded-2xl border border-surface-border bg-surface-muted/50 p-4 text-xs text-zinc-600">
-          All try-ons use Fashn <span className="font-semibold text-zinc-800">tryon-v1.6</span> (not Try-On Max) in{" "}
-          <span className="font-semibold text-zinc-800">balanced</span> mode—about 1 credit per result for clothing,
-          shoes, hats, and accessories. Images are auto-compressed to max 1000px before the API call.
+          All try-ons use Fashn <span className="font-semibold text-zinc-800">Try-On Max</span> at{" "}
+          <span className="font-semibold text-zinc-800">1k</span> resolution in{" "}
+          <span className="font-semibold text-zinc-800">balanced</span> mode (2–3 credits per image depending on
+          Fashn pricing). Good for clothing, shoes, hats, and accessories. Images are auto-compressed to max 1000px
+          before the API call.
           {selectedPreset?.id === "sneakers"
             ? " Sneakers use a bottoms category hint; other presets (including the cap, beanie, and sunglasses) use tops or bottoms as appropriate."
             : ""}

@@ -254,7 +254,7 @@
   }
 
   function inferCategoryFromImage(img) {
-    // Hint for /api/try-on (echoed in JSON): tops | bottoms only (shoe images → "bottoms"). Server always calls Fashn tryon-v1.6 (not tryon-max).
+    // Hint for /api/try-on (echoed in JSON): tops | bottoms only (shoe images → "bottoms"). Server calls Fashn Try-On Max.
     var DEFAULT_CATEGORY = "tops";
 
     var shoeKeywords = [

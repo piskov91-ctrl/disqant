@@ -5,8 +5,8 @@ import { recordTryOnProductUsage } from "@/lib/tryOnAnalytics";
 
 export const runtime = "nodejs";
 
-/** Fashn virtual try-on model: single supported slug for this app (do not use `tryon-max` here). */
-const FASHN_TRYON_MODEL = "tryon-v1.6" as const;
+/** Fashn virtual try-on: Try-On Max (higher fidelity than v1.6; higher credit use). @see https://docs.fashn.ai/api-reference/tryon-max */
+const FASHN_TRYON_MODEL = "tryon-max" as const;
 
 type FashnRunResponse = {
   id?: string;
@@ -36,10 +36,12 @@ async function fileToDataUrl(file: File) {
 }
 
 /**
- * Coerced hint for our JSON only (`/api/tryon` response). We do not send this to Fashn as a separate routing field; see `startPrediction` for the Fashn payload.
+ * Coerced hint for our JSON only (`/api/tryon` response). Try-On Max does not take this field; it is for clients/legacy embeds.
  * Map legacy `"shoes"` to `"bottoms"` so we never label a run with a separate shoe "category" (some UIs/keys may still POST `shoes` from old embeds).
  */
 type GarmentCategoryHint = "tops" | "bottoms";
+
+type TryOnMaxResolution = "1k" | "2k" | "4k";
 
 function serializeFashnError(err: unknown): string {
   if (err == null) return "Try-on failed.";
@@ -74,16 +76,24 @@ function parseGenerationMode(form: FormData): "balanced" | "quality" {
   return raw === "quality" ? "quality" : "balanced";
 }
 
+function parseResolution(form: FormData): TryOnMaxResolution {
+  const raw = String(form.get("resolution") || "1k").trim().toLowerCase();
+  if (raw === "2k") return "2k";
+  if (raw === "4k") return "4k";
+  return "1k";
+}
+
 async function startPrediction(params: {
   apiKey: string;
+  /** Person image (Try-On Max `model_image`). */
   modelImage: string;
+  /** Garment / product image (Try-On Max `product_image`). */
   productImage: string;
   generationMode: "balanced" | "quality";
-  /** Hint for v1.6 `category` (shoes / sneakers → `bottoms`). Omitted in JSON when not needed, but we always set it for consistent routing. */
-  garmentCategory: GarmentCategoryHint;
+  resolution: TryOnMaxResolution;
   serverTrace: string;
 }) {
-  const { apiKey, modelImage, productImage, generationMode, garmentCategory, serverTrace } = params;
+  const { apiKey, modelImage, productImage, generationMode, resolution, serverTrace } = params;
 
   const baseUrl = "https://api.fashn.ai/v1";
   const headers = {
@@ -91,16 +101,15 @@ async function startPrediction(params: {
     Authorization: `Bearer ${apiKey}`,
   };
 
-  // v1.6: `model_image` + `garment_image` + `mode` + optional `category` (default `auto` if omitted).
-  // Footwear: there is no `shoes` value — use `category: "bottoms"` (see `garmentCategory` from form: sneakers map to bottoms).
-  // @see https://docs.fashn.ai/api-reference/tryon-v1-6
+  // Try-On Max: `product_image` + `model_image`, optional `resolution`, `generation_mode`.
+  // @see https://docs.fashn.ai/api-reference/tryon-max
   const body = {
     model_name: FASHN_TRYON_MODEL,
     inputs: {
+      product_image: productImage,
       model_image: modelImage,
-      garment_image: productImage,
-      mode: generationMode,
-      category: garmentCategory,
+      resolution,
+      generation_mode: generationMode,
     },
   };
 
@@ -190,6 +199,7 @@ export async function POST(req: Request) {
     .slice(0, 4000);
   const category = resolveGarmentCategoryHint(form);
   const generationMode = parseGenerationMode(form);
+  const resolution = parseResolution(form);
 
   if (!(modelFile instanceof File) || !(garmentFile instanceof File)) {
     return Response.json(
@@ -206,7 +216,7 @@ export async function POST(req: Request) {
     modelImage,
     productImage,
     generationMode,
-    garmentCategory: category,
+    resolution,
     serverTrace,
   });
 
@@ -218,7 +228,7 @@ export async function POST(req: Request) {
     id: first.id,
     headers: first.headers,
     baseUrl: first.baseUrl,
-    timeoutMs: 120_000,
+    timeoutMs: 180_000,
     pollMs: 1200,
     category,
     serverTrace,
