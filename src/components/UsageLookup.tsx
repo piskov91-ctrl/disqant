@@ -14,11 +14,11 @@ export function UsageLookup() {
   }, [key]);
 
   return (
-    <section className="border-t border-surface-border bg-white py-16">
+    <section className="border-b border-white/10 py-16">
       <div className="mx-auto max-w-6xl px-6">
-        <div className="rounded-2xl border border-surface-border bg-white p-8 shadow-sm">
-          <h2 className="text-xl font-semibold tracking-tight text-zinc-900">Already a client?</h2>
-          <p className="mt-2 max-w-2xl text-sm leading-relaxed text-zinc-600">
+        <div className="rounded-2xl border border-white/10 bg-zinc-900/40 p-8 backdrop-blur-sm">
+          <h2 className="text-xl font-semibold tracking-tight text-zinc-50">Already a client?</h2>
+          <p className="mt-2 max-w-2xl text-sm leading-relaxed text-zinc-400">
             Enter your API key to check your current usage.
           </p>
 
@@ -37,7 +37,7 @@ export function UsageLookup() {
               autoCapitalize="none"
               autoCorrect="off"
               spellCheck={false}
-              className="h-11 w-full rounded-xl border border-surface-border bg-white px-4 text-sm text-zinc-900 outline-none transition placeholder:text-zinc-400 focus:border-accent/60 sm:max-w-sm"
+              className="h-11 w-full rounded-xl border border-white/10 bg-zinc-950/50 px-4 text-sm text-zinc-100 outline-none transition placeholder:text-zinc-500 focus:border-accent/60 sm:max-w-sm"
             />
             <button
               type="submit"
