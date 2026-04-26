@@ -1,61 +1,47 @@
 import { Footer } from "@/components/Footer";
 import { Header } from "@/components/Header";
 import Link from "next/link";
-import { Code2, MonitorSmartphone, Shirt } from "lucide-react";
+import { Code2, MonitorSmartphone, Play, Shirt } from "lucide-react";
 
 export default function Home() {
   return (
     <>
       <Header />
       <main className="pt-16">
-        {/* CINEMATIC HERO (full-bleed video + overlay) */}
-        <section aria-label="Home hero" className="relative left-1/2 w-screen -translate-x-1/2 overflow-hidden">
-          <div className="relative min-h-[80vh] w-full bg-black">
-            <div className="pointer-events-none flex min-h-[80vh] w-full items-center justify-center">
-              <video
-                src="/demo-video.mp4"
-                className="h-auto w-full max-h-[80vh] object-contain"
-                autoPlay
-                muted
-                loop
-                playsInline
-                controls={false}
-                preload="auto"
-              />
-            </div>
-
-            {/* Cinematic darkening + subtle glow for readable overlay text */}
-            <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/80 via-black/25 to-black/20" />
-            <div
-              className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_20%_10%,rgba(124,58,237,0.20),transparent_45%),radial-gradient(circle_at_80%_0%,rgba(236,72,153,0.20),transparent_50%)]"
-              aria-hidden
-            />
-
-            <div className="absolute inset-0">
-              <div className="absolute left-[5%] top-1/2 w-full max-w-[300px] -translate-y-1/2">
-                <h1
-                  className="text-balance text-4xl font-extrabold tracking-tight text-transparent bg-gradient-to-r from-[#7c3aed] to-[#ec4899] bg-clip-text [text-shadow:0_2px_40px_rgba(0,0,0,0.55)] md:text-6xl md:leading-[1.02]"
-                  style={{ fontFamily: "Georgia, serif" }}
-                >
+        <section
+          aria-label="Home hero"
+          className="bg-black text-white [background:radial-gradient(ellipse_80%_60%_at_15%_0%,rgba(124,58,237,0.12),transparent),radial-gradient(ellipse_60%_50%_at_90%_20%,rgba(236,72,153,0.08),transparent),#000000]"
+        >
+          <div className="mx-auto max-w-6xl px-6 py-20 md:py-24 lg:py-28">
+            <div className="grid min-h-[min(70vh,640px)] items-center gap-14 md:grid-cols-2 md:gap-12 lg:gap-16">
+              <div className="flex max-w-xl flex-col justify-center">
+                <h1 className="text-balance text-4xl font-semibold leading-[1.08] tracking-tight text-white sm:text-5xl">
                   Your online fitting room
                 </h1>
-                <p className="mt-4 max-w-2xl text-lg leading-relaxed text-white/90 [text-shadow:0_2px_30px_rgba(0,0,0,0.45)] max-md:mx-auto md:text-xl md:leading-relaxed">
+                <p className="mt-6 text-base leading-relaxed text-zinc-400 sm:text-lg">
                   Shoppers try on clothes before they buy. You get fewer returns and more sales. One line of code.
                 </p>
+                <a
+                  href="#how-it-works"
+                  className="mt-10 inline-flex w-fit items-center justify-center rounded-full border border-white/15 bg-white/5 px-7 py-3 text-sm font-medium text-white transition hover:border-white/25 hover:bg-white/10"
+                >
+                  Get started
+                </a>
+              </div>
 
-                <div className="mt-8 flex w-full max-w-sm flex-col items-stretch gap-3 self-center sm:flex-row sm:items-center sm:justify-center md:max-w-none md:self-start md:justify-start">
-                  <Link
-                    href="/demo"
-                    className="btn-accent-gradient h-12 w-full justify-center px-8 text-center shadow-2xl shadow-black/30 sm:w-auto sm:inline-flex"
-                  >
-                    See it live
-                  </Link>
-                  <Link
-                    href="/pricing"
-                    className="inline-flex h-12 w-full items-center justify-center rounded-full border border-white/30 bg-white/10 px-8 text-sm font-semibold text-white shadow-lg shadow-black/20 backdrop-blur-md transition hover:bg-white/15 sm:w-auto"
-                  >
-                    Get started
-                  </Link>
+              <div
+                className="relative flex aspect-[16/10] w-full max-w-2xl justify-self-end overflow-hidden rounded-2xl border border-white/[0.08] bg-zinc-950/50 shadow-[0_0_0_1px_rgba(255,255,255,0.04)] md:max-w-none"
+                aria-label="Product video"
+              >
+                <div
+                  className="pointer-events-none absolute inset-0 bg-[linear-gradient(145deg,rgba(24,24,27,0.4),rgba(9,9,11,0.95))]"
+                  aria-hidden
+                />
+                <div className="relative z-[1] flex w-full flex-col items-center justify-center px-6 py-16 text-center">
+                  <div className="flex h-16 w-16 items-center justify-center rounded-2xl border border-white/10 bg-white/[0.04] text-zinc-500 shadow-lg shadow-black/30">
+                    <Play className="h-7 w-7 translate-x-0.5" strokeWidth={1.5} aria-hidden />
+                  </div>
+                  <p className="mt-5 text-xs font-medium uppercase tracking-[0.2em] text-zinc-600">Video</p>
                 </div>
               </div>
             </div>
@@ -63,7 +49,10 @@ export default function Home() {
         </section>
 
         {/* HOW IT WORKS */}
-        <section className="border-y border-surface-border bg-surface-muted/40 py-20">
+        <section
+          id="how-it-works"
+          className="scroll-mt-20 border-y border-surface-border bg-surface-muted/40 py-20"
+        >
           <div className="mx-auto max-w-6xl px-6">
             <h2 className="text-center text-sm font-semibold uppercase tracking-widest text-accent">How it works</h2>
             <p className="mx-auto mt-3 max-w-2xl text-center text-3xl font-semibold tracking-tight text-zinc-900 md:text-4xl">
