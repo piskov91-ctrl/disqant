@@ -46,9 +46,6 @@ export function HeaderNav() {
         <Link href="/how-it-works" className={linkClass("/how-it-works")}>
           How it works
         </Link>
-        <Link href="/what-is-wear-me" className={linkClass("/what-is-wear-me")}>
-          What is Wear Me?
-        </Link>
         <Link href="/pricing" className={linkClass("/pricing")}>
           Pricing
         </Link>
@@ -111,9 +108,6 @@ export function HeaderNav() {
             <nav className="flex flex-col gap-1" aria-label="Mobile">
               <Link href="/how-it-works" className={navStackClass} onClick={() => setOpen(false)}>
                 How it works
-              </Link>
-              <Link href="/what-is-wear-me" className={navStackClass} onClick={() => setOpen(false)}>
-                What is Wear Me?
               </Link>
               <Link href="/pricing" className={navStackClass} onClick={() => setOpen(false)}>
                 Pricing
