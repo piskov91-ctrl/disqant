@@ -1,5 +1,6 @@
 import { Footer } from "@/components/Footer";
 import { Header } from "@/components/Header";
+import { HomeHeroBackground } from "@/components/HomeHeroBackground";
 import Link from "next/link";
 
 export default function Home() {
@@ -9,9 +10,10 @@ export default function Home() {
       <main className="pt-16">
         <section
           aria-label="Home hero"
-          className="min-h-[calc(100dvh-4rem)] bg-black text-white [background:radial-gradient(ellipse_80%_60%_at_15%_0%,rgba(124,58,237,0.12),transparent),radial-gradient(ellipse_60%_50%_at_90%_20%,rgba(236,72,153,0.08),transparent),#000000]"
+          className="relative min-h-[calc(100dvh-4rem)] overflow-hidden bg-black text-white"
         >
-          <div className="mx-auto max-w-6xl px-6 py-20 md:py-24 lg:py-28">
+          <HomeHeroBackground />
+          <div className="relative z-10 mx-auto max-w-6xl px-6 py-20 md:py-24 lg:py-28">
             <div className="grid min-h-[min(70vh,640px)] items-center gap-12 md:grid-cols-[1fr_1.22fr] md:items-center md:gap-10 lg:gap-14">
               <div className="flex min-h-0 max-w-xl flex-col justify-center">
                 <h1 className="text-balance text-4xl font-semibold leading-[1.08] tracking-tight text-white sm:text-5xl">

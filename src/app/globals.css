@@ -17,6 +17,15 @@ body {
 }
 
 @layer utilities {
+  @keyframes home-hero-grid {
+    0% {
+      background-position: 0 0, 0 0;
+    }
+    100% {
+      background-position: 64px 64px, 64px 64px;
+    }
+  }
+
   .text-balance {
     text-wrap: balance;
   }
