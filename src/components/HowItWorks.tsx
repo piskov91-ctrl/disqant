@@ -1,46 +1,41 @@
-const steps = [
-  {
-    n: "1",
-    title: "Pick a product",
-    body: "Choose something from your catalogue—the PDP image is enough to get started.",
-  },
-  {
-    n: "2",
-    title: "Upload your photo",
-    body: "Your shopper adds a normal full-length picture from their camera roll. No studio, no awkward posing.",
-  },
-  {
-    n: "3",
-    title: "See yourself wearing it",
-    body: "They get a believable preview in seconds. If it doesn’t feel right, they move on before you’ve paid for shipping.",
-  },
-];
-
 export function HowItWorks() {
   return (
-    <section id="how-it-works" className="scroll-mt-28 border-y border-surface-border bg-surface-muted/40 py-20">
-      <div className="mx-auto max-w-6xl px-6">
-        <h2 className="text-center text-sm font-semibold uppercase tracking-widest text-accent">
-          How it works
-        </h2>
-        <p className="mx-auto mt-3 max-w-2xl text-center text-3xl font-semibold tracking-tight text-zinc-900 md:text-4xl">
-          Three steps your customers already understand
-        </p>
-        <p className="mx-auto mt-4 max-w-xl text-center text-zinc-600">
-          No app download, no account wall—just the product they’re looking at and a photo they already have.
-        </p>
+    <section id="how-it-works" className="scroll-mt-28 border-y border-surface-border bg-surface-muted/40 py-16 md:py-20">
+      <div className="mx-auto max-w-3xl px-6">
+        <div className="space-y-14">
+          <section>
+            <h2 className="text-lg font-semibold text-zinc-900">What is it</h2>
+            <p className="mt-3 text-base leading-relaxed text-zinc-600">
+              Wear Me is a virtual try-on tool that lets your customers see how clothes look on them before
+              they buy. No changing rooms, no guessing, no returns.
+            </p>
+          </section>
 
-        <ol className="mt-14 grid gap-8 md:grid-cols-3 md:gap-6">
-          {steps.map((s) => (
-            <li key={s.title} className="flex flex-col rounded-2xl border border-surface-border bg-white p-8 shadow-sm">
-              <div className="mb-5 flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-[#7c3aed] to-[#ec4899] text-lg font-bold text-white shadow-accent-glow">
-                {s.n}
-              </div>
-              <h3 className="text-lg font-semibold text-zinc-900">{s.title}</h3>
-              <p className="mt-3 text-sm leading-relaxed text-zinc-600">{s.body}</p>
-            </li>
-          ))}
-        </ol>
+          <section>
+            <h2 className="text-lg font-semibold text-zinc-900">How customers use it</h2>
+            <ol className="mt-3 list-decimal space-y-3 pl-5 text-base leading-relaxed text-zinc-600">
+              <li>They see a &lsquo;Try me&rsquo; button on your product page.</li>
+              <li>They take a photo or upload one from their phone.</li>
+              <li>In seconds they see themselves wearing the item.</li>
+            </ol>
+          </section>
+
+          <section>
+            <h2 className="text-lg font-semibold text-zinc-900">What you need to do</h2>
+            <p className="mt-3 text-base leading-relaxed text-zinc-600">
+              Nothing complicated. No app to download, no software to install. We give you one line of code,
+              you paste it into your website, and it works straight away.
+            </p>
+          </section>
+
+          <section>
+            <h2 className="text-lg font-semibold text-zinc-900">Why it works</h2>
+            <p className="mt-3 text-base leading-relaxed text-zinc-600">
+              People buy more when they can see how something looks on them. And they return less because
+              they already know it fits.
+            </p>
+          </section>
+        </div>
       </div>
     </section>
   );
