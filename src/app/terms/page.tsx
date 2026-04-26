@@ -3,9 +3,9 @@ import { Header } from "@/components/Header";
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "Terms of Service — Disqant",
+  title: "Terms & Conditions — Disqant",
   description:
-    "Terms governing use of the Disqant virtual try-on SaaS platform, including acceptable use, liability, and UK law.",
+    "Terms & Conditions governing use of the Disqant virtual try-on SaaS platform, including acceptable use, liability, and UK law.",
 };
 
 export default function TermsPage() {
@@ -19,7 +19,7 @@ export default function TermsPage() {
               Legal
             </p>
             <h1 className="text-balance text-4xl font-semibold tracking-tight text-zinc-900 md:text-5xl">
-              Terms of Service
+              Terms &amp; Conditions
             </h1>
             <p className="mt-4 text-sm text-zinc-500">
               Last updated: 26 April 2026 &middot; Governing law: England and Wales.
@@ -30,7 +30,7 @@ export default function TermsPage() {
         <section className="bg-white py-12">
           <div className="mx-auto max-w-3xl space-y-10 px-6 text-sm leading-relaxed text-zinc-600 md:text-base">
             <p className="text-zinc-700">
-              These Terms of Service (&quot;Terms&quot;) govern your access to and use of the websites, applications, APIs,
+              These Terms and Conditions (&quot;Terms&quot;) govern your access to and use of the websites, applications, APIs,
               and virtual try-on services made available by Disqant at{" "}
               <span className="text-zinc-900">https://disqant.com</span> (the &quot;Service&quot;). By accessing or using
               the Service, you agree to these Terms. If you are accepting on behalf of a company or other legal entity,
@@ -74,7 +74,7 @@ export default function TermsPage() {
                 You (and, where you embed our Service, your end users) may upload images, product data, and other
                 materials (&quot;Customer Content&quot;). You grant us a worldwide, non-exclusive licence to host, process,
                 transmit, and display Customer Content only as needed to provide and secure the Service and as described
-                in your agreement and our Privacy Policy. You are responsible for obtaining all rights and consents
+                in your agreement and our Privacy &amp; Cookies policy. You are responsible for obtaining all rights and consents
                 for Customer Content, including for virtual try-on of identifiable individuals where required. You
                 represent that you have the right to use such content and that it does not violate law or third-party
                 rights.
@@ -167,7 +167,7 @@ export default function TermsPage() {
                   className="font-medium text-zinc-900 underline decoration-zinc-300 underline-offset-2 hover:decoration-zinc-500"
                   href="/privacy"
                 >
-                  Privacy Policy
+                  Privacy &amp; Cookies
                 </a>
                 . Where we process personal data on your instructions as a processor, a separate data processing
                 agreement or terms may apply. You are responsible for your own security practices in connection with
@@ -200,7 +200,7 @@ export default function TermsPage() {
             <div>
               <h2 className="text-lg font-semibold text-zinc-900">15. Contact</h2>
               <p className="mt-3">
-                For questions about these Terms, contact{" "}
+                For questions about these Terms &amp; Conditions, contact{" "}
                 <a
                   className="font-medium text-zinc-900 underline decoration-zinc-300 underline-offset-2 hover:decoration-zinc-500"
                   href="mailto:legal@disqant.com"

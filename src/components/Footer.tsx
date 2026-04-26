@@ -18,10 +18,10 @@ export function Footer() {
             Contact
           </Link>
           <Link href="/privacy" className="hover:text-zinc-900">
-            Privacy
+            Privacy &amp; Cookies
           </Link>
           <Link href="/terms" className="hover:text-zinc-900">
-            Terms
+            Terms &amp; Conditions
           </Link>
           <a href="#" className="hover:text-zinc-900">
             Status

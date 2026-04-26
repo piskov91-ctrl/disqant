@@ -3,7 +3,7 @@ import { Header } from "@/components/Header";
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "Privacy Policy — Disqant",
+  title: "Privacy & Cookies — Disqant",
   description:
     "How Disqant collects, uses, and protects personal data for its UK virtual try-on SaaS, including GDPR rights and cookies.",
 };
@@ -18,7 +18,9 @@ export default function PrivacyPage() {
             <p className="mb-4 inline-flex items-center gap-2 rounded-full border border-surface-border bg-surface-raised px-4 py-1.5 text-xs font-medium uppercase tracking-wider text-zinc-600">
               Legal
             </p>
-            <h1 className="text-balance text-4xl font-semibold tracking-tight text-zinc-900 md:text-5xl">Privacy Policy</h1>
+            <h1 className="text-balance text-4xl font-semibold tracking-tight text-zinc-900 md:text-5xl">
+              Privacy &amp; Cookies
+            </h1>
             <p className="mt-4 text-sm text-zinc-500">
               Last updated: 26 April 2026 &middot; Disqant is operated from the United Kingdom.
             </p>
@@ -28,7 +30,7 @@ export default function PrivacyPage() {
         <section className="bg-white py-12">
           <div className="mx-auto max-w-3xl space-y-10 px-6 text-sm leading-relaxed text-zinc-600 md:text-base">
             <p className="text-zinc-700">
-              This Privacy Policy explains how Disqant (&quot;we&quot;, &quot;us&quot;, &quot;our&quot;) processes personal
+              This Privacy &amp; Cookies policy explains how Disqant (&quot;we&quot;, &quot;us&quot;, &quot;our&quot;) processes personal
               data when you use our websites, applications, and virtual try-on services at{" "}
               <span className="text-zinc-900">https://disqant.com</span> (together, the &quot;Service&quot;). It applies
               to visitors, business customers, and their end users where we act as a processor on behalf of a retailer. We
@@ -245,7 +247,7 @@ export default function PrivacyPage() {
             <div>
               <h2 className="text-lg font-semibold text-zinc-900">11. Changes to this policy</h2>
               <p className="mt-3">
-                We may update this Privacy Policy from time to time. The &quot;Last updated&quot; date at the top will
+                We may update this Privacy &amp; Cookies policy from time to time. The &quot;Last updated&quot; date at the top will
                 change, and we will take further steps (such as email or a notice in the app) for material changes
                 where appropriate.
               </p>
