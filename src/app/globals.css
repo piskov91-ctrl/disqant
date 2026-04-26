@@ -47,6 +47,42 @@ body {
       background-position: 50% 50%;
     }
   }
+
+  /**
+   * Faint blue/purple grid with soft “glow” (Linear / Vercel–style, very subtle on black).
+   */
+  .home-hero-glow-grid {
+    position: absolute;
+    inset: 0;
+    overflow: hidden;
+    background-image: linear-gradient(rgba(129, 140, 248, 0.11) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(139, 92, 246, 0.09) 1px, transparent 1px);
+    background-size: 64px 64px;
+    background-position: 0 0, 0 0;
+    -webkit-mask-image: radial-gradient(ellipse 88% 78% at 50% 42%, #000 8%, #000 42%, rgba(0, 0, 0, 0.4) 68%, transparent 100%);
+    mask-image: radial-gradient(ellipse 88% 78% at 50% 42%, #000 8%, #000 42%, rgba(0, 0, 0, 0.4) 68%, transparent 100%);
+  }
+
+  .home-hero-glow-grid::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background-image: linear-gradient(rgba(165, 180, 252, 0.14) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(167, 139, 250, 0.11) 1px, transparent 1px);
+    background-size: 64px 64px;
+    filter: blur(1.1px);
+    opacity: 0.55;
+    mix-blend-mode: screen;
+    -webkit-mask-image: radial-gradient(ellipse 88% 78% at 50% 42%, #000 8%, #000 42%, rgba(0, 0, 0, 0.35) 70%, transparent 100%);
+    mask-image: radial-gradient(ellipse 88% 78% at 50% 42%, #000 8%, #000 42%, rgba(0, 0, 0, 0.35) 70%, transparent 100%);
+  }
+
+  @media (min-width: 640px) {
+    .home-hero-glow-grid,
+    .home-hero-glow-grid::before {
+      background-size: 72px 72px;
+    }
+  }
 }
 
 @keyframes home-hero-gradient-shift {

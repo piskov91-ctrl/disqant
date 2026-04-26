@@ -12,7 +12,8 @@ export default function Home() {
           className="relative min-h-[calc(100dvh-4rem)] overflow-hidden text-white"
         >
           <div className="home-hero-gradient-bg pointer-events-none absolute inset-0 z-0" aria-hidden />
-          <div className="pointer-events-none absolute inset-0 z-[1] bg-[radial-gradient(ellipse_90%_80%_at_50%_45%,transparent_25%,rgba(0,0,0,0.5)_100%)]" aria-hidden />
+          <div className="home-hero-glow-grid pointer-events-none absolute inset-0 z-[1]" aria-hidden />
+          <div className="pointer-events-none absolute inset-0 z-[2] bg-[radial-gradient(ellipse_90%_80%_at_50%_45%,transparent_25%,rgba(0,0,0,0.5)_100%)]" aria-hidden />
           <div className="relative z-10 mx-auto max-w-6xl px-6 py-20 md:py-24 lg:py-28">
             <div className="grid min-h-[min(70vh,640px)] items-center gap-12 md:grid-cols-[1fr_1.22fr] md:items-center md:gap-10 lg:gap-14">
               <div className="flex min-h-0 max-w-xl flex-col justify-center">
