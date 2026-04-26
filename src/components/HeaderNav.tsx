@@ -10,6 +10,10 @@ const navStackClass = "block rounded-xl px-3 py-2 text-base text-zinc-800 transi
 
 export function HeaderNav() {
   const pathname = usePathname();
+
+  function linkClass(href: string) {
+    return `${navTextClass}${pathname === href ? " font-medium text-zinc-900" : ""}`;
+  }
   const menuId = useId();
   const [open, setOpen] = useState(false);
 
@@ -38,40 +42,31 @@ export function HeaderNav() {
 
   return (
     <div className="flex items-center gap-3">
-      {/* Desktop nav */}
-      <nav className="hidden items-center gap-8 md:flex" aria-label="Primary">
-        <Link href="/how-it-works" className={navTextClass}>
+      <nav className="hidden items-center gap-7 lg:gap-8 md:flex" aria-label="Primary">
+        <Link href="/how-it-works" className={linkClass("/how-it-works")}>
           How it works
         </Link>
-        <Link href="/product" className={navTextClass}>
-          What is Wear Me?
+        <Link href="/pricing" className={linkClass("/pricing")}>
+          Pricing
         </Link>
-        <Link href="/pricing" className={navTextClass}>
-          Subscriptions
+        <Link href="/demo" className={linkClass("/demo")}>
+          Demo
         </Link>
-        <Link
-          href="/demo"
-          className="bg-gradient-to-r from-purple-600 to-pink-500 px-4 py-2 text-sm font-medium text-white rounded-full"
-        >
-          Wear Me
-        </Link>
-        <Link href="/about" className={navTextClass}>
-          About
-        </Link>
-        <Link href="/contact" className={navTextClass}>
+        <Link href="/contact" className={linkClass("/contact")}>
           Contact
         </Link>
       </nav>
 
-      {/* Right actions (always visible) */}
-      <a href="#pricing" className={`${navTextClass} hidden sm:inline`}>
+      <Link
+        href="/pricing"
+        className={`${navTextClass} hidden sm:inline${pathname === "/pricing" ? " font-medium text-zinc-900" : ""}`}
+      >
         Sign in
-      </a>
+      </Link>
       <Link href="/demo" className="btn-accent-gradient h-10 px-5 text-sm font-semibold">
         Try it now
       </Link>
 
-      {/* Mobile menu toggle */}
       <button
         type="button"
         className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-surface-border bg-white text-zinc-900 shadow-sm transition hover:border-zinc-300 hover:bg-surface-raised md:hidden"
@@ -83,7 +78,6 @@ export function HeaderNav() {
         {open ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
       </button>
 
-      {/* Mobile menu panel */}
       {open ? (
         <div className="fixed inset-0 z-[70] md:hidden">
           <button
@@ -115,21 +109,11 @@ export function HeaderNav() {
               <Link href="/how-it-works" className={navStackClass} onClick={() => setOpen(false)}>
                 How it works
               </Link>
-              <Link href="/product" className={navStackClass} onClick={() => setOpen(false)}>
-                What is Wear Me?
-              </Link>
               <Link href="/pricing" className={navStackClass} onClick={() => setOpen(false)}>
-                Subscriptions
+                Pricing
               </Link>
-              <Link
-                href="/demo"
-                className="inline-flex items-center justify-center bg-gradient-to-r from-purple-600 to-pink-500 px-4 py-2 text-sm font-medium text-white rounded-full"
-                onClick={() => setOpen(false)}
-              >
-                Wear Me
-              </Link>
-              <Link href="/about" className={navStackClass} onClick={() => setOpen(false)}>
-                About
+              <Link href="/demo" className={navStackClass} onClick={() => setOpen(false)}>
+                Demo
               </Link>
               <Link href="/contact" className={navStackClass} onClick={() => setOpen(false)}>
                 Contact
@@ -137,9 +121,9 @@ export function HeaderNav() {
 
               <div className="my-2 h-px w-full bg-surface-border" />
 
-              <a href="#pricing" className={navStackClass} onClick={() => setOpen(false)}>
+              <Link href="/pricing" className={navStackClass} onClick={() => setOpen(false)}>
                 Sign in
-              </a>
+              </Link>
               <Link
                 href="/demo"
                 className="btn-accent-gradient mt-1 h-11 w-full justify-center text-sm font-semibold"
