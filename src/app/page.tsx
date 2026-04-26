@@ -13,7 +13,7 @@ export default function Home() {
           className="bg-black text-white [background:radial-gradient(ellipse_80%_60%_at_15%_0%,rgba(124,58,237,0.12),transparent),radial-gradient(ellipse_60%_50%_at_90%_20%,rgba(236,72,153,0.08),transparent),#000000]"
         >
           <div className="mx-auto max-w-6xl px-6 py-20 md:py-24 lg:py-28">
-            <div className="grid min-h-[min(70vh,640px)] items-center gap-14 md:grid-cols-2 md:gap-12 lg:gap-16">
+            <div className="grid min-h-[min(70vh,640px)] items-center gap-12 md:grid-cols-[1fr_1.22fr] md:items-center md:gap-10 lg:gap-14">
               <div className="flex min-h-0 max-w-xl flex-col justify-center">
                 <h1 className="text-balance text-4xl font-semibold leading-[1.08] tracking-tight text-white sm:text-5xl">
                   Your online fitting room
@@ -29,29 +29,19 @@ export default function Home() {
                 </a>
               </div>
 
-              <div className="relative w-full min-h-0">
-                <div className="relative aspect-[16/10] w-full overflow-hidden rounded-2xl border border-white/[0.1] bg-black shadow-[0_0_0_1px_rgba(255,255,255,0.04)]">
-                  <video
-                    className="absolute inset-0 h-full w-full object-contain"
-                    autoPlay
-                    loop
-                    muted
-                    playsInline
-                    preload="auto"
-                    controls={false}
-                    aria-label="Disquant product demo"
-                  >
-                    <source src="/demo-video.mp4" type="video/mp4" />
-                  </video>
-                  <div
-                    className="pointer-events-none absolute inset-0 ring-1 ring-inset ring-white/[0.06]"
-                    aria-hidden
-                  />
-                  <div
-                    className="pointer-events-none absolute inset-x-0 bottom-0 h-1/3 bg-gradient-to-t from-black/10 to-transparent"
-                    aria-hidden
-                  />
-                </div>
+              <div className="relative flex w-full min-w-0 justify-center">
+                <video
+                  className="h-auto w-full max-h-[min(58vh,680px)] object-contain sm:max-h-[min(64vh,760px)] md:max-h-[min(85vh,960px)]"
+                  autoPlay
+                  loop
+                  muted
+                  playsInline
+                  preload="auto"
+                  controls={false}
+                  aria-label="Disquant product demo"
+                >
+                  <source src="/demo-video.mp4" type="video/mp4" />
+                </video>
               </div>
             </div>
           </div>
