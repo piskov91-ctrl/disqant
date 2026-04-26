@@ -76,6 +76,16 @@ const GARMENT_PRESETS: GarmentPreset[] = [
   },
 ];
 
+/** Cycled while the try-on request is in flight (see `wearLoadingMsgIndex` + `useEffect`). */
+const WEAR_LOADING_MESSAGES: readonly string[] = [
+  "AI is styling your outfit...",
+  "Almost ready...",
+  "Adding final touches...",
+  "Blending the look on you...",
+  "Tuning the fit and colors...",
+  "Usually 20–30 seconds—worth the wait ✨",
+];
+
 /** Matches `public/widget.js` injectStyles (Wear Me + modal) for pixel-consistent /demo modal. */
 const DEMO_WEAR_MODAL_STYLE_ID = "disqant-demo-wear-modal-style";
 const DEMO_WEAR_MODAL_CSS =
@@ -108,10 +118,14 @@ const DEMO_WEAR_MODAL_CSS =
   ".dq-processing.is-on{display:flex;}" +
   ".dq-spin{width:34px;height:34px;border-radius:999px;border:3px solid rgba(15,15,20,.14);border-top-color:#7c3aed;animation:dqspin 1s linear infinite;}" +
   "@keyframes dqspin{to{transform:rotate(360deg);}}" +
-  ".dq-processing-text{font:900 13px/1.25 system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;color:#0f0f14;text-align:center;max-width:420px;padding:0 14px;}" +
+  ".dq-processing-inner{display:flex;flex-direction:column;align-items:center;gap:14px;min-height:4.5rem;justify-content:center;}" +
+  ".dq-processing-text{font:900 14px/1.35 system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;color:#0f0f14;text-align:center;max-width:420px;padding:0 16px;}" +
+  ".dq-processing-msg{animation:dq-msg-in .42s ease both;}" +
+  "@keyframes dq-msg-in{0%{opacity:0;transform:translateY(8px) scale(.99)}100%{opacity:1;transform:translateY(0) scale(1)}}" +
   ".dq-progress{position:absolute;left:12px;right:12px;bottom:12px;z-index:5;height:10px;border-radius:999px;background:rgba(15,15,20,.10);overflow:hidden;display:none;}" +
   ".dq-progress.is-on{display:block;}" +
-  ".dq-progress>span{display:block;height:100%;width:0%;background:linear-gradient(135deg,#7c3aed,#ec4899);transition:width .12s ease;}" +
+  ".dq-progress>span{display:block;height:100%;width:0%;background:linear-gradient(135deg,#7c3aed,#c084fc 45%,#ec4899 100%);background-size:200% 100%;transition:width .12s ease;position:relative;animation:dq-bar-pulse 1.9s ease-in-out infinite;}" +
+  "@keyframes dq-bar-pulse{0%,100%{background-position:0% 50%;filter:brightness(1)}50%{background-position:100% 50%;filter:brightness(1.12)}}" +
   ".dq-row{display:flex;gap:10px;flex-wrap:wrap;}" +
   ".dq-choice{flex:1;min-width:160px;display:flex;align-items:center;gap:10px;justify-content:center;padding:12px 12px;border-radius:16px;border:1px solid rgba(15,15,20,.10);background:#fff;color:#0f0f14;cursor:pointer;box-shadow:0 10px 26px rgba(0,0,0,.06);font:900 12px/1 system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;transition:transform .16s ease, box-shadow .16s ease;}" +
   ".dq-choice:hover{transform:translateY(-1px);box-shadow:0 14px 30px rgba(0,0,0,.09);}" +
@@ -234,6 +248,7 @@ export default function DemoClient() {
   const [wearFlippingCamera, setWearFlippingCamera] = useState(false);
   const [wearGenerating, setWearGenerating] = useState(false);
   const [wearError, setWearError] = useState<string | null>(null);
+  const [wearLoadingMsgIndex, setWearLoadingMsgIndex] = useState(0);
 
   const wearGalleryInputRef = useRef<HTMLInputElement | null>(null);
   const wearVideoRef = useRef<HTMLVideoElement | null>(null);
@@ -259,6 +274,20 @@ export default function DemoClient() {
     const id = window.requestAnimationFrame(() => setWearBackdropOpen(true));
     return () => window.cancelAnimationFrame(id);
   }, [wearOpen, wearClosing]);
+
+  // Rotate friendly status copy while the API request is running.
+  useEffect(() => {
+    if (!wearProcessing) {
+      setWearLoadingMsgIndex(0);
+      return;
+    }
+    setWearLoadingMsgIndex(0);
+    const ms = 3200;
+    const id = window.setInterval(() => {
+      setWearLoadingMsgIndex((i) => (i + 1) % WEAR_LOADING_MESSAGES.length);
+    }, ms);
+    return () => window.clearInterval(id);
+  }, [wearProcessing]);
 
   // Lock page scroll while the try-on modal is open (remains through close animation until `wearOpen` is false).
   useEffect(() => {
@@ -640,9 +669,18 @@ export default function DemoClient() {
                   />
                 ) : null}
 
-                <div className={`dq-processing${wearProcessing ? " is-on" : ""}`}>
-                  <div className="dq-spin" />
-                  <div className="dq-processing-text">This may take 20-30 seconds, please wait ✨</div>
+                <div className={`dq-processing${wearProcessing ? " is-on" : ""}`} aria-busy={wearProcessing}>
+                  <div className="dq-processing-inner">
+                    <div className="dq-spin" aria-hidden />
+                    <div
+                      key={wearLoadingMsgIndex}
+                      className="dq-processing-text dq-processing-msg"
+                      role="status"
+                      aria-live="polite"
+                    >
+                      {WEAR_LOADING_MESSAGES[wearLoadingMsgIndex] ?? WEAR_LOADING_MESSAGES[0]}
+                    </div>
+                  </div>
                 </div>
 
                 <div className={`dq-progress${wearShowProgress ? " is-on" : ""}`}>
