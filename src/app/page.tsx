@@ -31,7 +31,7 @@ export default function Home() {
 
               <div className="relative flex w-full min-w-0 justify-center">
                 <video
-                  className="h-auto w-full max-h-[min(58vh,680px)] object-contain sm:max-h-[min(64vh,760px)] md:max-h-[min(85vh,960px)]"
+                  className="h-auto w-full max-h-[min(41vh,476px)] object-contain sm:max-h-[min(45vh,532px)] md:max-h-[min(59.5vh,672px)]"
                   autoPlay
                   loop
                   muted
