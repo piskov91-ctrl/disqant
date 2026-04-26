@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
-import { useSearchParams } from "next/navigation";
+import { usePathname } from "next/navigation";
 import { SwitchCamera } from "lucide-react";
 import { Footer } from "@/components/Footer";
 import { Header } from "@/components/Header";
@@ -264,8 +264,19 @@ async function fetchUrlAsFile(url: string, name: string) {
 }
 
 export default function DemoClient() {
-  const searchParams = useSearchParams();
-  const urlKey = searchParams.get("key");
+  const pathname = usePathname();
+  const [urlKey, setUrlKey] = useState<string | null>(null);
+
+  useEffect(() => {
+    function readKey() {
+      const raw = new URLSearchParams(window.location.search).get("key");
+      setUrlKey(raw?.trim() || null);
+    }
+    readKey();
+    window.addEventListener("popstate", readKey);
+    return () => window.removeEventListener("popstate", readKey);
+  }, [pathname]);
+
   const [selectedPresetId, setSelectedPresetId] = useState<GarmentPreset["id"]>(
     GARMENT_PRESETS[0]?.id ?? "tee",
   );
