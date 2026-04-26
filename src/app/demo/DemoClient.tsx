@@ -6,8 +6,8 @@ import { SwitchCamera } from "lucide-react";
 import { Footer } from "@/components/Footer";
 import { Header } from "@/components/Header";
 
-/** Echoed from FormData; Try-On Max infers product type from images (no Fashn `category` param). */
-type GarmentCategoryHint = "tops" | "shoes" | "bottoms";
+/** Echoed from FormData; Fashn `tryon-max` run payload in this app does not include `garment_type` — use tops/bottoms only. */
+type GarmentCategoryHint = "tops" | "bottoms";
 
 type TryOnResponse =
   | { id: string; output: string[]; category?: GarmentCategoryHint }
@@ -26,7 +26,7 @@ type GarmentPreset = {
     | "sunglasses";
   label: string;
   name: string;
-  /** Hint for `/api/try-on` (echoed in JSON); maps to sneakers → shoes, apparel → tops */
+  /** Hint for `/api/try-on` (echoed in JSON); sneakers use `bottoms` like other non-top apparel. */
   category: GarmentCategoryHint;
   imageUrl: string;
 };
@@ -36,7 +36,7 @@ const GARMENT_PRESETS: GarmentPreset[] = [
     id: "sneakers",
     label: "Sneakers",
     name: "White clean sneakers",
-    category: "shoes",
+    category: "bottoms",
     imageUrl:
       // White sneakers on a white background (product-style).
       "https://images.unsplash.com/photo-1625860191460-10a66c7384fb?auto=format&fit=crop&w=1400&q=80",
@@ -1000,7 +1000,7 @@ export default function DemoClient() {
           Try-on uses Fashn <span className="font-semibold text-zinc-800">balanced</span> generation. Images are
           auto-compressed to max 1000px before the API call.
           {selectedPreset?.id === "sneakers"
-            ? " Sneakers use a shoes category hint; other presets (including the cap, beanie, and sunglasses) use tops or bottoms as appropriate."
+            ? " Sneakers use a bottoms category hint; other presets (including the cap, beanie, and sunglasses) use tops or bottoms as appropriate."
             : ""}
         </p>
       </main>

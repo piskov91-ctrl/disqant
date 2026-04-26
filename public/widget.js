@@ -254,7 +254,7 @@
   }
 
   function inferCategoryFromImage(img) {
-    // Hint for /api/try-on (echoed in JSON): tops | shoes | bottoms. Fashn Try-On Max has no category field.
+    // Hint for /api/try-on (echoed in JSON): tops | bottoms only (shoe images → "bottoms"). Fashn tryon-max run body in this app has no garment_type.
     var DEFAULT_CATEGORY = "tops";
 
     var shoeKeywords = [
@@ -285,7 +285,7 @@
 
     var haystack = normalizeText(parts.join(" "));
     for (var si = 0; si < shoeKeywords.length; si++) {
-      if (haystack.indexOf(shoeKeywords[si]) !== -1) return "shoes";
+      if (haystack.indexOf(shoeKeywords[si]) !== -1) return "bottoms";
     }
     for (var bi = 0; bi < bottomsKeywords.length; bi++) {
       if (haystack.indexOf(bottomsKeywords[bi]) !== -1) return "bottoms";
@@ -405,12 +405,7 @@
     var garmentFile = null;
     var stream = null;
     var camFacingMode = "environment";
-    var selectedCategory =
-      inferredCategory === "shoes"
-        ? "shoes"
-        : inferredCategory === "bottoms"
-          ? "bottoms"
-          : "tops";
+    var selectedCategory = inferredCategory === "bottoms" ? "bottoms" : "tops";
 
     var stage = document.createElement("div");
     stage.className = "dq-stage";

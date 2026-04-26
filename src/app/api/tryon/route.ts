@@ -33,22 +33,21 @@ async function fileToDataUrl(file: File) {
 }
 
 /**
- * Client garment hint for our JSON response only.
- * Try-On Max (`/v1/run`) does not document a `category` input; product type is inferred from images.
+ * Coerced hint for our JSON only (`/api/tryon` response). We do **not** send this to Fashn:
+ * `tryon-max` public inputs are `model_image`, `product_image`, and optional `generation_mode`, etc. — no `garment_type` in our body.
+ * Map legacy `"shoes"` to `"bottoms"` so we never label a run with a separate shoe "category" (some UIs/keys may still POST `shoes` from old embeds).
  * @see https://docs.fashn.ai/api-reference/tryon-max
  */
-type GarmentCategoryHint = "tops" | "shoes" | "bottoms";
+type GarmentCategoryHint = "tops" | "bottoms";
 
 function resolveGarmentCategoryHint(form: FormData): GarmentCategoryHint {
   const fromForm = String(form.get("category") || "")
     .trim()
     .toLowerCase();
-  if (fromForm === "shoes") return "shoes";
-  if (fromForm === "bottoms") return "bottoms";
+  if (fromForm === "shoes" || fromForm === "bottoms") return "bottoms";
 
   const tryOn = String(form.get("tryOnType") || "").trim().toLowerCase();
-  if (tryOn === "shoes") return "shoes";
-  if (tryOn === "bottoms") return "bottoms";
+  if (tryOn === "shoes" || tryOn === "bottoms") return "bottoms";
 
   return "tops";
 }
