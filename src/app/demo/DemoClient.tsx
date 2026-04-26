@@ -14,7 +14,7 @@ type TryOnResponse =
   | { error: string; code?: string; keyKind?: "demo" | "client" };
 
 type GarmentPreset = {
-  id: "sneakers" | "tee" | "sweater" | "jacket" | "jacket_leather" | "jeans";
+  id: "sneakers" | "tee" | "sweater" | "jacket" | "jacket_leather" | "jeans" | "cap";
   label: string;
   name: string;
   /** Hint for `/api/try-on` (echoed in JSON); maps to sneakers → shoes, apparel → tops */
@@ -74,6 +74,15 @@ const GARMENT_PRESETS: GarmentPreset[] = [
     // TuanAnh Blue — pair of blue jeans on a box (product-style denim).
     imageUrl:
       "https://images.unsplash.com/photo-1714143136361-386dae5672e2?auto=format&fit=crop&w=1400&q=80",
+  },
+  {
+    id: "cap",
+    label: "Cap",
+    name: "Black baseball cap (product shot)",
+    category: "tops",
+    // Clear cap on light background (product / catalog style).
+    imageUrl:
+      "https://images.unsplash.com/photo-1521369909029-2afed882baee?auto=format&fit=crop&w=1400&q=80",
   },
 ];
 
@@ -955,7 +964,7 @@ export default function DemoClient() {
           Try-on uses Fashn <span className="font-semibold text-zinc-800">balanced</span> generation. Images are
           auto-compressed to max 1000px before the API call.
           {selectedPreset?.id === "sneakers"
-            ? " Sneakers use a shoes category hint; other presets use tops or bottoms as appropriate."
+            ? " Sneakers use a shoes category hint; other presets (including the cap) use tops or bottoms as appropriate."
             : ""}
         </p>
       </main>
