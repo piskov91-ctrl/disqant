@@ -72,14 +72,14 @@ async function startPrediction(params: {
     Authorization: `Bearer ${apiKey}`,
   };
 
-  // `tryon` + `1k` + `balanced` — lower per-run credit use than `tryon-max` at the same resolution/mode in common pricing tiers.
+  // tryon-v1.6: ~1 credit/output; uses `garment_image` + `mode` (not tryon-max’s `product_image` / `generation_mode` / `resolution`).
+  // @see https://docs.fashn.ai/api-reference/tryon-v1-6
   const body = {
-    model_name: "tryon",
+    model_name: "tryon-v1.6",
     inputs: {
       model_image: modelImage,
-      product_image: productImage,
-      resolution: "1k",
-      generation_mode: generationMode,
+      garment_image: productImage,
+      mode: generationMode,
     },
   };
 
