@@ -25,7 +25,8 @@ function keyLookupKey(apiKey: string) {
 
 let redisSingleton: Redis | null = null;
 
-function getRedis() {
+/** @internal Shared Upstash client for `apiKeyStore` and `tryOnAnalytics`. */
+export function getRedis() {
   if (redisSingleton) return redisSingleton;
 
   const url = process.env.KV_REST_API_URL;
@@ -108,6 +109,8 @@ export async function deleteClientKey(id: string) {
   await redis.lrem(KEY_INDEX, 0, id);
   await redis.del(recordKey(id));
   if (rec?.key) await redis.del(keyLookupKey(rec.key));
+  await redis.del(`disquant:tryon:products:${id}`);
+  await redis.del(`disquant:tryon:events:${id}`);
   return { ok: true as const };
 }
 

@@ -1,5 +1,6 @@
 import { cookies } from "next/headers";
 import { assertClientCanUseByApiKey, incrementUsageOrThrow, listClientKeys } from "@/lib/apiKeyStore";
+import { recordTryOnProductUsage } from "@/lib/tryOnAnalytics";
 
 export const runtime = "nodejs";
 
@@ -149,6 +150,10 @@ export async function POST(req: Request) {
 
   const modelFile = form.get("model");
   const garmentFile = form.get("garment");
+  /** Source product image URL when the garment is not only a user upload (e.g. preset or catalog URL). */
+  const productImageUrlField = String(form.get("productImageUrl") ?? form.get("garmentUrl") ?? "")
+    .trim()
+    .slice(0, 4000);
   const category = resolveGarmentCategoryHint(form);
   const generationMode = parseGenerationMode(form);
 
@@ -182,8 +187,14 @@ export async function POST(req: Request) {
     category,
   });
   if (result.ok) {
+    const at = new Date().toISOString();
     try {
       await incrementUsageOrThrow(client.id);
+      void recordTryOnProductUsage({
+        clientId: client.id,
+        productImageUrl: productImageUrlField,
+        at,
+      });
     } catch {
       // Usage enforcement is checked before starting; ignore rare race here.
     }

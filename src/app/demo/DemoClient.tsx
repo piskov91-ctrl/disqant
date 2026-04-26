@@ -557,6 +557,7 @@ export default function DemoClient() {
       const fd = new FormData();
       fd.set("model", modelC);
       fd.set("garment", garmentC);
+      fd.set("productImageUrl", wearPreset.imageUrl);
       fd.set("category", wearPreset.category);
       fd.set("generationMode", "balanced");
       const res = await fetch("/api/tryon", {
