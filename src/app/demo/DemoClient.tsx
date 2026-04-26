@@ -86,6 +86,13 @@ const WEAR_LOADING_MESSAGES: readonly string[] = [
   "Usually 20–30 seconds—worth the wait ✨",
 ];
 
+/** Fetch as blob so cross-origin `download` works and we can `navigator.share` a File on mobile. */
+async function fetchImageBlobFromUrl(url: string): Promise<Blob> {
+  const r = await fetch(url, { mode: "cors" });
+  if (!r.ok) throw new Error("Could not read image");
+  return r.blob();
+}
+
 /** Matches `public/widget.js` injectStyles (Wear Me + modal) for pixel-consistent /demo modal. */
 const DEMO_WEAR_MODAL_STYLE_ID = "disqant-demo-wear-modal-style";
 const DEMO_WEAR_MODAL_CSS =
@@ -249,6 +256,9 @@ export default function DemoClient() {
   const [wearGenerating, setWearGenerating] = useState(false);
   const [wearError, setWearError] = useState<string | null>(null);
   const [wearLoadingMsgIndex, setWearLoadingMsgIndex] = useState(0);
+  /** Prefetched when the result URL is ready — faster / more reliable save and Web Share. */
+  const [wearResultBlob, setWearResultBlob] = useState<Blob | null>(null);
+  const [wearSaveLoading, setWearSaveLoading] = useState(false);
 
   const wearGalleryInputRef = useRef<HTMLInputElement | null>(null);
   const wearVideoRef = useRef<HTMLVideoElement | null>(null);
@@ -371,6 +381,7 @@ export default function DemoClient() {
       setWearShowVideo(false);
       setWearGenerating(false);
       setWearError(null);
+      setWearResultBlob(null);
     }, 220);
   }, [clearWearProgressTimer, stopWearStream]);
 
@@ -406,6 +417,7 @@ export default function DemoClient() {
       setWearOpen(true);
       setWearCameraFacing("user");
       setWearFlippingCamera(false);
+      setWearResultBlob(null);
       setSelectedPresetId(preset.id);
       setWearGarmentLoading(true);
       void (async () => {
@@ -532,6 +544,7 @@ export default function DemoClient() {
     if (!wearModelFile || !wearGarmentFile || !wearPreset) return;
     setWearError(null);
     setWearGenerating(true);
+    setWearResultBlob(null);
     setWearProcessing(true);
     setWearShowProgress(true);
     setWearProgressPct(0);
@@ -597,6 +610,15 @@ export default function DemoClient() {
       });
       setWearHasPhoto(true);
       setWearProgressPct(100);
+      setWearResultBlob(null);
+      void (async () => {
+        try {
+          const b = await fetchImageBlobFromUrl(out);
+          setWearResultBlob(b);
+        } catch {
+          /* Save flow will try again on action; CORS or transient network. */
+        }
+      })();
       window.setTimeout(() => {
         setWearProcessing(false);
         setWearShowProgress(false);
@@ -619,15 +641,50 @@ export default function DemoClient() {
     wearPreset,
   ]);
 
-  const onWearDownload = useCallback(() => {
+  const onWearSaveToGallery = useCallback(async () => {
     if (!wearStageUrl) return;
-    const a = document.createElement("a");
-    a.href = wearStageUrl;
-    a.download = "disqant-tryon.png";
-    document.body.appendChild(a);
-    a.click();
-    a.remove();
-  }, [wearStageUrl]);
+    setWearSaveLoading(true);
+    setWearError(null);
+    try {
+      let blob = wearResultBlob;
+      if (!blob) {
+        blob = await fetchImageBlobFromUrl(wearStageUrl);
+        setWearResultBlob(blob);
+      }
+      const ext = blob.type?.includes("png") ? "png" : "jpeg";
+      const fileName = `disqant-tryon.${ext}`;
+      const mime = blob.type && blob.type.startsWith("image/") ? blob.type : "image/jpeg";
+      const file = new File([blob], fileName, { type: mime });
+
+      if (typeof navigator !== "undefined" && "share" in navigator && "canShare" in navigator) {
+        const n = navigator as Navigator & { canShare: (d: ShareData) => boolean };
+        if (n.canShare({ files: [file] })) {
+          try {
+            const nav = navigator as Navigator & { share: (d: ShareData) => Promise<void> };
+            await nav.share({ files: [file], title: "Disqant try-on" });
+            return;
+          } catch (e) {
+            if (e && typeof e === "object" && (e as Error).name === "AbortError") return;
+          }
+        }
+      }
+
+      const objectUrl = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = objectUrl;
+      a.download = fileName;
+      a.rel = "noopener";
+      a.style.display = "none";
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      window.setTimeout(() => URL.revokeObjectURL(objectUrl), 3000);
+    } catch {
+      setWearError("Could not save the image. Check your connection and try again.");
+    } finally {
+      setWearSaveLoading(false);
+    }
+  }, [wearStageUrl, wearResultBlob]);
 
   const selectedPreset = useMemo(
     () => GARMENT_PRESETS.find((p) => p.id === selectedPresetId) ?? null,
@@ -784,8 +841,15 @@ export default function DemoClient() {
               </button>
 
               {wearSaveVisible ? (
-                <button type="button" className="dq-save" onClick={onWearDownload}>
-                  ⬇️ Save Photo
+                <button
+                  type="button"
+                  className="dq-primary"
+                  onClick={() => void onWearSaveToGallery()}
+                  disabled={wearSaveLoading}
+                  aria-busy={wearSaveLoading}
+                  title="Saves without opening a preview — on phone, you can save to Photos from the share sheet"
+                >
+                  {wearSaveLoading ? "Preparing image…" : "Add to your gallery"}
                 </button>
               ) : null}
             </div>
