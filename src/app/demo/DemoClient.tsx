@@ -299,6 +299,8 @@ export default function DemoClient() {
   const wearStreamRef = useRef<MediaStream | null>(null);
   const wearProgressTimerRef = useRef<number | null>(null);
   const wearStageUrlRef = useRef<string | null>(null);
+  /** Sync guard: `wearGenerating` updates after render, so double-clicks can fire two `/api/tryon` → two Fashn /run. */
+  const wearTryOnInFlightRef = useRef(false);
 
   useEffect(() => {
     wearStageUrlRef.current = wearStageUrl;
@@ -576,6 +578,8 @@ export default function DemoClient() {
 
   const onWearGenerate = useCallback(async () => {
     if (!wearModelFile || !wearGarmentFile || !wearPreset) return;
+    if (wearTryOnInFlightRef.current) return;
+    wearTryOnInFlightRef.current = true;
     setWearError(null);
     setWearGenerating(true);
     setWearResultBlob(null);
@@ -666,6 +670,7 @@ export default function DemoClient() {
       setWearShowProgress(false);
     } finally {
       setWearGenerating(false);
+      wearTryOnInFlightRef.current = false;
     }
   }, [
     clearWearProgressTimer,
