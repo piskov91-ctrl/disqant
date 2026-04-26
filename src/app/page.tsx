@@ -1,7 +1,7 @@
 import { Footer } from "@/components/Footer";
 import { Header } from "@/components/Header";
 import Link from "next/link";
-import { Code2, MonitorSmartphone, Play, Shirt } from "lucide-react";
+import { Code2, MonitorSmartphone, Shirt } from "lucide-react";
 
 export default function Home() {
   return (
@@ -14,7 +14,7 @@ export default function Home() {
         >
           <div className="mx-auto max-w-6xl px-6 py-20 md:py-24 lg:py-28">
             <div className="grid min-h-[min(70vh,640px)] items-center gap-14 md:grid-cols-2 md:gap-12 lg:gap-16">
-              <div className="flex max-w-xl flex-col justify-center">
+              <div className="flex min-h-0 max-w-xl flex-col justify-center">
                 <h1 className="text-balance text-4xl font-semibold leading-[1.08] tracking-tight text-white sm:text-5xl">
                   Your online fitting room
                 </h1>
@@ -29,19 +29,28 @@ export default function Home() {
                 </a>
               </div>
 
-              <div
-                className="relative flex aspect-[16/10] w-full max-w-2xl justify-self-end overflow-hidden rounded-2xl border border-white/[0.08] bg-zinc-950/50 shadow-[0_0_0_1px_rgba(255,255,255,0.04)] md:max-w-none"
-                aria-label="Product video"
-              >
-                <div
-                  className="pointer-events-none absolute inset-0 bg-[linear-gradient(145deg,rgba(24,24,27,0.4),rgba(9,9,11,0.95))]"
-                  aria-hidden
-                />
-                <div className="relative z-[1] flex w-full flex-col items-center justify-center px-6 py-16 text-center">
-                  <div className="flex h-16 w-16 items-center justify-center rounded-2xl border border-white/10 bg-white/[0.04] text-zinc-500 shadow-lg shadow-black/30">
-                    <Play className="h-7 w-7 translate-x-0.5" strokeWidth={1.5} aria-hidden />
-                  </div>
-                  <p className="mt-5 text-xs font-medium uppercase tracking-[0.2em] text-zinc-600">Video</p>
+              <div className="relative w-full min-h-0">
+                <div className="relative aspect-[16/10] w-full overflow-hidden rounded-2xl border border-white/[0.1] bg-black shadow-[0_0_0_1px_rgba(255,255,255,0.04)]">
+                  <video
+                    className="absolute inset-0 h-full w-full object-contain"
+                    autoPlay
+                    loop
+                    muted
+                    playsInline
+                    preload="auto"
+                    controls={false}
+                    aria-label="Disquant product demo"
+                  >
+                    <source src="/demo-video.mp4" type="video/mp4" />
+                  </video>
+                  <div
+                    className="pointer-events-none absolute inset-0 ring-1 ring-inset ring-white/[0.06]"
+                    aria-hidden
+                  />
+                  <div
+                    className="pointer-events-none absolute inset-x-0 bottom-0 h-1/3 bg-gradient-to-t from-black/10 to-transparent"
+                    aria-hidden
+                  />
                 </div>
               </div>
             </div>
