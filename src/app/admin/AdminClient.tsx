@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
+import { Footer } from "@/components/Footer";
 
 type KeyRecord = {
   id: string;
@@ -545,6 +546,7 @@ export default function AdminClient() {
           </section>
         </div>
       </main>
+      <Footer />
     </div>
   );
 }

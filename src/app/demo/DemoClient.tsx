@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { SwitchCamera } from "lucide-react";
+import { Footer } from "@/components/Footer";
 import { Header } from "@/components/Header";
 
 /** Echoed from FormData; Try-On Max infers product type from images (no Fashn `category` param). */
@@ -957,6 +958,7 @@ export default function DemoClient() {
             : ""}
         </p>
       </main>
+      <Footer />
     </div>
   );
 }

@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import { Footer } from "@/components/Footer";
 import AdminClient from "./AdminClient";
 import AdminGateClient from "./AdminGateClient";
 
@@ -39,6 +40,7 @@ export default function AdminPageClient() {
             Loading…
           </div>
         </main>
+        <Footer />
       </div>
     );
   }
@@ -71,6 +73,7 @@ export default function AdminPageClient() {
             <AdminGateClient onSuccess={() => setAuthed(true)} />
           </div>
         </main>
+        <Footer />
       </div>
     );
   }
