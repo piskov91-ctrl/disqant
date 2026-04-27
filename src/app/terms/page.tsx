@@ -97,12 +97,14 @@ export default function TermsPage() {
             </div>
 
             <div>
-              <h2 className="text-lg font-semibold text-zinc-900">6. Our intellectual property</h2>
+              <h2 className="text-lg font-semibold text-zinc-900">6. Intellectual property</h2>
               <p className="mt-3">
-                The Service, including software, models, visual design, and branding, is owned by Disqant or our
-                licensors. Except for the rights expressly granted in these Terms, we reserve all rights. You may not use
-                our name or logo except as required for normal attribution in integrations we permit, or with our prior
-                written consent.
+                All Disquant technology and branding are proprietary to Disquant Ltd, including without limitation
+                software, APIs, models, algorithms, documentation, user interfaces, and the Disquant name, logos, trade
+                dress, domain names, and related marks (whether registered or unregistered). The Service, including
+                these elements and any other materials we provide, is owned by Disqant or our licensors. Except for the
+                rights expressly granted in these Terms, we reserve all rights. You may not use our name or logo except
+                as required for normal attribution in integrations we permit, or with our prior written consent.
               </p>
             </div>
 

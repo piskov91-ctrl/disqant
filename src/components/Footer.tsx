@@ -36,7 +36,7 @@ export function Footer() {
             Privacy &amp; Cookies
           </Link>
         </nav>
-        <p className="text-xs text-zinc-600">© 2026 Disquant Ltd</p>
+        <p className="text-xs text-zinc-600">© 2026 Disquant Ltd. All rights reserved.</p>
       </div>
     </footer>
   );
