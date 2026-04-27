@@ -1,5 +1,6 @@
 import crypto from "node:crypto";
 import { cookies } from "next/headers";
+import { NextResponse } from "next/server";
 import { createClientKey, deleteClientKey, getRedis } from "@/lib/apiKeyStore";
 import { RETAILER_PASSWORD_MAX, RETAILER_PASSWORD_MIN } from "@/lib/retailerPasswordPolicy";
 
@@ -258,6 +259,27 @@ export async function setRetailerSessionCookie(token: string) {
     secure: process.env.NODE_ENV === "production",
     path: "/",
     maxAge: SESSION_TTL_SEC,
+  });
+}
+
+/** Prefer this in Route Handlers — pairs the cookie with the returned {@link NextResponse} (reliable Set-Cookie). */
+export function applyRetailerSessionToNextResponse(res: NextResponse, token: string) {
+  res.cookies.set(RETAILER_SESSION_COOKIE, token, {
+    httpOnly: true,
+    sameSite: "lax",
+    secure: process.env.NODE_ENV === "production",
+    path: "/",
+    maxAge: SESSION_TTL_SEC,
+  });
+}
+
+export function clearRetailerSessionOnNextResponse(res: NextResponse) {
+  res.cookies.set(RETAILER_SESSION_COOKIE, "", {
+    httpOnly: true,
+    sameSite: "lax",
+    secure: process.env.NODE_ENV === "production",
+    path: "/",
+    maxAge: 0,
   });
 }
 

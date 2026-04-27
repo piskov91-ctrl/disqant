@@ -18,32 +18,34 @@ function LoginFormInner() {
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
-  async function onSubmit(e: React.FormEvent) {
+  function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
-    setError(null);
-    setLoading(true);
-    try {
-      const res = await fetch("/api/retailer/login", {
-        method: "POST",
-        credentials: "include",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email: email.trim(), password }),
-      });
-      const data = (await res.json()) as { error?: string };
-      if (!res.ok) {
-        setError(data.error || "Could not sign in.");
-        return;
+    void (async () => {
+      setError(null);
+      setLoading(true);
+      try {
+        const res = await fetch("/api/retailer/login", {
+          method: "POST",
+          credentials: "include",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ email: email.trim(), password }),
+        });
+        const data = (await res.json()) as { error?: string };
+        if (!res.ok) {
+          setError(data.error || "Could not sign in.");
+          return;
+        }
+        window.location.assign(next);
+      } catch {
+        setError("Something went wrong. Please try again.");
+      } finally {
+        setLoading(false);
       }
-      window.location.assign(next);
-    } catch {
-      setError("Something went wrong. Please try again.");
-    } finally {
-      setLoading(false);
-    }
+    })();
   }
 
   return (
-    <form onSubmit={(e) => void onSubmit(e)} className="mt-8 space-y-5">
+    <form onSubmit={handleSubmit} className="mt-8 space-y-5" noValidate>
       <div>
         <label htmlFor="li-email" className="block text-sm font-medium text-zinc-200">
           Email

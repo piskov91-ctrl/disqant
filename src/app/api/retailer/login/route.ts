@@ -1,8 +1,9 @@
+import { NextResponse } from "next/server";
 import {
+  applyRetailerSessionToNextResponse,
   createRetailerSessionToken,
   findRetailerByEmail,
   normalizeRetailerEmail,
-  setRetailerSessionCookie,
   toPublicRetailer,
   verifyRetailerPassword,
 } from "@/lib/retailerAuth";
@@ -16,27 +17,28 @@ export async function POST(req: Request) {
   try {
     body = (await req.json()) as Body;
   } catch {
-    return Response.json({ error: "Invalid JSON body." }, { status: 400 });
+    return NextResponse.json({ error: "Invalid JSON body." }, { status: 400 });
   }
 
   const email = typeof body.email === "string" ? body.email.trim() : "";
   const password = typeof body.password === "string" ? body.password : "";
 
   if (!normalizeRetailerEmail(email) || !password) {
-    return Response.json({ error: "Email and password are required." }, { status: 400 });
+    return NextResponse.json({ error: "Email and password are required." }, { status: 400 });
   }
 
   const user = await findRetailerByEmail(email);
   if (!user || !verifyRetailerPassword(password, user.passwordSalt, user.passwordHash)) {
-    return Response.json({ error: "Invalid email or password." }, { status: 401 });
+    return NextResponse.json({ error: "Invalid email or password." }, { status: 401 });
   }
 
   try {
     const token = await createRetailerSessionToken(user.id);
-    await setRetailerSessionCookie(token);
-    return Response.json({ ok: true, user: toPublicRetailer(user) });
+    const res = NextResponse.json({ ok: true, user: toPublicRetailer(user) });
+    applyRetailerSessionToNextResponse(res, token);
+    return res;
   } catch (e) {
     const msg = e instanceof Error ? e.message : "Login failed.";
-    return Response.json({ error: msg }, { status: 500 });
+    return NextResponse.json({ error: msg }, { status: 500 });
   }
 }

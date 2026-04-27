@@ -69,47 +69,50 @@ export function SignupForm() {
     agreePrivacy,
   ]);
 
-  async function onSubmit(e: React.FormEvent) {
+  function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
-    setError(null);
-    const err = validate();
-    if (err) {
-      setError(err);
-      return;
-    }
-    setLoading(true);
-    try {
-      const res = await fetch("/api/retailer/signup", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          firstName: firstName.trim(),
-          lastName: lastName.trim(),
-          companyName: companyName.trim(),
-          email: email.trim(),
-          websiteUrl: websiteUrl.trim(),
-          password,
-          confirmPassword,
-          agreeTerms: true,
-          agreePrivacy: true,
-        }),
-      });
-      const data = (await res.json()) as { error?: string };
-      if (!res.ok) {
-        setError(data.error || "Could not create account.");
+    void (async () => {
+      setError(null);
+      const err = validate();
+      if (err) {
+        setError(err);
         return;
       }
-      window.location.assign("/dashboard");
-    } catch {
-      setError("Something went wrong. Please try again.");
-    } finally {
-      setLoading(false);
-    }
+      setLoading(true);
+      try {
+        const res = await fetch("/api/retailer/signup", {
+          method: "POST",
+          credentials: "include",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            firstName: firstName.trim(),
+            lastName: lastName.trim(),
+            companyName: companyName.trim(),
+            email: email.trim(),
+            websiteUrl: websiteUrl.trim(),
+            password,
+            confirmPassword,
+            agreeTerms: true,
+            agreePrivacy: true,
+          }),
+        });
+        const data = (await res.json()) as { error?: string };
+        if (!res.ok) {
+          setError(data.error || "Could not create account.");
+          return;
+        }
+        window.location.assign("/dashboard");
+      } catch {
+        setError("Something went wrong. Please try again.");
+      } finally {
+        setLoading(false);
+      }
+    })();
   }
 
   return (
     <div className="mt-8 rounded-2xl border border-zinc-700/80 bg-zinc-900/90 p-6 shadow-xl shadow-black/40 backdrop-blur-sm md:p-8">
-      <form onSubmit={(e) => void onSubmit(e)} className="space-y-5" noValidate>
+      <form onSubmit={handleSubmit} className="space-y-5" noValidate>
         <div className="grid gap-5 sm:grid-cols-2">
           <div>
             <label htmlFor="su-first" className="block text-sm font-medium text-zinc-200">

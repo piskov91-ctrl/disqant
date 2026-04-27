@@ -1,7 +1,8 @@
+import { NextResponse } from "next/server";
 import {
+  applyRetailerSessionToNextResponse,
   createRetailerSessionToken,
   registerRetailer,
-  setRetailerSessionCookie,
   toPublicRetailer,
 } from "@/lib/retailerAuth";
 
@@ -24,7 +25,7 @@ export async function POST(req: Request) {
   try {
     body = (await req.json()) as Body;
   } catch {
-    return Response.json({ error: "Invalid JSON body." }, { status: 400 });
+    return NextResponse.json({ error: "Invalid JSON body." }, { status: 400 });
   }
 
   const firstName = typeof body.firstName === "string" ? body.firstName : "";
@@ -50,10 +51,11 @@ export async function POST(req: Request) {
       agreePrivacy,
     });
     const token = await createRetailerSessionToken(user.id);
-    await setRetailerSessionCookie(token);
-    return Response.json({ ok: true, user: toPublicRetailer(user) });
+    const res = NextResponse.json({ ok: true, user: toPublicRetailer(user) });
+    applyRetailerSessionToNextResponse(res, token);
+    return res;
   } catch (e) {
     const msg = e instanceof Error ? e.message : "Registration failed.";
-    return Response.json({ error: msg }, { status: 400 });
+    return NextResponse.json({ error: msg }, { status: 400 });
   }
 }
