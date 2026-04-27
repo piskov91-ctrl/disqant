@@ -30,7 +30,7 @@ export async function POST(req: Request) {
   const firstName = typeof body.firstName === "string" ? body.firstName : "";
   const lastName = typeof body.lastName === "string" ? body.lastName : "";
   const companyName = typeof body.companyName === "string" ? body.companyName : "";
-  const email = typeof body.email === "string" ? body.email : "";
+  const email = typeof body.email === "string" ? body.email.trim() : "";
   const websiteUrl = typeof body.websiteUrl === "string" ? body.websiteUrl : "";
   const password = typeof body.password === "string" ? body.password : "";
   const confirmPassword = typeof body.confirmPassword === "string" ? body.confirmPassword : "";

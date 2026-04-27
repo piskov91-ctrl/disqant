@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useSearchParams } from "next/navigation";
 import { Suspense, useState } from "react";
 
 function safeNextPath(raw: string | null): string {
@@ -10,7 +10,6 @@ function safeNextPath(raw: string | null): string {
 }
 
 function LoginFormInner() {
-  const router = useRouter();
   const searchParams = useSearchParams();
   const next = safeNextPath(searchParams.get("next"));
 
@@ -26,16 +25,16 @@ function LoginFormInner() {
     try {
       const res = await fetch("/api/retailer/login", {
         method: "POST",
+        credentials: "include",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, password }),
+        body: JSON.stringify({ email: email.trim(), password }),
       });
       const data = (await res.json()) as { error?: string };
       if (!res.ok) {
         setError(data.error || "Could not sign in.");
         return;
       }
-      router.push(next);
-      router.refresh();
+      window.location.assign(next);
     } catch {
       setError("Something went wrong. Please try again.");
     } finally {

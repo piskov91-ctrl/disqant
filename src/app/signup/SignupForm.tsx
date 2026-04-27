@@ -1,8 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { useCallback, useState } from "react";
+import { RETAILER_PASSWORD_MAX, RETAILER_PASSWORD_MIN } from "@/lib/retailerPasswordPolicy";
 
 const inputClass =
   "mt-2 block w-full rounded-xl border border-zinc-600/80 bg-zinc-950/80 px-4 py-3 text-sm text-zinc-100 shadow-inner shadow-black/20 outline-none transition placeholder:text-zinc-600 focus:border-violet-500/60 focus:ring-1 focus:ring-violet-500/30";
@@ -22,7 +22,6 @@ function validateWebsiteIfPresent(raw: string): string | null {
 }
 
 export function SignupForm() {
-  const router = useRouter();
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
   const [companyName, setCompanyName] = useState("");
@@ -48,8 +47,12 @@ export function SignupForm() {
     }
     const webErr = validateWebsiteIfPresent(websiteUrl);
     if (webErr) return webErr;
-    if (password.length < 8) return "Password must be at least 8 characters.";
-    if (password.length > 128) return "Password must be at most 128 characters.";
+    if (password.length < RETAILER_PASSWORD_MIN) {
+      return `Password must be at least ${RETAILER_PASSWORD_MIN} characters.`;
+    }
+    if (password.length > RETAILER_PASSWORD_MAX) {
+      return `Password must be at most ${RETAILER_PASSWORD_MAX} characters.`;
+    }
     if (password !== confirmPassword) return "Password and confirmation do not match.";
     if (!agreeTerms) return "You must agree to the Terms & Conditions.";
     if (!agreePrivacy) return "You must agree to the Privacy Policy.";
@@ -96,8 +99,7 @@ export function SignupForm() {
         setError(data.error || "Could not create account.");
         return;
       }
-      router.push("/dashboard");
-      router.refresh();
+      window.location.assign("/dashboard");
     } catch {
       setError("Something went wrong. Please try again.");
     } finally {
@@ -201,9 +203,9 @@ export function SignupForm() {
             autoComplete="new-password"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
-            maxLength={128}
+            maxLength={RETAILER_PASSWORD_MAX}
             className={inputClass}
-            placeholder="At least 8 characters"
+            placeholder={`At least ${RETAILER_PASSWORD_MIN} characters`}
           />
         </div>
 
@@ -218,7 +220,7 @@ export function SignupForm() {
             autoComplete="new-password"
             value={confirmPassword}
             onChange={(e) => setConfirmPassword(e.target.value)}
-            maxLength={128}
+            maxLength={RETAILER_PASSWORD_MAX}
             className={inputClass}
             placeholder="Re-enter password"
           />

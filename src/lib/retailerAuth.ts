@@ -1,6 +1,7 @@
 import crypto from "node:crypto";
 import { cookies } from "next/headers";
 import { createClientKey, deleteClientKey, getRedis } from "@/lib/apiKeyStore";
+import { RETAILER_PASSWORD_MAX, RETAILER_PASSWORD_MIN } from "@/lib/retailerPasswordPolicy";
 
 export const RETAILER_SESSION_COOKIE = "disquant_retailer_session";
 
@@ -164,8 +165,11 @@ export async function registerRetailer(params: {
   }
 
   const password = params.password;
-  if (password.length < 8 || password.length > 128) {
-    throw new Error("Password must be between 8 and 128 characters.");
+  if (password.length < RETAILER_PASSWORD_MIN) {
+    throw new Error(`Password must be at least ${RETAILER_PASSWORD_MIN} characters.`);
+  }
+  if (password.length > RETAILER_PASSWORD_MAX) {
+    throw new Error(`Password must be at most ${RETAILER_PASSWORD_MAX} characters.`);
   }
 
   const redis = getRedis();
