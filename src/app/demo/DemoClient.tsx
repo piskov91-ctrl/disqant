@@ -48,7 +48,9 @@ type GarmentPreset = {
     | "jeans"
     | "cap"
     | "beanie"
-    | "sunglasses"
+    | "sunglasses_aviator"
+    | "sunglasses_round"
+    | "sunglasses_wayfarer"
     | "necklace"
     | "earrings"
     | "gloves"
@@ -143,13 +145,31 @@ const GARMENT_PRESETS: GarmentPreset[] = [
       "https://images.unsplash.com/photo-1618354691792-d1d42acfd860?auto=format&fit=crop&w=1400&q=80",
   },
   {
-    id: "sunglasses",
-    label: "Sunglasses",
-    name: "Classic sunglasses (product shot)",
+    id: "sunglasses_aviator",
+    label: "Sunglasses (aviator)",
+    name: "Aviator sunglasses — silver metal frame (white background)",
     category: "tops",
-    // Full frames on a clean light surface. https://unsplash.com/photo-1511499767150-a48a237f0083
+    // Angelina (Unsplash) — teardrop / aviator shape, no visible branding in frame. https://unsplash.com/photos/silver-framed-aviator-style-sunglasses-_OBHnSLxpas
     imageUrl:
-      "https://images.unsplash.com/photo-1511499767150-a48a237f0083?auto=format&fit=crop&w=1400&q=80",
+      "https://images.unsplash.com/photo-1615210768832-159ca3912a05?auto=format&fit=crop&w=1400&q=80",
+  },
+  {
+    id: "sunglasses_round",
+    label: "Sunglasses (round)",
+    name: "Round-frame sunglasses (white background)",
+    category: "tops",
+    // Vikram Pataskar — round lenses, product-style, white backdrop. https://unsplash.com/photos/a-pair-of-round-sunglasses-with-blue-tinted-lenses-tTrpGlKyHhw
+    imageUrl:
+      "https://images.unsplash.com/photo-1678550690358-bf61ba0bf511?auto=format&fit=crop&w=1400&q=80",
+  },
+  {
+    id: "sunglasses_wayfarer",
+    label: "Sunglasses (wayfarer)",
+    name: "Wayfarer-style sunglasses — black frame (white background)",
+    category: "tops",
+    // Kiran CK — thick rectangular / wayfarer-style frame on white. https://unsplash.com/photos/black-framed-sunglasses-on-white-surface-lSl94SZHRgA
+    imageUrl:
+      "https://images.unsplash.com/photo-1584036553516-bf83210aa16c?auto=format&fit=crop&w=1400&q=80",
   },
   {
     id: "necklace",
@@ -316,9 +336,9 @@ const DEMO_CATALOG: readonly {
   {
     id: "eyewear",
     title: "Eyewear",
-    line: "Sunglasses, regular glasses",
+    line: "Aviator, round, and wayfarer sunglasses; prescription glasses",
     Icon: Glasses,
-    presetIds: ["sunglasses", "eyeglasses"],
+    presetIds: ["sunglasses_aviator", "sunglasses_round", "sunglasses_wayfarer", "eyeglasses"],
   },
 ] as const;
 
