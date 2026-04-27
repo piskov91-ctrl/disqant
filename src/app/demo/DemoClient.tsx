@@ -86,9 +86,9 @@ const GARMENT_PRESETS: GarmentPreset[] = [
     label: "T-Shirt",
     name: "Plain white t-shirt (mockup, full shirt visible)",
     category: "tops",
-    // White crew neck — full garment, neutral studio floor. https://unsplash.com/photos/gEupiRvyxh0
+    // mockupbee — flat-lay crew neck, full garment, light gray backdrop, no model. https://unsplash.com/photos/a-white-shirt-on-a-white-background-4rUYuwJ2vGw
     imageUrl:
-      "https://images.unsplash.com/photo-1618677603286-0ec56cb6e1b5?auto=format&fit=crop&w=1400&q=80",
+      "https://images.unsplash.com/photo-1651761179569-4ba2aa054997?auto=format&fit=crop&w=1400&q=80",
   },
   {
     id: "sweater",
@@ -122,9 +122,9 @@ const GARMENT_PRESETS: GarmentPreset[] = [
     label: "Blue jeans",
     name: "Blue denim jeans (flat lay, no model)",
     category: "bottoms",
-    // Full jeans folded / product-style on neutral surface. https://unsplash.com/photo-1714143136361-386dae5672e2
+    // TuanAnh Blue — single pair, front flat-lay, full legs and waist visible, neutral gray, no model. https://unsplash.com/photos/a-pair-of-dark-blue-jeans-on-a-white-background-wNP79A-_bRY
     imageUrl:
-      "https://images.unsplash.com/photo-1714143136361-386dae5672e2?auto=format&fit=crop&w=1400&q=80",
+      "https://images.unsplash.com/photo-1714143164072-7646ef5cb24d?auto=format&fit=crop&w=1400&q=80",
   },
   {
     id: "cap",
@@ -236,12 +236,12 @@ const GARMENT_PRESETS: GarmentPreset[] = [
   },
   {
     id: "blouse",
-    label: "Blouse",
-    name: "White long-sleeve blouse (product shot)",
+    label: "Collared shirt",
+    name: "White collared shirt — short sleeve polo (full garment, neutral wall)",
     category: "tops",
-    // Full blouse laid flat, neutral table. https://unsplash.com/photos/womens-white-square-neckline-long-sleeved-blouse-7eVFsYwVQVY
+    // Mediamodifier — white polo on hanger, hem to collar visible, off-white wall; no exterior logos. https://unsplash.com/photos/a-white-polo-shirt-hanging-on-a-clothes-rack-F5i3PZXYkvY
     imageUrl:
-      "https://images.unsplash.com/photo-1575483801929-3d7479048f24?auto=format&fit=crop&w=1400&q=80",
+      "https://images.unsplash.com/photo-1671438118097-479e63198629?auto=format&fit=crop&w=1400&q=80",
   },
   {
     id: "scarf",
@@ -308,7 +308,7 @@ const DEMO_CATALOG: readonly {
   {
     id: "clothing",
     title: "Clothing",
-    line: "T-shirts, jeans, blouses",
+    line: "T-shirts, jeans, collared tops",
     Icon: Shirt,
     presetIds: ["tee", "jeans", "sweater", "sneakers", "blouse", "boxer_shorts"],
   },
