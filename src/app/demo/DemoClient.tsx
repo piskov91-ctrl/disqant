@@ -312,6 +312,19 @@ const DEMO_CATALOG: readonly {
   },
 ] as const;
 
+const DEMO_CATALOG_IDS = new Set<DemoCatalogId>(DEMO_CATALOG.map((c) => c.id));
+
+/**
+ * Browsers back/forward do not know about React `openCatalog`. We push a same-URL `history` entry
+ * with `{ demoCatalog }` so Back returns to the category list instead of leaving `/demo`.
+ */
+function catalogIdFromHistoryState(state: unknown): DemoCatalogId | null {
+  if (state == null || typeof state !== "object" || !("demoCatalog" in state)) return null;
+  const id = (state as { demoCatalog?: unknown }).demoCatalog;
+  if (typeof id !== "string" || !DEMO_CATALOG_IDS.has(id as DemoCatalogId)) return null;
+  return id as DemoCatalogId;
+}
+
 /** Cycled while the try-on request is in flight (see `wearLoadingMsgIndex` + `useEffect`). */
 const WEAR_LOADING_MESSAGES: readonly string[] = [
   "AI is styling your outfit...",
@@ -484,6 +497,34 @@ export default function DemoClient() {
   );
   const [showUnavailableModal, setShowUnavailableModal] = useState(false);
   const [openCatalog, setOpenCatalog] = useState<DemoCatalogId | null>(null);
+
+  const openProductCatalog = useCallback((id: DemoCatalogId) => {
+    setOpenCatalog(id);
+    if (typeof window === "undefined") return;
+    const path = window.location.pathname + window.location.search;
+    window.history.pushState({ demoCatalog: id }, "", path);
+  }, []);
+
+  const backToProductCategories = useCallback(() => {
+    if (typeof window === "undefined") {
+      setOpenCatalog(null);
+      return;
+    }
+    if (catalogIdFromHistoryState(window.history.state) != null) {
+      window.history.back();
+    } else {
+      setOpenCatalog(null);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const onPopState = (e: PopStateEvent) => {
+      setOpenCatalog(catalogIdFromHistoryState(e.state));
+    };
+    window.addEventListener("popstate", onPopState);
+    return () => window.removeEventListener("popstate", onPopState);
+  }, []);
 
   const [wearOpen, setWearOpen] = useState(false);
   const [wearBackdropOpen, setWearBackdropOpen] = useState(false);
@@ -1187,7 +1228,7 @@ export default function DemoClient() {
                     <li key={cat.id} className="w-full">
                       <button
                         type="button"
-                        onClick={() => setOpenCatalog(cat.id)}
+                        onClick={() => openProductCatalog(cat.id)}
                         className="group flex w-full flex-col items-center text-center"
                       >
                         <div
@@ -1219,7 +1260,7 @@ export default function DemoClient() {
               <div className="flex flex-wrap items-center gap-3">
                 <button
                   type="button"
-                  onClick={() => setOpenCatalog(null)}
+                  onClick={backToProductCategories}
                   className="inline-flex items-center gap-1.5 rounded-full border border-zinc-600 bg-zinc-800/80 px-3 py-1.5 text-sm font-medium text-zinc-200 transition hover:border-zinc-500 hover:bg-zinc-800"
                 >
                   <ChevronLeft className="h-4 w-4" strokeWidth={2} aria-hidden />
