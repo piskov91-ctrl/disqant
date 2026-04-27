@@ -8,6 +8,15 @@ export const RETAILER_SESSION_COOKIE = "disquant_retailer_session";
 
 const SESSION_TTL_SEC = 60 * 60 * 24 * 14; // 14 days
 
+/**
+ * Use `AUTH_INSECURE_COOKIE=1` when running `next start` (production NODE_ENV) over **http** locally;
+ * otherwise `Secure` cookies are not stored and login loops back to `/login`.
+ */
+function retailerSessionCookieSecure(): boolean {
+  if (process.env.AUTH_INSECURE_COOKIE === "1") return false;
+  return process.env.NODE_ENV === "production";
+}
+
 const USER_PREFIX = "disquant:retailer:user:";
 const EMAIL_INDEX = "disquant:retailer:email:";
 const SESS_PREFIX = "disquant:retailer:session:";
@@ -105,9 +114,20 @@ export async function getRetailerById(id: string): Promise<RetailerUser | null> 
 
 export async function findRetailerByEmail(email: string): Promise<RetailerUser | null> {
   const redis = getRedis();
-  const id = (await redis.get(emailIndexKey(normalizeRetailerEmail(email)))) as string | null;
+  const rawId = await redis.get(emailIndexKey(normalizeRetailerEmail(email)));
+  const id = redisUserIdFromIndex(rawId);
   if (!id) return null;
   return getRetailerById(id);
+}
+
+/** Email index stores a UUID string; Upstash may return string or (rarely) another shape. */
+function redisUserIdFromIndex(raw: unknown): string | null {
+  if (raw == null) return null;
+  if (typeof raw === "string") {
+    const s = raw.trim();
+    return s.length > 0 ? s : null;
+  }
+  return null;
 }
 
 function defaultSignupTryOnLimit() {
@@ -219,7 +239,7 @@ export async function registerRetailer(params: {
 export async function createRetailerSessionToken(userId: string): Promise<string> {
   const token = crypto.randomBytes(32).toString("base64url");
   const redis = getRedis();
-  await redis.set(sessionKey(token), JSON.stringify({ userId }), { ex: SESSION_TTL_SEC });
+  await redis.set(sessionKey(token), userId, { ex: SESSION_TTL_SEC });
   return token;
 }
 
@@ -227,13 +247,30 @@ export async function getUserIdFromSessionToken(token: string | undefined): Prom
   if (!token?.trim()) return null;
   const redis = getRedis();
   const raw = await redis.get(sessionKey(token.trim()));
-  if (!raw || typeof raw !== "string") return null;
-  try {
-    const parsed = JSON.parse(raw) as { userId?: string };
-    return typeof parsed.userId === "string" ? parsed.userId : null;
-  } catch {
-    return null;
+  return parseSessionUserId(raw);
+}
+
+/** Session value is a plain user id; accept legacy JSON payloads and object-shaped values from the client. */
+function parseSessionUserId(raw: unknown): string | null {
+  if (raw == null) return null;
+  if (typeof raw === "string") {
+    const s = raw.trim();
+    if (!s) return null;
+    if (s.startsWith("{")) {
+      try {
+        const p = JSON.parse(s) as { userId?: unknown };
+        return typeof p.userId === "string" ? p.userId : null;
+      } catch {
+        return null;
+      }
+    }
+    return s;
   }
+  if (typeof raw === "object" && raw !== null && "userId" in raw) {
+    const u = (raw as { userId: unknown }).userId;
+    return typeof u === "string" ? u : null;
+  }
+  return null;
 }
 
 export async function destroyRetailerSessionToken(token: string) {
@@ -256,7 +293,7 @@ export async function setRetailerSessionCookie(token: string) {
     value: token,
     httpOnly: true,
     sameSite: "lax",
-    secure: process.env.NODE_ENV === "production",
+    secure: retailerSessionCookieSecure(),
     path: "/",
     maxAge: SESSION_TTL_SEC,
   });
@@ -267,7 +304,7 @@ export function applyRetailerSessionToNextResponse(res: NextResponse, token: str
   res.cookies.set(RETAILER_SESSION_COOKIE, token, {
     httpOnly: true,
     sameSite: "lax",
-    secure: process.env.NODE_ENV === "production",
+    secure: retailerSessionCookieSecure(),
     path: "/",
     maxAge: SESSION_TTL_SEC,
   });
@@ -277,7 +314,7 @@ export function clearRetailerSessionOnNextResponse(res: NextResponse) {
   res.cookies.set(RETAILER_SESSION_COOKIE, "", {
     httpOnly: true,
     sameSite: "lax",
-    secure: process.env.NODE_ENV === "production",
+    secure: retailerSessionCookieSecure(),
     path: "/",
     maxAge: 0,
   });
@@ -290,7 +327,7 @@ export async function clearRetailerSessionCookie() {
     value: "",
     httpOnly: true,
     sameSite: "lax",
-    secure: process.env.NODE_ENV === "production",
+    secure: retailerSessionCookieSecure(),
     path: "/",
     maxAge: 0,
   });

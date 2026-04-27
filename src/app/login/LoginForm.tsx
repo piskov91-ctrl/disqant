@@ -6,6 +6,8 @@ import { Suspense, useState } from "react";
 
 function safeNextPath(raw: string | null): string {
   if (!raw || !raw.startsWith("/") || raw.startsWith("//")) return "/dashboard";
+  const pathOnly = raw.split(/[?#]/)[0] ?? "";
+  if (pathOnly === "/login" || pathOnly === "/register") return "/dashboard";
   return raw;
 }
 
