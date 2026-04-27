@@ -192,12 +192,11 @@ const GARMENT_PRESETS: GarmentPreset[] = [
   {
     id: "gloves",
     label: "Gloves",
-    name: "White knit winter gloves — full pair, isolated on white (no model)",
+    name: "Brown leather gloves — everyday pair on white background",
     category: "tops",
-    // Maria Kovalets — pair on white, product-style (Unsplash: mittens / winter gloves white background).
-    // https://unsplash.com/photos/a-pair-of-white-gloves-on-a-white-background-7i1t584VG5o
+    // Nicolas Solerieu — full pair on white (Unsplash). https://unsplash.com/photos/a-pair-of-brown-leather-gloves-on-a-white-background-RLShnUiFFNA
     imageUrl:
-      "https://images.unsplash.com/photo-1737061538749-7e9f341509e4?auto=format&fit=crop&w=1600&q=85",
+      "https://images.unsplash.com/photo-1673294861057-4584f92b91d2?auto=format&fit=crop&w=1600&q=85",
   },
   {
     id: "handbag_women",
