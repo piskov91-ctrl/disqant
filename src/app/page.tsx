@@ -11,40 +11,41 @@ export default function Home() {
           aria-label="Home hero"
           className="relative min-h-[calc(100dvh-4rem)] overflow-hidden text-white"
         >
-            <div className="relative z-10 mx-auto max-w-6xl px-6 py-20 md:py-24 lg:py-28">
-              <div className="grid min-h-[min(70vh,640px)] items-center gap-20 md:grid-cols-[0.82fr_1.45fr] md:items-center md:gap-28 lg:gap-32">
-                <div className="flex min-h-0 max-w-xl flex-col justify-center pr-2 md:-ml-1 md:pr-8 lg:-ml-2 lg:pr-12">
-                  <h1 className="text-balance text-4xl font-semibold leading-[1.08] tracking-tight text-white sm:text-5xl">
-                    Your online fitting room
-                  </h1>
-                  <p className="mt-6 text-base leading-relaxed text-zinc-400 sm:text-lg">
-                    Shoppers try on clothes before they buy. You get fewer returns and more sales. One
-                    line of code.
-                  </p>
-                  <Link
-                    href="/how-it-works"
-                    className="mt-10 inline-flex w-fit items-center justify-center rounded-full border border-white/15 bg-white/5 px-7 py-3 text-sm font-medium text-white transition hover:border-white/25 hover:bg-white/10"
-                  >
-                    Get started
-                  </Link>
-                </div>
+          <div className="relative z-10 mx-auto max-w-6xl px-4 py-12 sm:px-6 sm:py-16 md:py-20 lg:py-24 xl:py-28">
+            <div className="grid grid-cols-1 items-center gap-10 md:grid-cols-2 md:gap-10 lg:gap-14 xl:gap-16">
+              <div className="order-1 flex min-w-0 flex-col justify-center">
+                <h1 className="text-balance text-3xl font-semibold leading-[1.12] tracking-tight text-white sm:text-4xl md:text-[2.5rem] md:leading-[1.1] lg:text-5xl lg:leading-[1.08]">
+                  Your online fitting room
+                </h1>
+                <p className="mt-5 max-w-[36rem] text-base leading-[1.65] text-zinc-200 sm:text-lg sm:leading-[1.7]">
+                  Shoppers try on clothes before they buy — reducing returns and boosting sales. Wear Me adds a
+                  virtual try-on button to your store in minutes. No app, no 3D models, just one line of code.
+                  Trusted by fashion retailers worldwide.
+                </p>
+                <Link
+                  href="/how-it-works"
+                  className="mt-8 inline-flex w-fit min-h-11 items-center justify-center rounded-full border border-white/15 bg-white/5 px-7 py-3 text-sm font-medium text-white transition hover:border-white/25 hover:bg-white/10 sm:mt-10"
+                >
+                  Get Started
+                </Link>
+              </div>
 
-                <div className="relative flex w-full min-w-0 justify-center pl-2 md:justify-end md:pl-16 lg:pl-24 xl:pl-28">
-                  <video
-                    className="h-auto w-full max-h-[min(41vh,476px)] object-contain sm:max-h-[min(45vh,532px)] md:max-h-[min(59.5vh,672px)]"
-                    autoPlay
-                    loop
-                    muted
-                    playsInline
-                    preload="auto"
-                    controls={false}
-                    aria-label="Disquant product demo"
-                  >
-                    <source src="/demo-video.mp4" type="video/mp4" />
-                  </video>
-                </div>
+              <div className="order-2 flex w-full min-w-0 justify-center md:justify-end">
+                <video
+                  className="h-auto w-full max-h-[min(52vh,420px)] max-w-full rounded-2xl object-contain shadow-lg shadow-black/30 sm:max-h-[min(56vh,480px)] md:max-h-[min(62vh,560px)] lg:max-h-[min(68vh,640px)]"
+                  autoPlay
+                  loop
+                  muted
+                  playsInline
+                  preload="auto"
+                  controls={false}
+                  aria-label="Wear Me virtual try-on demo video"
+                >
+                  <source src="/demo-video.mp4" type="video/mp4" />
+                </video>
               </div>
             </div>
+          </div>
         </section>
       </main>
       <Footer />
