@@ -355,6 +355,11 @@ function catalogIdFromHistoryState(state: unknown): DemoCatalogId | null {
   return id as DemoCatalogId;
 }
 
+function wearCameraFromHistoryState(state: unknown): boolean {
+  if (state == null || typeof state !== "object" || !("wearCamera" in state)) return false;
+  return (state as { wearCamera?: unknown }).wearCamera === true;
+}
+
 /** Cycled while the try-on request is in flight (see `wearLoadingMsgIndex` + `useEffect`). */
 const WEAR_LOADING_MESSAGES: readonly string[] = [
   "AI is styling your outfit...",
@@ -362,7 +367,7 @@ const WEAR_LOADING_MESSAGES: readonly string[] = [
   "Adding final touches...",
   "Blending the look on you...",
   "Tuning the fit and colors...",
-  "Try-On Max can take up to a couple of minutes—worth the wait ✨",
+  "AI is processing your look... usually ready in 20-30 seconds",
 ];
 
 /** Fetch as blob so cross-origin URLs still work with an object URL and `a[download]`. */
@@ -424,7 +429,7 @@ const DEMO_WEAR_MODAL_CSS =
   ".dq-brand{padding:12px 12px;border-top:1px solid rgba(15,15,20,.08);display:flex;align-items:center;justify-content:flex-start;background:#fff;}" +
   ".dq-brand span{font:900 12px/1 system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;color:#0f0f14;letter-spacing:.25px;}" +
   ".dq-brand small{margin-left:8px;font:700 12px/1 system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;color:rgba(15,15,20,.55);}" +
-  ".dq-cam-row{display:flex;gap:10px;align-items:stretch;}" +
+  ".dq-cam-row{display:flex;flex-wrap:wrap;gap:10px;align-items:stretch;}" +
   ".dq-flip{flex:0 0 auto;display:inline-flex;align-items:center;gap:8px;padding:12px 14px;border-radius:16px;border:1px solid rgba(15,15,20,.10);background:#fff;color:#0f0f14;cursor:pointer;box-shadow:0 10px 26px rgba(0,0,0,.06);font:900 12px/1 system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;transition:transform .16s ease, box-shadow .16s ease;}" +
   ".dq-flip:hover{transform:translateY(-1px);box-shadow:0 14px 30px rgba(0,0,0,.09);}" +
   ".dq-flip:disabled{opacity:.55;cursor:not-allowed;transform:none;}" +
@@ -547,15 +552,6 @@ export default function DemoClient() {
     }
   }, []);
 
-  useEffect(() => {
-    if (typeof window === "undefined") return;
-    const onPopState = (e: PopStateEvent) => {
-      setOpenCatalog(catalogIdFromHistoryState(e.state));
-    };
-    window.addEventListener("popstate", onPopState);
-    return () => window.removeEventListener("popstate", onPopState);
-  }, []);
-
   const [wearOpen, setWearOpen] = useState(false);
   const [wearBackdropOpen, setWearBackdropOpen] = useState(false);
   const [wearClosing, setWearClosing] = useState(false);
@@ -670,6 +666,19 @@ export default function DemoClient() {
     if (wearVideoRef.current) wearVideoRef.current.srcObject = null;
   }, []);
 
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const onPopState = (e: PopStateEvent) => {
+      setOpenCatalog(catalogIdFromHistoryState(e.state));
+      if (!wearCameraFromHistoryState(e.state)) {
+        setWearShowVideo(false);
+        stopWearStream();
+      }
+    };
+    window.addEventListener("popstate", onPopState);
+    return () => window.removeEventListener("popstate", onPopState);
+  }, [stopWearStream]);
+
   const clearWearProgressTimer = useCallback(() => {
     if (wearProgressTimerRef.current != null) {
       window.clearInterval(wearProgressTimerRef.current);
@@ -678,6 +687,9 @@ export default function DemoClient() {
   }, []);
 
   const closeWearModal = useCallback(() => {
+    if (typeof window !== "undefined" && wearCameraFromHistoryState(window.history.state)) {
+      window.history.back();
+    }
     setWearClosing(true);
     setWearBackdropOpen(false);
     setWearCameraFacing("user");
@@ -785,10 +797,16 @@ export default function DemoClient() {
         void wearVideoRef.current.play();
       }
       setWearShowVideo(true);
+      if (typeof window !== "undefined" && !wearCameraFromHistoryState(window.history.state)) {
+        const path = window.location.pathname + window.location.search;
+        const next: { wearCamera: true; demoCatalog?: DemoCatalogId } = { wearCamera: true };
+        if (openCatalog) next.demoCatalog = openCatalog;
+        window.history.pushState(next, "", path);
+      }
     } catch {
       /* user may deny; gallery still works */
     }
-  }, [stopWearStream, wearCameraFacing]);
+  }, [stopWearStream, wearCameraFacing, openCatalog]);
 
   const onWearFlipCamera = useCallback(async () => {
     if (!wearShowVideo) return;
@@ -827,6 +845,17 @@ export default function DemoClient() {
     }
   }, [wearShowVideo, wearCameraFacing, stopWearStream]);
 
+  const onWearCameraBack = useCallback(() => {
+    if (typeof window !== "undefined" && wearCameraFromHistoryState(window.history.state)) {
+      stopWearStream();
+      setWearShowVideo(false);
+      window.history.back();
+    } else {
+      stopWearStream();
+      setWearShowVideo(false);
+    }
+  }, [stopWearStream]);
+
   const onWearCapturePhoto = useCallback(() => {
     const video = wearVideoRef.current;
     if (!video?.videoWidth) return;
@@ -843,6 +872,9 @@ export default function DemoClient() {
         stopWearStream();
         setWearShowVideo(false);
         onWearGalleryPick(f);
+        if (typeof window !== "undefined" && wearCameraFromHistoryState(window.history.state)) {
+          window.history.back();
+        }
       },
       "image/jpeg",
       0.92,
@@ -1116,6 +1148,17 @@ export default function DemoClient() {
                   />
                   <div style={{ height: 10 }} />
                   <div className="dq-cam-row">
+                    <button
+                      type="button"
+                      className="dq-flip"
+                      onClick={onWearCameraBack}
+                      disabled={wearFlippingCamera}
+                      aria-label="Back to try-on"
+                      title="Back"
+                    >
+                      <ChevronLeft className="h-5 w-5 shrink-0 opacity-90" strokeWidth={2} aria-hidden />
+                      <span>Back</span>
+                    </button>
                     <button
                       type="button"
                       className="dq-flip"
