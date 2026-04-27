@@ -1526,6 +1526,11 @@ export default function DemoClient() {
             </>
           )}
         </div>
+
+        <p className="mt-6 max-w-3xl text-xs leading-relaxed text-zinc-500">
+          All product images shown are for demonstration purposes only. These are sample items used to showcase the
+          virtual try-on technology and do not represent real products for sale.
+        </p>
       </main>
       <Footer />
     </div>
