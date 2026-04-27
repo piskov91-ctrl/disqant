@@ -38,7 +38,8 @@ type GarmentPreset = {
     | "jeans"
     | "cap"
     | "beanie"
-    | "sunglasses";
+    | "sunglasses"
+    | "necklace";
   label: string;
   name: string;
   /** Hint for `/api/try-on` (echoed in JSON); sneakers use `bottoms` like other non-top apparel. */
@@ -122,6 +123,15 @@ const GARMENT_PRESETS: GarmentPreset[] = [
     name: "Classic sunglasses (product shot)",
     category: "tops",
     imageUrl: "https://images.unsplash.com/photo-1511499767150-a48a237f0083?w=400",
+  },
+  {
+    id: "necklace",
+    label: "Necklace",
+    name: "Simple gold chain (product shot)",
+    category: "tops",
+    // Oscar Ramirez (Unsplash) — gold rope chain on a white block; Unsplash License.
+    imageUrl:
+      "https://images.unsplash.com/photo-1708220040954-a89dd8317a9e?auto=format&fit=crop&w=1400&q=80",
   },
 ];
 
@@ -1029,7 +1039,7 @@ export default function DemoClient() {
           Fashn pricing). Good for clothing, shoes, hats, and accessories. Images are auto-compressed to max 1000px
           before the API call.
           {selectedPreset?.id === "sneakers"
-            ? " Sneakers use a bottoms category hint; other presets (including the cap, beanie, and sunglasses) use tops or bottoms as appropriate."
+            ? " Sneakers use a bottoms category hint; other presets (including the cap, beanie, sunglasses, and necklace) use tops or bottoms as appropriate."
             : ""}
         </p>
       </main>
