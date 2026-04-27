@@ -2,7 +2,17 @@
 
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { usePathname } from "next/navigation";
-import { SwitchCamera } from "lucide-react";
+import {
+  ChevronLeft,
+  Folder,
+  Glasses,
+  Shirt,
+  Snowflake,
+  Sparkles,
+  SwitchCamera,
+  Waves,
+  type LucideIcon,
+} from "lucide-react";
 import { Footer } from "@/components/Footer";
 import { Header } from "@/components/Header";
 
@@ -45,7 +55,13 @@ type GarmentPreset = {
     | "handbag_women"
     | "mens_bag"
     | "ankle_bracelet"
-    | "boxer_shorts";
+    | "boxer_shorts"
+    | "blouse"
+    | "scarf"
+    | "bracelet"
+    | "swim_men"
+    | "swim_women"
+    | "eyeglasses";
   label: string;
   name: string;
   /** Hint for `/api/try-on` (echoed in JSON); sneakers use `bottoms` like other non-top apparel. */
@@ -194,7 +210,107 @@ const GARMENT_PRESETS: GarmentPreset[] = [
     imageUrl:
       "https://images.unsplash.com/photo-1719473458937-d42f1f9aad00?auto=format&fit=crop&w=1400&q=80",
   },
+  {
+    id: "blouse",
+    label: "Blouse",
+    name: "Light silk blouse (flat lay)",
+    category: "tops",
+    imageUrl:
+      "https://images.unsplash.com/photo-1594633312681-425c7b97ccd1?auto=format&fit=crop&w=1400&q=80",
+  },
+  {
+    id: "scarf",
+    label: "Scarf",
+    name: "Soft knit winter scarf (flat lay)",
+    category: "tops",
+    imageUrl:
+      "https://images.unsplash.com/photo-1606760227091-3dd870d97f1d?auto=format&fit=crop&w=1400&q=80",
+  },
+  {
+    id: "bracelet",
+    label: "Bracelet",
+    name: "Gold link bracelet (product shot)",
+    category: "tops",
+    imageUrl:
+      "https://images.unsplash.com/photo-1611955167811-4711904bb9f0?auto=format&fit=crop&w=1400&q=80",
+  },
+  {
+    id: "swim_men",
+    label: "Swim (men's)",
+    name: "Men's swim trunks (flat lay)",
+    category: "bottoms",
+    imageUrl:
+      "https://images.unsplash.com/photo-1506629082955-511b1aa562c8?auto=format&fit=crop&w=1400&q=80",
+  },
+  {
+    id: "swim_women",
+    label: "Swim (women's)",
+    name: "One-piece swimsuit (product style)",
+    category: "tops",
+    imageUrl:
+      "https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?auto=format&fit=crop&w=1400&q=80",
+  },
+  {
+    id: "eyeglasses",
+    label: "Glasses",
+    name: "Clear-lens eyeglasses (product shot)",
+    category: "tops",
+    imageUrl:
+      "https://images.unsplash.com/photo-1506617420156-8e4536971650?auto=format&fit=crop&w=1400&q=80",
+  },
 ];
+
+const PRESET_BY_ID = Object.fromEntries(GARMENT_PRESETS.map((p) => [p.id, p])) as Record<
+  GarmentPreset["id"],
+  GarmentPreset
+>;
+
+type DemoCatalogId = "clothing" | "accessories" | "winter" | "swimwear" | "eyewear";
+
+const DEMO_CATALOG: readonly {
+  id: DemoCatalogId;
+  title: string;
+  line: string;
+  Icon: LucideIcon;
+  /** Preset order inside the category. */
+  presetIds: readonly GarmentPreset["id"][];
+}[] = [
+  {
+    id: "clothing",
+    title: "Clothing",
+    line: "T-shirts, jeans, blouses",
+    Icon: Shirt,
+    presetIds: ["tee", "jeans", "sweater", "sneakers", "blouse", "boxer_shorts"],
+  },
+  {
+    id: "accessories",
+    title: "Accessories",
+    line: "Necklace, earrings, bracelet, ankle bracelet, bags",
+    Icon: Sparkles,
+    presetIds: ["necklace", "earrings", "bracelet", "ankle_bracelet", "handbag_women", "mens_bag"],
+  },
+  {
+    id: "winter",
+    title: "Winter",
+    line: "Jackets, gloves, hat, scarf",
+    Icon: Snowflake,
+    presetIds: ["jacket", "jacket_leather", "gloves", "cap", "beanie", "scarf"],
+  },
+  {
+    id: "swimwear",
+    title: "Swimwear",
+    line: "Men's and women's",
+    Icon: Waves,
+    presetIds: ["swim_men", "swim_women"],
+  },
+  {
+    id: "eyewear",
+    title: "Eyewear",
+    line: "Sunglasses, regular glasses",
+    Icon: Glasses,
+    presetIds: ["sunglasses", "eyeglasses"],
+  },
+] as const;
 
 /** Cycled while the try-on request is in flight (see `wearLoadingMsgIndex` + `useEffect`). */
 const WEAR_LOADING_MESSAGES: readonly string[] = [
@@ -367,6 +483,7 @@ export default function DemoClient() {
     GARMENT_PRESETS[0]?.id ?? "tee",
   );
   const [showUnavailableModal, setShowUnavailableModal] = useState(false);
+  const [openCatalog, setOpenCatalog] = useState<DemoCatalogId | null>(null);
 
   const [wearOpen, setWearOpen] = useState(false);
   const [wearBackdropOpen, setWearBackdropOpen] = useState(false);
@@ -821,8 +938,25 @@ export default function DemoClient() {
     [selectedPresetId],
   );
 
+  const openCatalogDef = useMemo(
+    () => (openCatalog ? (DEMO_CATALOG.find((c) => c.id === openCatalog) ?? null) : null),
+    [openCatalog],
+  );
+
+  const visiblePresets = useMemo((): GarmentPreset[] => {
+    if (!openCatalogDef) return [];
+    return openCatalogDef.presetIds.map((id) => PRESET_BY_ID[id]!);
+  }, [openCatalogDef]);
+
+  useEffect(() => {
+    if (!openCatalogDef) return;
+    if (!openCatalogDef.presetIds.includes(selectedPresetId)) {
+      setSelectedPresetId(openCatalogDef.presetIds[0]!);
+    }
+  }, [openCatalogDef, openCatalog, selectedPresetId]);
+
   return (
-    <div className="min-h-dvh bg-white">
+    <div className="min-h-dvh bg-zinc-950 text-zinc-100">
       {wearOpen && (
         <div
           role="presentation"
@@ -1027,80 +1161,145 @@ export default function DemoClient() {
       )}
       <Header />
 
-      <main className="mx-auto max-w-4xl px-6 py-12 md:py-16">
-        <h1 className="text-balance text-3xl font-semibold tracking-tight text-zinc-900 md:text-4xl">
+      <main className="mx-auto max-w-5xl px-6 py-12 md:py-16">
+        <h1 className="text-balance text-3xl font-semibold tracking-tight text-zinc-50 md:text-4xl">
           Virtual try-on demo
         </h1>
-        <p className="mt-4 text-zinc-600">
-          Tap <span className="font-semibold text-zinc-900">Wear Me ✨</span> on a sample product, then upload your
+        <p className="mt-4 text-zinc-400">
+          Tap <span className="font-semibold text-zinc-100">Wear Me ✨</span> on a sample product, then upload your
           photo in the modal (gallery or camera), generate, and download your try-on.
         </p>
 
-        <div className="mt-8 rounded-2xl border border-surface-border bg-surface-muted/60 p-5">
-          <label className="block text-sm font-medium text-zinc-900">Sample products</label>
-          <p className="mt-1 text-xs text-zinc-500">Pick a preset — highlighted card is your current selection.</p>
-
-          <div className="mt-4 grid gap-3 sm:grid-cols-2">
-            {GARMENT_PRESETS.map((p) => {
-              const selected = p.id === selectedPresetId;
-              return (
-                <article
-                  key={p.id}
-                  className={`group overflow-hidden rounded-2xl border bg-white text-left shadow-sm transition ${
-                    selected
-                      ? "border-accent/50 ring-2 ring-accent/25"
-                      : "border-surface-border hover:border-zinc-300 hover:shadow-md"
-                  }`}
-                >
-                  <div
-                    role="presentation"
-                    className="relative aspect-[4/3] cursor-pointer bg-zinc-100"
-                    onClick={() => setSelectedPresetId(p.id)}
-                  >
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img
-                      src={p.imageUrl}
-                      alt={p.name}
-                      className="h-full w-full object-cover transition duration-300 group-hover:scale-[1.02]"
-                      loading="lazy"
-                    />
-                    <div className="pointer-events-none absolute inset-x-0 bottom-0 z-10 flex justify-center bg-gradient-to-t from-black/70 via-black/35 to-transparent pb-3 pt-12">
+        <div
+          className="mt-8 rounded-2xl border border-zinc-800 bg-zinc-900/60 p-5 shadow-lg shadow-black/20 backdrop-blur-sm"
+        >
+          {!openCatalog ? (
+            <>
+              <p className="text-sm font-medium text-zinc-200">Product catalog</p>
+              <p className="mt-1 text-xs text-zinc-500">Choose a category, then pick a product to try on.</p>
+              <ul
+                className="mt-6 grid list-none grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5"
+                role="list"
+              >
+                {DEMO_CATALOG.map((cat) => {
+                  const Icon = cat.Icon;
+                  return (
+                    <li key={cat.id} className="w-full">
                       <button
                         type="button"
-                        className="dq-wear-btn pointer-events-auto shadow-lg"
-                        aria-label="Wear Me"
-                        onClick={(e) => {
-                          e.preventDefault();
-                          e.stopPropagation();
-                          openWearMe(p);
-                        }}
+                        onClick={() => setOpenCatalog(cat.id)}
+                        className="group flex w-full flex-col items-center text-center"
                       >
-                        Wear Me ✨
+                        <div
+                          className="relative w-full max-w-xs overflow-hidden rounded-2xl border border-zinc-700/90 bg-gradient-to-b from-zinc-800/95 to-zinc-950/90 p-0 shadow-md shadow-black/40 transition group-hover:border-accent/45 group-hover:shadow-lg group-hover:shadow-violet-900/20"
+                        >
+                          <div className="flex items-center justify-center border-b border-zinc-700/80 bg-zinc-800/80 py-2">
+                            <Folder className="h-4 w-4 text-zinc-500" strokeWidth={2} aria-hidden />
+                            <span className="ml-1.5 text-[11px] font-medium uppercase tracking-wide text-zinc-500">
+                              Category
+                            </span>
+                          </div>
+                          <div className="flex flex-col items-center justify-center gap-2 px-6 py-8">
+                            <span className="inline-flex h-16 w-16 items-center justify-center rounded-2xl bg-zinc-900/80 text-violet-300 ring-1 ring-zinc-600/60">
+                              <Icon className="h-8 w-8" strokeWidth={1.8} aria-hidden />
+                            </span>
+                            <p className="text-sm font-medium text-zinc-300">{cat.line}</p>
+                          </div>
+                        </div>
+                        <p className="mt-3 text-base font-semibold tracking-tight text-zinc-100">{cat.title}</p>
+                        <span className="text-xs text-zinc-500">Open folder</span>
                       </button>
-                    </div>
+                    </li>
+                  );
+                })}
+              </ul>
+            </>
+          ) : (
+            <>
+              <div className="flex flex-wrap items-center gap-3">
+                <button
+                  type="button"
+                  onClick={() => setOpenCatalog(null)}
+                  className="inline-flex items-center gap-1.5 rounded-full border border-zinc-600 bg-zinc-800/80 px-3 py-1.5 text-sm font-medium text-zinc-200 transition hover:border-zinc-500 hover:bg-zinc-800"
+                >
+                  <ChevronLeft className="h-4 w-4" strokeWidth={2} aria-hidden />
+                  All categories
+                </button>
+                {openCatalogDef ? (
+                  <div className="min-w-0 text-left">
+                    <p className="text-sm font-medium text-zinc-200">Sample products</p>
+                    <p className="text-xs text-zinc-500">
+                      {openCatalogDef.title} — {openCatalogDef.line}
+                    </p>
                   </div>
-                  <div
-                    role="presentation"
-                    className="cursor-pointer border-t border-surface-border bg-white p-4"
-                    onClick={() => setSelectedPresetId(p.id)}
-                  >
-                    <p className="text-sm font-semibold text-zinc-900">{p.name}</p>
-                    <p className="mt-1 text-xs font-semibold text-zinc-600">{p.label}</p>
-                  </div>
-                </article>
-              );
-            })}
-          </div>
+                ) : null}
+              </div>
+              <p className="mt-3 text-xs text-zinc-500">
+                Highlighted card is your current selection for try-on.
+              </p>
+              <div className="mt-4 grid gap-3 sm:grid-cols-2">
+                {visiblePresets.map((p) => {
+                  const selected = p.id === selectedPresetId;
+                  return (
+                    <article
+                      key={p.id}
+                      className={`group overflow-hidden rounded-2xl border text-left shadow-sm transition ${
+                        selected
+                          ? "border-accent/50 bg-zinc-900 ring-2 ring-accent/25"
+                          : "border-zinc-700 bg-zinc-900/50 hover:border-zinc-500 hover:shadow-md"
+                      }`}
+                    >
+                      <div
+                        role="presentation"
+                        className="relative aspect-[4/3] cursor-pointer bg-zinc-800"
+                        onClick={() => setSelectedPresetId(p.id)}
+                      >
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img
+                          src={p.imageUrl}
+                          alt={p.name}
+                          className="h-full w-full object-cover transition duration-300 group-hover:scale-[1.02]"
+                          loading="lazy"
+                        />
+                        <div className="pointer-events-none absolute inset-x-0 bottom-0 z-10 flex justify-center bg-gradient-to-t from-black/70 via-black/35 to-transparent pb-3 pt-12">
+                          <button
+                            type="button"
+                            className="dq-wear-btn pointer-events-auto shadow-lg"
+                            aria-label="Wear Me"
+                            onClick={(e) => {
+                              e.preventDefault();
+                              e.stopPropagation();
+                              openWearMe(p);
+                            }}
+                          >
+                            Wear Me ✨
+                          </button>
+                        </div>
+                      </div>
+                      <div
+                        role="presentation"
+                        className="cursor-pointer border-t border-zinc-800 p-4"
+                        onClick={() => setSelectedPresetId(p.id)}
+                      >
+                        <p className="text-sm font-semibold text-zinc-100">{p.name}</p>
+                        <p className="mt-1 text-xs font-medium text-zinc-400">{p.label}</p>
+                      </div>
+                    </article>
+                  );
+                })}
+              </div>
+            </>
+          )}
         </div>
 
-        <p className="mt-6 rounded-2xl border border-surface-border bg-surface-muted/50 p-4 text-xs text-zinc-600">
-          All try-ons use Fashn <span className="font-semibold text-zinc-800">Try-On Max</span> at{" "}
-          <span className="font-semibold text-zinc-800">1k</span> resolution in{" "}
-          <span className="font-semibold text-zinc-800">balanced</span> mode (2–3 credits per image depending on
+        <p className="mt-6 rounded-2xl border border-zinc-800 bg-zinc-900/40 p-4 text-xs text-zinc-500">
+          All try-ons use Fashn <span className="font-semibold text-zinc-200">Try-On Max</span> at{" "}
+          <span className="font-semibold text-zinc-200">1k</span> resolution in{" "}
+          <span className="font-semibold text-zinc-200">balanced</span> mode (2–3 credits per image depending on
           Fashn pricing). Good for clothing, shoes, hats, and accessories. Images are auto-compressed to max 1000px
           before the API call.
           {selectedPreset?.id === "sneakers"
-            ? " Sneakers use a bottoms category hint; other gallery items use tops or bottoms as appropriate (e.g. bags, jewelry, gloves → tops; ankle bracelet and boxer shorts → bottoms)."
+            ? " Sneakers use a bottoms category hint; other items use tops or bottoms as appropriate (e.g. bags and jewelry often tops; ankle bracelet and boxers often bottoms)."
             : ""}
         </p>
       </main>
