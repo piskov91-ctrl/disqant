@@ -1,12 +1,24 @@
 import Link from "next/link";
 
-const plans = [
+type Plan = {
+  name: string;
+  price: string | null;
+  period: string | null;
+  features: readonly string[];
+  highlighted: boolean;
+  href: string;
+  contactOnly?: boolean;
+  /** Shown instead of price for contact tier (e.g. "Contact us"). */
+  subtitle?: string;
+};
+
+const plans: Plan[] = [
   {
     name: "Starter",
     price: "£149",
     period: "/month",
     features: [
-      "Up to 500 try-ons",
+      "300 try-ons",
       "For small stores",
       "Email support",
       "Easy integration",
@@ -18,12 +30,7 @@ const plans = [
     name: "Growth",
     price: "£299",
     period: "/month",
-    features: [
-      "Up to 1,500 try-ons",
-      "For growing stores",
-      "Priority support",
-      "Analytics dashboard",
-    ],
+    features: ["600 try-ons", "For growing stores", "Priority support"],
     highlighted: true,
     href: "/demo",
   },
@@ -31,43 +38,34 @@ const plans = [
     name: "Pro",
     price: "£599",
     period: "/month",
-    features: [
-      "Up to 3,000 try-ons",
-      "For large stores",
-      "Dedicated support",
-      "Advanced analytics",
-    ],
+    features: ["1,200 try-ons", "For large stores", "Dedicated support"],
     highlighted: false,
     href: "/demo",
   },
   {
     name: "Enterprise",
-    price: null as string | null,
-    period: null as string | null,
-    features: [
-      "Custom try-on volume",
-      "For multi-brand & scale",
-      "Strategic & technical support",
-      "Custom pricing, SLA & DPA",
-    ],
+    price: null,
+    period: null,
+    features: ["Unlimited try-ons", "Custom integration"],
     highlighted: false,
     href: "/contact",
     contactOnly: true,
+    subtitle: "Contact us",
   },
-] as const;
+];
 
 export function Pricing() {
   return (
     <section
-      id="pricing"
+      id="subscriptions"
       className="scroll-mt-28 border-t border-white/10 bg-zinc-950/40 py-20 md:py-24"
     >
       <div className="mx-auto max-w-6xl px-6">
         <h2 className="text-center text-sm font-semibold uppercase tracking-widest text-accent">
-          Plans
+          Subscriptions
         </h2>
         <p className="mx-auto mt-3 max-w-2xl text-center text-3xl font-semibold tracking-tight text-zinc-50 md:text-4xl">
-          Simple pricing for every stage
+          Plans for every stage
         </p>
         <p className="mx-auto mt-4 max-w-xl text-center text-sm leading-relaxed text-zinc-400 md:text-base">
           All plans include core try-on and integration support. Upgrade as your store grows.
@@ -75,7 +73,7 @@ export function Pricing() {
 
         <div className="mt-14 grid gap-6 sm:grid-cols-2 xl:grid-cols-4">
           {plans.map((plan) => {
-            const isContact = "contactOnly" in plan && plan.contactOnly;
+            const isContact = Boolean(plan.contactOnly);
             const ctaLabel = isContact ? "Contact us" : "Get Started";
 
             return (
@@ -96,8 +94,8 @@ export function Pricing() {
                 <h3 className="text-lg font-semibold text-zinc-50">{plan.name}</h3>
 
                 {isContact ? (
-                  <p className="mt-6 min-h-[3.5rem] text-sm leading-snug text-zinc-500">
-                    Volume pricing, bespoke integrations, and enterprise terms.
+                  <p className="mt-6 min-h-[3.5rem] text-2xl font-semibold tracking-tight text-zinc-50">
+                    {plan.subtitle ?? "Contact us"}
                   </p>
                 ) : (
                   <div className="mt-6 flex min-h-[3.5rem] items-baseline gap-1">

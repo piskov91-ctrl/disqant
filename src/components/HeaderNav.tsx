@@ -47,7 +47,7 @@ export function HeaderNav() {
           How it works
         </Link>
         <Link href="/pricing" className={linkClass("/pricing")}>
-          Pricing
+          Subscriptions
         </Link>
         <Link href="/demo" className={linkClass("/demo")}>
           Demo
@@ -110,7 +110,7 @@ export function HeaderNav() {
                 How it works
               </Link>
               <Link href="/pricing" className={navStackClass} onClick={() => setOpen(false)}>
-                Pricing
+                Subscriptions
               </Link>
               <Link href="/demo" className={navStackClass} onClick={() => setOpen(false)}>
                 Demo
