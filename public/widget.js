@@ -840,7 +840,19 @@
     mo.observe(document.documentElement, { subtree: true, childList: true, attributes: false });
   }
 
+  function beaconClientVisit(key) {
+    if (!key) return;
+    try {
+      fetch("/api/client-visit", {
+        method: "POST",
+        headers: { "x-api-key": key },
+        credentials: "same-origin",
+      }).catch(function () {});
+    } catch (_e) {}
+  }
+
   function boot() {
+    beaconClientVisit(getClientKey());
     scanAndBind();
     observe();
     window.addEventListener("load", function () { scanAndBind(); });

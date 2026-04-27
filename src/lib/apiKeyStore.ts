@@ -111,6 +111,8 @@ export async function deleteClientKey(id: string) {
   if (rec?.key) await redis.del(keyLookupKey(rec.key));
   await redis.del(`disquant:tryon:products:${id}`);
   await redis.del(`disquant:tryon:events:${id}`);
+  await redis.srem("disquant:analytics:clientStats:ids", id);
+  await redis.del(`disquant:analytics:clientStats:${id}`);
   return { ok: true as const };
 }
 

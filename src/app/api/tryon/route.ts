@@ -1,7 +1,11 @@
 import { randomUUID } from "node:crypto";
 import { cookies } from "next/headers";
 import { assertClientCanUseByApiKey, incrementUsageOrThrow, listClientKeys } from "@/lib/apiKeyStore";
-import { recordTryOnCompleted } from "@/lib/platformAnalytics";
+import {
+  DEMO_ANALYTICS_SESSION_COOKIE,
+  getRequestClientIp,
+  recordTryOnCompleted,
+} from "@/lib/platformAnalytics";
 import { recordTryOnProductUsage } from "@/lib/tryOnAnalytics";
 
 export const runtime = "nodejs";
@@ -186,7 +190,9 @@ export async function POST(req: Request) {
   }
 
   // Note: /demo page itself is still access-code gated, but this API now requires a client API key.
-  await cookies();
+  const cookieJar = await cookies();
+  const demoSessionId = cookieJar.get(DEMO_ANALYTICS_SESSION_COOKIE)?.value?.trim() || null;
+  const demoIp = getRequestClientIp(req);
 
   let form: FormData;
   try {
@@ -249,7 +255,13 @@ export async function POST(req: Request) {
     } catch {
       // Usage enforcement is checked before starting; ignore rare race here.
     }
-    void recordTryOnCompleted(isRetailerTryOn);
+    void recordTryOnCompleted({
+      isRetailer: isRetailerTryOn,
+      clientId: client.id,
+      clientName: client.clientName,
+      demoSessionId,
+      demoIp,
+    });
   }
   return result.response;
 }

@@ -13,12 +13,33 @@ type KeyRecord = {
   createdAt: string;
 };
 
+type ClientAnalyticsRow = {
+  kind: "client";
+  clientId: string;
+  clientName: string;
+  visits: number;
+  tryOns: number;
+  lastActive: string | null;
+};
+
+type DemoVisitorAnalyticsRow = {
+  kind: "demo";
+  label: string;
+  sessionId: string | null;
+  lastIp: string;
+  visits: number;
+  tryOns: number;
+  lastActive: string | null;
+};
+
 type AnalyticsSummary = {
   demoVisitsToday: number;
   demoVisitsThisMonth: number;
   tryOnsTotal: number;
   tryOnsRetailer: number;
   tryOnsVisitor: number;
+  clients: ClientAnalyticsRow[];
+  demoVisitors: DemoVisitorAnalyticsRow[];
 };
 
 type AdminTab = "clients" | "analytics";
@@ -93,6 +114,8 @@ export default function AdminClient() {
         tryOnsTotal: data.tryOnsTotal,
         tryOnsRetailer: data.tryOnsRetailer,
         tryOnsVisitor: data.tryOnsVisitor,
+        clients: Array.isArray(data.clients) ? data.clients : [],
+        demoVisitors: Array.isArray(data.demoVisitors) ? data.demoVisitors : [],
       });
     } catch (e) {
       setAnalyticsError(e instanceof Error ? e.message : "Failed to load analytics.");
@@ -725,6 +748,115 @@ export default function AdminClient() {
                           />
                         </div>
                       </div>
+                    </div>
+                  </div>
+
+                  <div className="rounded-2xl border border-zinc-800 bg-zinc-900/60 p-0 overflow-hidden">
+                    <div className="border-b border-zinc-800 px-6 py-5 md:px-8">
+                      <h2 className="text-base font-semibold text-zinc-100">Clients (widget + API key)</h2>
+                      <p className="mt-1 text-sm text-zinc-400">
+                        Visits = widget load beacons; try-ons = completed Fashn runs with this client&apos;s key in
+                        the request. Names are from your client list.
+                      </p>
+                    </div>
+                    <div className="overflow-x-auto">
+                      <table className="w-full min-w-[640px] text-left text-sm">
+                        <thead>
+                          <tr className="border-b border-zinc-800 text-xs font-semibold uppercase tracking-wider text-zinc-500">
+                            <th className="px-6 py-3 md:px-8">Client</th>
+                            <th className="px-4 py-3 tabular-nums">Visits</th>
+                            <th className="px-4 py-3 tabular-nums">Try-ons</th>
+                            <th className="px-6 py-3 md:px-8">Last active</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {analytics.clients.length === 0 ? (
+                            <tr>
+                              <td colSpan={4} className="px-6 py-8 text-zinc-500 md:px-8">
+                                No clients in the database.
+                              </td>
+                            </tr>
+                          ) : (
+                            analytics.clients.map((row) => (
+                              <tr key={row.clientId} className="border-b border-zinc-800/80 last:border-0">
+                                <td className="px-6 py-4 font-medium text-zinc-100 md:px-8">{row.clientName}</td>
+                                <td className="px-4 py-4 tabular-nums text-zinc-300">{row.visits.toLocaleString()}</td>
+                                <td className="px-4 py-4 tabular-nums text-zinc-300">{row.tryOns.toLocaleString()}</td>
+                                <td className="px-6 py-4 text-zinc-400 md:px-8">
+                                  {row.lastActive
+                                    ? new Date(row.lastActive).toLocaleString(undefined, {
+                                        dateStyle: "medium",
+                                        timeStyle: "short",
+                                      })
+                                    : "—"}
+                                </td>
+                              </tr>
+                            ))
+                          )}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+
+                  <div className="rounded-2xl border border-zinc-800 bg-zinc-900/60 p-0 overflow-hidden">
+                    <div className="border-b border-zinc-800 px-6 py-5 md:px-8">
+                      <h2 className="text-base font-semibold text-zinc-100">Demo visitors</h2>
+                      <p className="mt-1 text-sm text-zinc-400">
+                        /demo page loads and try-ons without a client API key. Session cookie when available; otherwise
+                        IP only. Up to 250 most recently active rows.
+                      </p>
+                    </div>
+                    <div className="overflow-x-auto">
+                      <table className="w-full min-w-[720px] text-left text-sm">
+                        <thead>
+                          <tr className="border-b border-zinc-800 text-xs font-semibold uppercase tracking-wider text-zinc-500">
+                            <th className="px-6 py-3 md:px-8">Visitor</th>
+                            <th className="px-4 py-3">Session / IP</th>
+                            <th className="px-4 py-3 tabular-nums">Visits</th>
+                            <th className="px-4 py-3 tabular-nums">Try-ons</th>
+                            <th className="px-6 py-3 md:px-8">Last active</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {analytics.demoVisitors.length === 0 ? (
+                            <tr>
+                              <td colSpan={5} className="px-6 py-8 text-zinc-500 md:px-8">
+                                No demo visitor activity recorded yet.
+                              </td>
+                            </tr>
+                          ) : (
+                            analytics.demoVisitors.map((row, i) => (
+                              <tr
+                                key={`${row.label}-${row.lastIp}-${i}`}
+                                className="border-b border-zinc-800/80 last:border-0"
+                              >
+                                <td className="max-w-[220px] px-6 py-4 text-zinc-200 md:px-8">
+                                  <span className="line-clamp-2" title={row.label}>
+                                    {row.label}
+                                  </span>
+                                </td>
+                                <td className="px-4 py-4 font-mono text-xs text-zinc-400">
+                                  {row.sessionId ? (
+                                    <span title={row.sessionId}>{row.sessionId.slice(0, 12)}…</span>
+                                  ) : (
+                                    <span title={row.lastIp}>{row.lastIp}</span>
+                                  )}
+                                </td>
+                                <td className="px-4 py-4 tabular-nums text-zinc-300">{row.visits.toLocaleString()}</td>
+                                <td className="px-4 py-4 tabular-nums text-zinc-300">{row.tryOns.toLocaleString()}</td>
+                                <td className="px-6 py-4 text-zinc-400 md:px-8">
+                                  {row.lastActive
+                                    ? new Date(row.lastActive).toLocaleString(undefined, {
+                                        dateStyle: "medium",
+                                        timeStyle: "short",
+                                      })
+                                    : "—"}
+                                </td>
+                              </tr>
+                            ))
+                          )}
+                        </tbody>
+                      </table>
                     </div>
                   </div>
                 </>

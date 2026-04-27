@@ -1065,6 +1065,7 @@ export default function DemoClient() {
         method: "POST",
         headers: reqHeaders,
         body: fd,
+        credentials: "include",
       });
       const data = (await res.json()) as TryOnResponse;
       clearWearProgressTimer();
