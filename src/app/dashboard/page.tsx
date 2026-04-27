@@ -57,10 +57,12 @@ export default async function DashboardPage() {
               Dashboard
             </h1>
             <p className="mt-4 max-w-2xl text-lg leading-relaxed text-zinc-400">
-              {user.companyName}
-              {user.firstName || user.lastName
-                ? ` · ${[user.firstName, user.lastName].filter(Boolean).join(" ")}`
-                : null}{" "}
+              {[
+                [user.firstName, user.lastName].filter(Boolean).join(" "),
+                user.companyName?.trim(),
+              ]
+                .filter(Boolean)
+                .join(" · ") || "Account"}{" "}
               · Try-on usage and your embed API key.
             </p>
             <p className="mt-2 text-sm text-zinc-500">

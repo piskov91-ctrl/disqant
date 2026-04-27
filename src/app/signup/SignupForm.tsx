@@ -40,7 +40,6 @@ export function SignupForm() {
     if (firstName.trim().length > 100) return "First name must be at most 100 characters.";
     if (!lastName.trim()) return "Last name is required.";
     if (lastName.trim().length > 100) return "Last name must be at most 100 characters.";
-    if (!companyName.trim()) return "Company name is required.";
     if (companyName.trim().length > 200) return "Company name must be at most 200 characters.";
     const em = email.trim();
     if (!em) return "Email is required.";
@@ -144,7 +143,7 @@ export function SignupForm() {
 
         <div>
           <label htmlFor="su-company" className="block text-sm font-medium text-zinc-200">
-            Company name <span className="text-red-400">*</span>
+            Company name <span className="font-normal text-zinc-500">(optional)</span>
           </label>
           <input
             id="su-company"
@@ -242,8 +241,8 @@ export function SignupForm() {
                 className="font-medium text-violet-300 underline-offset-2 hover:underline"
               >
                 Terms &amp; Conditions
-              </Link>{" "}
-              <span className="text-red-400">*</span>
+              </Link>
+              .
             </span>
           </label>
           <label className="flex cursor-pointer items-start gap-3 text-sm text-zinc-300">
@@ -262,8 +261,8 @@ export function SignupForm() {
                 className="font-medium text-violet-300 underline-offset-2 hover:underline"
               >
                 Privacy Policy
-              </Link>{" "}
-              <span className="text-red-400">*</span>
+              </Link>
+              .
             </span>
           </label>
         </div>

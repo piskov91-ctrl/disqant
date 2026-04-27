@@ -18,7 +18,8 @@ export default function RegisterPage() {
           <h1 className="text-3xl font-semibold tracking-tight text-zinc-50">Sign up</h1>
           <p className="mt-2 text-sm leading-relaxed text-zinc-400">
             Create your retailer account for an API key and usage dashboard. Passwords are hashed with scrypt; we
-            never store plain text passwords. Fields marked <span className="text-red-400">*</span> are required.
+            never store plain text passwords. Required fields use a red asterisk (
+            <span className="text-red-400">*</span>); company and website are optional.
           </p>
           <SignupForm />
           <p className="mt-8 text-center text-xs text-zinc-500">

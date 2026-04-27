@@ -116,6 +116,7 @@ function defaultSignupTryOnLimit() {
 export async function registerRetailer(params: {
   firstName: string;
   lastName: string;
+  /** Display/organization name; may be empty (API client label falls back to full name). */
   companyName: string;
   email: string;
   websiteUrl: string;
@@ -148,9 +149,12 @@ export async function registerRetailer(params: {
     throw new Error("Invalid email address.");
   }
   const companyName = params.companyName.trim();
-  if (!companyName || companyName.length > 200) {
-    throw new Error("Company name is required (max 200 characters).");
+  if (companyName.length > 200) {
+    throw new Error("Company name must be at most 200 characters.");
   }
+
+  const clientDisplayName =
+    companyName || `${firstName} ${lastName}`.trim() || email.split("@")[0] || "Retailer";
 
   let websiteUrl: string;
   try {
@@ -173,7 +177,7 @@ export async function registerRetailer(params: {
   const usageLimit = defaultSignupTryOnLimit();
   let client;
   try {
-    client = await createClientKey({ clientName: companyName, usageLimit });
+    client = await createClientKey({ clientName: clientDisplayName, usageLimit });
   } catch (e) {
     const msg = e instanceof Error ? e.message : "Could not create API key.";
     throw new Error(msg);
@@ -187,7 +191,7 @@ export async function registerRetailer(params: {
     firstName,
     lastName,
     email,
-    companyName,
+    companyName: companyName,
     websiteUrl,
     passwordSalt: salt,
     passwordHash: hash,
