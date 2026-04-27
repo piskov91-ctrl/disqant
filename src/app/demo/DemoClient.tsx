@@ -183,11 +183,11 @@ const GARMENT_PRESETS: GarmentPreset[] = [
   {
     id: "earrings",
     label: "Earrings",
-    name: "Gold-toned stud earrings (product shot)",
+    name: "Gold earrings (white surface, product shot)",
     category: "tops",
-    // Pair of earrings on white. https://unsplash.com/photo-1723361656146-f201d215c49c
+    // Oscar Ramirez — pair of gold earrings on white. (unsplash.com/photos/gold-earrings 404s; Miao Xiang’s hit in that search is wedding bands, not earrings.) https://unsplash.com/photos/a-pair-of-gold-earrings-on-a-white-surface-pQYSjhWz4cQ
     imageUrl:
-      "https://images.unsplash.com/photo-1723361656146-f201d215c49c?auto=format&fit=crop&w=1400&q=80",
+      "https://images.unsplash.com/photo-1708220040828-9ab1673681d3?auto=format&fit=crop&w=1400&q=80",
   },
   {
     id: "gloves",
@@ -255,11 +255,11 @@ const GARMENT_PRESETS: GarmentPreset[] = [
   {
     id: "bracelet",
     label: "Bracelet",
-    name: "Gold link bracelet (product shot)",
+    name: "Gold chain bracelet (white textile)",
     category: "tops",
-    // https://unsplash.com/photo-1611955167811-4711904bb9f0
+    // Amina Atar — gold chain bracelet on white blanket; no model. (unsplash.com/photos/gold-bracelet 404s.) https://unsplash.com/photos/a-gold-chain-bracelet-laying-on-top-of-a-white-blanket-F6qEiDArzfk
     imageUrl:
-      "https://images.unsplash.com/photo-1611955167811-4711904bb9f0?auto=format&fit=crop&w=1400&q=80",
+      "https://images.unsplash.com/photo-1684616289712-dd118c126fae?auto=format&fit=crop&w=1400&q=80",
   },
   {
     id: "swim_men",
