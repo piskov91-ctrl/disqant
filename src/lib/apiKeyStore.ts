@@ -9,8 +9,6 @@ export type ClientApiKeyRecord = {
   usageLimit: number;
   usageCount: number;
   createdAt: string; // ISO
-  /** When true, embed shows a friendlier limit-reached message ("check back soon"). */
-  demoKey?: boolean;
 };
 
 const KEY_INDEX = "disquant:clientKeys:index"; // list of ids (newest first)
@@ -67,7 +65,6 @@ export async function createClientKey(params: {
   clientName: string;
   usageLimit: number;
   fashnApiKey?: string;
-  demoKey?: boolean;
 }) {
   const clientName = params.clientName.trim();
   if (!clientName) throw new Error("Client name is required.");
@@ -93,7 +90,6 @@ export async function createClientKey(params: {
     usageLimit: Math.floor(params.usageLimit),
     usageCount: 0,
     createdAt: now,
-    demoKey: Boolean(params.demoKey),
   };
 
   // Persist record + add to index.
@@ -159,7 +155,6 @@ export async function updateClientKey(params: {
   clientName: string;
   usageLimit: number;
   fashnApiKey?: string;
-  demoKey?: boolean;
 }) {
   const redis = getRedis();
   const id = params.id;
@@ -182,9 +177,6 @@ export async function updateClientKey(params: {
       ? { fashnApiKey: params.fashnApiKey.trim() }
       : null),
   };
-  if (typeof params.demoKey === "boolean") {
-    next.demoKey = params.demoKey;
-  }
   await redis.set(recordKey(id), next);
   return next;
 }

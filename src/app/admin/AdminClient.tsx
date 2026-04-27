@@ -12,8 +12,6 @@ type KeyRecord = {
   usageLimit: number;
   usageCount: number;
   createdAt: string;
-  /** Softer limit-reached copy for embeds (checkbox at create / edit). */
-  demoKey?: boolean;
 };
 
 type ClientAnalyticsRow = {
@@ -91,13 +89,11 @@ export default function AdminClient() {
   const [editClientName, setEditClientName] = useState("");
   const [editFashnApiKey, setEditFashnApiKey] = useState("");
   const [editUsageLimit, setEditUsageLimit] = useState("");
-  const [editDemoKey, setEditDemoKey] = useState(false);
   const [savingEdit, setSavingEdit] = useState(false);
 
   const [clientName, setClientName] = useState("");
   const [fashnApiKey, setFashnApiKey] = useState("");
   const [usageLimit, setUsageLimit] = useState("1000");
-  const [createDemoKey, setCreateDemoKey] = useState(false);
   const [creating, setCreating] = useState(false);
 
   const [analytics, setAnalytics] = useState<AnalyticsSummary | null>(null);
@@ -207,7 +203,6 @@ export default function AdminClient() {
           clientName,
           fashnApiKey,
           usageLimit: Number(usageLimit),
-          demoKey: createDemoKey,
         }),
       });
       const data = (await res.json()) as { key?: KeyRecord; error?: string };
@@ -219,7 +214,6 @@ export default function AdminClient() {
         setKeys((prev) => [data.key!, ...prev]);
         setClientName("");
         setFashnApiKey("");
-        setCreateDemoKey(false);
       }
     } catch (e) {
       setError(e instanceof Error ? e.message : "Failed to create key.");
@@ -315,7 +309,6 @@ export default function AdminClient() {
     setEditClientName(rec.clientName);
     setEditUsageLimit(String(rec.usageLimit));
     setEditFashnApiKey("");
-    setEditDemoKey(Boolean(rec.demoKey));
   }
 
   function closeEditModal() {
@@ -323,7 +316,6 @@ export default function AdminClient() {
     setEditClientName("");
     setEditFashnApiKey("");
     setEditUsageLimit("");
-    setEditDemoKey(false);
     setSavingEdit(false);
   }
 
@@ -339,7 +331,6 @@ export default function AdminClient() {
           clientName: editClientName,
           ...(editFashnApiKey.trim() ? { fashnApiKey: editFashnApiKey.trim() } : null),
           usageLimit: Number(editUsageLimit),
-          demoKey: editDemoKey,
         }),
       });
       const data = (await res.json()) as { key?: KeyRecord; error?: string };
@@ -502,8 +493,7 @@ export default function AdminClient() {
                   Edit client
                 </p>
                 <p className="mt-1 text-sm text-zinc-400">
-                  Update client name, try-on limit, demo-key messaging, and (optionally) replace the Fashn.ai API
-                  key.
+                  Update client name, try-on limit, and (optionally) replace the Fashn.ai API key.
                 </p>
               </div>
               <button
@@ -548,21 +538,6 @@ export default function AdminClient() {
                   className="mt-3 block w-full rounded-xl border border-zinc-700 bg-zinc-950 px-4 py-3 text-sm text-zinc-100 outline-none transition focus:border-accent/60"
                 />
               </div>
-              <label className="flex cursor-pointer items-start gap-3 rounded-xl border border-zinc-800 bg-zinc-950/50 px-4 py-3">
-                <input
-                  type="checkbox"
-                  checked={editDemoKey}
-                  onChange={(e) => setEditDemoKey(e.target.checked)}
-                  className="mt-1 h-4 w-4 shrink-0 rounded border-zinc-600 bg-zinc-900 text-accent focus:ring-accent/40"
-                />
-                <span>
-                  <span className="block text-sm font-medium text-zinc-200">Demo key</span>
-                  <span className="mt-0.5 block text-xs text-zinc-500">
-                    When the try-on limit is reached, customers see a short promotional message (&quot;check back
-                    soon&quot;). If off, they see only that Wear Me is temporarily unavailable.
-                  </span>
-                </span>
-              </label>
             </div>
 
             <div className="mt-7 flex gap-3">
@@ -730,23 +705,6 @@ export default function AdminClient() {
                     />
                   </div>
                   <div className="md:col-span-12">
-                    <label className="flex cursor-pointer items-start gap-3 rounded-xl border border-zinc-800 bg-zinc-950/40 px-4 py-3">
-                      <input
-                        type="checkbox"
-                        checked={createDemoKey}
-                        onChange={(e) => setCreateDemoKey(e.target.checked)}
-                        className="mt-1 h-4 w-4 shrink-0 rounded border-zinc-600 bg-zinc-900 text-accent focus:ring-accent/40"
-                      />
-                      <span>
-                        <span className="block text-sm font-medium text-zinc-200">Demo key</span>
-                        <span className="mt-0.5 block text-xs text-zinc-500">
-                          When the limit is reached, show the promotional &quot;check back soon&quot; message in the
-                          embed. Leave unchecked for the minimal unavailable message only.
-                        </span>
-                      </span>
-                    </label>
-                  </div>
-                  <div className="md:col-span-12">
                     <button
                       type="submit"
                       disabled={
@@ -811,14 +769,7 @@ export default function AdminClient() {
                           className="grid w-full grid-cols-[minmax(0,1.35fr)_minmax(0,0.7fr)_minmax(0,1.6fr)_minmax(0,0.7fr)_minmax(0,0.55fr)_minmax(0,0.7fr)_minmax(0,0.55fr)_minmax(0,0.6fr)_minmax(0,0.7fr)] items-center gap-2 border-b border-zinc-800 px-4 py-4 text-base md:px-6"
                         >
                           <div className="min-w-0">
-                            <div className="flex flex-wrap items-center gap-2">
-                              <span className="truncate font-semibold text-zinc-100">{k.clientName}</span>
-                              {k.demoKey ? (
-                                <span className="shrink-0 rounded-full border border-amber-800/60 bg-amber-950/40 px-2 py-0.5 text-xs font-semibold text-amber-200/95">
-                                  Demo key
-                                </span>
-                              ) : null}
-                            </div>
+                            <div className="truncate font-semibold text-zinc-100">{k.clientName}</div>
                           </div>
                           <div>
                             <span className="rounded-md border border-zinc-700 bg-zinc-950 px-2 py-1 font-mono text-sm text-zinc-300">

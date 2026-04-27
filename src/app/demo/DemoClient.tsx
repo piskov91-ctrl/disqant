@@ -567,26 +567,8 @@ export default function DemoClient() {
           setWearShowProgress(false);
           return;
         }
-        if (
-          res.status === 403 &&
-          "code" in data &&
-          data.code === "USAGE_LIMIT" &&
-          data.keyKind === "demo"
-        ) {
-          setWearError(
-            "You've explored all our demo try-ons! Ready to bring this to your store? Contact us at hello@disqant.com to get started",
-          );
-          setWearProcessing(false);
-          setWearShowProgress(false);
-          return;
-        }
         if (res.status === 403 && "code" in data && data.code === "USAGE_LIMIT") {
-          const kind = "limitMessageKind" in data ? data.limitMessageKind : undefined;
-          setWearError(
-            kind === "promotional"
-              ? "Wear Me is temporarily unavailable. Please check back soon!"
-              : "Wear Me is temporarily unavailable.",
-          );
+          setWearError("Wear Me is temporarily unavailable. Please try again later.");
           setWearProcessing(false);
           setWearShowProgress(false);
           return;

@@ -170,12 +170,7 @@ export function AdminWearMeClient({ apiKey }: { apiKey: string }) {
           return;
         }
         if (res.status === 403 && "code" in data && data.code === "USAGE_LIMIT") {
-          const kind = "limitMessageKind" in data ? data.limitMessageKind : undefined;
-          setError(
-            kind === "promotional"
-              ? "Wear Me is temporarily unavailable. Please check back soon!"
-              : "Wear Me is temporarily unavailable.",
-          );
+          setError("Wear Me is temporarily unavailable. Please try again later.");
           return;
         }
         const msg = "error" in data ? formatTryOnApiError((data as { error?: unknown }).error) : "Try-on failed.";
