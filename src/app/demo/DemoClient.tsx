@@ -1162,11 +1162,6 @@ export default function DemoClient() {
     }
   }, [wearStageUrl, wearResultBlob]);
 
-  const selectedPreset = useMemo(
-    () => GARMENT_PRESETS.find((p) => p.id === selectedPresetId) ?? null,
-    [selectedPresetId],
-  );
-
   const openCatalogDef = useMemo(
     () => (openCatalog ? (DEMO_CATALOG.find((c) => c.id === openCatalog) ?? null) : null),
     [openCatalog],
@@ -1531,17 +1526,6 @@ export default function DemoClient() {
             </>
           )}
         </div>
-
-        <p className="mt-6 rounded-2xl border border-zinc-800 bg-zinc-900/40 p-4 text-xs text-zinc-500">
-          All try-ons use Fashn <span className="font-semibold text-zinc-200">Try-On Max</span> at{" "}
-          <span className="font-semibold text-zinc-200">1k</span> resolution in{" "}
-          <span className="font-semibold text-zinc-200">balanced</span> mode (2–3 credits per image depending on
-          Fashn pricing). Good for clothing, shoes, hats, and accessories. Images are auto-compressed to max 1000px
-          before the API call.
-          {selectedPreset?.id === "sneakers"
-            ? " Sneakers use a bottoms category hint; other items use tops or bottoms as appropriate (e.g. bags and jewelry often tops; ankle bracelet and boxers often bottoms)."
-            : ""}
-        </p>
       </main>
       <Footer />
     </div>
