@@ -264,20 +264,20 @@ const GARMENT_PRESETS: GarmentPreset[] = [
   {
     id: "swim_men",
     label: "Swim (men's)",
-    name: "Men's swim shorts (white background)",
+    name: "Men's swim shorts (studio white, full garments, no model)",
     category: "bottoms",
-    // Includes swim-style shorts, studio white (full garments, no beach scene). https://unsplash.com/photos/three-mens-shorts-are-lined-up-against-a-white-background-xa8hkIGTTf8
+    // Swim-style shorts lined on white — product-style, no people. https://unsplash.com/photos/three-mens-shorts-are-lined-up-against-a-white-background-xa8hkIGTTf8
     imageUrl:
-      "https://images.unsplash.com/photo-1719473458937-d42f1f9aad00?auto=format&fit=crop&w=1400&q=80",
+      "https://images.unsplash.com/photo-1719473458937-d42f1f9aad00?auto=format&fit=crop&w=1600&q=85",
   },
   {
     id: "swim_women",
     label: "Swim (women's)",
-    name: "White one-piece swimsuit (full view)",
+    name: "Women's swimsuit — two-piece flat lay on white (no model)",
     category: "tops",
-    // Marlon Alves — swimwear, entire suit visible. https://unsplash.com/photos/a-woman-in-a-white-garment-iCXFnbxrkl0
+    // Markus Kammermann — bikini laid on white surface, both pieces visible, no logos. https://unsplash.com/photos/a-blue-bikini-sits-on-a-white-surface-lXKvhH1_tEk
     imageUrl:
-      "https://images.unsplash.com/photo-1659799610076-6a858ddeb6fc?auto=format&fit=crop&w=1400&q=80",
+      "https://images.unsplash.com/photo-1749220781965-b745d9efd3ce?auto=format&fit=crop&w=1600&q=85",
   },
   {
     id: "eyeglasses",
