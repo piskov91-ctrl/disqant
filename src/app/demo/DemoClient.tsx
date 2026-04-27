@@ -192,11 +192,11 @@ const GARMENT_PRESETS: GarmentPreset[] = [
   {
     id: "gloves",
     label: "Gloves",
-    name: "Brown leather gloves (white background)",
+    name: "Brown leather gloves — full pair, sharp detail",
     category: "tops",
-    // Both gloves fully visible on white. https://unsplash.com/photo-1673294861057-4584f92b91d2
+    // Vincent Wachowiak — high-res leather pair, full gloves visible, no logos. https://unsplash.com/photos/brown-leather-gloves-efB_rwztE2w
     imageUrl:
-      "https://images.unsplash.com/photo-1673294861057-4584f92b91d2?auto=format&fit=crop&w=1400&q=80",
+      "https://images.unsplash.com/photo-1570385456135-53b38386a848?auto=format&fit=crop&w=1400&q=80",
   },
   {
     id: "handbag_women",
@@ -324,9 +324,9 @@ const DEMO_CATALOG: readonly {
   {
     id: "winter",
     title: "Winter",
-    line: "Jackets, gloves, hat, scarf",
+    line: "Jackets, gloves, caps & beanies",
     Icon: Snowflake,
-    presetIds: ["jacket", "jacket_leather", "gloves", "cap", "beanie", "scarf"],
+    presetIds: ["jacket", "jacket_leather", "gloves", "cap", "beanie"],
   },
   {
     id: "swimwear",
