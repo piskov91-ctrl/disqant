@@ -2,26 +2,95 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useCallback, useState } from "react";
+
+const inputClass =
+  "mt-2 block w-full rounded-xl border border-zinc-600/80 bg-zinc-950/80 px-4 py-3 text-sm text-zinc-100 shadow-inner shadow-black/20 outline-none transition placeholder:text-zinc-600 focus:border-violet-500/60 focus:ring-1 focus:ring-violet-500/30";
+
+function validateWebsiteIfPresent(raw: string): string | null {
+  const t = raw.trim();
+  if (!t) return null;
+  try {
+    const u = new URL(t.includes("://") ? t : `https://${t}`);
+    if (u.protocol !== "http:" && u.protocol !== "https:") {
+      return "Website must be a valid http(s) URL, or leave the field blank.";
+    }
+    return null;
+  } catch {
+    return "Website must be a valid URL (e.g. https://yourstore.com), or leave blank.";
+  }
+}
 
 export function SignupForm() {
   const router = useRouter();
+  const [firstName, setFirstName] = useState("");
+  const [lastName, setLastName] = useState("");
   const [companyName, setCompanyName] = useState("");
   const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
   const [websiteUrl, setWebsiteUrl] = useState("");
+  const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [agreeTerms, setAgreeTerms] = useState(false);
+  const [agreePrivacy, setAgreePrivacy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+
+  const validate = useCallback((): string | null => {
+    if (!firstName.trim()) return "First name is required.";
+    if (firstName.trim().length > 100) return "First name must be at most 100 characters.";
+    if (!lastName.trim()) return "Last name is required.";
+    if (lastName.trim().length > 100) return "Last name must be at most 100 characters.";
+    if (!companyName.trim()) return "Company name is required.";
+    if (companyName.trim().length > 200) return "Company name must be at most 200 characters.";
+    const em = email.trim();
+    if (!em) return "Email is required.";
+    if (em.length > 320 || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(em)) {
+      return "Enter a valid email address.";
+    }
+    const webErr = validateWebsiteIfPresent(websiteUrl);
+    if (webErr) return webErr;
+    if (password.length < 8) return "Password must be at least 8 characters.";
+    if (password.length > 128) return "Password must be at most 128 characters.";
+    if (password !== confirmPassword) return "Password and confirmation do not match.";
+    if (!agreeTerms) return "You must agree to the Terms & Conditions.";
+    if (!agreePrivacy) return "You must agree to the Privacy Policy.";
+    return null;
+  }, [
+    firstName,
+    lastName,
+    companyName,
+    email,
+    websiteUrl,
+    password,
+    confirmPassword,
+    agreeTerms,
+    agreePrivacy,
+  ]);
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
+    const err = validate();
+    if (err) {
+      setError(err);
+      return;
+    }
     setLoading(true);
     try {
       const res = await fetch("/api/retailer/signup", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ companyName, email, password, websiteUrl }),
+        body: JSON.stringify({
+          firstName: firstName.trim(),
+          lastName: lastName.trim(),
+          companyName: companyName.trim(),
+          email: email.trim(),
+          websiteUrl: websiteUrl.trim(),
+          password,
+          confirmPassword,
+          agreeTerms: true,
+          agreePrivacy: true,
+        }),
       });
       const data = (await res.json()) as { error?: string };
       if (!res.ok) {
@@ -38,95 +107,191 @@ export function SignupForm() {
   }
 
   return (
-    <form onSubmit={(e) => void onSubmit(e)} className="mt-8 space-y-5">
-      <div>
-        <label htmlFor="su-company" className="block text-sm font-medium text-zinc-200">
-          Company name
-        </label>
-        <input
-          id="su-company"
-          name="companyName"
-          autoComplete="organization"
-          value={companyName}
-          onChange={(e) => setCompanyName(e.target.value)}
-          required
-          maxLength={200}
-          className="mt-2 block w-full rounded-xl border border-zinc-700 bg-zinc-950 px-4 py-3 text-sm text-zinc-100 outline-none transition focus:border-accent/60"
-          placeholder="Your store or brand"
-        />
-      </div>
-      <div>
-        <label htmlFor="su-email" className="block text-sm font-medium text-zinc-200">
-          Email
-        </label>
-        <input
-          id="su-email"
-          name="email"
-          type="email"
-          autoComplete="email"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          required
-          className="mt-2 block w-full rounded-xl border border-zinc-700 bg-zinc-950 px-4 py-3 text-sm text-zinc-100 outline-none transition focus:border-accent/60"
-          placeholder="you@company.com"
-        />
-      </div>
-      <div>
-        <label htmlFor="su-password" className="block text-sm font-medium text-zinc-200">
-          Password
-        </label>
-        <input
-          id="su-password"
-          name="password"
-          type="password"
-          autoComplete="new-password"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          required
-          minLength={8}
-          maxLength={128}
-          className="mt-2 block w-full rounded-xl border border-zinc-700 bg-zinc-950 px-4 py-3 text-sm text-zinc-100 outline-none transition focus:border-accent/60"
-          placeholder="At least 8 characters"
-        />
-      </div>
-      <div>
-        <label htmlFor="su-web" className="block text-sm font-medium text-zinc-200">
-          Website URL
-        </label>
-        <input
-          id="su-web"
-          name="websiteUrl"
-          type="text"
-          inputMode="url"
-          autoComplete="url"
-          value={websiteUrl}
-          onChange={(e) => setWebsiteUrl(e.target.value)}
-          required
-          className="mt-2 block w-full rounded-xl border border-zinc-700 bg-zinc-950 px-4 py-3 text-sm text-zinc-100 outline-none transition focus:border-accent/60"
-          placeholder="https://yourstore.com"
-        />
-      </div>
-
-      {error ? (
-        <div className="rounded-xl border border-red-900/60 bg-red-950/40 px-4 py-3 text-sm text-red-200">
-          {error}
+    <div className="mt-8 rounded-2xl border border-zinc-700/80 bg-zinc-900/90 p-6 shadow-xl shadow-black/40 backdrop-blur-sm md:p-8">
+      <form onSubmit={(e) => void onSubmit(e)} className="space-y-5" noValidate>
+        <div className="grid gap-5 sm:grid-cols-2">
+          <div>
+            <label htmlFor="su-first" className="block text-sm font-medium text-zinc-200">
+              First name <span className="text-red-400">*</span>
+            </label>
+            <input
+              id="su-first"
+              name="firstName"
+              autoComplete="given-name"
+              value={firstName}
+              onChange={(e) => setFirstName(e.target.value)}
+              maxLength={100}
+              className={inputClass}
+              placeholder="Jane"
+            />
+          </div>
+          <div>
+            <label htmlFor="su-last" className="block text-sm font-medium text-zinc-200">
+              Last name <span className="text-red-400">*</span>
+            </label>
+            <input
+              id="su-last"
+              name="lastName"
+              autoComplete="family-name"
+              value={lastName}
+              onChange={(e) => setLastName(e.target.value)}
+              maxLength={100}
+              className={inputClass}
+              placeholder="Doe"
+            />
+          </div>
         </div>
-      ) : null}
 
-      <button
-        type="submit"
-        disabled={loading}
-        className="btn-accent-gradient h-12 w-full text-sm font-semibold disabled:cursor-not-allowed disabled:opacity-60"
-      >
-        {loading ? "Creating account…" : "Create account"}
-      </button>
+        <div>
+          <label htmlFor="su-company" className="block text-sm font-medium text-zinc-200">
+            Company name <span className="text-red-400">*</span>
+          </label>
+          <input
+            id="su-company"
+            name="companyName"
+            autoComplete="organization"
+            value={companyName}
+            onChange={(e) => setCompanyName(e.target.value)}
+            maxLength={200}
+            className={inputClass}
+            placeholder="Your store or brand"
+          />
+        </div>
 
-      <p className="text-center text-sm text-zinc-500">
-        Already have an account?{" "}
-        <Link href="/login" className="font-medium text-zinc-200 underline-offset-2 hover:underline">
-          Sign In
-        </Link>
-      </p>
-    </form>
+        <div>
+          <label htmlFor="su-email" className="block text-sm font-medium text-zinc-200">
+            Email <span className="text-red-400">*</span>
+          </label>
+          <input
+            id="su-email"
+            name="email"
+            type="email"
+            autoComplete="email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            className={inputClass}
+            placeholder="you@company.com"
+          />
+        </div>
+
+        <div>
+          <label htmlFor="su-web" className="block text-sm font-medium text-zinc-200">
+            Website URL <span className="font-normal text-zinc-500">(optional)</span>
+          </label>
+          <input
+            id="su-web"
+            name="websiteUrl"
+            type="text"
+            inputMode="url"
+            autoComplete="url"
+            value={websiteUrl}
+            onChange={(e) => setWebsiteUrl(e.target.value)}
+            className={inputClass}
+            placeholder="https://yourstore.com"
+          />
+        </div>
+
+        <div>
+          <label htmlFor="su-password" className="block text-sm font-medium text-zinc-200">
+            Password <span className="text-red-400">*</span>
+          </label>
+          <input
+            id="su-password"
+            name="password"
+            type="password"
+            autoComplete="new-password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            maxLength={128}
+            className={inputClass}
+            placeholder="At least 8 characters"
+          />
+        </div>
+
+        <div>
+          <label htmlFor="su-confirm" className="block text-sm font-medium text-zinc-200">
+            Confirm password <span className="text-red-400">*</span>
+          </label>
+          <input
+            id="su-confirm"
+            name="confirmPassword"
+            type="password"
+            autoComplete="new-password"
+            value={confirmPassword}
+            onChange={(e) => setConfirmPassword(e.target.value)}
+            maxLength={128}
+            className={inputClass}
+            placeholder="Re-enter password"
+          />
+        </div>
+
+        <div className="space-y-3 rounded-xl border border-zinc-700/60 bg-zinc-950/50 p-4">
+          <label className="flex cursor-pointer items-start gap-3 text-sm text-zinc-300">
+            <input
+              type="checkbox"
+              checked={agreeTerms}
+              onChange={(e) => setAgreeTerms(e.target.checked)}
+              className="mt-1 h-4 w-4 shrink-0 rounded border-zinc-500 bg-zinc-900 text-violet-500 focus:ring-violet-500/40"
+            />
+            <span>
+              I agree to the{" "}
+              <Link
+                href="/terms"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="font-medium text-violet-300 underline-offset-2 hover:underline"
+              >
+                Terms &amp; Conditions
+              </Link>{" "}
+              <span className="text-red-400">*</span>
+            </span>
+          </label>
+          <label className="flex cursor-pointer items-start gap-3 text-sm text-zinc-300">
+            <input
+              type="checkbox"
+              checked={agreePrivacy}
+              onChange={(e) => setAgreePrivacy(e.target.checked)}
+              className="mt-1 h-4 w-4 shrink-0 rounded border-zinc-500 bg-zinc-900 text-violet-500 focus:ring-violet-500/40"
+            />
+            <span>
+              I agree to the{" "}
+              <Link
+                href="/privacy"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="font-medium text-violet-300 underline-offset-2 hover:underline"
+              >
+                Privacy Policy
+              </Link>{" "}
+              <span className="text-red-400">*</span>
+            </span>
+          </label>
+        </div>
+
+        {error ? (
+          <div
+            className="rounded-xl border border-red-500/40 bg-red-950/50 px-4 py-3 text-sm text-red-100"
+            role="alert"
+          >
+            {error}
+          </div>
+        ) : null}
+
+        <button
+          type="submit"
+          disabled={loading}
+          className="btn-accent-gradient h-12 w-full text-sm font-semibold shadow-lg shadow-violet-900/20 disabled:cursor-not-allowed disabled:opacity-60"
+        >
+          {loading ? "Creating account…" : "Create account"}
+        </button>
+
+        <p className="text-center text-sm text-zinc-500">
+          Already have an account?{" "}
+          <Link href="/login" className="font-medium text-zinc-200 underline-offset-2 hover:underline">
+            Sign In
+          </Link>
+        </p>
+      </form>
+    </div>
   );
 }

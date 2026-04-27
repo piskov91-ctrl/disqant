@@ -22,8 +22,12 @@ function sessionKey(token: string) {
 
 export type RetailerUser = {
   id: string;
+  /** Present for accounts created after registration form update. */
+  firstName?: string;
+  lastName?: string;
   email: string;
   companyName: string;
+  /** Normalized URL or empty string if omitted at signup. */
   websiteUrl: string;
   passwordSalt: string;
   passwordHash: string;
@@ -71,6 +75,17 @@ function normalizeWebsiteUrl(raw: string): string | null {
   }
 }
 
+/** Empty string if blank; normalized URL if valid; throws if non-empty but invalid. */
+function normalizeOptionalWebsiteUrl(raw: string): string {
+  const t = raw.trim();
+  if (!t) return "";
+  const n = normalizeWebsiteUrl(t);
+  if (!n) {
+    throw new Error("Website URL is not valid. Leave blank or enter a full URL (e.g. https://example.com).");
+  }
+  return n;
+}
+
 export async function getRetailerById(id: string): Promise<RetailerUser | null> {
   if (!id) return null;
   const redis = getRedis();
@@ -99,11 +114,35 @@ function defaultSignupTryOnLimit() {
 }
 
 export async function registerRetailer(params: {
+  firstName: string;
+  lastName: string;
   companyName: string;
   email: string;
   websiteUrl: string;
   password: string;
+  confirmPassword: string;
+  agreeTerms: boolean;
+  agreePrivacy: boolean;
 }): Promise<RetailerUser> {
+  if (!params.agreeTerms) {
+    throw new Error("You must accept the Terms & Conditions.");
+  }
+  if (!params.agreePrivacy) {
+    throw new Error("You must accept the Privacy Policy.");
+  }
+  if (params.password !== params.confirmPassword) {
+    throw new Error("Passwords do not match.");
+  }
+
+  const firstName = params.firstName.trim();
+  if (!firstName || firstName.length > 100) {
+    throw new Error("First name is required (max 100 characters).");
+  }
+  const lastName = params.lastName.trim();
+  if (!lastName || lastName.length > 100) {
+    throw new Error("Last name is required (max 100 characters).");
+  }
+
   const email = normalizeRetailerEmail(params.email);
   if (!email || email.length > 320 || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
     throw new Error("Invalid email address.");
@@ -112,10 +151,14 @@ export async function registerRetailer(params: {
   if (!companyName || companyName.length > 200) {
     throw new Error("Company name is required (max 200 characters).");
   }
-  const websiteUrl = normalizeWebsiteUrl(params.websiteUrl);
-  if (!websiteUrl) {
-    throw new Error("Enter a valid website URL (e.g. https://yourstore.com).");
+
+  let websiteUrl: string;
+  try {
+    websiteUrl = normalizeOptionalWebsiteUrl(params.websiteUrl);
+  } catch (e) {
+    throw e instanceof Error ? e : new Error("Invalid website URL.");
   }
+
   const password = params.password;
   if (password.length < 8 || password.length > 128) {
     throw new Error("Password must be between 8 and 128 characters.");
@@ -141,6 +184,8 @@ export async function registerRetailer(params: {
   const { salt, hash } = hashRetailerPassword(password);
   const user: RetailerUser = {
     id,
+    firstName,
+    lastName,
     email,
     companyName,
     websiteUrl,

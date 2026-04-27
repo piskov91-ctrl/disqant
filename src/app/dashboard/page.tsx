@@ -57,18 +57,26 @@ export default async function DashboardPage() {
               Dashboard
             </h1>
             <p className="mt-4 max-w-2xl text-lg leading-relaxed text-zinc-400">
-              {user.companyName} · Try-on usage and your embed API key.
+              {user.companyName}
+              {user.firstName || user.lastName
+                ? ` · ${[user.firstName, user.lastName].filter(Boolean).join(" ")}`
+                : null}{" "}
+              · Try-on usage and your embed API key.
             </p>
             <p className="mt-2 text-sm text-zinc-500">
               Website:{" "}
-              <a
-                href={user.websiteUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-zinc-300 underline-offset-2 hover:underline"
-              >
-                {user.websiteUrl}
-              </a>
+              {user.websiteUrl ? (
+                <a
+                  href={user.websiteUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-zinc-300 underline-offset-2 hover:underline"
+                >
+                  {user.websiteUrl}
+                </a>
+              ) : (
+                <span className="text-zinc-600">Not provided</span>
+              )}
             </p>
           </div>
         </section>
