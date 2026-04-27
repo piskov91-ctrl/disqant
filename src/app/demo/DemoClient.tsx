@@ -603,6 +603,20 @@ export default function DemoClient() {
   /** Avoid refetching the sample garment on every popstate when the same preset is already loaded. */
   const wearLoadedPresetIdRef = useRef<GarmentPreset["id"] | null>(null);
 
+  /** Admin analytics: one demo page visit per load (debounce shields React Strict Mode double-mount in dev). */
+  useEffect(() => {
+    const key = "disquant_demo_visit_last_beacon_ms";
+    const now = Date.now();
+    try {
+      const prev = Number(sessionStorage.getItem(key) ?? "0");
+      if (now - prev < 800) return;
+      sessionStorage.setItem(key, String(now));
+    } catch {
+      /* ignore */
+    }
+    void fetch("/api/demo-visit", { method: "POST" }).catch(() => {});
+  }, []);
+
   useEffect(() => {
     wearStageUrlRef.current = wearStageUrl;
   }, [wearStageUrl]);

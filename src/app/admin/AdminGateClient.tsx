@@ -33,7 +33,7 @@ export default function AdminGateClient({ onSuccess }: { onSuccess?: () => void 
   return (
     <form onSubmit={submit} className="mt-6 space-y-4" autoComplete="off">
       <div>
-        <label className="block text-sm font-medium text-zinc-900">Admin password</label>
+        <label className="block text-sm font-medium text-zinc-200">Admin password</label>
         <input
           value={password}
           onChange={(e) => setPassword(e.target.value)}
@@ -43,12 +43,12 @@ export default function AdminGateClient({ onSuccess }: { onSuccess?: () => void 
           autoCorrect="off"
           autoCapitalize="none"
           placeholder="Enter password"
-          className="mt-2 block w-full rounded-xl border border-surface-border bg-white px-4 py-3 text-sm text-zinc-900 outline-none placeholder:text-zinc-400 transition focus:border-accent/60"
+          className="mt-2 block w-full rounded-xl border border-zinc-700 bg-zinc-950 px-4 py-3 text-sm text-zinc-100 outline-none placeholder:text-zinc-600 transition focus:border-accent/60"
         />
       </div>
 
       {error && (
-        <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800">
+        <div className="rounded-xl border border-red-900/60 bg-red-950/40 px-4 py-3 text-sm text-red-200">
           {error}
         </div>
       )}

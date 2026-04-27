@@ -1,6 +1,7 @@
 import { randomUUID } from "node:crypto";
 import { cookies } from "next/headers";
 import { assertClientCanUseByApiKey, incrementUsageOrThrow, listClientKeys } from "@/lib/apiKeyStore";
+import { recordTryOnCompleted } from "@/lib/platformAnalytics";
 import { recordTryOnProductUsage } from "@/lib/tryOnAnalytics";
 
 export const runtime = "nodejs";
@@ -162,6 +163,9 @@ export async function POST(req: Request) {
     return Response.json({ error: "Missing client API key." }, { status: 401 });
   }
 
+  /** Caller sent an integrator key (retailer/embed); otherwise usage is attributed to demo/visitor. */
+  const isRetailerTryOn = Boolean(clientApiKey);
+
   let client: Awaited<ReturnType<typeof assertClientCanUseByApiKey>>;
   try {
     client = await assertClientCanUseByApiKey(effectiveClientApiKey);
@@ -245,6 +249,7 @@ export async function POST(req: Request) {
     } catch {
       // Usage enforcement is checked before starting; ignore rare race here.
     }
+    void recordTryOnCompleted(isRetailerTryOn);
   }
   return result.response;
 }
