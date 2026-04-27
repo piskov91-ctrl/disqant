@@ -124,6 +124,14 @@ export async function getClientByApiKey(apiKey: string) {
   return rec;
 }
 
+/** Load a client key record by internal id (e.g. retailer dashboard). */
+export async function getClientKeyRecordById(id: string): Promise<ClientApiKeyRecord | null> {
+  if (!id) return null;
+  const redis = getRedis();
+  const rec = (await redis.get(recordKey(id))) as ClientApiKeyRecord | null;
+  return rec ?? null;
+}
+
 export async function assertClientCanUseByApiKey(apiKey: string) {
   const client = await getClientByApiKey(apiKey);
   if (!client) throw new Error("Invalid API key.");

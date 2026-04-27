@@ -58,10 +58,16 @@ export function HeaderNav() {
       </nav>
 
       <Link
-        href="/pricing"
-        className={`${navTextClass} hidden sm:inline${pathname === "/pricing" ? " font-medium text-zinc-900" : ""}`}
+        href="/login"
+        className={`${navTextClass} hidden sm:inline${pathname === "/login" ? " font-medium text-zinc-900" : ""}`}
       >
-        Sign in
+        Log in
+      </Link>
+      <Link
+        href="/signup"
+        className={`${navTextClass} hidden sm:inline${pathname === "/signup" ? " font-medium text-zinc-900" : ""}`}
+      >
+        Sign up
       </Link>
       <Link href="/demo" className="btn-accent-gradient h-10 px-5 text-sm font-semibold">
         Try it now
@@ -121,8 +127,11 @@ export function HeaderNav() {
 
               <div className="my-2 h-px w-full bg-surface-border" />
 
-              <Link href="/pricing" className={navStackClass} onClick={() => setOpen(false)}>
-                Sign in
+              <Link href="/login" className={navStackClass} onClick={() => setOpen(false)}>
+                Log in
+              </Link>
+              <Link href="/signup" className={navStackClass} onClick={() => setOpen(false)}>
+                Sign up
               </Link>
               <Link
                 href="/demo"
