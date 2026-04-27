@@ -192,11 +192,11 @@ const GARMENT_PRESETS: GarmentPreset[] = [
   {
     id: "gloves",
     label: "Gloves",
-    name: "Brown leather gloves — full pair, sharp detail",
+    name: "Brown leather gloves (everyday style, white background)",
     category: "tops",
-    // Vincent Wachowiak — high-res leather pair, full gloves visible, no logos. https://unsplash.com/photos/brown-leather-gloves-efB_rwztE2w
+    // Nicolas Solerieu — full pair on white, neutral product-style, no logos. https://unsplash.com/photos/a-pair-of-brown-leather-gloves-on-a-white-background-RLShnUiFFNA
     imageUrl:
-      "https://images.unsplash.com/photo-1570385456135-53b38386a848?auto=format&fit=crop&w=1400&q=80",
+      "https://images.unsplash.com/photo-1673294861057-4584f92b91d2?auto=format&fit=crop&w=1400&q=80",
   },
   {
     id: "handbag_women",
