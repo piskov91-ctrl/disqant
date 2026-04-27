@@ -295,6 +295,8 @@ const PRESET_BY_ID = Object.fromEntries(GARMENT_PRESETS.map((p) => [p.id, p])) a
   GarmentPreset
 >;
 
+const PRESET_ID_SET = new Set<string>(GARMENT_PRESETS.map((p) => p.id));
+
 type DemoCatalogId = "clothing" | "accessories" | "winter" | "swimwear" | "eyewear";
 
 const DEMO_CATALOG: readonly {
@@ -358,6 +360,32 @@ function catalogIdFromHistoryState(state: unknown): DemoCatalogId | null {
 function wearCameraFromHistoryState(state: unknown): boolean {
   if (state == null || typeof state !== "object" || !("wearCamera" in state)) return false;
   return (state as { wearCamera?: unknown }).wearCamera === true;
+}
+
+function wearModalFromHistoryState(state: unknown): boolean {
+  if (state == null || typeof state !== "object") return false;
+  return (state as { wearModal?: unknown }).wearModal === true;
+}
+
+function wearPresetIdFromHistoryState(state: unknown): GarmentPreset["id"] | null {
+  if (state == null || typeof state !== "object") return null;
+  const id = (state as { wearPresetId?: unknown }).wearPresetId;
+  if (typeof id !== "string" || !PRESET_ID_SET.has(id)) return null;
+  return id as GarmentPreset["id"];
+}
+
+/** How many history steps to pop to leave try-on (modal ± camera) and land on the catalog grid. */
+function wearTryOnPopCount(state: unknown): number {
+  if (wearCameraFromHistoryState(state)) return 2;
+  if (wearModalFromHistoryState(state)) return 1;
+  return 0;
+}
+
+function cloneHistoryStatePatch(state: unknown): Record<string, unknown> {
+  if (state != null && typeof state === "object" && !Array.isArray(state)) {
+    return { ...(state as Record<string, unknown>) };
+  }
+  return {};
 }
 
 /** Cycled while the try-on request is in flight (see `wearLoadingMsgIndex` + `useEffect`). */
@@ -517,16 +545,6 @@ export default function DemoClient() {
   const pathname = usePathname();
   const [urlKey, setUrlKey] = useState<string | null>(null);
 
-  useEffect(() => {
-    function readKey() {
-      const raw = new URLSearchParams(window.location.search).get("key");
-      setUrlKey(raw?.trim() || null);
-    }
-    readKey();
-    window.addEventListener("popstate", readKey);
-    return () => window.removeEventListener("popstate", readKey);
-  }, [pathname]);
-
   const [selectedPresetId, setSelectedPresetId] = useState<GarmentPreset["id"]>(
     GARMENT_PRESETS[0]?.id ?? "tee",
   );
@@ -582,6 +600,8 @@ export default function DemoClient() {
   const wearStageUrlRef = useRef<string | null>(null);
   /** Sync guard: `wearGenerating` updates after render, so double-clicks can fire two `/api/tryon` → two Fashn /run. */
   const wearTryOnInFlightRef = useRef(false);
+  /** Avoid refetching the sample garment on every popstate when the same preset is already loaded. */
+  const wearLoadedPresetIdRef = useRef<GarmentPreset["id"] | null>(null);
 
   useEffect(() => {
     wearStageUrlRef.current = wearStageUrl;
@@ -666,19 +686,6 @@ export default function DemoClient() {
     if (wearVideoRef.current) wearVideoRef.current.srcObject = null;
   }, []);
 
-  useEffect(() => {
-    if (typeof window === "undefined") return;
-    const onPopState = (e: PopStateEvent) => {
-      setOpenCatalog(catalogIdFromHistoryState(e.state));
-      if (!wearCameraFromHistoryState(e.state)) {
-        setWearShowVideo(false);
-        stopWearStream();
-      }
-    };
-    window.addEventListener("popstate", onPopState);
-    return () => window.removeEventListener("popstate", onPopState);
-  }, [stopWearStream]);
-
   const clearWearProgressTimer = useCallback(() => {
     if (wearProgressTimerRef.current != null) {
       window.clearInterval(wearProgressTimerRef.current);
@@ -686,9 +693,103 @@ export default function DemoClient() {
     }
   }, []);
 
+  const applyDemoPopState = useCallback(
+    (state: unknown) => {
+      const cat = catalogIdFromHistoryState(state);
+      setOpenCatalog(cat);
+
+      const cam = wearCameraFromHistoryState(state);
+      const modal = wearModalFromHistoryState(state);
+      const pid = wearPresetIdFromHistoryState(state);
+      const preset = pid ? (PRESET_BY_ID[pid] ?? null) : null;
+
+      if (!modal || !preset) {
+        wearLoadedPresetIdRef.current = null;
+        stopWearStream();
+        setWearShowVideo(false);
+        clearWearProgressTimer();
+        const snap = wearStageUrlRef.current;
+        if (snap?.startsWith("blob:")) URL.revokeObjectURL(snap);
+        setWearBackdropOpen(false);
+        setWearClosing(false);
+        setWearOpen(false);
+        setWearPreset(null);
+        setWearStageUrl(null);
+        setWearHasPhoto(false);
+        setWearModelFile(null);
+        setWearGarmentFile(null);
+        setWearGarmentLoading(false);
+        setWearProcessing(false);
+        setWearShowProgress(false);
+        setWearProgressPct(0);
+        setWearSaveVisible(false);
+        setWearGenerating(false);
+        setWearError(null);
+        setWearResultBlob(null);
+        setWearCameraFacing("user");
+        setWearFlippingCamera(false);
+        wearTryOnInFlightRef.current = false;
+        return;
+      }
+
+      setWearOpen(true);
+      setWearClosing(false);
+      setWearPreset(preset);
+      setSelectedPresetId(preset.id);
+      setWearShowVideo(cam);
+      if (!cam) stopWearStream();
+      setWearError(null);
+      void window.requestAnimationFrame(() => setWearBackdropOpen(true));
+
+      if (wearLoadedPresetIdRef.current !== preset.id) {
+        wearLoadedPresetIdRef.current = preset.id;
+        setWearGarmentLoading(true);
+        void (async () => {
+          try {
+            const raw = await fetchUrlAsFile(preset.imageUrl, `${preset.id}.jpg`);
+            const g = await compressImageToMax1000px(raw);
+            setWearGarmentFile(g);
+          } catch {
+            setWearError("Could not load sample product image.");
+            wearLoadedPresetIdRef.current = null;
+          } finally {
+            setWearGarmentLoading(false);
+          }
+        })();
+      }
+    },
+    [clearWearProgressTimer, stopWearStream],
+  );
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const raw = new URLSearchParams(window.location.search).get("key");
+    setUrlKey(raw?.trim() || null);
+  }, [pathname]);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const onPopState = (e: PopStateEvent) => {
+      const raw = new URLSearchParams(window.location.search).get("key");
+      setUrlKey(raw?.trim() || null);
+      applyDemoPopState(e.state);
+    };
+    window.addEventListener("popstate", onPopState);
+    return () => window.removeEventListener("popstate", onPopState);
+  }, [applyDemoPopState]);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    applyDemoPopState(window.history.state);
+  }, [applyDemoPopState]);
+
   const closeWearModal = useCallback(() => {
-    if (typeof window !== "undefined" && wearCameraFromHistoryState(window.history.state)) {
-      window.history.back();
+    if (typeof window !== "undefined") {
+      const pops = wearTryOnPopCount(window.history.state);
+      if (pops > 0) {
+        window.history.go(-pops);
+        return;
+      }
     }
     setWearClosing(true);
     setWearBackdropOpen(false);
@@ -701,6 +802,7 @@ export default function DemoClient() {
     window.setTimeout(() => {
       setWearOpen(false);
       setWearClosing(false);
+      wearLoadedPresetIdRef.current = null;
       setWearPreset(null);
       setWearStageUrl(null);
       setWearHasPhoto(false);
@@ -729,6 +831,7 @@ export default function DemoClient() {
 
   const openWearMe = useCallback(
     (preset: GarmentPreset) => {
+      wearLoadedPresetIdRef.current = null;
       const prev = wearStageUrlRef.current;
       if (prev?.startsWith("blob:")) URL.revokeObjectURL(prev);
       stopWearStream();
@@ -758,14 +861,35 @@ export default function DemoClient() {
           const raw = await fetchUrlAsFile(preset.imageUrl, `${preset.id}.jpg`);
           const g = await compressImageToMax1000px(raw);
           setWearGarmentFile(g);
+          wearLoadedPresetIdRef.current = preset.id;
         } catch {
           setWearError("Could not load sample product image.");
+          wearLoadedPresetIdRef.current = null;
         } finally {
           setWearGarmentLoading(false);
         }
       })();
+
+      if (typeof window !== "undefined" && openCatalog) {
+        const path = window.location.pathname + window.location.search;
+        const cur = cloneHistoryStatePatch(window.history.state);
+        const next: Record<string, unknown> = {
+          ...cur,
+          demoCatalog: openCatalog,
+          wearModal: true,
+          wearPresetId: preset.id,
+        };
+        delete next.wearCamera;
+        const st = window.history.state;
+        const replace = wearModalFromHistoryState(st) && !wearCameraFromHistoryState(st);
+        if (replace) {
+          window.history.replaceState(next, "", path);
+        } else {
+          window.history.pushState(next, "", path);
+        }
+      }
     },
-    [clearWearProgressTimer, stopWearStream],
+    [clearWearProgressTimer, openCatalog, stopWearStream],
   );
 
   const onWearGalleryPick = useCallback(
@@ -799,14 +923,16 @@ export default function DemoClient() {
       setWearShowVideo(true);
       if (typeof window !== "undefined" && !wearCameraFromHistoryState(window.history.state)) {
         const path = window.location.pathname + window.location.search;
-        const next: { wearCamera: true; demoCatalog?: DemoCatalogId } = { wearCamera: true };
+        const cur = cloneHistoryStatePatch(window.history.state);
+        const next: Record<string, unknown> = { ...cur, wearCamera: true, wearModal: true };
         if (openCatalog) next.demoCatalog = openCatalog;
+        if (wearPreset) next.wearPresetId = wearPreset.id;
         window.history.pushState(next, "", path);
       }
     } catch {
       /* user may deny; gallery still works */
     }
-  }, [stopWearStream, wearCameraFacing, openCatalog]);
+  }, [stopWearStream, wearCameraFacing, openCatalog, wearPreset]);
 
   const onWearFlipCamera = useCallback(async () => {
     if (!wearShowVideo) return;
