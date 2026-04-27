@@ -581,7 +581,12 @@ export default function DemoClient() {
           return;
         }
         if (res.status === 403 && "code" in data && data.code === "USAGE_LIMIT") {
-          setWearError("Virtual try-on temporarily unavailable. Please try again later");
+          const kind = "limitMessageKind" in data ? data.limitMessageKind : undefined;
+          setWearError(
+            kind === "promotional"
+              ? "Wear Me is temporarily unavailable. Please check back soon!"
+              : "Wear Me is temporarily unavailable.",
+          );
           setWearProcessing(false);
           setWearShowProgress(false);
           return;

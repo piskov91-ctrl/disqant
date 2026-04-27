@@ -422,7 +422,7 @@
     limitIcon.innerHTML = "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><circle cx=\"12\" cy=\"12\" r=\"10\"/><path d=\"M12 6v6l4 2\"/></svg>";
     var limitCopy = document.createElement("p");
     limitCopy.className = "dq-limit-copy";
-    limitCopy.textContent = "Wear Me is temporarily unavailable. Please check back soon!";
+    limitCopy.textContent = "Wear Me is temporarily unavailable.";
     limitBanner.appendChild(limitIcon);
     limitBanner.appendChild(limitCopy);
     body.appendChild(limitBanner);
@@ -761,6 +761,10 @@
             data.code === "USAGE_LIMIT" &&
             data.keyKind === "client";
           if (usageLimited) {
+            var promotional = data.limitMessageKind === "promotional";
+            limitCopy.textContent = promotional
+              ? "Wear Me is temporarily unavailable. Please check back soon!"
+              : "Wear Me is temporarily unavailable.";
             limitBanner.style.display = "flex";
             try {
               limitBanner.scrollIntoView({ block: "nearest", behavior: "smooth" });

@@ -1,6 +1,11 @@
 import { randomUUID } from "node:crypto";
 import { cookies } from "next/headers";
-import { assertClientCanUseByApiKey, incrementUsageOrThrow, listClientKeys } from "@/lib/apiKeyStore";
+import {
+  assertClientCanUseByApiKey,
+  getClientByApiKey,
+  incrementUsageOrThrow,
+  listClientKeys,
+} from "@/lib/apiKeyStore";
 import {
   DEMO_ANALYTICS_SESSION_COOKIE,
   getRequestClientIp,
@@ -177,11 +182,15 @@ export async function POST(req: Request) {
     const msg = e instanceof Error ? e.message : "Unauthorized.";
     const isUsage = msg === "Try-on limit exceeded.";
     if (isUsage) {
+      const atLimitRec = await getClientByApiKey(effectiveClientApiKey);
+      const limitMessageKind =
+        clientApiKey && atLimitRec?.demoKey === true ? "promotional" : "standard";
       return Response.json(
         {
           error: msg,
           code: "USAGE_LIMIT",
           keyKind: clientApiKey ? "client" : "demo",
+          ...(clientApiKey ? { limitMessageKind } : {}),
         },
         { status: 403 },
       );

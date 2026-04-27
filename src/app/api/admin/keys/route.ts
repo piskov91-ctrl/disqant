@@ -23,7 +23,12 @@ export async function GET() {
   return Response.json({ keys: redacted });
 }
 
-type CreateBody = { clientName?: unknown; usageLimit?: unknown; fashnApiKey?: unknown };
+type CreateBody = {
+  clientName?: unknown;
+  usageLimit?: unknown;
+  fashnApiKey?: unknown;
+  demoKey?: unknown;
+};
 
 export async function POST(req: Request) {
   if (!(await requireAdmin())) return Response.json({ error: "Unauthorized." }, { status: 401 });
@@ -43,9 +48,15 @@ export async function POST(req: Request) {
       : typeof body.usageLimit === "string"
         ? Number(body.usageLimit)
         : NaN;
+  const demoKey = body.demoKey === true;
 
   try {
-    const rec = await createClientKey({ clientName, usageLimit: usageLimitNum, fashnApiKey });
+    const rec = await createClientKey({
+      clientName,
+      usageLimit: usageLimitNum,
+      fashnApiKey,
+      demoKey,
+    });
     const { fashnApiKey: rawFashn, ...rest } = rec;
     void rawFashn;
     return Response.json({ key: rest });

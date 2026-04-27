@@ -5,7 +5,13 @@ export type GarmentCategoryHint = "tops" | "bottoms";
 
 export type TryOnResponse =
   | { id: string; output: string[]; category?: GarmentCategoryHint }
-  | { error: string; code?: string; keyKind?: "demo" | "client" };
+  | {
+      error: string;
+      code?: string;
+      keyKind?: "demo" | "client";
+      /** USAGE_LIMIT + retailer key: `promotional` = friendlier embed copy. */
+      limitMessageKind?: "promotional" | "standard";
+    };
 
 export function formatTryOnApiError(err: unknown): string {
   if (err == null) return "Try-on failed.";
