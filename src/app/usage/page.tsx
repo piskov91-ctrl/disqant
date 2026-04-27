@@ -1,8 +1,14 @@
+import type { Metadata } from "next";
 import { Footer } from "@/components/Footer";
 import { Header } from "@/components/Header";
 import { TopProductThumbnails } from "@/components/TopProductThumbnails";
 import { getClientByApiKey } from "@/lib/apiKeyStore";
 import { getTopTryOnProducts } from "@/lib/tryOnAnalytics";
+
+export const metadata: Metadata = {
+  title: "Dashboard",
+  description: "View try-ons used, try-on limit, and top product images for your Wear Me API key.",
+};
 
 export const runtime = "nodejs";
 
@@ -19,6 +25,7 @@ export default async function UsagePage(props: UsagePageProps) {
 
   const used = client?.usageCount ?? 0;
   const limit = client?.usageLimit ?? 0;
+  const remaining = Math.max(0, limit - used);
   const pct = limit > 0 ? Math.min(100, Math.round((used / limit) * 100)) : 0;
   const blocked = !!client && limit > 0 && used >= limit;
 
@@ -29,10 +36,10 @@ export default async function UsagePage(props: UsagePageProps) {
         <section className="border-b border-white/10 py-14">
           <div className="mx-auto max-w-6xl px-6">
             <h1 className="text-balance text-4xl font-semibold tracking-tight text-zinc-50 md:text-5xl">
-              Usage
+              Dashboard
             </h1>
             <p className="mt-4 max-w-2xl text-lg leading-relaxed text-zinc-400">
-              Check your Wear Me usage and most used product images with your API key.
+              See try-ons used, try-ons remaining, and your try-on limit—and your most-used product images.
             </p>
           </div>
         </section>
@@ -81,25 +88,25 @@ export default async function UsagePage(props: UsagePageProps) {
 
                   <div className="mt-8 grid gap-6 md:grid-cols-3">
                     <div className="rounded-2xl border border-white/10 bg-zinc-950/30 p-6">
-                      <p className="text-sm font-medium text-zinc-400">Wear Me uses</p>
+                      <p className="text-sm font-medium text-zinc-400">Try-ons used</p>
                       <p className="mt-2 text-3xl font-semibold tracking-tight text-zinc-50">{used}</p>
                     </div>
                     <div className="rounded-2xl border border-white/10 bg-zinc-950/30 p-6">
-                      <p className="text-sm font-medium text-zinc-400">Limit</p>
-                      <p className="mt-2 text-3xl font-semibold tracking-tight text-zinc-50">{limit}</p>
+                      <p className="text-sm font-medium text-zinc-400">Try-ons remaining</p>
+                      <p className="mt-2 text-3xl font-semibold tracking-tight text-zinc-50">{remaining}</p>
                     </div>
                     <div className="rounded-2xl border border-white/10 bg-zinc-950/30 p-6">
-                      <p className="text-sm font-medium text-zinc-400">Usage</p>
-                      <p className="mt-2 text-3xl font-semibold tracking-tight text-zinc-50">{pct}%</p>
+                      <p className="text-sm font-medium text-zinc-400">Try-on limit</p>
+                      <p className="mt-2 text-3xl font-semibold tracking-tight text-zinc-50">{limit}</p>
                     </div>
                   </div>
 
                   <div className="mt-8">
-                    <div className="flex items-center justify-between text-sm font-medium text-zinc-300">
+                    <div className="flex flex-wrap items-center justify-between gap-2 text-sm font-medium text-zinc-300">
                       <span>
-                        {used} / {limit}
+                        Try-ons used {used} / {limit} try-on limit
                       </span>
-                      <span>{pct}%</span>
+                      <span className="tabular-nums text-zinc-400">{pct}% of limit</span>
                     </div>
                     <div className="mt-3 h-3 w-full overflow-hidden rounded-full border border-white/10 bg-zinc-950/50">
                       <div

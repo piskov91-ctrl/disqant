@@ -19,7 +19,7 @@ export function UsageLookup() {
         <div className="rounded-2xl border border-white/10 bg-zinc-900/40 p-8 backdrop-blur-sm">
           <h2 className="text-xl font-semibold tracking-tight text-zinc-50">Already a client?</h2>
           <p className="mt-2 max-w-2xl text-sm leading-relaxed text-zinc-400">
-            Enter your API key to check your current usage.
+            Enter your API key to open your dashboard and see try-ons used and your try-on limit.
           </p>
 
           <form
@@ -44,7 +44,7 @@ export function UsageLookup() {
               disabled={!targetHref}
               className="btn-accent-gradient h-11 px-6 text-sm disabled:cursor-not-allowed disabled:opacity-60"
             >
-              Check my usage
+              Open dashboard
             </button>
           </form>
         </div>
