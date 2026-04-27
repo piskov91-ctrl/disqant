@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { Footer } from "@/components/Footer";
+import { AdminTryWearMeClient } from "@/app/admin/AdminTryWearMeClient";
 
 type KeyRecord = {
   id: string;
@@ -42,7 +43,7 @@ type AnalyticsSummary = {
   demoVisitors: DemoVisitorAnalyticsRow[];
 };
 
-type AdminTab = "clients" | "analytics";
+type AdminTab = "clients" | "analytics" | "tryWearMe";
 
 const CREDIT_PLANS = [
   {
@@ -101,6 +102,8 @@ export default function AdminClient() {
 
   const [creditCalcOpen, setCreditCalcOpen] = useState(false);
   const [calcTryOnsInput, setCalcTryOnsInput] = useState("");
+  /** Which client key powers admin Try Wear Me (retailer `/api/tryon` path). */
+  const [tryWearMeKeyId, setTryWearMeKeyId] = useState<string | null>(null);
 
   const remainingTotal = useMemo(() => {
     const used = keys.reduce((s, k) => s + k.usageCount, 0);
@@ -175,6 +178,14 @@ export default function AdminClient() {
   useEffect(() => {
     void load();
   }, []);
+
+  useEffect(() => {
+    if (keys.length === 0) {
+      setTryWearMeKeyId(null);
+      return;
+    }
+    setTryWearMeKeyId((prev) => (prev && keys.some((k) => k.id === prev) ? prev : keys[0]!.id));
+  }, [keys]);
 
   useEffect(() => {
     if (activeTab === "analytics") void loadAnalytics();
@@ -340,11 +351,17 @@ export default function AdminClient() {
   }
 
   function refreshCurrentTab() {
-    if (activeTab === "clients") void load();
+    if (activeTab === "clients" || activeTab === "tryWearMe") void load();
     else void loadAnalytics();
   }
 
-  const tabBusy = activeTab === "clients" ? loading : analyticsLoading;
+  const tabBusy =
+    activeTab === "clients" || activeTab === "tryWearMe" ? loading : analyticsLoading;
+
+  const tryWearMeKeyRecord = useMemo(
+    () => keys.find((k) => k.id === tryWearMeKeyId) ?? null,
+    [keys, tryWearMeKeyId],
+  );
 
   return (
     <div className="min-h-dvh w-full bg-zinc-950 px-8 text-zinc-100">
@@ -633,6 +650,19 @@ export default function AdminClient() {
             >
               Analytics
             </button>
+            <button
+              type="button"
+              role="tab"
+              aria-selected={activeTab === "tryWearMe"}
+              onClick={() => setActiveTab("tryWearMe")}
+              className={`rounded-full px-5 py-2 text-sm font-semibold transition ${
+                activeTab === "tryWearMe"
+                  ? "bg-zinc-800 text-zinc-100 shadow-sm"
+                  : "text-zinc-500 hover:text-zinc-300"
+              }`}
+            >
+              Try Wear Me
+            </button>
           </div>
 
           {activeTab === "clients" ? (
@@ -830,6 +860,60 @@ export default function AdminClient() {
                 </p>
               </section>
             </>
+          ) : activeTab === "tryWearMe" ? (
+            <section className="mt-8 w-full overflow-hidden rounded-2xl border border-zinc-800 bg-zinc-900/60 p-6 shadow-sm md:p-8">
+              <h2 className="text-base font-semibold text-zinc-100">Try Wear Me</h2>
+              <p className="mt-1 text-sm text-zinc-400">
+                Run virtual try-on using a client&apos;s API key and Fashn quota (same flow as the public demo,
+                without demo fallback).
+              </p>
+
+              {loading ? (
+                <div className="mt-8 text-sm text-zinc-500">Loading clients…</div>
+              ) : keys.length === 0 ? (
+                <div className="mt-8 rounded-xl border border-zinc-800 bg-zinc-950/40 px-4 py-6 text-sm text-zinc-400">
+                  Create a client API key on the Clients tab first, then return here to test try-on against that
+                  key.
+                </div>
+              ) : (
+                <div className="mt-8 space-y-6">
+                  <div className="max-w-xl">
+                    <label
+                      htmlFor="admin-trywearme-key"
+                      className="block text-sm font-medium text-zinc-200"
+                    >
+                      Client for this session
+                    </label>
+                    <select
+                      id="admin-trywearme-key"
+                      value={tryWearMeKeyId ?? ""}
+                      onChange={(e) => setTryWearMeKeyId(e.target.value || null)}
+                      className="mt-2 block w-full rounded-xl border border-zinc-700 bg-zinc-950 px-4 py-3 text-sm text-zinc-100 outline-none transition focus:border-accent/60"
+                    >
+                      {keys.map((k) => (
+                        <option key={k.id} value={k.id}>
+                          {k.clientName} · {k.usageCount}/{k.usageLimit} try-ons used
+                        </option>
+                      ))}
+                    </select>
+                    {tryWearMeKeyRecord ? (
+                      <p className="mt-2 text-xs text-zinc-500">
+                        Requests use header{" "}
+                        <span className="font-mono text-zinc-400">x-api-key</span> for this client&apos;s
+                        Disquant key (prefix{" "}
+                        <span className="font-mono text-zinc-400">
+                          {(tryWearMeKeyRecord.key || "").slice(0, 8)}…
+                        </span>
+                        ).
+                      </p>
+                    ) : null}
+                  </div>
+                  {tryWearMeKeyRecord ? (
+                    <AdminTryWearMeClient key={tryWearMeKeyRecord.id} apiKey={tryWearMeKeyRecord.key} />
+                  ) : null}
+                </div>
+              )}
+            </section>
           ) : (
             <section className="mt-8 w-full space-y-6">
               {analyticsError ? (

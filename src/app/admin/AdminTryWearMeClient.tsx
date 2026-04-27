@@ -1,24 +1,14 @@
 "use client";
 
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
-import { usePathname } from "next/navigation";
 import { ChevronLeft, Folder, SwitchCamera } from "lucide-react";
 import {
   DEMO_CATALOG,
   GARMENT_PRESETS,
   PRESET_BY_ID,
-  PRESET_ID_SET,
-  catalogIdFromHistoryState,
-  cloneHistoryStatePatch,
   type DemoCatalogId,
   type GarmentPreset,
-  wearCameraFromHistoryState,
-  wearModalFromHistoryState,
-  wearPresetIdFromHistoryState,
-  wearTryOnPopCount,
 } from "@/app/demo/demoGarments";
-import { Footer } from "@/components/Footer";
-import { Header } from "@/components/Header";
 import {
   DEMO_WEAR_MODAL_CSS,
   DEMO_WEAR_MODAL_STYLE_ID,
@@ -32,10 +22,7 @@ import {
   type TryOnResponse,
 } from "@/lib/wearMeShared";
 
-export default function DemoClient() {
-  const pathname = usePathname();
-  const [urlKey, setUrlKey] = useState<string | null>(null);
-
+export function AdminTryWearMeClient({ apiKey }: { apiKey: string }) {
   const [selectedPresetId, setSelectedPresetId] = useState<GarmentPreset["id"]>(
     GARMENT_PRESETS[0]?.id ?? "tee",
   );
@@ -44,21 +31,10 @@ export default function DemoClient() {
 
   const openProductCatalog = useCallback((id: DemoCatalogId) => {
     setOpenCatalog(id);
-    if (typeof window === "undefined") return;
-    const path = window.location.pathname + window.location.search;
-    window.history.pushState({ demoCatalog: id }, "", path);
   }, []);
 
   const backToProductCategories = useCallback(() => {
-    if (typeof window === "undefined") {
-      setOpenCatalog(null);
-      return;
-    }
-    if (catalogIdFromHistoryState(window.history.state) != null) {
-      window.history.back();
-    } else {
-      setOpenCatalog(null);
-    }
+    setOpenCatalog(null);
   }, []);
 
   const [wearOpen, setWearOpen] = useState(false);
@@ -93,20 +69,6 @@ export default function DemoClient() {
   const wearTryOnInFlightRef = useRef(false);
   /** Avoid refetching the sample garment on every popstate when the same preset is already loaded. */
   const wearLoadedPresetIdRef = useRef<GarmentPreset["id"] | null>(null);
-
-  /** Admin analytics: one demo page visit per load (debounce shields React Strict Mode double-mount in dev). */
-  useEffect(() => {
-    const key = "disquant_demo_visit_last_beacon_ms";
-    const now = Date.now();
-    try {
-      const prev = Number(sessionStorage.getItem(key) ?? "0");
-      if (now - prev < 800) return;
-      sessionStorage.setItem(key, String(now));
-    } catch {
-      /* ignore */
-    }
-    void fetch("/api/demo-visit", { method: "POST" }).catch(() => {});
-  }, []);
 
   useEffect(() => {
     wearStageUrlRef.current = wearStageUrl;
@@ -198,104 +160,7 @@ export default function DemoClient() {
     }
   }, []);
 
-  const applyDemoPopState = useCallback(
-    (state: unknown) => {
-      const cat = catalogIdFromHistoryState(state);
-      setOpenCatalog(cat);
-
-      const cam = wearCameraFromHistoryState(state);
-      const modal = wearModalFromHistoryState(state);
-      const pid = wearPresetIdFromHistoryState(state);
-      const preset = pid ? (PRESET_BY_ID[pid] ?? null) : null;
-
-      if (!modal || !preset) {
-        wearLoadedPresetIdRef.current = null;
-        stopWearStream();
-        setWearShowVideo(false);
-        clearWearProgressTimer();
-        const snap = wearStageUrlRef.current;
-        if (snap?.startsWith("blob:")) URL.revokeObjectURL(snap);
-        setWearBackdropOpen(false);
-        setWearClosing(false);
-        setWearOpen(false);
-        setWearPreset(null);
-        setWearStageUrl(null);
-        setWearHasPhoto(false);
-        setWearModelFile(null);
-        setWearGarmentFile(null);
-        setWearGarmentLoading(false);
-        setWearProcessing(false);
-        setWearShowProgress(false);
-        setWearProgressPct(0);
-        setWearSaveVisible(false);
-        setWearGenerating(false);
-        setWearError(null);
-        setWearResultBlob(null);
-        setWearCameraFacing("user");
-        setWearFlippingCamera(false);
-        wearTryOnInFlightRef.current = false;
-        return;
-      }
-
-      setWearOpen(true);
-      setWearClosing(false);
-      setWearPreset(preset);
-      setSelectedPresetId(preset.id);
-      setWearShowVideo(cam);
-      if (!cam) stopWearStream();
-      setWearError(null);
-      void window.requestAnimationFrame(() => setWearBackdropOpen(true));
-
-      if (wearLoadedPresetIdRef.current !== preset.id) {
-        wearLoadedPresetIdRef.current = preset.id;
-        setWearGarmentLoading(true);
-        void (async () => {
-          try {
-            const raw = await fetchUrlAsFile(preset.imageUrl, `${preset.id}.jpg`);
-            const g = await compressImageToMax1000px(raw);
-            setWearGarmentFile(g);
-          } catch {
-            setWearError("Could not load sample product image.");
-            wearLoadedPresetIdRef.current = null;
-          } finally {
-            setWearGarmentLoading(false);
-          }
-        })();
-      }
-    },
-    [clearWearProgressTimer, stopWearStream],
-  );
-
-  useEffect(() => {
-    if (typeof window === "undefined") return;
-    const raw = new URLSearchParams(window.location.search).get("key");
-    setUrlKey(raw?.trim() || null);
-  }, [pathname]);
-
-  useEffect(() => {
-    if (typeof window === "undefined") return;
-    const onPopState = (e: PopStateEvent) => {
-      const raw = new URLSearchParams(window.location.search).get("key");
-      setUrlKey(raw?.trim() || null);
-      applyDemoPopState(e.state);
-    };
-    window.addEventListener("popstate", onPopState);
-    return () => window.removeEventListener("popstate", onPopState);
-  }, [applyDemoPopState]);
-
-  useEffect(() => {
-    if (typeof window === "undefined") return;
-    applyDemoPopState(window.history.state);
-  }, [applyDemoPopState]);
-
   const closeWearModal = useCallback(() => {
-    if (typeof window !== "undefined") {
-      const pops = wearTryOnPopCount(window.history.state);
-      if (pops > 0) {
-        window.history.go(-pops);
-        return;
-      }
-    }
     setWearClosing(true);
     setWearBackdropOpen(false);
     setWearCameraFacing("user");
@@ -374,27 +239,8 @@ export default function DemoClient() {
           setWearGarmentLoading(false);
         }
       })();
-
-      if (typeof window !== "undefined" && openCatalog) {
-        const path = window.location.pathname + window.location.search;
-        const cur = cloneHistoryStatePatch(window.history.state);
-        const next: Record<string, unknown> = {
-          ...cur,
-          demoCatalog: openCatalog,
-          wearModal: true,
-          wearPresetId: preset.id,
-        };
-        delete next.wearCamera;
-        const st = window.history.state;
-        const replace = wearModalFromHistoryState(st) && !wearCameraFromHistoryState(st);
-        if (replace) {
-          window.history.replaceState(next, "", path);
-        } else {
-          window.history.pushState(next, "", path);
-        }
-      }
     },
-    [clearWearProgressTimer, openCatalog, stopWearStream],
+    [clearWearProgressTimer, stopWearStream],
   );
 
   const onWearGalleryPick = useCallback(
@@ -426,18 +272,10 @@ export default function DemoClient() {
         void wearVideoRef.current.play();
       }
       setWearShowVideo(true);
-      if (typeof window !== "undefined" && !wearCameraFromHistoryState(window.history.state)) {
-        const path = window.location.pathname + window.location.search;
-        const cur = cloneHistoryStatePatch(window.history.state);
-        const next: Record<string, unknown> = { ...cur, wearCamera: true, wearModal: true };
-        if (openCatalog) next.demoCatalog = openCatalog;
-        if (wearPreset) next.wearPresetId = wearPreset.id;
-        window.history.pushState(next, "", path);
-      }
     } catch {
       /* user may deny; gallery still works */
     }
-  }, [stopWearStream, wearCameraFacing, openCatalog, wearPreset]);
+  }, [stopWearStream, wearCameraFacing]);
 
   const onWearFlipCamera = useCallback(async () => {
     if (!wearShowVideo) return;
@@ -477,14 +315,8 @@ export default function DemoClient() {
   }, [wearShowVideo, wearCameraFacing, stopWearStream]);
 
   const onWearCameraBack = useCallback(() => {
-    if (typeof window !== "undefined" && wearCameraFromHistoryState(window.history.state)) {
-      stopWearStream();
-      setWearShowVideo(false);
-      window.history.back();
-    } else {
-      stopWearStream();
-      setWearShowVideo(false);
-    }
+    stopWearStream();
+    setWearShowVideo(false);
   }, [stopWearStream]);
 
   const onWearCapturePhoto = useCallback(() => {
@@ -503,9 +335,6 @@ export default function DemoClient() {
         stopWearStream();
         setWearShowVideo(false);
         onWearGalleryPick(f);
-        if (typeof window !== "undefined" && wearCameraFromHistoryState(window.history.state)) {
-          window.history.back();
-        }
       },
       "image/jpeg",
       0.92,
@@ -546,8 +375,10 @@ export default function DemoClient() {
       fd.set("category", wearPreset.category);
       fd.set("generationMode", "balanced");
       const tryOnTrace = globalThis.crypto?.randomUUID?.() ?? `tryon-${Date.now()}-${Math.random()}`;
-      const reqHeaders: Record<string, string> = { "x-tryon-trace": tryOnTrace };
-      if (urlKey) reqHeaders["x-api-key"] = urlKey;
+      const reqHeaders: Record<string, string> = {
+        "x-tryon-trace": tryOnTrace,
+        "x-api-key": apiKey,
+      };
       console.log(
         "[disquant] browser: about to fetch POST /api/tryon (one successful log per try-on; if you see 2+ per click, the client is firing more than one request before the in-flight ref blocks it)",
         { tryOnTrace },
@@ -567,21 +398,8 @@ export default function DemoClient() {
           setWearShowProgress(false);
           return;
         }
-        if (
-          res.status === 403 &&
-          "code" in data &&
-          data.code === "USAGE_LIMIT" &&
-          data.keyKind === "demo"
-        ) {
-          setWearError(
-            "You've explored all our demo try-ons! Ready to bring this to your store? Contact us at hello@disqant.com to get started",
-          );
-          setWearProcessing(false);
-          setWearShowProgress(false);
-          return;
-        }
         if (res.status === 403 && "code" in data && data.code === "USAGE_LIMIT") {
-          setWearError("Virtual try-on temporarily unavailable. Please try again later");
+          setWearError("Try-on limit reached for this client key, or virtual try-on is temporarily unavailable.");
           setWearProcessing(false);
           setWearShowProgress(false);
           return;
@@ -631,7 +449,7 @@ export default function DemoClient() {
   }, [
     clearWearProgressTimer,
     startWearFakeProgress,
-    urlKey,
+    apiKey,
     wearGarmentFile,
     wearModelFile,
     wearPreset,
@@ -686,7 +504,7 @@ export default function DemoClient() {
   }, [openCatalogDef, openCatalog, selectedPresetId]);
 
   return (
-    <div className="min-h-dvh bg-zinc-950 text-zinc-100">
+    <div className="text-zinc-100">
       {wearOpen && (
         <div
           role="presentation"
@@ -900,15 +718,11 @@ export default function DemoClient() {
           </div>
         </div>
       )}
-      <Header />
 
-      <main className="mx-auto max-w-5xl px-6 py-12 md:py-16">
-        <h1 className="text-balance text-3xl font-semibold tracking-tight text-zinc-50 md:text-4xl">
-          Virtual try-on demo
-        </h1>
-        <p className="mt-4 text-zinc-400">
-          Tap <span className="font-semibold text-zinc-100">Wear Me ✨</span> on a sample product, then upload your
-          photo in the modal (gallery or camera), generate, and download your try-on.
+      <div className="mx-auto max-w-5xl">
+        <h2 className="text-xl font-semibold tracking-tight text-zinc-100 md:text-2xl">Try Wear Me</h2>
+        <p className="mt-2 text-sm text-zinc-400">
+          Same flow as the public demo: pick a garment category, open <span className="font-semibold text-zinc-200">Wear Me ✨</span>, then use gallery or camera and generate. Requests use the API key you selected above (retailer mode — counts against that client&apos;s try-on limit).
         </p>
 
         <div
@@ -1037,8 +851,7 @@ export default function DemoClient() {
           All product images shown are for demonstration purposes only. These are sample items used to showcase the
           virtual try-on technology and do not represent real products for sale.
         </p>
-      </main>
-      <Footer />
+      </div>
     </div>
   );
 }
