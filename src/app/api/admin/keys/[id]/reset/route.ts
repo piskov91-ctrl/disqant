@@ -17,7 +17,7 @@ export async function POST(_req: Request, ctx: { params: Promise<{ id: string }>
     return Response.json({ ok: true, usageCount: rec.usageCount });
   } catch (e) {
     return Response.json(
-      { error: e instanceof Error ? e.message : "Failed to reset usage." },
+      { error: e instanceof Error ? e.message : "Failed to reset try-ons used." },
       { status: 400 },
     );
   }

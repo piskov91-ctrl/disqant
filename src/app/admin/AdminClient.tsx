@@ -236,7 +236,7 @@ export default function AdminClient() {
   }
 
   async function resetKeyUsage(id: string) {
-    const ok = window.confirm("Reset usage counter to 0 for this client?");
+    const ok = window.confirm("Reset try-ons used to 0 for this client?");
     if (!ok) return;
 
     setError(null);
@@ -247,14 +247,14 @@ export default function AdminClient() {
       const data = (await res.json()) as { ok?: true; usageCount?: number; error?: string };
       if (!res.ok) {
         if (data.error === "Unauthorized.") window.location.reload();
-        setError(data.error || "Failed to reset usage.");
+        setError(data.error || "Failed to reset try-ons used.");
         return;
       }
       setKeys((prev) =>
         prev.map((k) => (k.id === id ? { ...k, usageCount: 0 } : k)),
       );
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Failed to reset usage.");
+      setError(e instanceof Error ? e.message : "Failed to reset try-ons used.");
     }
   }
 
@@ -476,7 +476,7 @@ export default function AdminClient() {
                   Edit client
                 </p>
                 <p className="mt-1 text-sm text-zinc-400">
-                  Update client name, usage limit, and (optionally) replace the Fashn.ai API key.
+                  Update client name, try-on limit, and (optionally) replace the Fashn.ai API key.
                 </p>
               </div>
               <button
@@ -513,7 +513,7 @@ export default function AdminClient() {
                 </p>
               </div>
               <div>
-                <label className="block text-sm font-medium text-zinc-200">Usage limit</label>
+                <label className="block text-sm font-medium text-zinc-200">Try-on limit</label>
                 <input
                   value={editUsageLimit}
                   onChange={(e) => setEditUsageLimit(e.target.value)}
@@ -640,7 +640,7 @@ export default function AdminClient() {
               <section className="mt-8 w-full overflow-hidden rounded-2xl border border-zinc-800 bg-zinc-900/60 p-6 shadow-sm md:p-8">
                 <h2 className="text-base font-semibold text-zinc-100">Create new client</h2>
                 <p className="mt-1 text-sm text-zinc-400">
-                  Create a client API key with a usage limit.
+                  Create a client API key with a try-on limit.
                 </p>
 
                 <form onSubmit={createKey} className="mt-6 grid gap-4 md:grid-cols-12 md:items-end">
@@ -665,7 +665,7 @@ export default function AdminClient() {
                     />
                   </div>
                   <div className="md:col-span-2">
-                    <label className="block text-sm font-medium text-zinc-200">Usage limit</label>
+                    <label className="block text-sm font-medium text-zinc-200">Try-on limit</label>
                     <input
                       value={usageLimit}
                       onChange={(e) => setUsageLimit(e.target.value)}
@@ -702,7 +702,8 @@ export default function AdminClient() {
                   <div>
                     <h2 className="text-base font-semibold text-zinc-100">Clients</h2>
                     <p className="mt-1 text-sm text-zinc-400">
-                      {keys.length} total · Usage {remainingTotal.used}/{remainingTotal.limit}
+                      {keys.length} clients · Try-ons used {remainingTotal.used} / {remainingTotal.limit} try-on limit
+                      (summed across clients)
                     </p>
                   </div>
                 </div>
@@ -716,7 +717,7 @@ export default function AdminClient() {
                     <div className="grid w-full grid-cols-[minmax(0,1.35fr)_minmax(0,0.7fr)_minmax(0,1.6fr)_minmax(0,0.7fr)_minmax(0,0.55fr)_minmax(0,0.7fr)_minmax(0,0.55fr)_minmax(0,0.6fr)_minmax(0,0.7fr)] gap-2 border-b border-zinc-800 px-4 py-3 text-xs font-semibold uppercase tracking-wider text-zinc-500 md:px-6">
                       <div>Client Name</div>
                       <div>API Key</div>
-                      <div>Usage / Limit</div>
+                      <div>Try-ons used / Try-on limit</div>
                       <div>Status</div>
                       <div className="text-center">EDIT</div>
                       <div className="text-center">COPY</div>
@@ -801,11 +802,11 @@ export default function AdminClient() {
                           <div className="text-center">
                             <button
                               type="button"
-                              onClick={() => void resetKeyUsage(k.id)}
-                              className="inline-flex h-9 items-center justify-center rounded-full border border-zinc-600 bg-zinc-800 px-3 text-sm font-semibold text-zinc-100 transition hover:border-zinc-500 hover:bg-zinc-700"
-                              aria-label="Reset"
-                            >
-                              Reset
+                            onClick={() => void resetKeyUsage(k.id)}
+                            className="inline-flex h-9 items-center justify-center rounded-full border border-zinc-600 bg-zinc-800 px-3 text-sm font-semibold text-zinc-100 transition hover:border-zinc-500 hover:bg-zinc-700"
+                            aria-label="Reset try-ons used"
+                          >
+                            Reset
                             </button>
                           </div>
                           <div className="text-center">

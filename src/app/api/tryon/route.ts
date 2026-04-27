@@ -175,7 +175,7 @@ export async function POST(req: Request) {
     client = await assertClientCanUseByApiKey(effectiveClientApiKey);
   } catch (e) {
     const msg = e instanceof Error ? e.message : "Unauthorized.";
-    const isUsage = msg === "Usage limit exceeded.";
+    const isUsage = msg === "Try-on limit exceeded.";
     if (isUsage) {
       return Response.json(
         {

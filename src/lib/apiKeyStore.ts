@@ -69,7 +69,7 @@ export async function createClientKey(params: {
   const clientName = params.clientName.trim();
   if (!clientName) throw new Error("Client name is required.");
   if (!Number.isFinite(params.usageLimit) || params.usageLimit <= 0) {
-    throw new Error("Usage limit must be a positive number.");
+    throw new Error("Try-on limit must be a positive number.");
   }
 
   const redis = getRedis();
@@ -127,7 +127,7 @@ export async function getClientByApiKey(apiKey: string) {
 export async function assertClientCanUseByApiKey(apiKey: string) {
   const client = await getClientByApiKey(apiKey);
   if (!client) throw new Error("Invalid API key.");
-  if (client.usageCount >= client.usageLimit) throw new Error("Usage limit exceeded.");
+  if (client.usageCount >= client.usageLimit) throw new Error("Try-on limit exceeded.");
   return client;
 }
 
@@ -135,7 +135,7 @@ export async function incrementUsageOrThrow(id: string) {
   const redis = getRedis();
   const rec = (await redis.get(recordKey(id))) as ClientApiKeyRecord | null;
   if (!rec) throw new Error("Client key not found.");
-  if (rec.usageCount >= rec.usageLimit) throw new Error("Usage limit exceeded.");
+  if (rec.usageCount >= rec.usageLimit) throw new Error("Try-on limit exceeded.");
   const next: ClientApiKeyRecord = { ...rec, usageCount: rec.usageCount + 1 };
   await redis.set(recordKey(id), next);
   return next;
@@ -163,7 +163,7 @@ export async function updateClientKey(params: {
   const clientName = params.clientName.trim();
   if (!clientName) throw new Error("Client name is required.");
   if (!Number.isFinite(params.usageLimit) || params.usageLimit <= 0) {
-    throw new Error("Usage limit must be a positive number.");
+    throw new Error("Try-on limit must be a positive number.");
   }
 
   const rec = (await redis.get(recordKey(id))) as ClientApiKeyRecord | null;
