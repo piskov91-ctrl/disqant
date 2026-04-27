@@ -207,6 +207,18 @@
       + ".dq-brand span{font:900 12px/1 system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;color:#0f0f14;letter-spacing:.25px;}"
       + ".dq-brand small{margin-left:8px;font:700 12px/1 system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;color:rgba(15,15,20,.55);}"
 
+      // Retail try-on limit (USAGE_LIMIT) — customer-facing
+      + ".dq-limit-banner{display:none;align-items:flex-start;gap:14px;padding:16px 18px;border-radius:18px;"
+      + "border:1px solid rgba(180,83,9,.28);"
+      + "background:linear-gradient(135deg,rgba(255,251,235,.98) 0%,rgba(254,243,199,.92) 50%,rgba(253,230,138,.88) 100%);"
+      + "box-shadow:0 10px 28px rgba(180,83,9,.1),inset 0 1px 0 rgba(255,255,255,.65);}"
+      + ".dq-limit-icon{flex-shrink:0;width:44px;height:44px;border-radius:14px;display:flex;align-items:center;justify-content:center;"
+      + "background:linear-gradient(145deg,rgba(251,191,36,.35),rgba(245,158,11,.22));"
+      + "border:1px solid rgba(180,83,9,.2);color:#b45309;}"
+      + ".dq-limit-icon svg{display:block;width:24px;height:24px;}"
+      + ".dq-limit-copy{margin:0;font:800 14px/1.5 system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;color:#78350f;"
+      + "letter-spacing:.01em;max-width:36rem;}"
+
       // Mobile tweaks
       + "@media (max-width:420px){.dq-body{padding:10px}.dq-stage{height:min(74vh,520px)}.dq-choice{min-width:100%}}";
 
@@ -400,6 +412,20 @@
     OPEN_MODAL = m;
 
     var body = m.body;
+
+    var limitBanner = document.createElement("div");
+    limitBanner.className = "dq-limit-banner";
+    limitBanner.setAttribute("role", "alert");
+    limitBanner.style.display = "none";
+    var limitIcon = document.createElement("div");
+    limitIcon.className = "dq-limit-icon";
+    limitIcon.innerHTML = "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><circle cx=\"12\" cy=\"12\" r=\"10\"/><path d=\"M12 6v6l4 2\"/></svg>";
+    var limitCopy = document.createElement("p");
+    limitCopy.className = "dq-limit-copy";
+    limitCopy.textContent = "Wear Me is temporarily unavailable. Please check back soon!";
+    limitBanner.appendChild(limitIcon);
+    limitBanner.appendChild(limitCopy);
+    body.appendChild(limitBanner);
 
     var modelFile = null;
     var garmentFile = null;
@@ -729,6 +755,17 @@
         try { data = await res.json(); } catch (_e) { }
         if (!res.ok) {
           stopLoading(false);
+          var usageLimited =
+            res.status === 403 &&
+            data &&
+            data.code === "USAGE_LIMIT" &&
+            data.keyKind === "client";
+          if (usageLimited) {
+            limitBanner.style.display = "flex";
+            try {
+              limitBanner.scrollIntoView({ block: "nearest", behavior: "smooth" });
+            } catch (_scroll) { }
+          }
           return;
         }
 
