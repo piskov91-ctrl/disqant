@@ -264,18 +264,18 @@ const GARMENT_PRESETS: GarmentPreset[] = [
   {
     id: "swim_men",
     label: "Swim (men's)",
-    name: "Men's swim shorts (studio white, full garments, no model)",
+    name: "Men's swim shorts — flat lay on white (overhead, catalog style)",
     category: "bottoms",
-    // Swim-style shorts lined on white — product-style, no people. https://unsplash.com/photos/three-mens-shorts-are-lined-up-against-a-white-background-xa8hkIGTTf8
+    // TuanAnh Blue — swim shorts laid flat on white, shot from above; no models. https://unsplash.com/photos/three-pairs-of-mens-shorts-on-a-white-background-pcUwRAJX5es
     imageUrl:
-      "https://images.unsplash.com/photo-1719473458937-d42f1f9aad00?auto=format&fit=crop&w=1600&q=85",
+      "https://images.unsplash.com/photo-1719473466836-ff9f5ebe0e1b?auto=format&fit=crop&w=1600&q=85",
   },
   {
     id: "swim_women",
     label: "Swim (women's)",
-    name: "Women's swimsuit — two-piece flat lay on white (no model)",
+    name: "Women's bikini — top & bottom flat on white (overhead, catalog style)",
     category: "tops",
-    // Markus Kammermann — bikini laid on white surface, both pieces visible, no logos. https://unsplash.com/photos/a-blue-bikini-sits-on-a-white-surface-lXKvhH1_tEk
+    // Markus Kammermann — top and bottom laid separately on white, overhead product shot; no models. https://unsplash.com/photos/a-blue-bikini-sits-on-a-white-surface-lXKvhH1_tEk
     imageUrl:
       "https://images.unsplash.com/photo-1749220781965-b745d9efd3ce?auto=format&fit=crop&w=1600&q=85",
   },
