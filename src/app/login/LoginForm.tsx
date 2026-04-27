@@ -87,12 +87,12 @@ function LoginFormInner() {
         disabled={loading}
         className="btn-accent-gradient h-12 w-full text-sm font-semibold disabled:cursor-not-allowed disabled:opacity-60"
       >
-        {loading ? "Signing in…" : "Log in"}
+        {loading ? "Signing in…" : "Sign In"}
       </button>
 
       <p className="text-center text-sm text-zinc-500">
         No account?{" "}
-        <Link href="/signup" className="font-medium text-zinc-200 underline-offset-2 hover:underline">
+        <Link href="/register" className="font-medium text-zinc-200 underline-offset-2 hover:underline">
           Sign up
         </Link>
       </p>

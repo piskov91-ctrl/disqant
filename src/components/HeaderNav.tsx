@@ -7,6 +7,8 @@ import { Menu, X } from "lucide-react";
 
 const navTextClass = "text-sm text-zinc-600 transition hover:text-zinc-900";
 const navStackClass = "block rounded-xl px-3 py-2 text-base text-zinc-800 transition hover:bg-surface-raised";
+const navAuthBtnClass =
+  "hidden sm:inline-flex h-10 items-center justify-center rounded-full border border-surface-border bg-white px-4 text-sm font-semibold text-zinc-900 shadow-sm transition hover:border-zinc-300 hover:bg-surface-raised";
 
 export function HeaderNav() {
   const pathname = usePathname();
@@ -59,15 +61,15 @@ export function HeaderNav() {
 
       <Link
         href="/login"
-        className={`${navTextClass} hidden sm:inline${pathname === "/login" ? " font-medium text-zinc-900" : ""}`}
+        className={`${navAuthBtnClass}${pathname === "/login" ? " ring-2 ring-zinc-900/15" : ""}`}
       >
-        Log in
+        Sign In
       </Link>
       <Link
-        href="/signup"
-        className={`${navTextClass} hidden sm:inline${pathname === "/signup" ? " font-medium text-zinc-900" : ""}`}
+        href="/register"
+        className={`${navAuthBtnClass}${pathname === "/register" ? " ring-2 ring-zinc-900/15" : ""}`}
       >
-        Sign up
+        Sign Up
       </Link>
       <Link href="/demo" className="btn-accent-gradient h-10 px-5 text-sm font-semibold">
         Try it now
@@ -127,11 +129,19 @@ export function HeaderNav() {
 
               <div className="my-2 h-px w-full bg-surface-border" />
 
-              <Link href="/login" className={navStackClass} onClick={() => setOpen(false)}>
-                Log in
+              <Link
+                href="/login"
+                className="inline-flex h-11 w-full items-center justify-center rounded-full border border-surface-border bg-white text-sm font-semibold text-zinc-900 shadow-sm transition hover:border-zinc-300 hover:bg-surface-raised"
+                onClick={() => setOpen(false)}
+              >
+                Sign In
               </Link>
-              <Link href="/signup" className={navStackClass} onClick={() => setOpen(false)}>
-                Sign up
+              <Link
+                href="/register"
+                className="inline-flex h-11 w-full items-center justify-center rounded-full border border-surface-border bg-white text-sm font-semibold text-zinc-900 shadow-sm transition hover:border-zinc-300 hover:bg-surface-raised"
+                onClick={() => setOpen(false)}
+              >
+                Sign Up
               </Link>
               <Link
                 href="/demo"
