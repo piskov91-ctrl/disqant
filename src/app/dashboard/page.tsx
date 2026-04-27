@@ -5,6 +5,8 @@ import { Header } from "@/components/Header";
 import { TopProductThumbnails } from "@/components/TopProductThumbnails";
 import { getClientKeyRecordById } from "@/lib/apiKeyStore";
 import { getRetailerSessionUser } from "@/lib/retailerAuth";
+import { TryOnTimingCharts } from "@/components/TryOnTimingCharts";
+import { getTryOnTimingForClient } from "@/lib/platformAnalytics";
 import { getTopTryOnProducts } from "@/lib/tryOnAnalytics";
 import { RetailerDashboardClient } from "./RetailerDashboardClient";
 
@@ -41,6 +43,7 @@ export default async function DashboardPage() {
   }
 
   const topProducts = await getTopTryOnProducts(client.id, 5);
+  const tryOnTiming = await getTryOnTimingForClient(client.id);
   const used = client.usageCount;
   const limit = client.usageLimit;
   const remaining = Math.max(0, limit - used);
@@ -141,6 +144,13 @@ export default async function DashboardPage() {
                   </div>
                 </div>
               </div>
+
+              <TryOnTimingCharts
+                variant="dashboard"
+                subtitle="Try-ons billed to your API key (all time)."
+                tryOnByHourUtc={tryOnTiming.tryOnByHourUtc}
+                tryOnByWeekdayUtc={tryOnTiming.tryOnByWeekdayUtc}
+              />
 
               <div className="rounded-2xl border border-white/10 bg-zinc-900/40 p-8 backdrop-blur-sm">
                 <h2 className="text-lg font-semibold text-zinc-50">Top Wear Me product images</h2>

@@ -16,6 +16,18 @@ const TRYON_TOTAL = "disquant:analytics:tryon:total";
 const TRYON_RETAILER = "disquant:analytics:tryon:retailer";
 const TRYON_VISITOR = "disquant:analytics:tryon:visitor";
 
+/** All completed try-ons, UTC hour 0–23 → count (Redis hash field = hour). */
+const TRYON_GLOBAL_HOUR_UTC = "disquant:analytics:tryon:global:hourUtc";
+/** All completed try-ons, UTC weekday 0=Sun … 6=Sat → count. */
+const TRYON_GLOBAL_WEEKDAY_UTC = "disquant:analytics:tryon:global:weekdayUtc";
+
+function tryOnClientHourKey(clientId: string) {
+  return `disquant:analytics:tryon:client:${clientId}:hourUtc`;
+}
+function tryOnClientWeekdayKey(clientId: string) {
+  return `disquant:analytics:tryon:client:${clientId}:weekdayUtc`;
+}
+
 const CLIENT_STATS_PREFIX = "disquant:analytics:clientStats:";
 const CLIENT_STATS_INDEX = "disquant:analytics:clientStats:ids";
 
@@ -43,6 +55,13 @@ export type DemoVisitorAnalyticsRow = {
   lastActive: string | null;
 };
 
+export type TryOnTimingBuckets = {
+  /** Length 24: index = UTC hour 0–23. */
+  tryOnByHourUtc: number[];
+  /** Length 7: index = JS getUTCDay() 0=Sun … 6=Sat. */
+  tryOnByWeekdayUtc: number[];
+};
+
 export type PlatformAnalyticsSummary = {
   demoVisitsToday: number;
   demoVisitsThisMonth: number;
@@ -51,12 +70,55 @@ export type PlatformAnalyticsSummary = {
   tryOnsVisitor: number;
   clients: ClientAnalyticsRow[];
   demoVisitors: DemoVisitorAnalyticsRow[];
-};
+} & TryOnTimingBuckets;
 
 function num(v: unknown): number {
   if (v == null) return 0;
   const n = Number(v);
   return Number.isFinite(n) ? n : 0;
+}
+
+function hashToBuckets(h: Record<string, string> | null | undefined, length: number): number[] {
+  if (!h) return Array.from({ length }, () => 0);
+  return Array.from({ length }, (_, i) => num(h[String(i)]));
+}
+
+async function loadGlobalTryOnTiming(redis: ReturnType<typeof getRedis>): Promise<TryOnTimingBuckets> {
+  const [hHour, hWeek] = await Promise.all([
+    redis.hgetall(TRYON_GLOBAL_HOUR_UTC),
+    redis.hgetall(TRYON_GLOBAL_WEEKDAY_UTC),
+  ]);
+  return {
+    tryOnByHourUtc: hashToBuckets(hHour as Record<string, string> | null, 24),
+    tryOnByWeekdayUtc: hashToBuckets(hWeek as Record<string, string> | null, 7),
+  };
+}
+
+/** Per-client try-on timing (all try-ons billed to this client id). */
+export async function getTryOnTimingForClient(clientId: string): Promise<TryOnTimingBuckets> {
+  if (!clientId) {
+    return {
+      tryOnByHourUtc: Array.from({ length: 24 }, () => 0),
+      tryOnByWeekdayUtc: Array.from({ length: 7 }, () => 0),
+    };
+  }
+  try {
+    const redis = getRedis();
+    const [hHour, hWeek] = await Promise.all([
+      redis.hgetall(tryOnClientHourKey(clientId)),
+      redis.hgetall(tryOnClientWeekdayKey(clientId)),
+    ]);
+    return {
+      tryOnByHourUtc: hashToBuckets(hHour as Record<string, string> | null, 24),
+      tryOnByWeekdayUtc: hashToBuckets(hWeek as Record<string, string> | null, 7),
+    };
+  } catch (e) {
+    console.error("[platformAnalytics] getTryOnTimingForClient failed", e);
+    return {
+      tryOnByHourUtc: Array.from({ length: 24 }, () => 0),
+      tryOnByWeekdayUtc: Array.from({ length: 7 }, () => 0),
+    };
+  }
 }
 
 /** Best-effort client IP for analytics (Vercel / proxies). */
@@ -199,13 +261,27 @@ export async function recordTryOnCompleted(params: {
       redis.incr(isRetailer ? TRYON_RETAILER : TRYON_VISITOR),
     ]);
 
+    const hourUtc = now.getUTCHours();
+    const weekdayUtc = now.getUTCDay();
+
+    const globalTiming = [
+      redis.hincrby(TRYON_GLOBAL_HOUR_UTC, String(hourUtc), 1),
+      redis.hincrby(TRYON_GLOBAL_WEEKDAY_UTC, String(weekdayUtc), 1),
+    ];
+    const clientTiming = isRetailer
+      ? [
+          redis.hincrby(tryOnClientHourKey(clientId), String(hourUtc), 1),
+          redis.hincrby(tryOnClientWeekdayKey(clientId), String(weekdayUtc), 1),
+        ]
+      : [];
+
     if (isRetailer) {
-      await bumpClientTryOn(clientId, clientName, at);
+      await Promise.all([bumpClientTryOn(clientId, clientName, at), ...globalTiming, ...clientTiming]);
     } else {
       const sid = demoSessionId?.trim() || null;
       const visitorId =
         sid && isLikelySessionId(sid) ? sid : `ip:${demoIp.replace(/[^\d.a-fA-F:]/g, "_").slice(0, 120) || "unknown"}`;
-      await bumpDemoVisitorTryOn(visitorId, demoIp, at, atMs);
+      await Promise.all([bumpDemoVisitorTryOn(visitorId, demoIp, at, atMs), ...globalTiming]);
     }
   } catch (e) {
     console.error("[platformAnalytics] recordTryOnCompleted failed", e);
@@ -271,6 +347,8 @@ export async function getPlatformAnalyticsSummary(): Promise<PlatformAnalyticsSu
       });
     }
 
+    const timing = await loadGlobalTryOnTiming(redis);
+
     return {
       demoVisitsToday: num(demoToday),
       demoVisitsThisMonth: num(demoMonth),
@@ -279,6 +357,7 @@ export async function getPlatformAnalyticsSummary(): Promise<PlatformAnalyticsSu
       tryOnsVisitor: num(tryOnsVisitor),
       clients: clientRows,
       demoVisitors,
+      ...timing,
     };
   } catch (e) {
     console.error("[platformAnalytics] getPlatformAnalyticsSummary failed", e);
@@ -290,6 +369,8 @@ export async function getPlatformAnalyticsSummary(): Promise<PlatformAnalyticsSu
       tryOnsVisitor: 0,
       clients: [],
       demoVisitors: [],
+      tryOnByHourUtc: Array.from({ length: 24 }, () => 0),
+      tryOnByWeekdayUtc: Array.from({ length: 7 }, () => 0),
     };
   }
 }

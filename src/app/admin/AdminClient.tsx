@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { Footer } from "@/components/Footer";
+import { TryOnTimingCharts } from "@/components/TryOnTimingCharts";
 import { AdminWearMeClient } from "@/app/admin/AdminWearMeClient";
 
 type KeyRecord = {
@@ -41,6 +42,8 @@ type AnalyticsSummary = {
   tryOnsVisitor: number;
   clients: ClientAnalyticsRow[];
   demoVisitors: DemoVisitorAnalyticsRow[];
+  tryOnByHourUtc: number[];
+  tryOnByWeekdayUtc: number[];
 };
 
 type AdminTab = "clients" | "analytics" | "wearMe";
@@ -159,6 +162,8 @@ export default function AdminClient() {
         setAnalyticsError(data.error || "Failed to load analytics.");
         return;
       }
+      const h = Array.isArray(data.tryOnByHourUtc) ? data.tryOnByHourUtc : [];
+      const w = Array.isArray(data.tryOnByWeekdayUtc) ? data.tryOnByWeekdayUtc : [];
       setAnalytics({
         demoVisitsToday: data.demoVisitsToday,
         demoVisitsThisMonth: data.demoVisitsThisMonth,
@@ -167,6 +172,12 @@ export default function AdminClient() {
         tryOnsVisitor: data.tryOnsVisitor,
         clients: Array.isArray(data.clients) ? data.clients : [],
         demoVisitors: Array.isArray(data.demoVisitors) ? data.demoVisitors : [],
+        tryOnByHourUtc: Array.from({ length: 24 }, (_, i) =>
+          typeof h[i] === "number" && Number.isFinite(h[i]) ? h[i] : 0,
+        ),
+        tryOnByWeekdayUtc: Array.from({ length: 7 }, (_, i) =>
+          typeof w[i] === "number" && Number.isFinite(w[i]) ? w[i] : 0,
+        ),
       });
     } catch (e) {
       setAnalyticsError(e instanceof Error ? e.message : "Failed to load analytics.");
@@ -1002,6 +1013,13 @@ export default function AdminClient() {
                       </div>
                     </div>
                   </div>
+
+                  <TryOnTimingCharts
+                    variant="admin"
+                    subtitle="All completed try-ons across the platform."
+                    tryOnByHourUtc={analytics.tryOnByHourUtc}
+                    tryOnByWeekdayUtc={analytics.tryOnByWeekdayUtc}
+                  />
 
                   <div className="rounded-2xl border border-zinc-800 bg-zinc-900/60 p-0 overflow-hidden">
                     <div className="border-b border-zinc-800 px-6 py-5 md:px-8">
