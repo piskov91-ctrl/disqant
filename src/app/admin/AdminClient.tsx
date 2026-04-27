@@ -44,6 +44,41 @@ type AnalyticsSummary = {
 
 type AdminTab = "clients" | "analytics";
 
+const CREDIT_PLANS = [
+  {
+    name: "Starter",
+    tryOns: 300,
+    credits: 600,
+    fashnCost: 34,
+    price: 149,
+    profit: 115,
+  },
+  {
+    name: "Growth",
+    tryOns: 600,
+    credits: 1200,
+    fashnCost: 68,
+    price: 299,
+    profit: 231,
+  },
+  {
+    name: "Pro",
+    tryOns: 1200,
+    credits: 2400,
+    fashnCost: 136,
+    price: 599,
+    profit: 463,
+  },
+] as const;
+
+/** Per-try-on unit economics from Starter (linear Fashn cost). */
+const FASHN_GBP_PER_TRYON = 34 / 300;
+const RECOMMENDED_GBP_PER_TRYON = 149 / 300;
+
+function formatGbp(n: number) {
+  return `£${n.toFixed(2)}`;
+}
+
 export default function AdminClient() {
   const [activeTab, setActiveTab] = useState<AdminTab>("clients");
   const [keys, setKeys] = useState<KeyRecord[]>([]);
@@ -64,6 +99,9 @@ export default function AdminClient() {
   const [analyticsLoading, setAnalyticsLoading] = useState(false);
   const [analyticsError, setAnalyticsError] = useState<string | null>(null);
 
+  const [creditCalcOpen, setCreditCalcOpen] = useState(false);
+  const [calcTryOnsInput, setCalcTryOnsInput] = useState("");
+
   const remainingTotal = useMemo(() => {
     const used = keys.reduce((s, k) => s + k.usageCount, 0);
     const limit = keys.reduce((s, k) => s + k.usageLimit, 0);
@@ -77,6 +115,16 @@ export default function AdminClient() {
       visitor: Math.round((analytics.tryOnsVisitor / analytics.tryOnsTotal) * 100),
     };
   }, [analytics]);
+
+  const calcResult = useMemo(() => {
+    const n = Number.parseInt(calcTryOnsInput.trim(), 10);
+    if (!Number.isFinite(n) || n <= 0) return null;
+    const credits = n * 2;
+    const fashnCost = n * FASHN_GBP_PER_TRYON;
+    const recommendedPrice = n * RECOMMENDED_GBP_PER_TRYON;
+    const profit = recommendedPrice - fashnCost;
+    return { tryOns: n, credits, fashnCost, recommendedPrice, profit };
+  }, [calcTryOnsInput]);
 
   async function load() {
     setLoading(true);
@@ -300,6 +348,120 @@ export default function AdminClient() {
 
   return (
     <div className="min-h-dvh w-full bg-zinc-950 px-8 text-zinc-100">
+      {creditCalcOpen && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm sm:p-6"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="credit-calc-title"
+        >
+          <div className="max-h-[90dvh] w-full max-w-3xl overflow-y-auto rounded-2xl border border-zinc-700 bg-zinc-900 p-6 shadow-xl">
+            <div className="flex items-start justify-between gap-4">
+              <div className="min-w-0">
+                <p id="credit-calc-title" className="text-base font-semibold text-zinc-100">
+                  Credit Calculator
+                </p>
+                <p className="mt-1 text-sm text-zinc-400">
+                  Try-On Max uses 2 Fashn credits per try-on. Figures are illustrative GBP.
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setCreditCalcOpen(false)}
+                className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-zinc-600 bg-zinc-800 text-zinc-200 transition hover:border-zinc-500 hover:bg-zinc-700"
+                aria-label="Close"
+              >
+                ✕
+              </button>
+            </div>
+
+            <div className="mt-6 overflow-x-auto rounded-xl border border-zinc-800">
+              <table className="w-full min-w-[520px] text-left text-sm">
+                <thead>
+                  <tr className="border-b border-zinc-800 bg-zinc-950/50 text-xs font-semibold uppercase tracking-wider text-zinc-500">
+                    <th className="px-4 py-3">Plan</th>
+                    <th className="px-4 py-3 tabular-nums">Try-ons</th>
+                    <th className="px-4 py-3 tabular-nums">Credits</th>
+                    <th className="px-4 py-3 tabular-nums">Fashn cost</th>
+                    <th className="px-4 py-3 tabular-nums">Price</th>
+                    <th className="px-4 py-3 tabular-nums">Profit</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {CREDIT_PLANS.map((row) => (
+                    <tr key={row.name} className="border-b border-zinc-800/80 last:border-0">
+                      <td className="px-4 py-3 font-medium text-zinc-100">{row.name}</td>
+                      <td className="px-4 py-3 tabular-nums text-zinc-300">{row.tryOns}</td>
+                      <td className="px-4 py-3 tabular-nums text-zinc-300">{row.credits}</td>
+                      <td className="px-4 py-3 tabular-nums text-zinc-300">£{row.fashnCost}</td>
+                      <td className="px-4 py-3 tabular-nums text-zinc-300">£{row.price}</td>
+                      <td className="px-4 py-3 tabular-nums text-emerald-400/90">£{row.profit}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+
+            <div className="mt-8 rounded-xl border border-zinc-800 bg-zinc-950/40 p-5">
+              <h3 className="text-sm font-semibold text-zinc-100">Custom package</h3>
+              <p className="mt-1 text-xs text-zinc-500">
+                Recommended price uses the Starter plan rate (£149 ÷ 300 try-ons). Fashn cost scales linearly
+                (£34 ÷ 300).
+              </p>
+              <label className="mt-4 block text-sm font-medium text-zinc-200">Number of try-ons</label>
+              <input
+                value={calcTryOnsInput}
+                onChange={(e) => setCalcTryOnsInput(e.target.value)}
+                inputMode="numeric"
+                placeholder="e.g. 450"
+                className="mt-2 block w-full max-w-xs rounded-xl border border-zinc-700 bg-zinc-950 px-4 py-3 text-sm text-zinc-100 outline-none transition placeholder:text-zinc-600 focus:border-accent/60"
+              />
+              {calcResult ? (
+                <dl className="mt-5 grid gap-3 text-sm sm:grid-cols-2">
+                  <div className="rounded-lg border border-zinc-800 bg-zinc-900/80 px-4 py-3">
+                    <dt className="text-xs font-medium uppercase tracking-wide text-zinc-500">Credits</dt>
+                    <dd className="mt-1 tabular-nums text-lg font-semibold text-zinc-100">
+                      {calcResult.credits.toLocaleString()}
+                    </dd>
+                  </div>
+                  <div className="rounded-lg border border-zinc-800 bg-zinc-900/80 px-4 py-3">
+                    <dt className="text-xs font-medium uppercase tracking-wide text-zinc-500">Fashn cost (est.)</dt>
+                    <dd className="mt-1 tabular-nums text-lg font-semibold text-zinc-100">
+                      {formatGbp(calcResult.fashnCost)}
+                    </dd>
+                  </div>
+                  <div className="rounded-lg border border-zinc-800 bg-zinc-900/80 px-4 py-3">
+                    <dt className="text-xs font-medium uppercase tracking-wide text-zinc-500">
+                      Recommended price (est.)
+                    </dt>
+                    <dd className="mt-1 tabular-nums text-lg font-semibold text-zinc-100">
+                      {formatGbp(calcResult.recommendedPrice)}
+                    </dd>
+                  </div>
+                  <div className="rounded-lg border border-zinc-800 bg-zinc-900/80 px-4 py-3">
+                    <dt className="text-xs font-medium uppercase tracking-wide text-zinc-500">Profit (est.)</dt>
+                    <dd className="mt-1 tabular-nums text-lg font-semibold text-emerald-400/90">
+                      {formatGbp(calcResult.profit)}
+                    </dd>
+                  </div>
+                </dl>
+              ) : (
+                <p className="mt-4 text-sm text-zinc-500">Enter a positive whole number of try-ons.</p>
+              )}
+            </div>
+
+            <div className="mt-6 flex justify-end">
+              <button
+                type="button"
+                onClick={() => setCreditCalcOpen(false)}
+                className="inline-flex h-11 items-center justify-center rounded-full border border-zinc-600 bg-zinc-800 px-6 text-sm font-semibold text-zinc-100 transition hover:border-zinc-500 hover:bg-zinc-700"
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
       {editing && (
         <div
           className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-6 backdrop-blur-sm"
@@ -421,14 +583,23 @@ export default function AdminClient() {
                 Manage client keys and view platform analytics.
               </p>
             </div>
-            <button
-              type="button"
-              onClick={refreshCurrentTab}
-              disabled={tabBusy}
-              className="inline-flex h-11 items-center justify-center rounded-full border border-zinc-700 bg-zinc-900 px-5 text-sm font-semibold text-zinc-100 transition hover:border-zinc-600 hover:bg-zinc-800 disabled:cursor-not-allowed disabled:opacity-60"
-            >
-              Refresh
-            </button>
+            <div className="flex flex-wrap items-center gap-3">
+              <button
+                type="button"
+                onClick={() => setCreditCalcOpen(true)}
+                className="inline-flex h-11 items-center justify-center rounded-full border border-zinc-600 bg-zinc-800 px-5 text-sm font-semibold text-zinc-100 transition hover:border-zinc-500 hover:bg-zinc-700"
+              >
+                Credit Calculator
+              </button>
+              <button
+                type="button"
+                onClick={refreshCurrentTab}
+                disabled={tabBusy}
+                className="inline-flex h-11 items-center justify-center rounded-full border border-zinc-700 bg-zinc-900 px-5 text-sm font-semibold text-zinc-100 transition hover:border-zinc-600 hover:bg-zinc-800 disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                Refresh
+              </button>
+            </div>
           </div>
 
           <div
