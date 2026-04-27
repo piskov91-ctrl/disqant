@@ -39,7 +39,13 @@ type GarmentPreset = {
     | "cap"
     | "beanie"
     | "sunglasses"
-    | "necklace";
+    | "necklace"
+    | "earrings"
+    | "gloves"
+    | "handbag_women"
+    | "mens_bag"
+    | "ankle_bracelet"
+    | "boxer_shorts";
   label: string;
   name: string;
   /** Hint for `/api/try-on` (echoed in JSON); sneakers use `bottoms` like other non-top apparel. */
@@ -133,6 +139,60 @@ const GARMENT_PRESETS: GarmentPreset[] = [
     // Oscar Ramirez (Unsplash) — gold rope chain on a white block; Unsplash License.
     imageUrl:
       "https://images.unsplash.com/photo-1708220040954-a89dd8317a9e?auto=format&fit=crop&w=1400&q=80",
+  },
+  {
+    id: "earrings",
+    label: "Earrings",
+    name: "Gold-toned stud earrings (product shot)",
+    category: "tops",
+    // Aditya Sethia (Unsplash) — a pair of gold-toned earrings on white. https://unsplash.com/photos/a-pair-of-gold-toned-earrings-on-a-white-background-rQe2QeFQMGE
+    imageUrl:
+      "https://images.unsplash.com/photo-1723361656146-f201d215c49c?auto=format&fit=crop&w=1400&q=80",
+  },
+  {
+    id: "gloves",
+    label: "Gloves",
+    name: "Brown leather gloves (white background)",
+    category: "tops",
+    // Unsplash License — work gloves on light background. https://unsplash.com/photos/a-pair-of-brown-leather-gloves-on-a-white-background-RLShnUiFFNA
+    imageUrl:
+      "https://images.unsplash.com/photo-1673294861057-4584f92b91d2?auto=format&fit=crop&w=1400&q=80",
+  },
+  {
+    id: "handbag_women",
+    label: "Handbag (women's)",
+    name: "Brown leather shoulder bag (product shot)",
+    category: "tops",
+    // Unsplash License — handbag isolated on white. https://unsplash.com/photos/a-brown-leather-handbag-on-a-white-background-zxPo13geJ5U
+    imageUrl:
+      "https://images.unsplash.com/photo-1691480250099-a63081ecfcb8?auto=format&fit=crop&w=1400&q=80",
+  },
+  {
+    id: "mens_bag",
+    label: "Bag (men's)",
+    name: "Brown leather briefcase (on wood)",
+    category: "tops",
+    // Unsplash License — business briefcase. https://unsplash.com/photos/a-brown-leather-briefcase-sitting-on-top-of-a-wooden-floor-Pe1jkWJWDUk
+    imageUrl:
+      "https://images.unsplash.com/photo-1643168661851-199cf2bba5c0?auto=format&fit=crop&w=1400&q=80",
+  },
+  {
+    id: "ankle_bracelet",
+    label: "Ankle bracelet",
+    name: "Silver chain anklet / bracelet (product style)",
+    category: "bottoms",
+    // Unsplash License — fine silver chain. https://unsplash.com/photos/silver-chain-link-bracelet-EJLzjLFnvPI
+    imageUrl:
+      "https://images.unsplash.com/photo-1610695049917-d21679d7d593?auto=format&fit=crop&w=1400&q=80",
+  },
+  {
+    id: "boxer_shorts",
+    label: "Boxer shorts",
+    name: "Men's casual shorts (flat lay, white bg)",
+    category: "bottoms",
+    // TuanAnh Blue (Unsplash) — three men's shorts on white. https://unsplash.com/photos/three-mens-shorts-are-lined-up-against-a-white-background-xa8hkIGTTf8
+    imageUrl:
+      "https://images.unsplash.com/photo-1719473458937-d42f1f9aad00?auto=format&fit=crop&w=1400&q=80",
   },
 ];
 
@@ -1040,7 +1100,7 @@ export default function DemoClient() {
           Fashn pricing). Good for clothing, shoes, hats, and accessories. Images are auto-compressed to max 1000px
           before the API call.
           {selectedPreset?.id === "sneakers"
-            ? " Sneakers use a bottoms category hint; other presets (including the cap, beanie, sunglasses, and necklace) use tops or bottoms as appropriate."
+            ? " Sneakers use a bottoms category hint; other gallery items use tops or bottoms as appropriate (e.g. bags, jewelry, gloves → tops; ankle bracelet and boxer shorts → bottoms)."
             : ""}
         </p>
       </main>
