@@ -17,11 +17,20 @@ export default function Home() {
                 <h1 className="text-balance text-3xl font-semibold leading-[1.12] tracking-tight text-white sm:text-4xl md:text-[2.5rem] md:leading-[1.1] lg:text-5xl lg:leading-[1.08]">
                   Your online fitting room
                 </h1>
-                <p className="mt-5 max-w-[36rem] text-base leading-[1.65] text-zinc-200 sm:text-lg sm:leading-[1.7]">
-                  Shoppers try on clothes before they buy — reducing returns and boosting sales. Wear Me adds a
-                  virtual try-on button to your store in minutes. No app, no 3D models, just one line of code.
+
+                <p className="mt-8 max-w-[36rem] text-base leading-[1.65] text-zinc-200 sm:mt-10 sm:text-lg sm:leading-[1.7]">
+                  Shoppers try on clothes before they buy — reducing returns and boosting sales.
+                </p>
+
+                <p className="mt-6 max-w-[36rem] text-base leading-[1.65] text-zinc-200 sm:mt-8 sm:text-lg sm:leading-[1.7]">
+                  Wear Me adds a virtual try-on button to your store in minutes. No app, no 3D models, just one
+                  line of code.
+                </p>
+
+                <p className="mt-6 max-w-[36rem] text-sm leading-relaxed text-zinc-400 sm:mt-8 sm:text-base">
                   Trusted by fashion retailers worldwide.
                 </p>
+
                 <Link
                   href="/how-it-works"
                   className="mt-8 inline-flex w-fit min-h-11 items-center justify-center rounded-full border border-white/15 bg-white/5 px-7 py-3 text-sm font-medium text-white transition hover:border-white/25 hover:bg-white/10 sm:mt-10"
