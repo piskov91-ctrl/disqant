@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { Footer } from "@/components/Footer";
-import { AdminTryWearMeClient } from "@/app/admin/AdminTryWearMeClient";
+import { AdminWearMeClient } from "@/app/admin/AdminWearMeClient";
 
 type KeyRecord = {
   id: string;
@@ -43,7 +43,7 @@ type AnalyticsSummary = {
   demoVisitors: DemoVisitorAnalyticsRow[];
 };
 
-type AdminTab = "clients" | "analytics" | "tryWearMe";
+type AdminTab = "clients" | "analytics" | "wearMe";
 
 const CREDIT_PLANS = [
   {
@@ -102,8 +102,8 @@ export default function AdminClient() {
 
   const [creditCalcOpen, setCreditCalcOpen] = useState(false);
   const [calcTryOnsInput, setCalcTryOnsInput] = useState("");
-  /** Which client key powers admin Try Wear Me (retailer `/api/tryon` path). */
-  const [tryWearMeKeyId, setTryWearMeKeyId] = useState<string | null>(null);
+  /** Which client key powers admin Wear Me (retailer `/api/tryon`, not the public demo). */
+  const [wearMeKeyId, setWearMeKeyId] = useState<string | null>(null);
 
   const remainingTotal = useMemo(() => {
     const used = keys.reduce((s, k) => s + k.usageCount, 0);
@@ -181,10 +181,10 @@ export default function AdminClient() {
 
   useEffect(() => {
     if (keys.length === 0) {
-      setTryWearMeKeyId(null);
+      setWearMeKeyId(null);
       return;
     }
-    setTryWearMeKeyId((prev) => (prev && keys.some((k) => k.id === prev) ? prev : keys[0]!.id));
+    setWearMeKeyId((prev) => (prev && keys.some((k) => k.id === prev) ? prev : keys[0]!.id));
   }, [keys]);
 
   useEffect(() => {
@@ -351,16 +351,16 @@ export default function AdminClient() {
   }
 
   function refreshCurrentTab() {
-    if (activeTab === "clients" || activeTab === "tryWearMe") void load();
+    if (activeTab === "clients" || activeTab === "wearMe") void load();
     else void loadAnalytics();
   }
 
   const tabBusy =
-    activeTab === "clients" || activeTab === "tryWearMe" ? loading : analyticsLoading;
+    activeTab === "clients" || activeTab === "wearMe" ? loading : analyticsLoading;
 
-  const tryWearMeKeyRecord = useMemo(
-    () => keys.find((k) => k.id === tryWearMeKeyId) ?? null,
-    [keys, tryWearMeKeyId],
+  const wearMeKeyRecord = useMemo(
+    () => keys.find((k) => k.id === wearMeKeyId) ?? null,
+    [keys, wearMeKeyId],
   );
 
   return (
@@ -653,15 +653,15 @@ export default function AdminClient() {
             <button
               type="button"
               role="tab"
-              aria-selected={activeTab === "tryWearMe"}
-              onClick={() => setActiveTab("tryWearMe")}
+              aria-selected={activeTab === "wearMe"}
+              onClick={() => setActiveTab("wearMe")}
               className={`rounded-full px-5 py-2 text-sm font-semibold transition ${
-                activeTab === "tryWearMe"
+                activeTab === "wearMe"
                   ? "bg-zinc-800 text-zinc-100 shadow-sm"
                   : "text-zinc-500 hover:text-zinc-300"
               }`}
             >
-              Try Wear Me
+              Wear Me
             </button>
           </div>
 
@@ -860,9 +860,9 @@ export default function AdminClient() {
                 </p>
               </section>
             </>
-          ) : activeTab === "tryWearMe" ? (
+          ) : activeTab === "wearMe" ? (
             <section className="mt-8 w-full overflow-hidden rounded-2xl border border-zinc-800 bg-zinc-900/60 p-6 shadow-sm md:p-8">
-              <h2 className="text-base font-semibold text-zinc-100">Try Wear Me</h2>
+              <h2 className="text-base font-semibold text-zinc-100">Wear Me</h2>
               <p className="mt-1 text-sm text-zinc-400">
                 Quick try-on test using the selected client&apos;s API key (counts against their quota).
               </p>
@@ -877,16 +877,13 @@ export default function AdminClient() {
               ) : (
                 <div className="mt-8 space-y-6">
                   <div className="max-w-xl">
-                    <label
-                      htmlFor="admin-trywearme-key"
-                      className="block text-sm font-medium text-zinc-200"
-                    >
+                    <label htmlFor="admin-wearme-key" className="block text-sm font-medium text-zinc-200">
                       Client for this session
                     </label>
                     <select
-                      id="admin-trywearme-key"
-                      value={tryWearMeKeyId ?? ""}
-                      onChange={(e) => setTryWearMeKeyId(e.target.value || null)}
+                      id="admin-wearme-key"
+                      value={wearMeKeyId ?? ""}
+                      onChange={(e) => setWearMeKeyId(e.target.value || null)}
                       className="mt-2 block w-full rounded-xl border border-zinc-700 bg-zinc-950 px-4 py-3 text-sm text-zinc-100 outline-none transition focus:border-accent/60"
                     >
                       {keys.map((k) => (
@@ -895,20 +892,20 @@ export default function AdminClient() {
                         </option>
                       ))}
                     </select>
-                    {tryWearMeKeyRecord ? (
+                    {wearMeKeyRecord ? (
                       <p className="mt-2 text-xs text-zinc-500">
                         Requests use header{" "}
                         <span className="font-mono text-zinc-400">x-api-key</span> for this client&apos;s
                         Disquant key (prefix{" "}
                         <span className="font-mono text-zinc-400">
-                          {(tryWearMeKeyRecord.key || "").slice(0, 8)}…
+                          {(wearMeKeyRecord.key || "").slice(0, 8)}…
                         </span>
                         ).
                       </p>
                     ) : null}
                   </div>
-                  {tryWearMeKeyRecord ? (
-                    <AdminTryWearMeClient key={tryWearMeKeyRecord.id} apiKey={tryWearMeKeyRecord.key} />
+                  {wearMeKeyRecord ? (
+                    <AdminWearMeClient key={wearMeKeyRecord.id} apiKey={wearMeKeyRecord.key} />
                   ) : null}
                 </div>
               )}

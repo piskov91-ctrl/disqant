@@ -1,5 +1,9 @@
 "use client";
 
+/**
+ * Admin-only virtual try-on UI. Does not import demo routes, catalog, or DemoClient.
+ * Calls `/api/tryon` with the retailer `x-api-key` from the admin key picker.
+ */
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
 import {
   compressImageToMax1000px,
@@ -11,7 +15,7 @@ function revokeIfBlob(url: string | null) {
   if (url?.startsWith("blob:")) URL.revokeObjectURL(url);
 }
 
-export function AdminTryWearMeClient({ apiKey }: { apiKey: string }) {
+export function AdminWearMeClient({ apiKey }: { apiKey: string }) {
   const [modelFile, setModelFile] = useState<File | null>(null);
   const [modelPreview, setModelPreview] = useState<string | null>(null);
   const [garmentFile, setGarmentFile] = useState<File | null>(null);
@@ -148,7 +152,8 @@ export function AdminTryWearMeClient({ apiKey }: { apiKey: string }) {
       fd.set("garment", garmentC);
       fd.set("category", "tops");
       fd.set("generationMode", "balanced");
-      const tryOnTrace = globalThis.crypto?.randomUUID?.() ?? `tryon-${Date.now()}`;
+      const traceId = globalThis.crypto?.randomUUID?.() ?? `${Date.now()}`;
+      const tryOnTrace = `admin-wear-${traceId}`;
       const res = await fetch("/api/tryon", {
         method: "POST",
         headers: {
