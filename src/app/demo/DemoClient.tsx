@@ -264,20 +264,20 @@ const GARMENT_PRESETS: GarmentPreset[] = [
   {
     id: "swim_men",
     label: "Swim (men's)",
-    name: "Men's swim shorts — flat lay on white (overhead, catalog style)",
+    name: "Surfer walking from the ocean with a board (stock)",
     category: "bottoms",
-    // Unsplash product-style swim shorts (user-provided asset).
+    // Unsplash+ CDN (direct image from API `urls` / plus host). https://unsplash.com/photos/a-man-walking-out-of-the-ocean-with-a-surfboard-mx0AGA3Cyp8
     imageUrl:
-      "https://images.unsplash.com/photo-1614204424926-197290e45e35?w=800",
+      "https://plus.unsplash.com/premium_photo-1661891142977-6db59f9c2c71?auto=format&fit=crop&w=1600&q=85",
   },
   {
     id: "swim_women",
     label: "Swim (women's)",
-    name: "Women's bikini — top & bottom flat on white (overhead, catalog style)",
+    name: "Pair of bikinis in the snow (stock)",
     category: "tops",
-    // Unsplash swimwear flat lay (user-provided asset).
+    // Unsplash+ CDN (direct image from API `urls` / plus host). https://unsplash.com/photos/a-pair-of-bikinis-laying-in-the-snow-X5hKPjUU2Ck
     imageUrl:
-      "https://images.unsplash.com/photo-1625886400853-73a6b3f1e8d5?w=800",
+      "https://plus.unsplash.com/premium_photo-1682470124225-ed9ed8b08dce?auto=format&fit=crop&w=1600&q=85",
   },
   {
     id: "eyeglasses",
