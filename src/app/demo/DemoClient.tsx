@@ -149,25 +149,25 @@ const GARMENT_PRESETS: GarmentPreset[] = [
     label: "Sunglasses (aviator)",
     name: "Aviator sunglasses — silver metal frame (white background)",
     category: "tops",
-    // Angelina (Unsplash) — teardrop / aviator shape, no visible branding in frame. https://unsplash.com/photos/silver-framed-aviator-style-sunglasses-_OBHnSLxpas
+    // Engin Akyurt — single pair, full frame, light backdrop; e-commerce / try-on style (no logos). https://unsplash.com/photos/silver-framed-aviator-style-sunglasses-hB8YCg-FC-A
     imageUrl:
-      "https://images.unsplash.com/photo-1615210768832-159ca3912a05?auto=format&fit=crop&w=1400&q=80",
+      "https://images.unsplash.com/photo-1592635955011-24d885bdb289?auto=format&fit=crop&w=1400&q=80",
   },
   {
     id: "sunglasses_round",
     label: "Sunglasses (round)",
     name: "Round-frame sunglasses (white background)",
     category: "tops",
-    // Vikram Pataskar — round lenses, product-style, white backdrop. https://unsplash.com/photos/a-pair-of-round-sunglasses-with-blue-tinted-lenses-tTrpGlKyHhw
+    // Alondra Lucia — round metal frames, gradient lenses, clean white product shot. https://unsplash.com/photos/a-pair-of-sunglasses-on-a-white-background-tUyg4nIQHPk
     imageUrl:
-      "https://images.unsplash.com/photo-1678550690358-bf61ba0bf511?auto=format&fit=crop&w=1400&q=80",
+      "https://images.unsplash.com/photo-1649119161997-00ffc8c24e11?auto=format&fit=crop&w=1400&q=80",
   },
   {
     id: "sunglasses_wayfarer",
     label: "Sunglasses (wayfarer)",
     name: "Wayfarer-style sunglasses — black frame (white background)",
     category: "tops",
-    // Kiran CK — thick rectangular / wayfarer-style frame on white. https://unsplash.com/photos/black-framed-sunglasses-on-white-surface-lSl94SZHRgA
+    // Kiran CK — browline / clubmaster (common everyday style), full frame, neutral light backdrop, no visible branding. https://unsplash.com/photos/black-framed-sunglasses-on-white-surface-lSl94SZHRgA
     imageUrl:
       "https://images.unsplash.com/photo-1584036553516-bf83210aa16c?auto=format&fit=crop&w=1400&q=80",
   },
