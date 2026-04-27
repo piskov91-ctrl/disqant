@@ -76,24 +76,25 @@ const GARMENT_PRESETS: GarmentPreset[] = [
     name: "White clean sneakers",
     category: "bottoms",
     imageUrl:
-      // White sneakers on a white background (product-style).
+      // White sneakers, full pair on a light/white background (Unsplash). https://unsplash.com/photo-1625860191460-10a66c7384fb
       "https://images.unsplash.com/photo-1625860191460-10a66c7384fb?auto=format&fit=crop&w=1400&q=80",
   },
   {
     id: "tee",
     label: "T-Shirt",
-    name: "Plain white t-shirt (flat lay)",
+    name: "Plain white t-shirt (mockup, full shirt visible)",
     category: "tops",
+    // White crew neck — full garment, neutral studio floor. https://unsplash.com/photos/gEupiRvyxh0
     imageUrl:
-      "https://images.unsplash.com/photo-1620799139507-2a76f79a2f4d?auto=format&fit=crop&w=1400&q=80",
+      "https://images.unsplash.com/photo-1618677603286-0ec56cb6e1b5?auto=format&fit=crop&w=1400&q=80",
   },
   {
     id: "sweater",
     label: "Sweater",
     name: "Beige oversized knit sweater",
     category: "tops",
+    // Full knit sweater, flat lay, neutral background. https://unsplash.com/photo-1687275161342-8699c61e4364
     imageUrl:
-      // Beige knit sweater (full garment shot).
       "https://images.unsplash.com/photo-1687275161342-8699c61e4364?auto=format&fit=crop&w=1400&q=80",
   },
   {
@@ -101,15 +102,16 @@ const GARMENT_PRESETS: GarmentPreset[] = [
     label: "Jacket",
     name: "Black jacket",
     category: "tops",
+    // Black jacket laid flat, full piece visible. https://unsplash.com/photo-1608063615781-e2ef8c73d114
     imageUrl:
-      "https://images.unsplash.com/photo-1608063615781-e2ef8c73d114?w=400",
+      "https://images.unsplash.com/photo-1608063615781-e2ef8c73d114?auto=format&fit=crop&w=1400&q=80",
   },
   {
     id: "jacket_leather",
     label: "Leather jacket",
     name: "Black leather jacket (flat lay, no model)",
     category: "tops",
-    // Lea Øchel — black leather zip-up on white textile (product / flat lay).
+    // Lea Øchel — black leather zip-up on light textile. https://unsplash.com/photo-1551028719-00167b16eac5
     imageUrl:
       "https://images.unsplash.com/photo-1551028719-00167b16eac5?auto=format&fit=crop&w=1400&q=80",
   },
@@ -118,7 +120,7 @@ const GARMENT_PRESETS: GarmentPreset[] = [
     label: "Blue jeans",
     name: "Blue denim jeans (flat lay, no model)",
     category: "bottoms",
-    // TuanAnh Blue — pair of blue jeans on a box (product-style denim).
+    // Full jeans folded / product-style on neutral surface. https://unsplash.com/photo-1714143136361-386dae5672e2
     imageUrl:
       "https://images.unsplash.com/photo-1714143136361-386dae5672e2?auto=format&fit=crop&w=1400&q=80",
   },
@@ -127,32 +129,34 @@ const GARMENT_PRESETS: GarmentPreset[] = [
     label: "Cap",
     name: "Black baseball cap (product shot)",
     category: "tops",
-    // Clear cap on light background (product / catalog style).
+    // Black cap, clear product angle, light background. https://unsplash.com/photo-1521369909029-2afed882baee
     imageUrl:
       "https://images.unsplash.com/photo-1521369909029-2afed882baee?auto=format&fit=crop&w=1400&q=80",
   },
   {
     id: "beanie",
     label: "Beanie",
-    name: "Grey knit winter beanie (outdoor)",
+    name: "Grey knit beanie (white background)",
     category: "tops",
-    // Victória Kubiaki (Unsplash) — grey winter beanie, free Unsplash License. https://unsplash.com/photos/woman-wearing-grey-beanie-OhGFIr5yXYk
+    // Ryan Hoffman — beanie for mockup, whole hat on white. https://unsplash.com/photos/black-knit-cap-on-white-surface-2BK0JEwQSpQ
     imageUrl:
-      "https://images.unsplash.com/photo-1570144591865-45f6485b957c?auto=format&fit=crop&w=1400&q=80",
+      "https://images.unsplash.com/photo-1618354691792-d1d42acfd860?auto=format&fit=crop&w=1400&q=80",
   },
   {
     id: "sunglasses",
     label: "Sunglasses",
     name: "Classic sunglasses (product shot)",
     category: "tops",
-    imageUrl: "https://images.unsplash.com/photo-1511499767150-a48a237f0083?w=400",
+    // Full frames on a clean light surface. https://unsplash.com/photo-1511499767150-a48a237f0083
+    imageUrl:
+      "https://images.unsplash.com/photo-1511499767150-a48a237f0083?auto=format&fit=crop&w=1400&q=80",
   },
   {
     id: "necklace",
     label: "Necklace",
     name: "Simple gold chain (product shot)",
     category: "tops",
-    // Oscar Ramirez (Unsplash) — gold rope chain on a white block; Unsplash License.
+    // Gold chain on a white plinth. https://unsplash.com/photo-1708220040954-a89dd8317a9e
     imageUrl:
       "https://images.unsplash.com/photo-1708220040954-a89dd8317a9e?auto=format&fit=crop&w=1400&q=80",
   },
@@ -161,7 +165,7 @@ const GARMENT_PRESETS: GarmentPreset[] = [
     label: "Earrings",
     name: "Gold-toned stud earrings (product shot)",
     category: "tops",
-    // Aditya Sethia (Unsplash) — a pair of gold-toned earrings on white. https://unsplash.com/photos/a-pair-of-gold-toned-earrings-on-a-white-background-rQe2QeFQMGE
+    // Pair of earrings on white. https://unsplash.com/photo-1723361656146-f201d215c49c
     imageUrl:
       "https://images.unsplash.com/photo-1723361656146-f201d215c49c?auto=format&fit=crop&w=1400&q=80",
   },
@@ -170,7 +174,7 @@ const GARMENT_PRESETS: GarmentPreset[] = [
     label: "Gloves",
     name: "Brown leather gloves (white background)",
     category: "tops",
-    // Unsplash License — work gloves on light background. https://unsplash.com/photos/a-pair-of-brown-leather-gloves-on-a-white-background-RLShnUiFFNA
+    // Both gloves fully visible on white. https://unsplash.com/photo-1673294861057-4584f92b91d2
     imageUrl:
       "https://images.unsplash.com/photo-1673294861057-4584f92b91d2?auto=format&fit=crop&w=1400&q=80",
   },
@@ -179,7 +183,7 @@ const GARMENT_PRESETS: GarmentPreset[] = [
     label: "Handbag (women's)",
     name: "Brown leather shoulder bag (product shot)",
     category: "tops",
-    // Unsplash License — handbag isolated on white. https://unsplash.com/photos/a-brown-leather-handbag-on-a-white-background-zxPo13geJ5U
+    // Handbag on white. https://unsplash.com/photo-1691480250099-a63081ecfcb8
     imageUrl:
       "https://images.unsplash.com/photo-1691480250099-a63081ecfcb8?auto=format&fit=crop&w=1400&q=80",
   },
@@ -188,7 +192,7 @@ const GARMENT_PRESETS: GarmentPreset[] = [
     label: "Bag (men's)",
     name: "Brown leather briefcase (on wood)",
     category: "tops",
-    // Unsplash License — business briefcase. https://unsplash.com/photos/a-brown-leather-briefcase-sitting-on-top-of-a-wooden-floor-Pe1jkWJWDUk
+    // Full briefcase, neutral wood surface. https://unsplash.com/photo-1643168661851-199cf2bba5c0
     imageUrl:
       "https://images.unsplash.com/photo-1643168661851-199cf2bba5c0?auto=format&fit=crop&w=1400&q=80",
   },
@@ -197,32 +201,34 @@ const GARMENT_PRESETS: GarmentPreset[] = [
     label: "Ankle bracelet",
     name: "Silver chain anklet / bracelet (product style)",
     category: "bottoms",
-    // Unsplash License — fine silver chain. https://unsplash.com/photos/silver-chain-link-bracelet-EJLzjLFnvPI
+    // Full chain loop visible, bright background. https://unsplash.com/photo-1610695049917-d21679d7d593
     imageUrl:
       "https://images.unsplash.com/photo-1610695049917-d21679d7d593?auto=format&fit=crop&w=1400&q=80",
   },
   {
     id: "boxer_shorts",
     label: "Boxer shorts",
-    name: "Men's casual shorts (flat lay, white bg)",
+    name: "Blue denim shorts (flat lay, white background)",
     category: "bottoms",
-    // TuanAnh Blue (Unsplash) — three men's shorts on white. https://unsplash.com/photos/three-mens-shorts-are-lined-up-against-a-white-background-xa8hkIGTTf8
+    // Single pair, full length on white. Engin Akyurt. https://unsplash.com/photos/blue-denim-shorts-on-white-surface-Hd4nlxLgIbA
     imageUrl:
-      "https://images.unsplash.com/photo-1719473458937-d42f1f9aad00?auto=format&fit=crop&w=1400&q=80",
+      "https://images.unsplash.com/photo-1591195853828-11db59a44f6b?auto=format&fit=crop&w=1400&q=80",
   },
   {
     id: "blouse",
     label: "Blouse",
-    name: "Light silk blouse (flat lay)",
+    name: "White long-sleeve blouse (product shot)",
     category: "tops",
+    // Full blouse laid flat, neutral table. https://unsplash.com/photos/womens-white-square-neckline-long-sleeved-blouse-7eVFsYwVQVY
     imageUrl:
-      "https://images.unsplash.com/photo-1594633312681-425c7b97ccd1?auto=format&fit=crop&w=1400&q=80",
+      "https://images.unsplash.com/photo-1575483801929-3d7479048f24?auto=format&fit=crop&w=1400&q=80",
   },
   {
     id: "scarf",
     label: "Scarf",
     name: "Soft knit winter scarf (flat lay)",
     category: "tops",
+    // Scarf with full length visible, neutral background. https://unsplash.com/photo-1606760227091-3dd870d97f1d
     imageUrl:
       "https://images.unsplash.com/photo-1606760227091-3dd870d97f1d?auto=format&fit=crop&w=1400&q=80",
   },
@@ -231,32 +237,36 @@ const GARMENT_PRESETS: GarmentPreset[] = [
     label: "Bracelet",
     name: "Gold link bracelet (product shot)",
     category: "tops",
+    // https://unsplash.com/photo-1611955167811-4711904bb9f0
     imageUrl:
       "https://images.unsplash.com/photo-1611955167811-4711904bb9f0?auto=format&fit=crop&w=1400&q=80",
   },
   {
     id: "swim_men",
     label: "Swim (men's)",
-    name: "Men's swim trunks (flat lay)",
+    name: "Men's swim shorts (white background)",
     category: "bottoms",
+    // Includes swim-style shorts, studio white (full garments, no beach scene). https://unsplash.com/photos/three-mens-shorts-are-lined-up-against-a-white-background-xa8hkIGTTf8
     imageUrl:
-      "https://images.unsplash.com/photo-1506629082955-511b1aa562c8?auto=format&fit=crop&w=1400&q=80",
+      "https://images.unsplash.com/photo-1719473458937-d42f1f9aad00?auto=format&fit=crop&w=1400&q=80",
   },
   {
     id: "swim_women",
     label: "Swim (women's)",
-    name: "One-piece swimsuit (product style)",
+    name: "White one-piece swimsuit (full view)",
     category: "tops",
+    // Marlon Alves — swimwear, entire suit visible. https://unsplash.com/photos/a-woman-in-a-white-garment-iCXFnbxrkl0
     imageUrl:
-      "https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?auto=format&fit=crop&w=1400&q=80",
+      "https://images.unsplash.com/photo-1659799610076-6a858ddeb6fc?auto=format&fit=crop&w=1400&q=80",
   },
   {
     id: "eyeglasses",
     label: "Glasses",
-    name: "Clear-lens eyeglasses (product shot)",
+    name: "Clear-lens eyeglasses (on white surface)",
     category: "tops",
+    // Bartosz Sujkowski — frames on a white surface. https://unsplash.com/photos/a-pair-of-glasses-sitting-on-top-of-a-white-surface-0zA84TFRjI8
     imageUrl:
-      "https://images.unsplash.com/photo-1506617420156-8e4536971650?auto=format&fit=crop&w=1400&q=80",
+      "https://images.unsplash.com/photo-1646084081219-1090f72a531c?auto=format&fit=crop&w=1400&q=80",
   },
 ];
 
