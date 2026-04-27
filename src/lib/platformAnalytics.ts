@@ -121,6 +121,20 @@ export async function getTryOnTimingForClient(clientId: string): Promise<TryOnTi
   }
 }
 
+/** Global UTC try-on timing histograms (all completed try-ons). */
+export async function getGlobalTryOnTiming(): Promise<TryOnTimingBuckets> {
+  try {
+    const redis = getRedis();
+    return await loadGlobalTryOnTiming(redis);
+  } catch (e) {
+    console.error("[platformAnalytics] getGlobalTryOnTiming failed", e);
+    return {
+      tryOnByHourUtc: Array.from({ length: 24 }, () => 0),
+      tryOnByWeekdayUtc: Array.from({ length: 7 }, () => 0),
+    };
+  }
+}
+
 /** Best-effort client IP for analytics (Vercel / proxies). */
 export function getRequestClientIp(req: Request): string {
   const xff = req.headers.get("x-forwarded-for");

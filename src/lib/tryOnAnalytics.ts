@@ -1,4 +1,4 @@
-import { getRedis } from "./apiKeyStore";
+import { getRedis, listClientKeys } from "./apiKeyStore";
 import { LOCAL_OR_UNKNOWN_PRODUCT } from "./tryOnConstants";
 
 export { LOCAL_OR_UNKNOWN_PRODUCT } from "./tryOnConstants";
@@ -65,6 +65,28 @@ export async function recordTryOnProductUsage(params: {
 /**
  * Returns the top N product image URLs by try-on count for a client.
  */
+function parseZrangeWithScores(raw: unknown, maxPairs: number): TopTryOnProduct[] {
+  if (!Array.isArray(raw) || raw.length === 0) return [];
+  if (typeof raw[0] === "object" && raw[0] !== null && "member" in (raw[0] as object)) {
+    return (raw as { member: string; score: number }[])
+      .slice(0, maxPairs)
+      .map((r) => ({
+        productImageUrl: r.member,
+        tryOnCount: Math.round(Number(r.score)),
+      }));
+  }
+  if (raw.length % 2 !== 0) return [];
+  const out: TopTryOnProduct[] = [];
+  const cap = Math.min(maxPairs, Math.floor(raw.length / 2));
+  for (let i = 0; i < cap; i++) {
+    out.push({
+      productImageUrl: String(raw[i * 2]),
+      tryOnCount: Math.round(Number(raw[i * 2 + 1])),
+    });
+  }
+  return out;
+}
+
 export async function getTopTryOnProducts(
   clientId: string,
   limit = 5,
@@ -76,27 +98,68 @@ export async function getTopTryOnProducts(
       rev: true,
       withScores: true,
     })) as unknown;
-
-    if (Array.isArray(raw) && raw.length > 0) {
-      if (typeof raw[0] === "object" && raw[0] !== null && "member" in (raw[0] as object)) {
-        return (raw as { member: string; score: number }[]).map((r) => ({
-          productImageUrl: r.member,
-          tryOnCount: Math.round(Number(r.score)),
-        }));
-      }
-      if (raw.length % 2 === 0) {
-        const out: TopTryOnProduct[] = [];
-        for (let i = 0; i < raw.length; i += 2) {
-          out.push({
-            productImageUrl: String(raw[i]),
-            tryOnCount: Math.round(Number(raw[i + 1])),
-          });
-        }
-        return out;
-      }
-    }
+    return parseZrangeWithScores(raw, limit);
   } catch (e) {
     console.error("[tryOnAnalytics] getTop failed", e);
   }
   return [];
+}
+
+/** All ranked product URLs for a client (most popular first). Capped for payload safety. */
+export async function getAllTryOnProducts(clientId: string, max = 2000): Promise<TopTryOnProduct[]> {
+  if (!clientId) return [];
+  const redis = getRedis();
+  const key = `disquant:tryon:products:${clientId}`;
+  try {
+    const raw = (await redis.zrange(key, 0, max - 1, {
+      rev: true,
+      withScores: true,
+    })) as unknown;
+    return parseZrangeWithScores(raw, max);
+  } catch (e) {
+    console.error("[tryOnAnalytics] getAllTryOnProducts failed", e);
+  }
+  return [];
+}
+
+/** Merge product counts across all API key clients; most popular first. */
+export async function getAllTryOnProductsAggregated(maxProducts = 800): Promise<TopTryOnProduct[]> {
+  try {
+    const clients = await listClientKeys();
+    const merged = new Map<string, number>();
+    for (const c of clients) {
+      const rows = await getAllTryOnProducts(c.id, 4000);
+      for (const r of rows) {
+        merged.set(r.productImageUrl, (merged.get(r.productImageUrl) ?? 0) + r.tryOnCount);
+      }
+    }
+    return Array.from(merged.entries())
+      .map(([productImageUrl, tryOnCount]) => ({ productImageUrl, tryOnCount }))
+      .sort((a, b) => b.tryOnCount - a.tryOnCount)
+      .slice(0, maxProducts);
+  } catch (e) {
+    console.error("[tryOnAnalytics] getAllTryOnProductsAggregated failed", e);
+  }
+  return [];
+}
+
+/** Human-readable label for analytics (from URL or upload bucket). */
+export function productDisplayName(productImageUrl: string): string {
+  if (productImageUrl === LOCAL_OR_UNKNOWN_PRODUCT) return "Custom upload / unknown product";
+  try {
+    const u = new URL(productImageUrl);
+    const seg = u.pathname.split("/").filter(Boolean).pop();
+    if (seg) {
+      let decoded = seg;
+      try {
+        decoded = decodeURIComponent(seg);
+      } catch {
+        /* keep raw */
+      }
+      return decoded.length > 96 ? `${decoded.slice(0, 93)}…` : decoded;
+    }
+    return u.hostname;
+  } catch {
+    return productImageUrl.length > 96 ? `${productImageUrl.slice(0, 93)}…` : productImageUrl;
+  }
 }

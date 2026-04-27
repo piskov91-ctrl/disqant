@@ -20,6 +20,9 @@ export type TryOnTimingChartsProps = TryOnTimingBuckets & {
   variant?: "admin" | "dashboard";
   /** Shown under the main title (e.g. “Your store’s try-ons”). */
   subtitle?: string;
+  showWeekdays?: boolean;
+  /** No outer card or page-level titles — for nesting (e.g. analytics modal). */
+  embedded?: boolean;
 };
 
 export function TryOnTimingCharts({
@@ -27,6 +30,8 @@ export function TryOnTimingCharts({
   tryOnByWeekdayUtc,
   variant = "dashboard",
   subtitle,
+  showWeekdays = true,
+  embedded = false,
 }: TryOnTimingChartsProps) {
   const hours = normalize24(tryOnByHourUtc);
   const days = normalize7(tryOnByWeekdayUtc);
@@ -45,6 +50,82 @@ export function TryOnTimingCharts({
 
   const totalTryOns = hours.reduce((s, n) => s + n, 0);
 
+  const hourBlock = (
+    <div>
+      {!embedded ? (
+        <div className="flex flex-wrap items-baseline justify-between gap-2">
+          <h3 className="text-sm font-medium text-zinc-300">Peak hours (UTC)</h3>
+          <span className="text-xs tabular-nums text-zinc-500">
+            {totalTryOns.toLocaleString()} try-on{totalTryOns === 1 ? "" : "s"} in chart
+          </span>
+        </div>
+      ) : (
+        <div className="flex flex-wrap items-baseline justify-between gap-2">
+          <span className="text-xs tabular-nums text-zinc-500">
+            {totalTryOns.toLocaleString()} try-on{totalTryOns === 1 ? "" : "s"} (UTC)
+          </span>
+        </div>
+      )}
+      <div className={`flex gap-0.5 sm:gap-px md:gap-0.5 ${embedded ? "mt-2" : "mt-4"}`}>
+        {hours.map((count, hour) => (
+          <div key={hour} className="flex min-w-0 flex-1 flex-col items-center gap-1">
+            <div
+              className={`flex h-28 w-full max-w-[14px] flex-col justify-end ${trackCls}`}
+              title={`${hour}:00 UTC — ${count.toLocaleString()} try-on${count === 1 ? "" : "s"}`}
+            >
+              <div
+                className={`w-full ${barCls}`}
+                style={{ height: `${(count / maxHour) * 100}%`, minHeight: count > 0 ? 2 : 0 }}
+              />
+            </div>
+            {hour % 4 === 0 ? (
+              <span className={`${tickCls} tabular-nums`}>{hour}</span>
+            ) : (
+              <span className={`${tickCls} select-none opacity-0`} aria-hidden>
+                ·
+              </span>
+            )}
+          </div>
+        ))}
+      </div>
+      <p className="mt-2 text-center text-[10px] text-zinc-600">Hour of day (UTC)</p>
+    </div>
+  );
+
+  const weekdayBlock =
+    showWeekdays ? (
+      <div>
+        <h3 className="text-sm font-medium text-zinc-300">Busiest weekdays (UTC)</h3>
+        <p className="mt-1 text-xs text-zinc-500">Sunday = 0 … Saturday = 6 (same as JavaScript Date.getUTCDay()).</p>
+        <div className="mt-4 space-y-2">
+          {days.map((count, d) => (
+            <div key={d} className="flex items-center gap-3">
+              <span className="w-9 shrink-0 text-xs font-medium text-zinc-400">{WEEKDAY_LABELS[d]}</span>
+              <div className={`min-h-6 min-w-0 flex-1 overflow-hidden rounded-full ${trackCls}`}>
+                <div
+                  className={`h-6 rounded-full ${barCls}`}
+                  style={{ width: `${(count / maxDay) * 100}%`, minWidth: count > 0 ? 4 : 0 }}
+                  title={`${WEEKDAY_LABELS[d]} — ${count.toLocaleString()} try-on${count === 1 ? "" : "s"}`}
+                />
+              </div>
+              <span className="w-10 shrink-0 text-right text-xs tabular-nums text-zinc-500">
+                {count.toLocaleString()}
+              </span>
+            </div>
+          ))}
+        </div>
+      </div>
+    ) : null;
+
+  if (embedded) {
+    return (
+      <div className="space-y-0">
+        {hourBlock}
+        {weekdayBlock ? <div className="mt-8">{weekdayBlock}</div> : null}
+      </div>
+    );
+  }
+
   return (
     <div className={card}>
       <h2 className={titleCls}>When customers use Wear Me</h2>
@@ -54,59 +135,8 @@ export function TryOnTimingCharts({
       </p>
 
       <div className="mt-8 space-y-10">
-        <div>
-          <div className="flex flex-wrap items-baseline justify-between gap-2">
-            <h3 className="text-sm font-medium text-zinc-300">Peak hours (UTC)</h3>
-            <span className="text-xs tabular-nums text-zinc-500">
-              {totalTryOns.toLocaleString()} try-on{totalTryOns === 1 ? "" : "s"} in chart
-            </span>
-          </div>
-          <div className="mt-4 flex gap-0.5 sm:gap-px md:gap-0.5">
-            {hours.map((count, hour) => (
-              <div key={hour} className="flex min-w-0 flex-1 flex-col items-center gap-1">
-                <div
-                  className={`flex h-28 w-full max-w-[14px] flex-col justify-end ${trackCls}`}
-                  title={`${hour}:00 UTC — ${count.toLocaleString()} try-on${count === 1 ? "" : "s"}`}
-                >
-                  <div
-                    className={`w-full ${barCls}`}
-                    style={{ height: `${(count / maxHour) * 100}%`, minHeight: count > 0 ? 2 : 0 }}
-                  />
-                </div>
-                {hour % 4 === 0 ? (
-                  <span className={`${tickCls} tabular-nums`}>{hour}</span>
-                ) : (
-                  <span className={`${tickCls} select-none opacity-0`} aria-hidden>
-                    ·
-                  </span>
-                )}
-              </div>
-            ))}
-          </div>
-          <p className="mt-2 text-center text-[10px] text-zinc-600">Hour of day (UTC)</p>
-        </div>
-
-        <div>
-          <h3 className="text-sm font-medium text-zinc-300">Busiest weekdays (UTC)</h3>
-          <p className="mt-1 text-xs text-zinc-500">Sunday = 0 … Saturday = 6 (same as JavaScript Date.getUTCDay()).</p>
-          <div className="mt-4 space-y-2">
-            {days.map((count, d) => (
-              <div key={d} className="flex items-center gap-3">
-                <span className="w-9 shrink-0 text-xs font-medium text-zinc-400">{WEEKDAY_LABELS[d]}</span>
-                <div className={`min-h-6 min-w-0 flex-1 overflow-hidden rounded-full ${trackCls}`}>
-                  <div
-                    className={`h-6 rounded-full ${barCls}`}
-                    style={{ width: `${(count / maxDay) * 100}%`, minWidth: count > 0 ? 4 : 0 }}
-                    title={`${WEEKDAY_LABELS[d]} — ${count.toLocaleString()} try-on${count === 1 ? "" : "s"}`}
-                  />
-                </div>
-                <span className="w-10 shrink-0 text-right text-xs tabular-nums text-zinc-500">
-                  {count.toLocaleString()}
-                </span>
-              </div>
-            ))}
-          </div>
-        </div>
+        {hourBlock}
+        {weekdayBlock}
       </div>
     </div>
   );

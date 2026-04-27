@@ -17,6 +17,7 @@ import {
   wearPresetIdFromHistoryState,
   wearTryOnPopCount,
 } from "@/app/demo/demoGarments";
+import { AnalyticsInsightsModal } from "@/components/AnalyticsInsightsModal";
 import { Footer } from "@/components/Footer";
 import { Header } from "@/components/Header";
 import {
@@ -83,6 +84,7 @@ export default function DemoClient() {
   /** Prefetched when the result URL is ready — faster / more reliable save and Web Share. */
   const [wearResultBlob, setWearResultBlob] = useState<Blob | null>(null);
   const [wearSaveLoading, setWearSaveLoading] = useState(false);
+  const [analyticsOpen, setAnalyticsOpen] = useState(false);
 
   const wearGalleryInputRef = useRef<HTMLInputElement | null>(null);
   const wearVideoRef = useRef<HTMLVideoElement | null>(null);
@@ -887,16 +889,33 @@ export default function DemoClient() {
           </div>
         </div>
       )}
+      <AnalyticsInsightsModal
+        open={analyticsOpen}
+        onClose={() => setAnalyticsOpen(false)}
+        fetchUrl="/api/demo/analytics/insights"
+        theme="site"
+      />
       <Header />
 
       <main className="mx-auto max-w-5xl px-6 py-12 md:py-16">
-        <h1 className="text-balance text-3xl font-semibold tracking-tight text-zinc-50 md:text-4xl">
-          Virtual try-on demo
-        </h1>
-        <p className="mt-4 text-zinc-400">
-          Tap <span className="font-semibold text-zinc-100">Wear Me ✨</span> on a sample product, then upload your
-          photo in the modal (gallery or camera), generate, and download your try-on.
-        </p>
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+          <div className="min-w-0">
+            <h1 className="text-balance text-3xl font-semibold tracking-tight text-zinc-50 md:text-4xl">
+              Virtual try-on demo
+            </h1>
+            <p className="mt-4 text-zinc-400">
+              Tap <span className="font-semibold text-zinc-100">Wear Me ✨</span> on a sample product, then upload your
+              photo in the modal (gallery or camera), generate, and download your try-on.
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={() => setAnalyticsOpen(true)}
+            className="inline-flex h-11 shrink-0 items-center justify-center rounded-full border border-violet-500/40 bg-violet-950/50 px-6 text-sm font-semibold text-violet-100 transition hover:border-violet-400/55 hover:bg-violet-900/40"
+          >
+            Analytics
+          </button>
+        </div>
 
         <div
           className="mt-8 rounded-2xl border border-zinc-800 bg-zinc-900/60 p-5 shadow-lg shadow-black/20 backdrop-blur-sm"

@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { Footer } from "@/components/Footer";
-import { TryOnTimingCharts } from "@/components/TryOnTimingCharts";
+import { AnalyticsInsightsModal } from "@/components/AnalyticsInsightsModal";
 import { AdminWearMeClient } from "@/app/admin/AdminWearMeClient";
 
 type KeyRecord = {
@@ -42,8 +42,6 @@ type AnalyticsSummary = {
   tryOnsVisitor: number;
   clients: ClientAnalyticsRow[];
   demoVisitors: DemoVisitorAnalyticsRow[];
-  tryOnByHourUtc: number[];
-  tryOnByWeekdayUtc: number[];
 };
 
 type AdminTab = "clients" | "analytics" | "wearMe";
@@ -107,6 +105,7 @@ export default function AdminClient() {
   const [calcTryOnsInput, setCalcTryOnsInput] = useState("");
   /** Which client key powers admin Wear Me (retailer `/api/tryon`, not the public demo). */
   const [wearMeKeyId, setWearMeKeyId] = useState<string | null>(null);
+  const [analyticsInsightsOpen, setAnalyticsInsightsOpen] = useState(false);
 
   const remainingTotal = useMemo(() => {
     const used = keys.reduce((s, k) => s + k.usageCount, 0);
@@ -162,8 +161,6 @@ export default function AdminClient() {
         setAnalyticsError(data.error || "Failed to load analytics.");
         return;
       }
-      const h = Array.isArray(data.tryOnByHourUtc) ? data.tryOnByHourUtc : [];
-      const w = Array.isArray(data.tryOnByWeekdayUtc) ? data.tryOnByWeekdayUtc : [];
       setAnalytics({
         demoVisitsToday: data.demoVisitsToday,
         demoVisitsThisMonth: data.demoVisitsThisMonth,
@@ -172,12 +169,6 @@ export default function AdminClient() {
         tryOnsVisitor: data.tryOnsVisitor,
         clients: Array.isArray(data.clients) ? data.clients : [],
         demoVisitors: Array.isArray(data.demoVisitors) ? data.demoVisitors : [],
-        tryOnByHourUtc: Array.from({ length: 24 }, (_, i) =>
-          typeof h[i] === "number" && Number.isFinite(h[i]) ? h[i] : 0,
-        ),
-        tryOnByWeekdayUtc: Array.from({ length: 7 }, (_, i) =>
-          typeof w[i] === "number" && Number.isFinite(w[i]) ? w[i] : 0,
-        ),
       });
     } catch (e) {
       setAnalyticsError(e instanceof Error ? e.message : "Failed to load analytics.");
@@ -490,6 +481,12 @@ export default function AdminClient() {
           </div>
         </div>
       )}
+      <AnalyticsInsightsModal
+        open={analyticsInsightsOpen}
+        onClose={() => setAnalyticsInsightsOpen(false)}
+        fetchUrl="/api/admin/analytics/insights"
+        theme="admin"
+      />
       {editing && (
         <div
           className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-6 backdrop-blur-sm"
@@ -612,6 +609,13 @@ export default function AdminClient() {
               </p>
             </div>
             <div className="flex flex-wrap items-center gap-3">
+              <button
+                type="button"
+                onClick={() => setAnalyticsInsightsOpen(true)}
+                className="inline-flex h-11 items-center justify-center rounded-full border border-violet-500/40 bg-violet-950/50 px-5 text-sm font-semibold text-violet-100 transition hover:border-violet-400/55 hover:bg-violet-900/40"
+              >
+                Analytics
+              </button>
               <button
                 type="button"
                 onClick={() => setCreditCalcOpen(true)}
@@ -1013,13 +1017,6 @@ export default function AdminClient() {
                       </div>
                     </div>
                   </div>
-
-                  <TryOnTimingCharts
-                    variant="admin"
-                    subtitle="All completed try-ons across the platform."
-                    tryOnByHourUtc={analytics.tryOnByHourUtc}
-                    tryOnByWeekdayUtc={analytics.tryOnByWeekdayUtc}
-                  />
 
                   <div className="rounded-2xl border border-zinc-800 bg-zinc-900/60 p-0 overflow-hidden">
                     <div className="border-b border-zinc-800 px-6 py-5 md:px-8">

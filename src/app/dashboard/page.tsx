@@ -2,12 +2,9 @@ import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { Footer } from "@/components/Footer";
 import { Header } from "@/components/Header";
-import { TopProductThumbnails } from "@/components/TopProductThumbnails";
 import { getClientKeyRecordById } from "@/lib/apiKeyStore";
 import { getRetailerSessionUser } from "@/lib/retailerAuth";
-import { TryOnTimingCharts } from "@/components/TryOnTimingCharts";
-import { getTryOnTimingForClient } from "@/lib/platformAnalytics";
-import { getTopTryOnProducts } from "@/lib/tryOnAnalytics";
+import { DashboardAnalyticsButton } from "./DashboardAnalyticsButton";
 import { RetailerDashboardClient } from "./RetailerDashboardClient";
 
 export const metadata: Metadata = {
@@ -42,8 +39,6 @@ export default async function DashboardPage() {
     );
   }
 
-  const topProducts = await getTopTryOnProducts(client.id, 5);
-  const tryOnTiming = await getTryOnTimingForClient(client.id);
   const used = client.usageCount;
   const limit = client.usageLimit;
   const remaining = Math.max(0, limit - used);
@@ -56,33 +51,38 @@ export default async function DashboardPage() {
       <main className="pt-16">
         <section className="border-b border-white/10 py-14">
           <div className="mx-auto max-w-6xl px-6">
-            <h1 className="text-balance text-4xl font-semibold tracking-tight text-zinc-50 md:text-5xl">
-              Dashboard
-            </h1>
-            <p className="mt-4 max-w-2xl text-lg leading-relaxed text-zinc-400">
-              {[
-                [user.firstName, user.lastName].filter(Boolean).join(" "),
-                user.companyName?.trim(),
-              ]
-                .filter(Boolean)
-                .join(" · ") || "Account"}{" "}
-              · Try-on usage and your embed API key.
-            </p>
-            <p className="mt-2 text-sm text-zinc-500">
-              Website:{" "}
-              {user.websiteUrl ? (
-                <a
-                  href={user.websiteUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-zinc-300 underline-offset-2 hover:underline"
-                >
-                  {user.websiteUrl}
-                </a>
-              ) : (
-                <span className="text-zinc-600">Not provided</span>
-              )}
-            </p>
+            <div className="flex flex-col gap-6 sm:flex-row sm:items-start sm:justify-between">
+              <div className="min-w-0">
+                <h1 className="text-balance text-4xl font-semibold tracking-tight text-zinc-50 md:text-5xl">
+                  Dashboard
+                </h1>
+                <p className="mt-4 max-w-2xl text-lg leading-relaxed text-zinc-400">
+                  {[
+                    [user.firstName, user.lastName].filter(Boolean).join(" "),
+                    user.companyName?.trim(),
+                  ]
+                    .filter(Boolean)
+                    .join(" · ") || "Account"}{" "}
+                  · Try-on usage and your embed API key.
+                </p>
+                <p className="mt-2 text-sm text-zinc-500">
+                  Website:{" "}
+                  {user.websiteUrl ? (
+                    <a
+                      href={user.websiteUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-zinc-300 underline-offset-2 hover:underline"
+                    >
+                      {user.websiteUrl}
+                    </a>
+                  ) : (
+                    <span className="text-zinc-600">Not provided</span>
+                  )}
+                </p>
+              </div>
+              <DashboardAnalyticsButton />
+            </div>
           </div>
         </section>
 
@@ -143,28 +143,6 @@ export default async function DashboardPage() {
                     />
                   </div>
                 </div>
-              </div>
-
-              <TryOnTimingCharts
-                variant="dashboard"
-                subtitle="Try-ons billed to your API key (all time)."
-                tryOnByHourUtc={tryOnTiming.tryOnByHourUtc}
-                tryOnByWeekdayUtc={tryOnTiming.tryOnByWeekdayUtc}
-              />
-
-              <div className="rounded-2xl border border-white/10 bg-zinc-900/40 p-8 backdrop-blur-sm">
-                <h2 className="text-lg font-semibold text-zinc-50">Top Wear Me product images</h2>
-                <p className="mt-2 text-sm text-zinc-400">
-                  Ranked by completed try-ons. Send <span className="font-mono text-zinc-300">productImageUrl</span>{" "}
-                  with requests to attribute catalog images.
-                </p>
-                {topProducts.length === 0 ? (
-                  <p className="mt-6 text-sm text-zinc-500">
-                    No data yet. Complete a Wear Me on your site to see rankings here.
-                  </p>
-                ) : (
-                  <TopProductThumbnails items={topProducts} />
-                )}
               </div>
             </div>
           </div>
