@@ -187,13 +187,16 @@ body .shadow-2xl {
   box-shadow: var(--tw-ring-offset-shadow, 0 0 #0000), var(--tw-ring-shadow, 0 0 #0000), var(--tw-shadow);
 }
 
-body header {
-  border-color: rgb(255 255 255 / 0.1) !important;
-  background-color: rgb(9 9 11 / 0.7) !important;
+/* Main marketing nav only (see Header.tsx `.site-header`). Admin `<header>` elements are unchanged. */
+body header.site-header {
+  border-color: rgb(255 255 255 / 0.12) !important;
+  background-color: transparent !important;
+  -webkit-backdrop-filter: blur(12px);
+  backdrop-filter: blur(12px);
   color: #fafafa;
 }
 
-body header a {
+body header.site-header a {
   color: inherit;
 }
 
