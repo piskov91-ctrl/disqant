@@ -1,6 +1,10 @@
 import { Footer } from "@/components/Footer";
 import { Header } from "@/components/Header";
+import Image from "next/image";
 import Link from "next/link";
+
+const HOME_HERO_BG =
+  "https://img.freepik.com/premium-photo/image-dressing-fitting-room-modern-shopping-mall_454047-7451.jpg";
 
 export default function Home() {
   return (
@@ -9,8 +13,22 @@ export default function Home() {
       <main className="pt-16">
         <section
           aria-label="Home hero"
-          className="relative min-h-[calc(100dvh-4rem)] overflow-hidden text-white"
+          className="relative isolate min-h-[calc(100dvh-4rem)] overflow-hidden text-white"
         >
+          <div className="pointer-events-none absolute inset-0 z-0">
+            <Image
+              src={HOME_HERO_BG}
+              alt=""
+              fill
+              className="object-cover object-center"
+              priority
+              sizes="100vw"
+            />
+            <div
+              className="absolute inset-0 bg-gradient-to-b from-black/75 via-black/60 to-black/70"
+              aria-hidden
+            />
+          </div>
           <div className="relative z-10 mx-auto max-w-6xl px-4 py-12 sm:px-6 sm:py-16 md:py-20 lg:py-24 xl:py-28">
             <div className="grid grid-cols-1 items-center gap-10 md:grid-cols-2 md:gap-10 lg:gap-14 xl:gap-16">
               <div className="order-1 flex min-w-0 flex-col justify-center">
@@ -27,7 +45,7 @@ export default function Home() {
                   line of code.
                 </p>
 
-                <p className="mt-6 max-w-[36rem] text-sm leading-relaxed text-zinc-400 sm:mt-8 sm:text-base">
+                <p className="mt-6 max-w-[36rem] text-sm leading-relaxed text-zinc-300 sm:mt-8 sm:text-base">
                   Trusted by fashion retailers worldwide.
                 </p>
 
