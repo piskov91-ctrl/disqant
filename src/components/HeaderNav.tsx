@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useEffect, useId, useState } from "react";
 import { usePathname } from "next/navigation";
 import { Menu, X } from "lucide-react";
+import { retailerSessionLabel, type RetailerDisplayUser } from "@/lib/retailerDisplayName";
 
 const navTextClass = "text-sm text-zinc-600 transition hover:text-zinc-900";
 const navStackClass = "block rounded-xl px-3 py-2 text-base text-zinc-800 transition hover:bg-surface-raised";
@@ -12,12 +13,36 @@ const navAuthBtnClass =
 
 export function HeaderNav() {
   const pathname = usePathname();
+  const menuId = useId();
+  const [open, setOpen] = useState(false);
+  const [retailerUser, setRetailerUser] = useState<RetailerDisplayUser | null | undefined>(undefined);
+
+  useEffect(() => {
+    let cancelled = false;
+    void (async () => {
+      try {
+        const res = await fetch("/api/retailer/me", { credentials: "include" });
+        if (cancelled) return;
+        if (!res.ok) {
+          setRetailerUser(null);
+          return;
+        }
+        const data = (await res.json()) as { user?: RetailerDisplayUser };
+        setRetailerUser(data.user ?? null);
+      } catch {
+        if (!cancelled) setRetailerUser(null);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [pathname]);
+
+  const loggedIn = Boolean(retailerUser);
 
   function linkClass(href: string) {
     return `${navTextClass}${pathname === href ? " font-medium text-zinc-900" : ""}`;
   }
-  const menuId = useId();
-  const [open, setOpen] = useState(false);
 
   useEffect(() => {
     setOpen(false);
@@ -43,7 +68,7 @@ export function HeaderNav() {
   }, [open]);
 
   return (
-    <div className="flex items-center gap-3">
+    <div className="flex min-w-0 items-center justify-end gap-2 sm:gap-3">
       <nav className="hidden items-center gap-7 lg:gap-8 md:flex" aria-label="Primary">
         <Link href="/how-it-works" className={linkClass("/how-it-works")}>
           How it works
@@ -57,23 +82,41 @@ export function HeaderNav() {
         <Link href="/contact" className={linkClass("/contact")}>
           Contact
         </Link>
+        {loggedIn ? (
+          <Link href="/dashboard" className={linkClass("/dashboard")}>
+            Dashboard
+          </Link>
+        ) : null}
       </nav>
 
-      <Link
-        href="/login"
-        className={`${navAuthBtnClass}${pathname === "/login" ? " ring-2 ring-zinc-900/15" : ""}`}
-      >
-        Sign In
-      </Link>
-      <Link
-        href="/register"
-        className={`${navAuthBtnClass}${pathname === "/register" ? " ring-2 ring-zinc-900/15" : ""}`}
-      >
-        Sign Up
-      </Link>
-      <Link href="/demo" className="btn-accent-gradient h-10 px-5 text-sm font-semibold">
+      {!loggedIn ? (
+        <>
+          <Link
+            href="/login"
+            className={`${navAuthBtnClass}${pathname === "/login" ? " ring-2 ring-zinc-900/15" : ""}`}
+          >
+            Sign In
+          </Link>
+          <Link
+            href="/register"
+            className={`${navAuthBtnClass}${pathname === "/register" ? " ring-2 ring-zinc-900/15" : ""}`}
+          >
+            Sign Up
+          </Link>
+        </>
+      ) : null}
+      <Link href="/demo" className="btn-accent-gradient h-10 shrink-0 px-5 text-sm font-semibold">
         Try it now
       </Link>
+
+      {loggedIn && retailerUser ? (
+        <span
+          className="hidden max-w-[12rem] truncate text-right text-sm font-medium text-zinc-800 md:inline"
+          title={retailerSessionLabel(retailerUser)}
+        >
+          {retailerSessionLabel(retailerUser)}
+        </span>
+      ) : null}
 
       <button
         type="button"
@@ -126,23 +169,37 @@ export function HeaderNav() {
               <Link href="/contact" className={navStackClass} onClick={() => setOpen(false)}>
                 Contact
               </Link>
+              {loggedIn && retailerUser ? (
+                <>
+                  <Link href="/dashboard" className={navStackClass} onClick={() => setOpen(false)}>
+                    Dashboard
+                  </Link>
+                  <p className="mt-2 rounded-xl bg-zinc-100 px-3 py-2 text-sm font-medium text-zinc-800">
+                    {retailerSessionLabel(retailerUser)}
+                  </p>
+                </>
+              ) : null}
 
               <div className="my-2 h-px w-full bg-surface-border" />
 
-              <Link
-                href="/login"
-                className="inline-flex h-11 w-full items-center justify-center rounded-full border border-surface-border bg-white text-sm font-semibold text-zinc-900 shadow-sm transition hover:border-zinc-300 hover:bg-surface-raised"
-                onClick={() => setOpen(false)}
-              >
-                Sign In
-              </Link>
-              <Link
-                href="/register"
-                className="inline-flex h-11 w-full items-center justify-center rounded-full border border-surface-border bg-white text-sm font-semibold text-zinc-900 shadow-sm transition hover:border-zinc-300 hover:bg-surface-raised"
-                onClick={() => setOpen(false)}
-              >
-                Sign Up
-              </Link>
+              {!loggedIn ? (
+                <>
+                  <Link
+                    href="/login"
+                    className="inline-flex h-11 w-full items-center justify-center rounded-full border border-surface-border bg-white text-sm font-semibold text-zinc-900 shadow-sm transition hover:border-zinc-300 hover:bg-surface-raised"
+                    onClick={() => setOpen(false)}
+                  >
+                    Sign In
+                  </Link>
+                  <Link
+                    href="/register"
+                    className="inline-flex h-11 w-full items-center justify-center rounded-full border border-surface-border bg-white text-sm font-semibold text-zinc-900 shadow-sm transition hover:border-zinc-300 hover:bg-surface-raised"
+                    onClick={() => setOpen(false)}
+                  >
+                    Sign Up
+                  </Link>
+                </>
+              ) : null}
               <Link
                 href="/demo"
                 className="btn-accent-gradient mt-1 h-11 w-full justify-center text-sm font-semibold"

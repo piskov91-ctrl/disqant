@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 import { Footer } from "@/components/Footer";
 import { Header } from "@/components/Header";
 import { getClientKeyRecordById } from "@/lib/apiKeyStore";
+import { retailerWelcomeGreetingName } from "@/lib/retailerDisplayName";
 import { getRetailerSessionUser } from "@/lib/retailerAuth";
 import { DashboardAnalyticsButton } from "./DashboardAnalyticsButton";
 import { RetailerDashboardClient } from "./RetailerDashboardClient";
@@ -19,13 +20,26 @@ export default async function DashboardPage() {
   const user = await getRetailerSessionUser();
   if (!user) redirect("/login?next=/dashboard");
 
+  const greeting = retailerWelcomeGreetingName(user);
+  const welcomeHeader = (
+    <section className="border-b border-white/10 bg-zinc-950/95 px-6 py-10">
+      <div className="mx-auto max-w-6xl">
+        <p className="text-balance text-2xl font-semibold tracking-tight text-zinc-50 md:text-3xl">
+          Welcome back, {greeting}!
+        </p>
+        <p className="mt-2 text-sm font-medium uppercase tracking-wider text-zinc-500">Dashboard</p>
+      </div>
+    </section>
+  );
+
   const client = user.clientId ? await getClientKeyRecordById(user.clientId) : null;
 
   if (user.clientId && !client) {
     return (
       <>
         <Header />
-        <main className="pt-16">
+        <main className="min-h-dvh bg-zinc-950">
+          {welcomeHeader}
           <div className="mx-auto max-w-6xl px-6 py-16">
             <p className="text-zinc-300">
               We couldn&apos;t load your API key record. Please contact{" "}
@@ -45,34 +59,46 @@ export default async function DashboardPage() {
     return (
       <>
         <Header />
-        <main className="pt-16">
-          <section className="border-b border-white/10 py-14">
-            <div className="mx-auto max-w-6xl px-6">
-              <h1 className="text-balance text-4xl font-semibold tracking-tight text-zinc-50 md:text-5xl">
-                Dashboard
-              </h1>
-              <p className="mt-4 max-w-2xl text-lg leading-relaxed text-zinc-400">
-                {[
-                  [user.firstName, user.lastName].filter(Boolean).join(" "),
-                  user.companyName?.trim(),
-                ]
-                  .filter(Boolean)
-                  .join(" · ") || "Account"}
-              </p>
-            </div>
-          </section>
-          <section className="py-16">
-            <div className="mx-auto max-w-2xl px-6">
-              <div className="rounded-2xl border border-white/10 bg-zinc-900/40 p-8 text-center backdrop-blur-sm md:p-10">
-                <p className="text-lg leading-relaxed text-zinc-200">
-                  Welcome! You don&apos;t have an active plan yet. Choose a plan from our Subscriptions page to get
-                  started.
+        <main className="min-h-dvh bg-zinc-950">
+          {welcomeHeader}
+          <section className="py-16 md:py-20">
+            <div className="mx-auto max-w-lg px-6">
+              <div className="rounded-2xl border border-white/10 bg-zinc-900/50 p-10 text-center shadow-xl shadow-black/20 backdrop-blur-sm md:p-12">
+                <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl border border-white/10 bg-zinc-950/80 text-zinc-500">
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    width="28"
+                    height="28"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="1.5"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    aria-hidden
+                  >
+                    <path d="M12 3v3" />
+                    <path d="M16.5 8.5 18 10" />
+                    <path d="M21 12h-3" />
+                    <path d="M18 16.5l-1.5 1.5" />
+                    <path d="M12 21v-3" />
+                    <path d="M7.5 15.5 6 18" />
+                    <path d="M3 12h3" />
+                    <path d="M6 7.5 7.5 6" />
+                    <circle cx="12" cy="12" r="4" />
+                  </svg>
+                </div>
+                <h2 className="mt-8 text-xl font-semibold tracking-tight text-zinc-100 md:text-2xl">
+                  No active plan
+                </h2>
+                <p className="mt-4 text-base leading-relaxed text-zinc-400">
+                  You don&apos;t have an active plan yet. Get started today!
                 </p>
                 <Link
                   href="/subscriptions"
-                  className="btn-accent-gradient mt-8 inline-flex h-12 items-center justify-center px-8 text-sm font-semibold"
+                  className="btn-accent-gradient mt-10 inline-flex h-12 min-w-[10rem] items-center justify-center px-8 text-sm font-semibold"
                 >
-                  View subscriptions
+                  View Plans
                 </Link>
               </div>
             </div>
@@ -92,15 +118,14 @@ export default async function DashboardPage() {
   return (
     <>
       <Header />
-      <main className="pt-16">
-        <section className="border-b border-white/10 py-14">
+      <main className="min-h-dvh bg-zinc-950">
+        {welcomeHeader}
+
+        <section className="border-b border-white/10 py-10">
           <div className="mx-auto max-w-6xl px-6">
             <div className="flex flex-col gap-6 sm:flex-row sm:items-start sm:justify-between">
               <div className="min-w-0">
-                <h1 className="text-balance text-4xl font-semibold tracking-tight text-zinc-50 md:text-5xl">
-                  Dashboard
-                </h1>
-                <p className="mt-4 max-w-2xl text-lg leading-relaxed text-zinc-400">
+                <p className="text-lg leading-relaxed text-zinc-400">
                   {[
                     [user.firstName, user.lastName].filter(Boolean).join(" "),
                     user.companyName?.trim(),
@@ -133,7 +158,7 @@ export default async function DashboardPage() {
         <section className="border-b border-white/10 py-16">
           <div className="mx-auto max-w-6xl px-6">
             <div className="space-y-8">
-              <div className="rounded-2xl border border-white/10 bg-zinc-900/40 p-8 backdrop-blur-sm">
+              <div className="rounded-2xl border border-white/10 bg-zinc-900/50 p-8 shadow-lg shadow-black/10 backdrop-blur-sm">
                 <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
                   <div className="min-w-0">
                     <p className="text-sm font-medium text-zinc-400">API key</p>
@@ -159,15 +184,15 @@ export default async function DashboardPage() {
                 <RetailerDashboardClient apiKey={client.key} />
 
                 <div className="mt-8 grid gap-6 md:grid-cols-3">
-                  <div className="rounded-2xl border border-white/10 bg-zinc-950/30 p-6">
+                  <div className="rounded-2xl border border-white/10 bg-zinc-950/40 p-6">
                     <p className="text-sm font-medium text-zinc-400">Try-ons used</p>
                     <p className="mt-2 text-3xl font-semibold tracking-tight text-zinc-50">{used}</p>
                   </div>
-                  <div className="rounded-2xl border border-white/10 bg-zinc-950/30 p-6">
+                  <div className="rounded-2xl border border-white/10 bg-zinc-950/40 p-6">
                     <p className="text-sm font-medium text-zinc-400">Try-ons remaining</p>
                     <p className="mt-2 text-3xl font-semibold tracking-tight text-zinc-50">{remaining}</p>
                   </div>
-                  <div className="rounded-2xl border border-white/10 bg-zinc-950/30 p-6">
+                  <div className="rounded-2xl border border-white/10 bg-zinc-950/40 p-6">
                     <p className="text-sm font-medium text-zinc-400">Try-on limit</p>
                     <p className="mt-2 text-3xl font-semibold tracking-tight text-zinc-50">{limit}</p>
                   </div>

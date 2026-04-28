@@ -14,7 +14,9 @@ function HeaderNavSlot() {
         </div>
       }
     >
-      <HeaderNav />
+      <div className="flex min-w-0 flex-1 justify-end">
+        <HeaderNav />
+      </div>
     </Suspense>
   );
 }
