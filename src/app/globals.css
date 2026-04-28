@@ -16,7 +16,7 @@ body {
   background: #000000;
 }
 
-/* Fixed layer: black + three slow purple/blue gradient blobs (see SiteBackground) */
+/* Fixed full-viewport layer: fitting room photo + overlay (see SiteBackground). Legacy blob classes kept unused. */
 .app-bg {
   overflow: hidden;
   contain: layout style paint;

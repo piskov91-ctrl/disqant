@@ -2,9 +2,6 @@ import { Footer } from "@/components/Footer";
 import { Header } from "@/components/Header";
 import Link from "next/link";
 
-/** Hero background: <code>public/fittingroom.png</code>. */
-const HOME_HERO_BG = "/fittingroom.png";
-
 export default function Home() {
   return (
     <>
@@ -12,19 +9,8 @@ export default function Home() {
       <main className="pt-16">
         <section
           aria-label="Home hero"
-          className="relative isolate min-h-[calc(100dvh-4rem)] overflow-hidden text-white"
+          className="relative min-h-[calc(100dvh-4rem)] overflow-hidden text-white"
         >
-          <div className="pointer-events-none absolute inset-0 z-0 overflow-hidden bg-black">
-            <div
-              className="absolute inset-0 bg-cover bg-center bg-no-repeat"
-              style={{ backgroundImage: `url("${HOME_HERO_BG}")` }}
-              aria-hidden
-            />
-            <div
-              className="absolute inset-0 bg-gradient-to-b from-black/82 via-black/52 to-black/78 md:from-black/70 md:via-black/45 md:to-black/68"
-              aria-hidden
-            />
-          </div>
           <div className="relative z-10 mx-auto max-w-6xl px-4 py-12 sm:px-6 sm:py-16 md:py-20 lg:py-24 xl:py-28">
             <div className="grid grid-cols-1 items-center gap-10 md:grid-cols-2 md:gap-10 lg:gap-14 xl:gap-16">
               <div className="order-1 flex min-w-0 flex-col justify-center">
