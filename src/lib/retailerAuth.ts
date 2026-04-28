@@ -2,7 +2,7 @@ import crypto from "node:crypto";
 import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
 import { getRedis } from "@/lib/apiKeyStore";
-import { RETAILER_PASSWORD_MAX, RETAILER_PASSWORD_MIN } from "@/lib/retailerPasswordPolicy";
+import { validateRetailerPasswordStrength } from "@/lib/retailerPasswordPolicy";
 
 export const RETAILER_SESSION_COOKIE = "disquant_retailer_session";
 
@@ -181,11 +181,9 @@ export async function registerRetailer(params: {
   }
 
   const password = params.password;
-  if (password.length < RETAILER_PASSWORD_MIN) {
-    throw new Error(`Password must be at least ${RETAILER_PASSWORD_MIN} characters.`);
-  }
-  if (password.length > RETAILER_PASSWORD_MAX) {
-    throw new Error(`Password must be at most ${RETAILER_PASSWORD_MAX} characters.`);
+  const pwdErr = validateRetailerPasswordStrength(password);
+  if (pwdErr) {
+    throw new Error(pwdErr);
   }
 
   const redis = getRedis();

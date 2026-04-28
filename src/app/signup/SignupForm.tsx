@@ -2,7 +2,11 @@
 
 import Link from "next/link";
 import { useCallback, useState } from "react";
-import { RETAILER_PASSWORD_MAX, RETAILER_PASSWORD_MIN } from "@/lib/retailerPasswordPolicy";
+import {
+  RETAILER_PASSWORD_MAX,
+  RETAILER_PASSWORD_RULES_SUMMARY,
+  validateRetailerPasswordStrength,
+} from "@/lib/retailerPasswordPolicy";
 
 const inputClass =
   "mt-2 block w-full rounded-xl border border-zinc-600/80 bg-zinc-950/80 px-4 py-3 text-sm text-zinc-100 shadow-inner shadow-black/20 outline-none transition placeholder:text-zinc-600 focus:border-violet-500/60 focus:ring-1 focus:ring-violet-500/30";
@@ -47,12 +51,8 @@ export function SignupForm() {
     }
     const webErr = validateWebsiteIfPresent(websiteUrl);
     if (webErr) return webErr;
-    if (password.length < RETAILER_PASSWORD_MIN) {
-      return `Password must be at least ${RETAILER_PASSWORD_MIN} characters.`;
-    }
-    if (password.length > RETAILER_PASSWORD_MAX) {
-      return `Password must be at most ${RETAILER_PASSWORD_MAX} characters.`;
-    }
+    const pwdErr = validateRetailerPasswordStrength(password);
+    if (pwdErr) return pwdErr;
     if (password !== confirmPassword) return "Password and confirmation do not match.";
     if (!agreeTerms) return "You must agree to the Terms & Conditions.";
     if (!agreePrivacy) return "You must agree to the Privacy Policy.";
@@ -208,8 +208,13 @@ export function SignupForm() {
             onChange={(e) => setPassword(e.target.value)}
             maxLength={RETAILER_PASSWORD_MAX}
             className={inputClass}
-            placeholder={`At least ${RETAILER_PASSWORD_MIN} characters`}
+            placeholder="Create a strong password"
           />
+          <ul className="mt-2 list-inside list-disc space-y-1 text-xs leading-relaxed text-zinc-500">
+            {RETAILER_PASSWORD_RULES_SUMMARY.map((rule) => (
+              <li key={rule}>{rule}</li>
+            ))}
+          </ul>
         </div>
 
         <div>
