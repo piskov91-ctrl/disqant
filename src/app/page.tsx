@@ -1,4 +1,5 @@
 import { Footer } from "@/components/Footer";
+import HomeFittingRoomSlot from "@/components/HomeFittingRoomSlot";
 import { Header } from "@/components/Header";
 import Link from "next/link";
 
@@ -40,18 +41,7 @@ export default function Home() {
               </div>
 
               <div className="order-2 flex w-full min-w-0 justify-center md:justify-end">
-                <video
-                  className="h-auto w-full max-h-[min(52vh,420px)] max-w-full rounded-2xl object-contain shadow-lg shadow-black/30 sm:max-h-[min(56vh,480px)] md:max-h-[min(62vh,560px)] lg:max-h-[min(68vh,640px)]"
-                  autoPlay
-                  loop
-                  muted
-                  playsInline
-                  preload="auto"
-                  controls={false}
-                  aria-label="Wear Me virtual try-on demo video"
-                >
-                  <source src="/demo-video.mp4" type="video/mp4" />
-                </video>
+                <HomeFittingRoomSlot />
               </div>
             </div>
           </div>
