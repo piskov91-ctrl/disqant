@@ -2,8 +2,8 @@ import { Footer } from "@/components/Footer";
 import { Header } from "@/components/Header";
 import Link from "next/link";
 
-const HOME_HERO_BG =
-  "https://img.freepik.com/premium-photo/image-dressing-fitting-room-modern-shopping-mall_454047-7451.jpg";
+/** Hero photo: add <code>public/fittingroom.jpg</code> (adjust path if you use another extension). */
+const HOME_HERO_BG = "/fittingroom.jpg";
 
 export default function Home() {
   return (
@@ -16,12 +16,12 @@ export default function Home() {
         >
           <div className="pointer-events-none absolute inset-0 z-0 overflow-hidden bg-black">
             <div
-              className="absolute inset-[-14%] bg-cover bg-center bg-no-repeat"
+              className="absolute inset-0 bg-black bg-cover bg-[center_38%] bg-no-repeat md:bg-contain md:bg-center"
               style={{ backgroundImage: `url("${HOME_HERO_BG}")` }}
               aria-hidden
             />
             <div
-              className="absolute inset-0 bg-gradient-to-b from-black/75 via-black/60 to-black/70"
+              className="absolute inset-0 bg-gradient-to-b from-black/82 via-black/52 to-black/78 md:from-black/70 md:via-black/45 md:to-black/68"
               aria-hidden
             />
           </div>
