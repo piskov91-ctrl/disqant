@@ -152,11 +152,16 @@ export async function POST(req: Request) {
   const clientApiKey =
     req.headers.get("x-api-key") ||
     req.headers.get("x-fit-room-api-key") ||
+    req.headers.get("x-disquant-api-key") ||
     (req.headers.get("authorization")?.startsWith("Bearer ")
       ? req.headers.get("authorization")!.slice("Bearer ".length)
       : null);
 
-  let effectiveClientApiKey = clientApiKey || process.env.FIT_ROOM_DEMO_TEST_CLIENT_KEY || null;
+  let effectiveClientApiKey =
+    clientApiKey ||
+    process.env.FIT_ROOM_DEMO_TEST_CLIENT_KEY?.trim() ||
+    process.env.DISQUANT_DEMO_TEST_CLIENT_KEY?.trim() ||
+    null;
   if (!effectiveClientApiKey) {
     // Final fallback for /demo: use the newest key in the DB so the demo works
     // without exposing keys in the UI or URL.

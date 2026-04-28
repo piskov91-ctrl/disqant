@@ -15,12 +15,37 @@ const KEY_INDEX = "fit-room:clientKeys:index"; // list of ids (newest first)
 const KEY_PREFIX = "fit-room:clientKeys:byId:"; // + id
 const KEY_BY_KEY_PREFIX = "fit-room:clientKeys:byKey:"; // + apiKey -> id
 
+/** Pre-rename keys in Upstash (demo still reads these until data is recreated or migrated). */
+const LEGACY_KEY_INDEX = "disquant:clientKeys:index";
+const LEGACY_KEY_PREFIX = "disquant:clientKeys:byId:";
+const LEGACY_KEY_BY_KEY_PREFIX = "disquant:clientKeys:byKey:";
+
 function recordKey(id: string) {
   return `${KEY_PREFIX}${id}`;
 }
 
 function keyLookupKey(apiKey: string) {
   return `${KEY_BY_KEY_PREFIX}${apiKey}`;
+}
+
+function recordKeyLegacy(id: string) {
+  return `${LEGACY_KEY_PREFIX}${id}`;
+}
+
+function keyLookupKeyLegacy(apiKey: string) {
+  return `${LEGACY_KEY_BY_KEY_PREFIX}${apiKey}`;
+}
+
+async function getRecordForMutation(id: string): Promise<{
+  rec: ClientApiKeyRecord;
+  redisKey: string;
+} | null> {
+  const redis = getRedis();
+  const fromNew = (await redis.get(recordKey(id))) as ClientApiKeyRecord | null;
+  if (fromNew) return { rec: fromNew, redisKey: recordKey(id) };
+  const fromLegacy = (await redis.get(recordKeyLegacy(id))) as ClientApiKeyRecord | null;
+  if (fromLegacy) return { rec: fromLegacy, redisKey: recordKeyLegacy(id) };
+  return null;
 }
 
 let redisSingleton: Redis | null = null;
@@ -44,13 +69,19 @@ export function getRedis() {
 }
 
 export async function listClientKeys() {
-  // Read IDs from index, then mget full records.
+  // Read IDs from index, then mget full records. If the fit-room index is empty,
+  // fall back to legacy `disquant:*` keys so existing deployments keep working.
   const redis = getRedis();
-  const ids = (await redis.lrange<string>(KEY_INDEX, 0, 499)) ?? [];
+  let ids = (await redis.lrange<string>(KEY_INDEX, 0, 499)) ?? [];
+  const recordKeyFn: (id: string) => string =
+    ids.length > 0 ? recordKey : recordKeyLegacy;
+  if (ids.length === 0) {
+    ids = (await redis.lrange<string>(LEGACY_KEY_INDEX, 0, 499)) ?? [];
+  }
   if (ids.length === 0) return [];
 
   // Upstash client typing for mget varies; normalize to a nullable list.
-  const keys = (await redis.mget(...ids.map((id: string) => recordKey(id)))) as Array<
+  const keys = (await redis.mget(...ids.map((id: string) => recordKeyFn(id)))) as Array<
     ClientApiKeyRecord | null
   >;
   return (keys ?? []).filter(Boolean) as ClientApiKeyRecord[];
@@ -103,25 +134,47 @@ export async function deleteClientKey(id: string) {
   const redis = getRedis();
   if (!id) throw new Error("Key id is required.");
 
-  const rec = (await redis.get(recordKey(id))) as ClientApiKeyRecord | null;
+  let rec = (await redis.get(recordKey(id))) as ClientApiKeyRecord | null;
+  let legacy = false;
+  if (!rec) {
+    rec = (await redis.get(recordKeyLegacy(id))) as ClientApiKeyRecord | null;
+    legacy = true;
+  }
+  if (!rec) throw new Error("Key id not found.");
 
-  // Remove id from index and delete the record.
-  await redis.lrem(KEY_INDEX, 0, id);
-  await redis.del(recordKey(id));
-  if (rec?.key) await redis.del(keyLookupKey(rec.key));
+  const indexKey = legacy ? LEGACY_KEY_INDEX : KEY_INDEX;
+  const recordRedisKey = legacy ? recordKeyLegacy(id) : recordKey(id);
+  const lookupDel = rec?.key
+    ? legacy
+      ? keyLookupKeyLegacy(rec.key)
+      : keyLookupKey(rec.key)
+    : null;
+
+  await redis.lrem(indexKey, 0, id);
+  await redis.del(recordRedisKey);
+  if (lookupDel) await redis.del(lookupDel);
   await redis.del(`fit-room:tryon:products:${id}`);
   await redis.del(`fit-room:tryon:events:${id}`);
+  await redis.del(`disquant:tryon:products:${id}`);
+  await redis.del(`disquant:tryon:events:${id}`);
   await redis.srem("fit-room:analytics:clientStats:ids", id);
   await redis.del(`fit-room:analytics:clientStats:${id}`);
+  await redis.srem("disquant:analytics:clientStats:ids", id);
+  await redis.del(`disquant:analytics:clientStats:${id}`);
   return { ok: true as const };
 }
 
 export async function getClientByApiKey(apiKey: string) {
   const redis = getRedis();
-  const id = (await redis.get(keyLookupKey(apiKey))) as string | null;
+  let id = (await redis.get(keyLookupKey(apiKey))) as string | null;
+  let legacy = false;
+  if (!id) {
+    id = (await redis.get(keyLookupKeyLegacy(apiKey))) as string | null;
+    legacy = true;
+  }
   if (!id) return null;
-  const rec = (await redis.get(recordKey(id))) as ClientApiKeyRecord | null;
-  return rec;
+  const recKey = legacy ? recordKeyLegacy(id) : recordKey(id);
+  return (await redis.get(recKey)) as ClientApiKeyRecord | null;
 }
 
 /** Load a client key record by internal id (e.g. retailer dashboard). */
@@ -129,7 +182,8 @@ export async function getClientKeyRecordById(id: string): Promise<ClientApiKeyRe
   if (!id) return null;
   const redis = getRedis();
   const rec = (await redis.get(recordKey(id))) as ClientApiKeyRecord | null;
-  return rec ?? null;
+  if (rec) return rec;
+  return (await redis.get(recordKeyLegacy(id))) as ClientApiKeyRecord | null;
 }
 
 export async function assertClientCanUseByApiKey(apiKey: string) {
@@ -141,20 +195,22 @@ export async function assertClientCanUseByApiKey(apiKey: string) {
 
 export async function incrementUsageOrThrow(id: string) {
   const redis = getRedis();
-  const rec = (await redis.get(recordKey(id))) as ClientApiKeyRecord | null;
-  if (!rec) throw new Error("Client key not found.");
+  const bundle = await getRecordForMutation(id);
+  if (!bundle) throw new Error("Client key not found.");
+  const { rec, redisKey } = bundle;
   if (rec.usageCount >= rec.usageLimit) throw new Error("Try-on limit exceeded.");
   const next: ClientApiKeyRecord = { ...rec, usageCount: rec.usageCount + 1 };
-  await redis.set(recordKey(id), next);
+  await redis.set(redisKey, next);
   return next;
 }
 
 export async function resetUsage(id: string) {
   const redis = getRedis();
-  const rec = (await redis.get(recordKey(id))) as ClientApiKeyRecord | null;
-  if (!rec) throw new Error("Client key not found.");
+  const bundle = await getRecordForMutation(id);
+  if (!bundle) throw new Error("Client key not found.");
+  const { rec, redisKey } = bundle;
   const next: ClientApiKeyRecord = { ...rec, usageCount: 0 };
-  await redis.set(recordKey(id), next);
+  await redis.set(redisKey, next);
   return next;
 }
 
@@ -174,8 +230,9 @@ export async function updateClientKey(params: {
     throw new Error("Try-on limit must be a positive number.");
   }
 
-  const rec = (await redis.get(recordKey(id))) as ClientApiKeyRecord | null;
-  if (!rec) throw new Error("Client key not found.");
+  const bundle = await getRecordForMutation(id);
+  if (!bundle) throw new Error("Client key not found.");
+  const { rec, redisKey } = bundle;
 
   const next: ClientApiKeyRecord = {
     ...rec,
@@ -185,7 +242,7 @@ export async function updateClientKey(params: {
       ? { fashnApiKey: params.fashnApiKey.trim() }
       : null),
   };
-  await redis.set(recordKey(id), next);
+  await redis.set(redisKey, next);
   return next;
 }
 

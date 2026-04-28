@@ -34,6 +34,15 @@ export function normalizeProductImageUrl(raw: string | null | undefined): string
   }
 }
 
+function tryonProductsKey(clientId: string) {
+  return `fit-room:tryon:products:${clientId}`;
+}
+
+/** Pre-rename product zset; merged on read with {@link tryonProductsKey} for continuity after rebrand. */
+function tryonProductsKeyLegacy(clientId: string) {
+  return `disquant:tryon:products:${clientId}`;
+}
+
 /**
  * Records a completed try-on: increments per-URL score and appends an audit event (timestamp + URL + client id).
  */
@@ -53,7 +62,7 @@ export async function recordTryOnProductUsage(params: {
   const payload = JSON.stringify(line);
   try {
     await Promise.all([
-      redis.zincrby(`fit-room:tryon:products:${id}`, 1, productImageUrl),
+      redis.zincrby(tryonProductsKey(id), 1, productImageUrl),
       redis.lpush(`fit-room:tryon:events:${id}`, payload),
     ]);
     await redis.ltrim(`fit-room:tryon:events:${id}`, 0, EVENTS_MAX - 1);
@@ -87,18 +96,36 @@ function parseZrangeWithScores(raw: unknown, maxPairs: number): TopTryOnProduct[
   return out;
 }
 
+function mergeZrangeIntoCounts(map: Map<string, number>, raw: unknown) {
+  for (const r of parseZrangeWithScores(raw, 1_000_000)) {
+    map.set(r.productImageUrl, (map.get(r.productImageUrl) ?? 0) + r.tryOnCount);
+  }
+}
+
 export async function getTopTryOnProducts(
   clientId: string,
   limit = 5,
 ): Promise<TopTryOnProduct[]> {
   const redis = getRedis();
-  const key = `fit-room:tryon:products:${clientId}`;
+  const fetchCap = Math.min(2000, Math.max(limit * 8, limit));
   try {
-    const raw = (await redis.zrange(key, 0, limit - 1, {
-      rev: true,
-      withScores: true,
-    })) as unknown;
-    return parseZrangeWithScores(raw, limit);
+    const [newRaw, oldRaw] = await Promise.all([
+      redis.zrange(tryonProductsKey(clientId), 0, fetchCap - 1, {
+        rev: true,
+        withScores: true,
+      }) as unknown,
+      redis.zrange(tryonProductsKeyLegacy(clientId), 0, fetchCap - 1, {
+        rev: true,
+        withScores: true,
+      }) as unknown,
+    ]);
+    const map = new Map<string, number>();
+    mergeZrangeIntoCounts(map, newRaw);
+    mergeZrangeIntoCounts(map, oldRaw);
+    return Array.from(map.entries())
+      .map(([productImageUrl, tryOnCount]) => ({ productImageUrl, tryOnCount }))
+      .sort((a, b) => b.tryOnCount - a.tryOnCount)
+      .slice(0, limit);
   } catch (e) {
     console.error("[tryOnAnalytics] getTop failed", e);
   }
@@ -109,13 +136,25 @@ export async function getTopTryOnProducts(
 export async function getAllTryOnProducts(clientId: string, max = 2000): Promise<TopTryOnProduct[]> {
   if (!clientId) return [];
   const redis = getRedis();
-  const key = `fit-room:tryon:products:${clientId}`;
+  const cap = Math.min(max, 5000);
   try {
-    const raw = (await redis.zrange(key, 0, max - 1, {
-      rev: true,
-      withScores: true,
-    })) as unknown;
-    return parseZrangeWithScores(raw, max);
+    const [newRaw, oldRaw] = await Promise.all([
+      redis.zrange(tryonProductsKey(clientId), 0, cap - 1, {
+        rev: true,
+        withScores: true,
+      }) as unknown,
+      redis.zrange(tryonProductsKeyLegacy(clientId), 0, cap - 1, {
+        rev: true,
+        withScores: true,
+      }) as unknown,
+    ]);
+    const map = new Map<string, number>();
+    mergeZrangeIntoCounts(map, newRaw);
+    mergeZrangeIntoCounts(map, oldRaw);
+    return Array.from(map.entries())
+      .map(([productImageUrl, tryOnCount]) => ({ productImageUrl, tryOnCount }))
+      .sort((a, b) => b.tryOnCount - a.tryOnCount)
+      .slice(0, max);
   } catch (e) {
     console.error("[tryOnAnalytics] getAllTryOnProducts failed", e);
   }

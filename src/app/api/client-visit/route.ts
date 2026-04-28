@@ -7,6 +7,7 @@ function apiKeyFromRequest(req: Request): string | null {
   const h =
     req.headers.get("x-api-key") ||
     req.headers.get("x-fit-room-api-key") ||
+    req.headers.get("x-disquant-api-key") ||
     (req.headers.get("authorization")?.startsWith("Bearer ")
       ? req.headers.get("authorization")!.slice("Bearer ".length)
       : null);

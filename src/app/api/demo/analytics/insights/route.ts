@@ -6,7 +6,9 @@ export const runtime = "nodejs";
 
 /** Same billing client as <code>/api/tryon</code> when no integrator key is sent (demo / fallback). */
 async function resolveDemoBillingClientId(): Promise<string | null> {
-  const envKey = process.env.FIT_ROOM_DEMO_TEST_CLIENT_KEY?.trim();
+  const envKey =
+    process.env.FIT_ROOM_DEMO_TEST_CLIENT_KEY?.trim() ||
+    process.env.DISQUANT_DEMO_TEST_CLIENT_KEY?.trim();
   if (envKey) {
     const rec = await getClientByApiKey(envKey);
     if (rec) return rec.id;
