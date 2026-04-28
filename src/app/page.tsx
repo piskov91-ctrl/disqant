@@ -16,7 +16,7 @@ export default function Home() {
         >
           <div className="pointer-events-none absolute inset-0 z-0 overflow-hidden bg-black">
             <div
-              className="absolute inset-0 bg-black bg-cover bg-[center_38%] bg-no-repeat md:bg-contain md:bg-center"
+              className="absolute inset-0 bg-cover bg-center bg-no-repeat"
               style={{ backgroundImage: `url("${HOME_HERO_BG}")` }}
               aria-hidden
             />
