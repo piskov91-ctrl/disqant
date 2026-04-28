@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { PricingGetStartedCta } from "@/components/PricingGetStartedCta";
 
 type Plan = {
   name: string;
@@ -6,10 +7,11 @@ type Plan = {
   period: string | null;
   features: readonly string[];
   highlighted: boolean;
-  href: string;
   contactOnly?: boolean;
   /** Shown instead of price for contact tier (e.g. "Contact us"). */
   subtitle?: string;
+  /** Only for Enterprise — self-serve plans use {@link PricingGetStartedCta}. */
+  href?: string;
 };
 
 const plans: Plan[] = [
@@ -24,7 +26,6 @@ const plans: Plan[] = [
       "Easy integration",
     ],
     highlighted: false,
-    href: "/demo",
   },
   {
     name: "Growth",
@@ -32,7 +33,6 @@ const plans: Plan[] = [
     period: "/month",
     features: ["600 try-ons", "For growing stores", "Priority support"],
     highlighted: true,
-    href: "/demo",
   },
   {
     name: "Pro",
@@ -40,7 +40,6 @@ const plans: Plan[] = [
     period: "/month",
     features: ["1,200 try-ons", "For large stores", "Dedicated support"],
     highlighted: false,
-    href: "/demo",
   },
   {
     name: "Enterprise",
@@ -122,18 +121,24 @@ export function Pricing({ sectionId = "subscriptions" }: PricingProps) {
                   ))}
                 </ul>
 
-                <Link
-                  href={plan.href}
-                  className={`mt-8 inline-flex h-11 w-full items-center justify-center rounded-full text-sm font-semibold transition ${
-                    plan.highlighted
-                      ? "bg-gradient-to-r from-[#7c3aed] to-[#ec4899] text-white shadow-accent-glow hover:opacity-[0.96]"
-                      : isContact
-                        ? "border border-white/20 bg-transparent text-zinc-100 hover:border-white/40 hover:bg-white/5"
+                {isContact ? (
+                  <Link
+                    href={plan.href ?? "/contact"}
+                    className="mt-8 inline-flex h-11 w-full items-center justify-center rounded-full border border-white/20 bg-transparent text-sm font-semibold text-zinc-100 transition hover:border-white/40 hover:bg-white/5"
+                  >
+                    {ctaLabel}
+                  </Link>
+                ) : (
+                  <PricingGetStartedCta
+                    className={`mt-8 inline-flex h-11 w-full items-center justify-center rounded-full text-sm font-semibold transition disabled:cursor-wait disabled:opacity-70 ${
+                      plan.highlighted
+                        ? "bg-gradient-to-r from-[#7c3aed] to-[#ec4899] text-white shadow-accent-glow hover:opacity-[0.96]"
                         : "border border-white/15 bg-white/5 text-zinc-100 hover:border-white/30 hover:bg-white/10"
-                  }`}
-                >
-                  {ctaLabel}
-                </Link>
+                    }`}
+                  >
+                    {ctaLabel}
+                  </PricingGetStartedCta>
+                )}
               </article>
             );
           })}
