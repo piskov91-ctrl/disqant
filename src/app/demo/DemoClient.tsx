@@ -994,7 +994,7 @@ export default function DemoClient() {
                         <div className="pointer-events-none absolute inset-x-0 bottom-0 z-10 flex justify-center bg-gradient-to-t from-black/70 via-black/35 to-transparent pb-3 pt-12">
                           <button
                             type="button"
-                            className="wear-me-btn pointer-events-auto"
+                            className="wear-me-3d-final pointer-events-auto"
                             aria-label="Wear Me"
                             onClick={(e) => {
                               e.preventDefault();
@@ -1002,7 +1002,28 @@ export default function DemoClient() {
                               openWearMe(p);
                             }}
                           >
-                            Wear Me
+                            <div className="brushed-surface">
+                              <div className="monogram-frame">
+                                <svg viewBox="0 0 100 100" className="intertwined-wm">
+                                  <text x="10" y="72" style={{ fontFamily: "serif", fontSize: "65px", fontWeight: "bold" }}>
+                                    W
+                                  </text>
+                                  <text
+                                    x="36"
+                                    y="72"
+                                    style={{
+                                      fontFamily: "serif",
+                                      fontSize: "65px",
+                                      fontWeight: "bold",
+                                      opacity: 0.9,
+                                    }}
+                                  >
+                                    M
+                                  </text>
+                                </svg>
+                              </div>
+                              <span className="btn-text-luxury">WEAR ME</span>
+                            </div>
                           </button>
                         </div>
                       </div>
