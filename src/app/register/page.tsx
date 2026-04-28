@@ -6,7 +6,7 @@ import { Header } from "@/components/Header";
 
 export const metadata: Metadata = {
   title: "Sign up",
-  description: "Create a retailer account for Disquant Wear Me.",
+  description: "Create a retailer account for Fit Room Wear Me.",
 };
 
 export default function RegisterPage() {

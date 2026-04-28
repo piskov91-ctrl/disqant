@@ -18,7 +18,7 @@ export function Features() {
     <section id="features" className="scroll-mt-28 py-24">
       <div className="mx-auto max-w-6xl px-6">
         <h2 className="text-center text-sm font-semibold uppercase tracking-widest text-accent">
-          Why Disquant
+          Why Fit Room
         </h2>
         <p className="mx-auto mt-3 max-w-2xl text-center text-3xl font-semibold tracking-tight text-zinc-900 md:text-4xl">
           Everything you need to sell with confidence online

@@ -96,7 +96,7 @@ export default function DemoClient() {
 
   /** Admin analytics: one demo page visit per load (debounce shields React Strict Mode double-mount in dev). */
   useEffect(() => {
-    const key = "disquant_demo_visit_last_beacon_ms";
+    const key = "fit-room_demo_visit_last_beacon_ms";
     const now = Date.now();
     try {
       const prev = Number(sessionStorage.getItem(key) ?? "0");
@@ -549,7 +549,7 @@ export default function DemoClient() {
       const reqHeaders: Record<string, string> = { "x-tryon-trace": tryOnTrace };
       if (urlKey) reqHeaders["x-api-key"] = urlKey;
       console.log(
-        "[disquant] browser: about to fetch POST /api/tryon (one successful log per try-on; if you see 2+ per click, the client is firing more than one request before the in-flight ref blocks it)",
+        "[fit-room] browser: about to fetch POST /api/tryon (one successful log per try-on; if you see 2+ per click, the client is firing more than one request before the in-flight ref blocks it)",
         { tryOnTrace },
       );
       const res = await fetch("/api/tryon", {
@@ -636,7 +636,7 @@ export default function DemoClient() {
         setWearResultBlob(blob);
       }
       const ext = blob.type?.includes("png") ? "png" : "jpeg";
-      const fileName = `disqant-tryon.${ext}`;
+      const fileName = `fit-room-tryon.${ext}`;
 
       const objectUrl = URL.createObjectURL(blob);
       const a = document.createElement("a");
@@ -847,7 +847,7 @@ export default function DemoClient() {
             </div>
 
             <div className="dq-brand">
-              <span>Disqant</span>
+              <span>Fit Room</span>
               <small>virtual try-on</small>
             </div>
           </div>

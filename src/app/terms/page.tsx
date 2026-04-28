@@ -3,9 +3,9 @@ import { Header } from "@/components/Header";
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "Terms & Conditions — Disqant",
+  title: "Terms & Conditions — Fit Room",
   description:
-    "Terms & Conditions governing use of the Disqant virtual try-on SaaS platform, including acceptable use, liability, and UK law.",
+    "Terms & Conditions governing use of the Fit Room virtual try-on SaaS platform, including acceptable use, liability, and UK law.",
 };
 
 export default function TermsPage() {
@@ -31,8 +31,8 @@ export default function TermsPage() {
           <div className="mx-auto max-w-3xl space-y-10 px-6 text-sm leading-relaxed text-zinc-600 md:text-base">
             <p className="text-zinc-700">
               These Terms and Conditions (&quot;Terms&quot;) govern your access to and use of the websites, applications, APIs,
-              and virtual try-on services made available by Disqant at{" "}
-              <span className="text-zinc-900">https://disqant.com</span> (the &quot;Service&quot;). By accessing or using
+              and virtual try-on services made available by Fit Room at{" "}
+              <span className="text-zinc-900">https://fit-room.com</span> (the &quot;Service&quot;). By accessing or using
               the Service, you agree to these Terms. If you are accepting on behalf of a company or other legal entity,
               you represent that you have authority to bind that entity.
             </p>
@@ -40,7 +40,7 @@ export default function TermsPage() {
             <div>
               <h2 className="text-lg font-semibold text-zinc-900">1. The Service</h2>
               <p className="mt-3">
-                Disqant provides cloud software that enables retailers to offer AI-assisted virtual try-on to shoppers. We
+                Fit Room provides cloud software that enables retailers to offer AI-assisted virtual try-on to shoppers. We
                 may modify, suspend, or discontinue features with reasonable notice where practicable, or immediately if
                 needed for security, legal compliance, or to protect the Service. We are based in the United Kingdom and
                 provide the Service for business and professional use unless otherwise agreed in writing.
@@ -99,10 +99,10 @@ export default function TermsPage() {
             <div>
               <h2 className="text-lg font-semibold text-zinc-900">6. Intellectual property</h2>
               <p className="mt-3">
-                All Disquant technology and branding are proprietary to Disquant Ltd, including without limitation
-                software, APIs, models, algorithms, documentation, user interfaces, and the Disquant name, logos, trade
+                All Fit Room technology and branding are proprietary to Fit Room Ltd, including without limitation
+                software, APIs, models, algorithms, documentation, user interfaces, and the Fit Room name, logos, trade
                 dress, domain names, and related marks (whether registered or unregistered). The Service, including
-                these elements and any other materials we provide, is owned by Disqant or our licensors. Except for the
+                these elements and any other materials we provide, is owned by Fit Room or our licensors. Except for the
                 rights expressly granted in these Terms, we reserve all rights. You may not use our name or logo except
                 as required for normal attribution in integrations we permit, or with our prior written consent.
               </p>
@@ -133,7 +133,7 @@ export default function TermsPage() {
               <p className="mt-3">
                 Subject to the previous section, to the maximum extent permitted by law: (a) our total liability arising
                 out of or in connection with these Terms or the Service in any twelve-month period is limited to the
-                fees you paid to Disqant for the Service in that period (or, if the claim relates to a free or trial
+                fees you paid to Fit Room for the Service in that period (or, if the claim relates to a free or trial
                 plan, to fifty British pounds); and (b) we are not liable for any indirect, consequential, or punitive
                 damages, or loss of profit, data, or goodwill, even if advised of the possibility. These limits do not
                 apply to liability that cannot be limited under applicable law.
@@ -143,7 +143,7 @@ export default function TermsPage() {
             <div>
               <h2 className="text-lg font-semibold text-zinc-900">10. Indemnity</h2>
               <p className="mt-3">
-                You will defend and indemnify Disqant, our affiliates, and personnel against third-party claims, damages,
+                You will defend and indemnify Fit Room, our affiliates, and personnel against third-party claims, damages,
                 and costs (including reasonable legal fees) arising from Customer Content, your use of the Service in
                 breach of these Terms, or your failure to meet applicable law (including data protection) where you are
                 responsible.
@@ -205,9 +205,9 @@ export default function TermsPage() {
                 For questions about these Terms &amp; Conditions, contact{" "}
                 <a
                   className="font-medium text-zinc-900 underline decoration-zinc-300 underline-offset-2 hover:decoration-zinc-500"
-                  href="mailto:legal@disqant.com"
+                  href="mailto:legal@fit-room.com"
                 >
-                  legal@disqant.com
+                  legal@fit-room.com
                 </a>
                 .
               </p>

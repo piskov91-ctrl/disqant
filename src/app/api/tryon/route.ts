@@ -120,7 +120,7 @@ async function startPrediction(params: {
 
   const runUrl = `${baseUrl}/run`;
   // Billing: Fashn credits are consumed per /v1/run (not per /status poll).
-  console.log("[disquant][Fashn] about to call POST (creates one prediction job / charges credits)", {
+  console.log("[fit-room][Fashn] about to call POST (creates one prediction job / charges credits)", {
     runUrl,
     serverTrace,
   });
@@ -144,19 +144,19 @@ async function startPrediction(params: {
 export async function POST(req: Request) {
   const serverTrace = randomUUID();
   const clientTrace = req.headers.get("x-tryon-trace")?.trim() || null;
-  console.log("[disquant][tryon] /api/tryon (or /api/try-on) handler invoked (HTTP POST) — if you see 2 of these for one user click, the client (or a proxy) sent duplicate requests", {
+  console.log("[fit-room][tryon] /api/tryon (or /api/try-on) handler invoked (HTTP POST) — if you see 2 of these for one user click, the client (or a proxy) sent duplicate requests", {
     serverTrace,
     clientTrace,
   });
 
   const clientApiKey =
     req.headers.get("x-api-key") ||
-    req.headers.get("x-disquant-api-key") ||
+    req.headers.get("x-fit-room-api-key") ||
     (req.headers.get("authorization")?.startsWith("Bearer ")
       ? req.headers.get("authorization")!.slice("Bearer ".length)
       : null);
 
-  let effectiveClientApiKey = clientApiKey || process.env.DISQUANT_DEMO_TEST_CLIENT_KEY || null;
+  let effectiveClientApiKey = clientApiKey || process.env.FIT_ROOM_DEMO_TEST_CLIENT_KEY || null;
   if (!effectiveClientApiKey) {
     // Final fallback for /demo: use the newest key in the DB so the demo works
     // without exposing keys in the UI or URL.
@@ -294,7 +294,7 @@ async function pollUntilDone(params: {
     pollN += 1;
     const statusUrl = `${baseUrl}/status/${id}`;
     if (isDev || pollN === 1) {
-      console.log("[disquant][Fashn] about to call GET (status poll; not the billed /run call)", {
+      console.log("[fit-room][Fashn] about to call GET (status poll; not the billed /run call)", {
         statusUrl,
         id,
         serverTrace,

@@ -11,9 +11,9 @@ export type ClientApiKeyRecord = {
   createdAt: string; // ISO
 };
 
-const KEY_INDEX = "disquant:clientKeys:index"; // list of ids (newest first)
-const KEY_PREFIX = "disquant:clientKeys:byId:"; // + id
-const KEY_BY_KEY_PREFIX = "disquant:clientKeys:byKey:"; // + apiKey -> id
+const KEY_INDEX = "fit-room:clientKeys:index"; // list of ids (newest first)
+const KEY_PREFIX = "fit-room:clientKeys:byId:"; // + id
+const KEY_BY_KEY_PREFIX = "fit-room:clientKeys:byKey:"; // + apiKey -> id
 
 function recordKey(id: string) {
   return `${KEY_PREFIX}${id}`;
@@ -109,10 +109,10 @@ export async function deleteClientKey(id: string) {
   await redis.lrem(KEY_INDEX, 0, id);
   await redis.del(recordKey(id));
   if (rec?.key) await redis.del(keyLookupKey(rec.key));
-  await redis.del(`disquant:tryon:products:${id}`);
-  await redis.del(`disquant:tryon:events:${id}`);
-  await redis.srem("disquant:analytics:clientStats:ids", id);
-  await redis.del(`disquant:analytics:clientStats:${id}`);
+  await redis.del(`fit-room:tryon:products:${id}`);
+  await redis.del(`fit-room:tryon:events:${id}`);
+  await redis.srem("fit-room:analytics:clientStats:ids", id);
+  await redis.del(`fit-room:analytics:clientStats:${id}`);
   return { ok: true as const };
 }
 

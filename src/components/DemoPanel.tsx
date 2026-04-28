@@ -27,7 +27,7 @@ export function DemoPanel() {
               See the demo in seconds
             </h2>
             <p className="mt-4 text-zinc-600">
-              Upload a portrait and a garment—Disquant returns a studio-quality composite you can
+              Upload a portrait and a garment—Fit Room returns a studio-quality composite you can
               drop into your PDP or checkout flow. This preview simulates the flow; wire your keys
               when you are ready to integrate.
             </p>

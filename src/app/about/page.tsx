@@ -12,7 +12,7 @@ export default function AboutPage() {
             <p className="mb-4 inline-flex items-center gap-2 rounded-full border border-surface-border bg-surface-raised px-4 py-1.5 text-xs font-medium uppercase tracking-wider text-zinc-600">
               About
             </p>
-            <h1 className="text-balance text-4xl font-semibold tracking-tight text-zinc-900 md:text-5xl">About Disquant</h1>
+            <h1 className="text-balance text-4xl font-semibold tracking-tight text-zinc-900 md:text-5xl">About Fit Room</h1>
             <p className="mt-4 max-w-2xl text-lg leading-relaxed text-zinc-600">
               We build practical tools for fashion retailers—starting with virtual try-on that feels believable, fast, and
               easy to add to a product page.
@@ -29,7 +29,7 @@ export default function AboutPage() {
             </p>
             <div className="mt-6 max-w-3xl space-y-4 text-sm leading-relaxed text-zinc-600 md:text-base">
               <p>
-                We started Disquant because shopping for clothes online still depends on guesswork. Shoppers squint at
+                We started Fit Room because shopping for clothes online still depends on guesswork. Shoppers squint at
                 photos, read reviews, and hope for the best—then a chunk of orders come back when reality doesn&apos;t
                 match expectations.
               </p>
@@ -139,9 +139,9 @@ export default function AboutPage() {
               <div className="mt-6">
                 <a
                   className="inline-flex items-center justify-center rounded-full border border-surface-border bg-white px-5 py-2 text-sm font-semibold text-zinc-900 shadow-sm transition hover:border-zinc-300 hover:bg-surface-raised"
-                  href="mailto:hello@disqant.com"
+                  href="mailto:hello@fit-room.com"
                 >
-                  hello@disqant.com
+                  hello@fit-room.com
                 </a>
               </div>
             </div>

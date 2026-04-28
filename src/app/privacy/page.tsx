@@ -3,9 +3,9 @@ import { Header } from "@/components/Header";
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "Privacy & Cookies — Disqant",
+  title: "Privacy & Cookies — Fit Room",
   description:
-    "How Disqant collects, uses, and protects personal data for its UK virtual try-on SaaS, including GDPR rights and cookies.",
+    "How Fit Room collects, uses, and protects personal data for its UK virtual try-on SaaS, including GDPR rights and cookies.",
 };
 
 export default function PrivacyPage() {
@@ -22,7 +22,7 @@ export default function PrivacyPage() {
               Privacy &amp; Cookies
             </h1>
             <p className="mt-4 text-sm text-zinc-500">
-              Last updated: 26 April 2026 &middot; Disqant is operated from the United Kingdom.
+              Last updated: 26 April 2026 &middot; Fit Room is operated from the United Kingdom.
             </p>
           </div>
         </section>
@@ -30,9 +30,9 @@ export default function PrivacyPage() {
         <section className="bg-white py-12">
           <div className="mx-auto max-w-3xl space-y-10 px-6 text-sm leading-relaxed text-zinc-600 md:text-base">
             <p className="text-zinc-700">
-              This Privacy &amp; Cookies policy explains how Disqant (&quot;we&quot;, &quot;us&quot;, &quot;our&quot;) processes personal
+              This Privacy &amp; Cookies policy explains how Fit Room (&quot;we&quot;, &quot;us&quot;, &quot;our&quot;) processes personal
               data when you use our websites, applications, and virtual try-on services at{" "}
-              <span className="text-zinc-900">https://disqant.com</span> (together, the &quot;Service&quot;). It applies
+              <span className="text-zinc-900">https://fit-room.com</span> (together, the &quot;Service&quot;). It applies
               to visitors, business customers, and their end users where we act as a processor on behalf of a retailer. We
               process personal data in line with the UK General Data Protection Regulation (UK GDPR) and the Data Protection
               Act 2018.
@@ -41,14 +41,14 @@ export default function PrivacyPage() {
             <div>
               <h2 className="text-lg font-semibold text-zinc-900">1. Data controller and contact</h2>
               <p className="mt-3">
-                The data controller for personal data we collect in connection with the Service is the Disqant entity
+                The data controller for personal data we collect in connection with the Service is the Fit Room entity
                 named in your order, contract, or sign-up (UK). For questions about this policy or your personal data,
                 contact us at{" "}
                 <a
                   className="font-medium text-zinc-900 underline decoration-zinc-300 underline-offset-2 hover:decoration-zinc-500"
-                  href="mailto:privacy@disqant.com"
+                  href="mailto:privacy@fit-room.com"
                 >
-                  privacy@disqant.com
+                  privacy@fit-room.com
                 </a>
                 . You can also write to the postal address provided on your agreement or on our website. We are not
                 required to appoint a Data Protection Officer for all cases; if we designate one, their details will
@@ -209,9 +209,9 @@ export default function PrivacyPage() {
                 To exercise your rights, contact{" "}
                 <a
                   className="font-medium text-zinc-900 underline decoration-zinc-300 underline-offset-2 hover:decoration-zinc-500"
-                  href="mailto:privacy@disqant.com"
+                  href="mailto:privacy@fit-room.com"
                 >
-                  privacy@disqant.com
+                  privacy@fit-room.com
                 </a>
                 . If you are an end user of a retailer&rsquo;s site, you may also contact the retailer, who is often your
                 main point of contact.

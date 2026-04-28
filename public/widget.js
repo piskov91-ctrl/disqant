@@ -4,10 +4,10 @@
   // Keep a stable reference for key lookup (document.currentScript becomes null later).
   var WIDGET_SCRIPT_EL = document.currentScript || null;
 
-  var WIDGET_ATTR_KEY = "data-disquant-key";
-  var WIDGET_ATTR_BOUND = "data-disquant-tryon-bound";
-  var WIDGET_ATTR_PENDING = "data-disquant-tryon-pending-load";
-  var WIDGET_ATTR_SKIP = "data-disquant-tryon-skip";
+  var WIDGET_ATTR_KEY = "data-fit-room-key";
+  var WIDGET_ATTR_BOUND = "data-fit-room-tryon-bound";
+  var WIDGET_ATTR_PENDING = "data-fit-room-tryon-pending-load";
+  var WIDGET_ATTR_SKIP = "data-fit-room-tryon-skip";
 
   // Matches app route /api/try-on in this repo.
   var API_ENDPOINT = "/api/try-on";
@@ -67,7 +67,7 @@
   }
 
   function injectStyles() {
-    if (qs("#disqant-widget-style")) return;
+    if (qs("#fit-room-widget-style")) return;
 
     var css = ""
       // Overlay wrapping
@@ -223,7 +223,7 @@
       + "@media (max-width:420px){.dq-body{padding:10px}.dq-stage{height:min(74vh,520px)}.dq-choice{min-width:100%}}";
 
     var style = document.createElement("style");
-    style.id = "disqant-widget-style";
+    style.id = "fit-room-widget-style";
     style.textContent = css;
     document.head.appendChild(style);
   }
@@ -366,7 +366,7 @@
     var brand = document.createElement("div");
     brand.className = "dq-brand";
     var brandName = document.createElement("span");
-    brandName.textContent = "Disqant";
+    brandName.textContent = "Fit Room";
     var brandSub = document.createElement("small");
     brandSub.textContent = "virtual try-on";
     brand.appendChild(brandName);
@@ -707,7 +707,7 @@
     function downloadDataUrl(dataUrl) {
       var a = document.createElement("a");
       a.href = dataUrl;
-      a.download = "disqant-tryon.png";
+      a.download = "fit-room-tryon.png";
       document.body.appendChild(a);
       a.click();
       a.parentNode.removeChild(a);
@@ -742,7 +742,7 @@
             ? globalThis.crypto.randomUUID()
             : "tryon-" + Date.now() + "-" + Math.random();
         console.log(
-          "[disquant] widget: about to fetch POST " + API_ENDPOINT + " (one per try-on; if 2+ per click, duplicate widget handlers)",
+          "[fit-room] widget: about to fetch POST " + API_ENDPOINT + " (one per try-on; if 2+ per click, duplicate widget handlers)",
           { tryOnTrace: tryOnTrace }
         );
         var res = await fetch(API_ENDPOINT, {

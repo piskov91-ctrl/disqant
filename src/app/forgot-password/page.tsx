@@ -5,7 +5,7 @@ import { Header } from "@/components/Header";
 
 export const metadata: Metadata = {
   title: "Forgot password",
-  description: "Reset your Disquant retailer account password.",
+  description: "Reset your Fit Room retailer account password.",
 };
 
 export default function ForgotPasswordPage() {
@@ -21,10 +21,10 @@ export default function ForgotPasswordPage() {
           </p>
           <p className="mt-6 text-sm text-zinc-300">
             <a
-              href="mailto:hello@disqant.com"
+              href="mailto:hello@fit-room.com"
               className="font-medium text-accent underline-offset-2 hover:underline"
             >
-              hello@disqant.com
+              hello@fit-room.com
             </a>
           </p>
           <p className="mt-10 text-center text-sm text-zinc-500">

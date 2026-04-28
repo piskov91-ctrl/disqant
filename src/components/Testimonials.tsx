@@ -8,7 +8,7 @@ const quotes = [
   },
   {
     quote:
-      "We’re not a massive team. I didn’t want another six-month build. Disquant sat behind our existing stack and we had something shippable in a couple of sprints.",
+      "We’re not a massive team. I didn’t want another six-month build. Fit Room sat behind our existing stack and we had something shippable in a couple of sprints.",
     name: "Priya Shah",
     role: "Head of digital",
     company: "Linden Outdoor (Yorkshire)",

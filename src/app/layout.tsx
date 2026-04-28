@@ -14,7 +14,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Disquant — Virtual try-on for modern commerce",
+  title: "Fit Room — Virtual try-on for modern commerce",
   description:
     "Let shoppers see products on themselves with AI-powered virtual try-on. Launch faster, convert more, and reduce returns.",
 };

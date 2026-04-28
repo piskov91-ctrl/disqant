@@ -4,7 +4,7 @@ import type { Metadata } from "next";
 import { ContactForm } from "./ContactForm";
 
 export const metadata: Metadata = {
-  title: "Contact — Disquant",
+  title: "Contact — Fit Room",
   description: "Get in touch about virtual try-on, integrations, and partnerships.",
 };
 
@@ -34,10 +34,10 @@ export default function ContactPage() {
             <p className="mt-8 text-center text-sm text-zinc-500">
               You can also email us at{" "}
               <a
-                href="mailto:hello@disqant.com"
+                href="mailto:hello@fit-room.com"
                 className="font-medium text-zinc-800 underline decoration-zinc-300 underline-offset-2 hover:decoration-zinc-500"
               >
-                hello@disqant.com
+                hello@fit-room.com
               </a>
               .
             </p>

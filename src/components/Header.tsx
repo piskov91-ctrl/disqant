@@ -32,7 +32,7 @@ export function Header() {
           <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-accent/15 text-accent">
             D
           </span>
-          Disquant
+          Fit Room
         </Link>
         <HeaderNavSlot />
       </div>

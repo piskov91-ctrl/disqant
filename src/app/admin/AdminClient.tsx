@@ -273,7 +273,7 @@ export default function AdminClient() {
 
   async function copyWidgetCode(apiKey: string) {
     const origin = window.location.origin;
-    const snippet = `<script async src=\"${origin}/widget.js\" data-disquant-key=\"${apiKey}\"></script>`;
+    const snippet = `<script async src=\"${origin}/widget.js\" data-fit-room-key=\"${apiKey}\"></script>`;
     try {
       await navigator.clipboard.writeText(snippet);
     } catch {
@@ -580,7 +580,7 @@ export default function AdminClient() {
             <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-accent/20 text-accent">
               D
             </span>
-            Disquant
+            Fit Room
           </Link>
           <div className="flex items-center gap-4">
             <Link href="/" className="text-sm text-zinc-400 transition hover:text-zinc-100">
@@ -871,7 +871,7 @@ export default function AdminClient() {
                 )}
 
                 <p className="px-6 py-5 text-xs text-zinc-500 md:px-8">
-                  Stored in Redis under <span className="font-mono text-zinc-400">disquant:clientKeys:*</span>.
+                  Stored in Redis under <span className="font-mono text-zinc-400">fit-room:clientKeys:*</span>.
                 </p>
               </section>
             </>
@@ -911,7 +911,7 @@ export default function AdminClient() {
                       <p className="mt-2 text-xs text-zinc-500">
                         Requests use header{" "}
                         <span className="font-mono text-zinc-400">x-api-key</span> for this client&apos;s
-                        Disquant key (prefix{" "}
+                        Fit Room key (prefix{" "}
                         <span className="font-mono text-zinc-400">
                           {(wearMeKeyRecord.key || "").slice(0, 8)}…
                         </span>

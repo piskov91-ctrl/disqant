@@ -30,7 +30,7 @@ export const WEAR_LOADING_MESSAGES: readonly string[] = [
   "AI is processing your look... usually ready in 20-30 seconds",
 ];
 
-export const DEMO_WEAR_MODAL_STYLE_ID = "disqant-demo-wear-modal-style";
+export const DEMO_WEAR_MODAL_STYLE_ID = "fit-room-demo-wear-modal-style";
 
 /** Matches `public/widget.js` injectStyles (Wear Me + modal) for pixel-consistent modal. */
 export const DEMO_WEAR_MODAL_CSS =

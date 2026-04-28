@@ -9,7 +9,7 @@ import {
 } from "@/lib/apiKeyStore";
 import { validateRetailerPasswordStrength } from "@/lib/retailerPasswordPolicy";
 
-export const RETAILER_SESSION_COOKIE = "disquant_retailer_session";
+export const RETAILER_SESSION_COOKIE = "fit-room_retailer_session";
 
 const RETAILER_SESSION_REDIS_TTL_SEC = 60 * 60 * 24 * 14; // server-side token expiry; browser cookie is session-only
 
@@ -22,9 +22,9 @@ function retailerSessionCookieSecure(): boolean {
   return process.env.NODE_ENV === "production";
 }
 
-const USER_PREFIX = "disquant:retailer:user:";
-const EMAIL_INDEX = "disquant:retailer:email:";
-const SESS_PREFIX = "disquant:retailer:session:";
+const USER_PREFIX = "fit-room:retailer:user:";
+const EMAIL_INDEX = "fit-room:retailer:email:";
+const SESS_PREFIX = "fit-room:retailer:session:";
 
 function userKey(id: string) {
   return `${USER_PREFIX}${id}`;

@@ -2,37 +2,37 @@ import { randomUUID } from "node:crypto";
 import { getRedis, listClientKeys } from "./apiKeyStore";
 
 /** HttpOnly cookie set on /demo so try-ons can attribute demo usage to the same visitor. */
-export const DEMO_ANALYTICS_SESSION_COOKIE = "disquant_demo_sid";
+export const DEMO_ANALYTICS_SESSION_COOKIE = "fit-room_demo_sid";
 
 function demoDayKey(d = new Date()) {
-  return `disquant:analytics:demo:day:${d.toISOString().slice(0, 10)}`;
+  return `fit-room:analytics:demo:day:${d.toISOString().slice(0, 10)}`;
 }
 
 function demoMonthKey(d = new Date()) {
-  return `disquant:analytics:demo:month:${d.toISOString().slice(0, 7)}`;
+  return `fit-room:analytics:demo:month:${d.toISOString().slice(0, 7)}`;
 }
 
-const TRYON_TOTAL = "disquant:analytics:tryon:total";
-const TRYON_RETAILER = "disquant:analytics:tryon:retailer";
-const TRYON_VISITOR = "disquant:analytics:tryon:visitor";
+const TRYON_TOTAL = "fit-room:analytics:tryon:total";
+const TRYON_RETAILER = "fit-room:analytics:tryon:retailer";
+const TRYON_VISITOR = "fit-room:analytics:tryon:visitor";
 
 /** All completed try-ons, UTC hour 0–23 → count (Redis hash field = hour). */
-const TRYON_GLOBAL_HOUR_UTC = "disquant:analytics:tryon:global:hourUtc";
+const TRYON_GLOBAL_HOUR_UTC = "fit-room:analytics:tryon:global:hourUtc";
 /** All completed try-ons, UTC weekday 0=Sun … 6=Sat → count. */
-const TRYON_GLOBAL_WEEKDAY_UTC = "disquant:analytics:tryon:global:weekdayUtc";
+const TRYON_GLOBAL_WEEKDAY_UTC = "fit-room:analytics:tryon:global:weekdayUtc";
 
 function tryOnClientHourKey(clientId: string) {
-  return `disquant:analytics:tryon:client:${clientId}:hourUtc`;
+  return `fit-room:analytics:tryon:client:${clientId}:hourUtc`;
 }
 function tryOnClientWeekdayKey(clientId: string) {
-  return `disquant:analytics:tryon:client:${clientId}:weekdayUtc`;
+  return `fit-room:analytics:tryon:client:${clientId}:weekdayUtc`;
 }
 
-const CLIENT_STATS_PREFIX = "disquant:analytics:clientStats:";
-const CLIENT_STATS_INDEX = "disquant:analytics:clientStats:ids";
+const CLIENT_STATS_PREFIX = "fit-room:analytics:clientStats:";
+const CLIENT_STATS_INDEX = "fit-room:analytics:clientStats:ids";
 
-const DEMO_VISITOR_PREFIX = "disquant:analytics:demoVisitor:";
-const DEMO_VISITOR_INDEX = "disquant:analytics:demoVisitor:index";
+const DEMO_VISITOR_PREFIX = "fit-room:analytics:demoVisitor:";
+const DEMO_VISITOR_INDEX = "fit-room:analytics:demoVisitor:index";
 
 const DEMO_VISITOR_DETAIL_LIMIT = 250;
 
@@ -156,7 +156,7 @@ function isLikelySessionId(value: string): boolean {
 
 export function readDemoSessionFromCookieHeader(cookieHeader: string | null): string | null {
   if (!cookieHeader) return null;
-  const m = cookieHeader.match(/(?:^|;\s*)disquant_demo_sid=([^;]+)/i);
+  const m = cookieHeader.match(/(?:^|;\s*)fit-room_demo_sid=([^;]+)/i);
   if (!m?.[1]) return null;
   const raw = decodeURIComponent(m[1]!.trim());
   return isLikelySessionId(raw) ? raw : null;

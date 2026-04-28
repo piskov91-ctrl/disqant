@@ -53,10 +53,10 @@ export async function recordTryOnProductUsage(params: {
   const payload = JSON.stringify(line);
   try {
     await Promise.all([
-      redis.zincrby(`disquant:tryon:products:${id}`, 1, productImageUrl),
-      redis.lpush(`disquant:tryon:events:${id}`, payload),
+      redis.zincrby(`fit-room:tryon:products:${id}`, 1, productImageUrl),
+      redis.lpush(`fit-room:tryon:events:${id}`, payload),
     ]);
-    await redis.ltrim(`disquant:tryon:events:${id}`, 0, EVENTS_MAX - 1);
+    await redis.ltrim(`fit-room:tryon:events:${id}`, 0, EVENTS_MAX - 1);
   } catch (e) {
     console.error("[tryOnAnalytics] record failed", e);
   }
@@ -92,7 +92,7 @@ export async function getTopTryOnProducts(
   limit = 5,
 ): Promise<TopTryOnProduct[]> {
   const redis = getRedis();
-  const key = `disquant:tryon:products:${clientId}`;
+  const key = `fit-room:tryon:products:${clientId}`;
   try {
     const raw = (await redis.zrange(key, 0, limit - 1, {
       rev: true,
@@ -109,7 +109,7 @@ export async function getTopTryOnProducts(
 export async function getAllTryOnProducts(clientId: string, max = 2000): Promise<TopTryOnProduct[]> {
   if (!clientId) return [];
   const redis = getRedis();
-  const key = `disquant:tryon:products:${clientId}`;
+  const key = `fit-room:tryon:products:${clientId}`;
   try {
     const raw = (await redis.zrange(key, 0, max - 1, {
       rev: true,

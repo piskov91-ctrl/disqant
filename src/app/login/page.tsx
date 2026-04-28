@@ -6,7 +6,7 @@ import { LoginForm } from "./LoginForm";
 
 export const metadata: Metadata = {
   title: "Sign In",
-  description: "Sign in to your Disquant retailer dashboard.",
+  description: "Sign in to your Fit Room retailer dashboard.",
 };
 
 export default function LoginPage() {

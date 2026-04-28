@@ -26,7 +26,7 @@ export default function AdminPageClient() {
               <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-accent/20 text-accent">
                 D
               </span>
-              Disquant
+              Fit Room
             </Link>
             <Link href="/" className="text-sm text-zinc-400 transition hover:text-zinc-100">
               Back to landing
@@ -55,7 +55,7 @@ export default function AdminPageClient() {
               <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-accent/20 text-accent">
                 D
               </span>
-              Disquant
+              Fit Room
             </Link>
             <Link href="/" className="text-sm text-zinc-400 transition hover:text-zinc-100">
               Back to landing

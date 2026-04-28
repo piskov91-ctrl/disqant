@@ -6,13 +6,13 @@ export function Footer() {
       <div className="mx-auto flex max-w-4xl flex-col items-center gap-4 px-6">
         <p className="text-zinc-400">
           <span className="whitespace-normal sm:whitespace-nowrap">
-            Disquant Ltd <span className="text-zinc-600">|</span> London, UK{" "}
+            Fit Room Ltd <span className="text-zinc-600">|</span> London, UK{" "}
             <span className="text-zinc-600">|</span>{" "}
             <a
-              href="mailto:hello@disqant.com"
+              href="mailto:hello@fit-room.com"
               className="text-zinc-300 underline decoration-zinc-600 underline-offset-2 transition hover:text-white hover:decoration-zinc-400"
             >
-              hello@disqant.com
+              hello@fit-room.com
             </a>
           </span>
         </p>
@@ -36,7 +36,7 @@ export function Footer() {
             Privacy &amp; Cookies
           </Link>
         </nav>
-        <p className="text-xs text-zinc-600">© 2026 Disquant Ltd. All rights reserved.</p>
+        <p className="text-xs text-zinc-600">© 2026 Fit Room Ltd. All rights reserved.</p>
       </div>
     </footer>
   );

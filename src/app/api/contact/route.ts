@@ -1,8 +1,8 @@
 import { Resend } from "resend";
 
-const TO_EMAIL = process.env.CONTACT_TO ?? "hello@disqant.com";
+const TO_EMAIL = process.env.CONTACT_TO ?? "hello@fit-room.com";
 /** Verifiable sender; default works with Resend test API until you set a domain. */
-const FROM_EMAIL = process.env.RESEND_FROM ?? "Disqant <onboarding@resend.dev>";
+const FROM_EMAIL = process.env.RESEND_FROM ?? "Fit Room <onboarding@resend.dev>";
 
 const VISITOR_OPTIONS = new Set(["under-10k", "10k-50k", "50k-100k", "100k-plus"]);
 
@@ -80,7 +80,7 @@ export async function POST(req: Request) {
   ].join("\n");
 
   const html = `
-  <h2>Contact form — Disqant</h2>
+  <h2>Contact form — Fit Room</h2>
   <p><strong>Name</strong><br/>${escapeHtml(name)}</p>
   <p><strong>Company</strong><br/>${escapeHtml(company)}</p>
   <p><strong>Website</strong><br/>${escapeHtml(websiteLine)}</p>

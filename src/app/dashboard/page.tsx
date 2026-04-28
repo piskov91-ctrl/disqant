@@ -43,8 +43,8 @@ export default async function DashboardPage() {
           <div className="mx-auto max-w-6xl px-6 py-16">
             <p className="text-zinc-300">
               We couldn&apos;t load your API key record. Please contact{" "}
-              <a href="mailto:hello@disqant.com" className="text-accent underline-offset-2 hover:underline">
-                hello@disqant.com
+              <a href="mailto:hello@fit-room.com" className="text-accent underline-offset-2 hover:underline">
+                hello@fit-room.com
               </a>
               .
             </p>
@@ -164,7 +164,7 @@ export default async function DashboardPage() {
                     <p className="text-sm font-medium text-zinc-400">API key</p>
                     <p className="mt-2 break-all font-mono text-sm text-zinc-200">{client.key}</p>
                     <p className="mt-2 text-xs text-zinc-500">
-                      Use this value as <span className="font-mono text-zinc-400">data-disquant-key</span> on the
+                      Use this value as <span className="font-mono text-zinc-400">data-fit-room-key</span> on the
                       script tag, or pass <span className="font-mono text-zinc-400">?key=</span> in the script URL.
                     </p>
                   </div>
