@@ -1,10 +1,10 @@
 "use client";
 
 import {
+  Gem,
   Glasses,
   Shirt,
   Snowflake,
-  Sparkles,
   Waves,
   type LucideIcon,
 } from "lucide-react";
@@ -290,7 +290,7 @@ export const DEMO_CATALOG: readonly {
     id: "accessories",
     title: "Accessories",
     line: "Necklace, earrings, bracelet, ankle bracelet, bags",
-    Icon: Sparkles,
+    Icon: Gem,
     presetIds: ["necklace", "earrings", "bracelet", "ankle_bracelet", "handbag_women", "mens_bag"],
   },
   {
