@@ -11,7 +11,7 @@ import { validateRetailerPasswordStrength } from "@/lib/retailerPasswordPolicy";
 
 export const RETAILER_SESSION_COOKIE = "disquant_retailer_session";
 
-const SESSION_TTL_SEC = 60 * 60 * 24 * 14; // 14 days
+const RETAILER_SESSION_REDIS_TTL_SEC = 60 * 60 * 24 * 14; // server-side token expiry; browser cookie is session-only
 
 /**
  * Use `AUTH_INSECURE_COOKIE=1` when running `next start` (production NODE_ENV) over **http** locally;
@@ -344,7 +344,7 @@ export async function updateRetailerProfile(params: {
 export async function createRetailerSessionToken(userId: string): Promise<string> {
   const token = crypto.randomBytes(32).toString("base64url");
   const redis = getRedis();
-  await redis.set(sessionKey(token), userId, { ex: SESSION_TTL_SEC });
+  await redis.set(sessionKey(token), userId, { ex: RETAILER_SESSION_REDIS_TTL_SEC });
   return token;
 }
 
@@ -400,7 +400,7 @@ export async function setRetailerSessionCookie(token: string) {
     sameSite: "lax",
     secure: retailerSessionCookieSecure(),
     path: "/",
-    maxAge: SESSION_TTL_SEC,
+    // Session cookie: no Max-Age — discarded when the browser ends the session (varies by browser / "restore session").
   });
 }
 
@@ -411,7 +411,6 @@ export function applyRetailerSessionToNextResponse(res: NextResponse, token: str
     sameSite: "lax",
     secure: retailerSessionCookieSecure(),
     path: "/",
-    maxAge: SESSION_TTL_SEC,
   });
 }
 
