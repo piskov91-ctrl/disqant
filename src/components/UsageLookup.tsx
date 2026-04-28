@@ -42,7 +42,7 @@ export function UsageLookup() {
             <button
               type="submit"
               disabled={!targetHref}
-              className="btn-accent-gradient h-11 px-6 text-sm disabled:cursor-not-allowed disabled:opacity-60"
+              className="btn-accent-gradient disabled:cursor-not-allowed disabled:opacity-60"
             >
               Open dashboard
             </button>

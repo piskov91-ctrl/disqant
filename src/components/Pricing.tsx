@@ -122,20 +122,11 @@ export function Pricing({ sectionId = "subscriptions" }: PricingProps) {
                 </ul>
 
                 {isContact ? (
-                  <Link
-                    href={plan.href ?? "/contact"}
-                    className="mt-8 inline-flex h-11 w-full items-center justify-center rounded-full border border-white/20 bg-transparent text-sm font-semibold text-zinc-100 transition hover:border-white/40 hover:bg-white/5"
-                  >
+                  <Link href={plan.href ?? "/contact"} className="btn-accent-gradient mt-8 w-full">
                     {ctaLabel}
                   </Link>
                 ) : (
-                  <PricingGetStartedCta
-                    className={`mt-8 inline-flex h-11 w-full items-center justify-center rounded-full text-sm font-semibold transition disabled:cursor-wait disabled:opacity-70 ${
-                      plan.highlighted
-                        ? "bg-gradient-to-r from-[#7c3aed] to-[#ec4899] text-white shadow-accent-glow hover:opacity-[0.96]"
-                        : "border border-white/15 bg-white/5 text-zinc-100 hover:border-white/30 hover:bg-white/10"
-                    }`}
-                  >
+                  <PricingGetStartedCta className="btn-accent-gradient mt-8 w-full disabled:cursor-wait disabled:opacity-70">
                     {ctaLabel}
                   </PricingGetStartedCta>
                 )}

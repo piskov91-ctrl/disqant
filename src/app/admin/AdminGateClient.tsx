@@ -56,7 +56,7 @@ export default function AdminGateClient({ onSuccess }: { onSuccess?: () => void 
       <button
         type="submit"
         disabled={loading || password.trim().length === 0}
-        className="btn-accent-gradient h-12 w-full px-8 text-sm disabled:cursor-not-allowed disabled:opacity-60"
+        className="btn-accent-gradient w-full disabled:cursor-not-allowed disabled:opacity-60"
       >
         {loading ? "Checking…" : "Unlock admin"}
       </button>

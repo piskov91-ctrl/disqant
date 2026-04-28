@@ -28,12 +28,12 @@ export function HeroCarousel() {
         </p>
 
         <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:items-center">
-          <Link href="/demo" className="btn-accent-gradient h-12 px-8 text-center sm:inline-flex">
+          <Link href="/demo" className="btn-accent-gradient text-center sm:inline-flex">
             Try the demo
           </Link>
           <a
             href="#subscriptions"
-            className="inline-flex h-12 items-center justify-center rounded-full border border-surface-border bg-white px-8 text-sm font-medium text-zinc-800 shadow-sm transition hover:border-zinc-300 hover:bg-surface-raised"
+            className="btn-accent-gradient text-center sm:inline-flex"
           >
             See subscriptions
           </a>

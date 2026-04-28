@@ -563,7 +563,7 @@ export default function AdminClient() {
                 disabled={
                   savingEdit || editClientName.trim().length === 0 || Number(editUsageLimit) <= 0
                 }
-                className="btn-accent-gradient h-11 flex-1 px-5 text-sm disabled:cursor-not-allowed disabled:opacity-60"
+                className="btn-accent-gradient flex-1 disabled:cursor-not-allowed disabled:opacity-60"
               >
                 {savingEdit ? "Saving…" : "Save"}
               </button>
@@ -728,7 +728,7 @@ export default function AdminClient() {
                         fashnApiKey.trim().length === 0 ||
                         Number(usageLimit) <= 0
                       }
-                      className="btn-accent-gradient h-12 w-full px-8 text-sm disabled:cursor-not-allowed disabled:opacity-60 md:w-auto"
+                      className="btn-accent-gradient w-full disabled:cursor-not-allowed disabled:opacity-60 md:w-auto"
                     >
                       {creating ? "Creating…" : "Create API key"}
                     </button>

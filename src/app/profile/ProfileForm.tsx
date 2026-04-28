@@ -199,7 +199,7 @@ export function ProfileForm({ initial }: { initial: ProfileInitialUser }) {
           <button
             type="submit"
             disabled={loading}
-            className="btn-accent-gradient h-11 px-8 text-sm font-semibold disabled:cursor-not-allowed disabled:opacity-60"
+            className="btn-accent-gradient disabled:cursor-not-allowed disabled:opacity-60"
           >
             {loading ? "Saving…" : "Save changes"}
           </button>

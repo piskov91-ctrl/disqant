@@ -96,7 +96,7 @@ export default async function DashboardPage() {
                 </p>
                 <Link
                   href="/subscriptions"
-                  className="btn-accent-gradient mt-10 inline-flex h-12 min-w-[10rem] items-center justify-center px-8 text-sm font-semibold"
+                  className="btn-accent-gradient mt-10 inline-flex min-w-[10rem] items-center justify-center"
                 >
                   View Plans
                 </Link>

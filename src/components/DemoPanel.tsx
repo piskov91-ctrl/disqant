@@ -70,7 +70,7 @@ export function DemoPanel() {
                     <button
                       type="button"
                       onClick={handleTry}
-                      className="btn-accent-gradient h-10 px-6 text-sm"
+                      className="btn-accent-gradient"
                     >
                       Try it now
                     </button>

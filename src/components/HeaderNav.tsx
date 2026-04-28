@@ -9,8 +9,7 @@ import { retailerSessionLabel, type RetailerDisplayUser } from "@/lib/retailerDi
 
 const navTextClass = "text-sm text-zinc-600 transition hover:text-zinc-900";
 const navStackClass = "block rounded-xl px-3 py-2 text-base text-zinc-800 transition hover:bg-surface-raised";
-const navAuthBtnClass =
-  "hidden sm:inline-flex h-10 items-center justify-center rounded-full border border-surface-border bg-white px-4 text-sm font-semibold text-zinc-900 shadow-sm transition hover:border-zinc-300 hover:bg-surface-raised";
+const navAuthBtnClass = "btn-accent-gradient hidden sm:inline-flex";
 
 export function HeaderNav() {
   const pathname = usePathname();
@@ -106,19 +105,19 @@ export function HeaderNav() {
         <>
           <Link
             href="/login"
-            className={`${navAuthBtnClass}${pathname === "/login" ? " ring-2 ring-zinc-900/15" : ""}`}
+            className={`${navAuthBtnClass}${pathname === "/login" ? " ring-2 ring-[#c6a77d]/50 ring-offset-2 ring-offset-zinc-950" : ""}`}
           >
             Sign In
           </Link>
           <Link
             href="/register"
-            className={`${navAuthBtnClass}${pathname === "/register" ? " ring-2 ring-zinc-900/15" : ""}`}
+            className={`${navAuthBtnClass}${pathname === "/register" ? " ring-2 ring-[#c6a77d]/50 ring-offset-2 ring-offset-zinc-950" : ""}`}
           >
             Sign Up
           </Link>
         </>
       ) : null}
-      <Link href="/demo" className="btn-accent-gradient h-10 shrink-0 px-5 text-sm font-semibold">
+      <Link href="/demo" className="btn-accent-gradient shrink-0">
         Try it now
       </Link>
 
@@ -209,14 +208,14 @@ export function HeaderNav() {
                 <>
                   <Link
                     href="/login"
-                    className="inline-flex h-11 w-full items-center justify-center rounded-full border border-surface-border bg-white text-sm font-semibold text-zinc-900 shadow-sm transition hover:border-zinc-300 hover:bg-surface-raised"
+                    className="btn-accent-gradient w-full"
                     onClick={() => setOpen(false)}
                   >
                     Sign In
                   </Link>
                   <Link
                     href="/register"
-                    className="inline-flex h-11 w-full items-center justify-center rounded-full border border-surface-border bg-white text-sm font-semibold text-zinc-900 shadow-sm transition hover:border-zinc-300 hover:bg-surface-raised"
+                    className="btn-accent-gradient w-full"
                     onClick={() => setOpen(false)}
                   >
                     Sign Up
@@ -225,7 +224,7 @@ export function HeaderNav() {
               ) : null}
               <Link
                 href="/demo"
-                className="btn-accent-gradient mt-1 h-11 w-full justify-center text-sm font-semibold"
+                className="btn-accent-gradient mt-1 w-full"
                 onClick={() => setOpen(false)}
               >
                 Try it now

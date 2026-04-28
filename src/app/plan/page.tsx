@@ -37,7 +37,7 @@ export default async function PlanPage() {
               </p>
               <Link
                 href="/subscriptions"
-                className="btn-accent-gradient mt-8 inline-flex h-12 items-center justify-center px-8 text-sm font-semibold"
+                className="btn-accent-gradient mt-8 inline-flex items-center justify-center"
               >
                 View Plans
               </Link>

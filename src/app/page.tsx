@@ -47,7 +47,7 @@ export default function Home() {
 
                 <Link
                   href="/how-it-works"
-                  className="mt-8 inline-flex w-fit min-h-11 items-center justify-center rounded-full border border-white/15 bg-white/5 px-7 py-3 text-sm font-medium text-white transition hover:border-white/25 hover:bg-white/10 sm:mt-10"
+                  className="btn-accent-gradient mt-8 w-fit sm:mt-10"
                 >
                   Get Started
                 </Link>

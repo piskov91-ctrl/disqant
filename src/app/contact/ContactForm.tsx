@@ -184,7 +184,7 @@ export function ContactForm() {
         <button
           type="submit"
           disabled={disabled}
-          className="btn-accent-gradient h-12 w-full px-8 text-sm font-semibold disabled:cursor-not-allowed disabled:opacity-60"
+          className="btn-accent-gradient w-full disabled:cursor-not-allowed disabled:opacity-60"
         >
           {disabled ? "Sending…" : "Submit"}
         </button>

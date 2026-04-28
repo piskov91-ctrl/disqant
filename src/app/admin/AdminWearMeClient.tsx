@@ -200,7 +200,7 @@ export function AdminWearMeClient({ apiKey }: { apiKey: string }) {
           <button
             type="button"
             onClick={() => setWearMenuOpen((o) => !o)}
-            className="inline-flex h-11 items-center justify-center rounded-full border border-zinc-600 bg-zinc-800 px-6 text-sm font-semibold text-zinc-100 transition hover:border-zinc-500 hover:bg-zinc-700"
+            className="btn-accent-gradient"
           >
             Wear Me
           </button>
@@ -256,7 +256,7 @@ export function AdminWearMeClient({ apiKey }: { apiKey: string }) {
           type="button"
           disabled={!canGenerate}
           onClick={() => void onGenerate()}
-          className="btn-accent-gradient h-11 px-8 text-sm disabled:cursor-not-allowed disabled:opacity-50"
+          className="btn-accent-gradient disabled:cursor-not-allowed disabled:opacity-50"
         >
           {loading ? "Generating…" : "Generate"}
         </button>
@@ -336,7 +336,7 @@ export function AdminWearMeClient({ apiKey }: { apiKey: string }) {
                 <button
                   type="button"
                   onClick={onCapturePhoto}
-                  className="btn-accent-gradient px-5 py-2 text-sm"
+                  className="btn-accent-gradient"
                 >
                   Capture
                 </button>

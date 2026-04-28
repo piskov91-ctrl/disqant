@@ -201,12 +201,58 @@ body footer a:hover {
   color: #ffffff !important;
 }
 
+@layer components {
+  /**
+   * Luxury primary actions (shared: Get Started, Wear Me, Try it now, form submits, etc.)
+   */
+  .btn-accent-gradient {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    box-sizing: border-box;
+    background: #2c241f;
+    color: #f5ede4;
+    padding: 14px 28px;
+    border-radius: 10px;
+    font-size: 16px;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+    line-height: 1.25;
+    text-decoration: none;
+    border: none;
+    cursor: pointer;
+    transition:
+      background-color 0.3s ease,
+      color 0.3s ease,
+      opacity 0.3s ease,
+      box-shadow 0.3s ease,
+      transform 0.3s ease;
+    box-shadow: none;
+  }
+
+  .btn-accent-gradient:hover:not(:disabled) {
+    background: #c6a77d;
+    color: #2c241f;
+  }
+
+  .btn-accent-gradient:focus-visible {
+    outline: 2px solid #c6a77d;
+    outline-offset: 2px;
+  }
+
+  .btn-accent-gradient:disabled {
+    opacity: 0.55;
+    cursor: not-allowed;
+  }
+
+  .btn-accent-gradient:disabled:hover {
+    background: #2c241f;
+    color: #f5ede4;
+  }
+}
+
 @layer utilities {
   .text-balance {
     text-wrap: balance;
-  }
-
-  .btn-accent-gradient {
-    @apply inline-flex items-center justify-center rounded-full bg-accent-gradient bg-[length:100%_100%] text-sm font-semibold text-white shadow-accent-glow transition hover:opacity-[0.96] hover:shadow-lg active:scale-[0.99];
   }
 }

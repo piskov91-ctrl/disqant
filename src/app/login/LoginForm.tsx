@@ -96,7 +96,7 @@ function LoginFormInner() {
       <button
         type="submit"
         disabled={loading}
-        className="btn-accent-gradient h-12 w-full text-sm font-semibold disabled:cursor-not-allowed disabled:opacity-60"
+        className="btn-accent-gradient w-full disabled:cursor-not-allowed disabled:opacity-60"
       >
         {loading ? "Signing in…" : "Sign In"}
       </button>

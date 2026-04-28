@@ -53,7 +53,7 @@ export default function AccessCodeGateClient() {
       <button
         type="submit"
         disabled={loading || code.trim().length === 0}
-        className="btn-accent-gradient h-12 w-full px-8 text-sm disabled:cursor-not-allowed disabled:opacity-60"
+        className="btn-accent-gradient w-full disabled:cursor-not-allowed disabled:opacity-60"
       >
         {loading ? "Checking…" : "Unlock demo"}
       </button>
