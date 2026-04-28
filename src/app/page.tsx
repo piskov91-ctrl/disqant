@@ -2,8 +2,8 @@ import { Footer } from "@/components/Footer";
 import { Header } from "@/components/Header";
 import Link from "next/link";
 
-/** Hero photo: add <code>public/fittingroom.jpg</code> (adjust path if you use another extension). */
-const HOME_HERO_BG = "/fittingroom.jpg";
+/** Hero background: <code>public/fittingroom.png</code>. */
+const HOME_HERO_BG = "/fittingroom.png";
 
 export default function Home() {
   return (
