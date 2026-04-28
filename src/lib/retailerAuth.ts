@@ -265,6 +265,82 @@ export async function registerRetailer(params: {
   return user;
 }
 
+export async function updateRetailerProfile(params: {
+  userId: string;
+  firstName: string;
+  lastName: string;
+  email: string;
+  companyName: string;
+  websiteUrl: string;
+}): Promise<RetailerUser> {
+  const existing = await getRetailerById(params.userId);
+  if (!existing) {
+    throw new Error("Account not found.");
+  }
+
+  const firstName = params.firstName.trim();
+  if (!firstName || firstName.length > 100) {
+    throw new Error("First name is required (max 100 characters).");
+  }
+  const lastName = params.lastName.trim();
+  if (!lastName || lastName.length > 100) {
+    throw new Error("Last name is required (max 100 characters).");
+  }
+
+  const email = normalizeRetailerEmail(params.email);
+  if (!email || email.length > 320 || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+    throw new Error("Invalid email address.");
+  }
+
+  const companyName = params.companyName.trim();
+  if (companyName.length > 200) {
+    throw new Error("Company name must be at most 200 characters.");
+  }
+
+  let websiteUrl: string;
+  try {
+    websiteUrl = normalizeOptionalWebsiteUrl(params.websiteUrl);
+  } catch (e) {
+    throw e instanceof Error ? e : new Error("Invalid website URL.");
+  }
+
+  const redis = getRedis();
+  const prevEmail = normalizeRetailerEmail(existing.email);
+
+  if (email !== prevEmail) {
+    const rawOther = await redis.get(emailIndexKey(email));
+    const otherId = redisUserIdFromIndex(rawOther);
+    if (otherId && otherId !== existing.id) {
+      throw new Error("An account with this email already exists.");
+    }
+  }
+
+  const next: RetailerUser = {
+    ...existing,
+    firstName,
+    lastName,
+    email,
+    companyName,
+    websiteUrl,
+  };
+
+  try {
+    if (email !== prevEmail) {
+      await redis.del(emailIndexKey(prevEmail));
+      await redis.set(emailIndexKey(email), existing.id);
+    }
+    await redis.set(userKey(existing.id), JSON.stringify(next));
+  } catch (e) {
+    if (email !== prevEmail) {
+      await redis.set(emailIndexKey(prevEmail), existing.id).catch(() => {});
+      await redis.del(emailIndexKey(email)).catch(() => {});
+    }
+    throw e instanceof Error ? e : new Error("Could not save profile.");
+  }
+
+  return next;
+}
+
 export async function createRetailerSessionToken(userId: string): Promise<string> {
   const token = crypto.randomBytes(32).toString("base64url");
   const redis = getRedis();

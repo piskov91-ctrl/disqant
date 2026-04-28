@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useEffect, useId, useState } from "react";
 import { usePathname } from "next/navigation";
 import { Menu, X } from "lucide-react";
+import { RetailerAccountMenu } from "@/components/RetailerAccountMenu";
 import { retailerSessionLabel, type RetailerDisplayUser } from "@/lib/retailerDisplayName";
 
 const navTextClass = "text-sm text-zinc-600 transition hover:text-zinc-900";
@@ -16,6 +17,7 @@ export function HeaderNav() {
   const menuId = useId();
   const [open, setOpen] = useState(false);
   const [retailerUser, setRetailerUser] = useState<RetailerDisplayUser | null | undefined>(undefined);
+  const [mobileSigningOut, setMobileSigningOut] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -67,6 +69,17 @@ export function HeaderNav() {
     return () => document.removeEventListener("keydown", onKeyDown);
   }, [open]);
 
+  function signOutMobile() {
+    void (async () => {
+      setMobileSigningOut(true);
+      try {
+        await fetch("/api/retailer/logout", { method: "POST", credentials: "include" });
+      } finally {
+        window.location.href = "/";
+      }
+    })();
+  }
+
   return (
     <div className="flex min-w-0 items-center justify-end gap-2 sm:gap-3">
       <nav className="hidden items-center gap-7 lg:gap-8 md:flex" aria-label="Primary">
@@ -109,14 +122,7 @@ export function HeaderNav() {
         Try it now
       </Link>
 
-      {loggedIn && retailerUser ? (
-        <span
-          className="hidden max-w-[12rem] truncate text-right text-sm font-medium text-zinc-800 md:inline"
-          title={retailerSessionLabel(retailerUser)}
-        >
-          {retailerSessionLabel(retailerUser)}
-        </span>
-      ) : null}
+      {loggedIn && retailerUser ? <RetailerAccountMenu user={retailerUser} /> : null}
 
       <button
         type="button"
@@ -174,9 +180,26 @@ export function HeaderNav() {
                   <Link href="/dashboard" className={navStackClass} onClick={() => setOpen(false)}>
                     Dashboard
                   </Link>
-                  <p className="mt-2 rounded-xl bg-zinc-100 px-3 py-2 text-sm font-medium text-zinc-800">
-                    {retailerSessionLabel(retailerUser)}
+                  <Link href="/profile" className={navStackClass} onClick={() => setOpen(false)}>
+                    Profile Settings
+                  </Link>
+                  <Link href="/plan" className={navStackClass} onClick={() => setOpen(false)}>
+                    My Plan
+                  </Link>
+                  <p className="mt-2 rounded-xl bg-zinc-100 px-3 py-2 text-xs font-medium text-zinc-600">
+                    Signed in as {retailerSessionLabel(retailerUser)}
                   </p>
+                  <button
+                    type="button"
+                    className="mt-2 w-full rounded-xl px-3 py-3 text-left text-base font-semibold text-zinc-800 transition hover:bg-red-50 hover:text-red-900"
+                    disabled={mobileSigningOut}
+                    onClick={() => {
+                      setOpen(false);
+                      signOutMobile();
+                    }}
+                  >
+                    {mobileSigningOut ? "Signing out…" : "Sign Out"}
+                  </button>
                 </>
               ) : null}
 
