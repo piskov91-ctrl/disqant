@@ -895,7 +895,7 @@ export default function DemoClient() {
             Virtual try-on demo
           </h1>
           <p className="mt-4 text-zinc-400">
-            Tap <span className="font-semibold text-zinc-100">Wear Me ✨</span> on a sample product, then upload your
+            Tap <span className="font-semibold text-zinc-100">Wear Me</span> on a sample product, then upload your
             photo in the modal (gallery or camera), generate, and download your try-on.
           </p>
         </div>
@@ -1002,7 +1002,7 @@ export default function DemoClient() {
                               openWearMe(p);
                             }}
                           >
-                            Wear Me ✨
+                            Wear Me
                           </button>
                         </div>
                       </div>
