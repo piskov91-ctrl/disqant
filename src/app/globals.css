@@ -305,6 +305,38 @@ body footer a:hover {
       inset 0 1px 1px rgba(255, 255, 255, 0.5);
     filter: none;
   }
+
+  /** Logo + label inside .wear-me-btn (e.g. home hero) */
+  .wear-me-btn:has(.wm-logo) {
+    gap: 0.625rem;
+    padding: 10px 22px 10px 12px;
+  }
+
+  .wear-me-btn .wm-logo {
+    flex-shrink: 0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 2.25rem;
+    height: 2.25rem;
+    border-radius: 50%;
+    background: rgba(44, 36, 31, 0.14);
+    font-family: inherit;
+    font-size: 0.5625rem;
+    font-weight: 800;
+    letter-spacing: 0.04em;
+    line-height: 1;
+    color: #2c241f;
+  }
+
+  .wear-me-btn .wm-text {
+    font-family: inherit;
+    font-weight: inherit;
+    font-size: inherit;
+    letter-spacing: 2px;
+    line-height: inherit;
+    color: inherit;
+  }
 }
 
 @layer utilities {

@@ -32,10 +32,12 @@ export default function Home() {
                 </p>
 
                 <Link
-                  href="/how-it-works"
+                  href="/demo"
                   className="wear-me-btn mt-8 w-fit sm:mt-10"
+                  aria-label="Wear Me — try the demo"
                 >
-                  Get Started
+                  <span className="wm-logo">WM</span>
+                  <span className="wm-text">WEAR ME</span>
                 </Link>
               </div>
 
