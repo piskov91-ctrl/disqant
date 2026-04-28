@@ -1,3 +1,4 @@
+import Image from "next/image";
 import Link from "next/link";
 import { Suspense } from "react";
 import { HeaderNav } from "@/components/HeaderNav";
@@ -25,14 +26,16 @@ export function Header() {
   return (
     <header className="site-header fixed top-0 left-0 right-0 z-[60] border-b border-white/10 bg-transparent backdrop-blur-md">
       <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-6">
-        <Link
-          href="/"
-          className="flex items-center gap-2 text-lg font-semibold tracking-tight text-zinc-900"
-        >
-          <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-accent/15 text-accent">
-            D
-          </span>
-          Fit Room
+        <Link href="/" className="flex shrink-0 items-center leading-none">
+          <Image
+            src="/logo.png"
+            alt="Fit Room"
+            width={1024}
+            height={1024}
+            priority
+            sizes="128px"
+            className="h-8 w-auto max-h-8"
+          />
         </Link>
         <HeaderNavSlot />
       </div>
