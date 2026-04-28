@@ -1,7 +1,12 @@
 import crypto from "node:crypto";
 import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
-import { getRedis } from "@/lib/apiKeyStore";
+import {
+  deleteClientKey,
+  getClientKeyRecordById,
+  getRedis,
+  type ClientApiKeyRecord,
+} from "@/lib/apiKeyStore";
 import { validateRetailerPasswordStrength } from "@/lib/retailerPasswordPolicy";
 
 export const RETAILER_SESSION_COOKIE = "disquant_retailer_session";
@@ -29,6 +34,44 @@ function emailIndexKey(email: string) {
 }
 function sessionKey(token: string) {
   return `${SESS_PREFIX}${token}`;
+}
+
+/**
+ * Signup used to auto-create an API key with this limit (via RETAILER_SIGNUP_TRYON_LIMIT, default 500).
+ * Those links are removed from signup; strip any still stored on retailer accounts so the dashboard
+ * shows the welcome / choose-a-plan state instead of a trial key.
+ */
+const LEGACY_SIGNUP_AUTO_TRYON_LIMIT = 500;
+const LEGACY_SIGNUP_TIME_SKEW_MS = 15_000;
+
+function clientLooksLikeLegacyAutoSignupKey(user: RetailerUser, client: ClientApiKeyRecord): boolean {
+  if (client.usageLimit !== LEGACY_SIGNUP_AUTO_TRYON_LIMIT) return false;
+  const tu = Date.parse(user.createdAt);
+  const tc = Date.parse(client.createdAt);
+  if (!Number.isFinite(tu) || !Number.isFinite(tc)) return false;
+  return Math.abs(tu - tc) <= LEGACY_SIGNUP_TIME_SKEW_MS;
+}
+
+/**
+ * If this account still points at an auto-provisioned signup client, unlink (and delete that client key).
+ */
+async function detachLegacySignupClientIfPresent(user: RetailerUser): Promise<RetailerUser> {
+  const cid = user.clientId?.trim();
+  if (!cid) return user;
+
+  const client = await getClientKeyRecordById(cid);
+  if (!client) {
+    const cleared: RetailerUser = { ...user, clientId: null };
+    await getRedis().set(userKey(user.id), JSON.stringify(cleared));
+    return cleared;
+  }
+
+  if (!clientLooksLikeLegacyAutoSignupKey(user, client)) return user;
+
+  const cleared: RetailerUser = { ...user, clientId: null };
+  await getRedis().set(userKey(user.id), JSON.stringify(cleared));
+  await deleteClientKey(cid).catch(() => {});
+  return cleared;
 }
 
 export type RetailerUser = {
@@ -103,16 +146,19 @@ export async function getRetailerById(id: string): Promise<RetailerUser | null> 
   const redis = getRedis();
   const raw = await redis.get(userKey(id));
   if (!raw) return null;
+  let parsed: RetailerUser | null = null;
   if (typeof raw === "string") {
     try {
       const u = JSON.parse(raw) as RetailerUser;
-      return { ...u, clientId: u.clientId ?? null };
+      parsed = { ...u, clientId: u.clientId ?? null };
     } catch {
       return null;
     }
+  } else {
+    const u = raw as RetailerUser;
+    parsed = { ...u, clientId: u.clientId ?? null };
   }
-  const u = raw as RetailerUser;
-  return { ...u, clientId: u.clientId ?? null };
+  return detachLegacySignupClientIfPresent(parsed);
 }
 
 export async function findRetailerByEmail(email: string): Promise<RetailerUser | null> {
