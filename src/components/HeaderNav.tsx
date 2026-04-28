@@ -117,9 +117,6 @@ export function HeaderNav() {
           </Link>
         </>
       ) : null}
-      <Link href="/demo" className="wear-me-btn shrink-0">
-        Try it now
-      </Link>
 
       {loggedIn && retailerUser ? <RetailerAccountMenu user={retailerUser} /> : null}
 
@@ -202,10 +199,9 @@ export function HeaderNav() {
                 </>
               ) : null}
 
-              <div className="my-2 h-px w-full bg-surface-border" />
-
               {!loggedIn ? (
                 <>
+                  <div className="my-2 h-px w-full bg-surface-border" />
                   <Link
                     href="/login"
                     className="btn-accent-gradient w-full"
@@ -222,13 +218,6 @@ export function HeaderNav() {
                   </Link>
                 </>
               ) : null}
-              <Link
-                href="/demo"
-                className="wear-me-btn mt-1 w-full"
-                onClick={() => setOpen(false)}
-              >
-                Try it now
-              </Link>
             </nav>
           </div>
         </div>
