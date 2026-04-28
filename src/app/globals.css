@@ -306,36 +306,106 @@ body footer a:hover {
     filter: none;
   }
 
-  /** Logo + label inside .wear-me-btn (e.g. home hero) */
-  .wear-me-btn:has(.wm-logo) {
-    padding: 10px 22px 10px 12px;
+  /**
+   * Home hero — 3D brushed-metal Wear Me control
+   */
+  .wear-me-3d-final {
+    appearance: none;
+    display: block;
+    border: none;
+    margin: 0;
+    padding: 0;
+    background: transparent;
+    cursor: pointer;
+    border-radius: 9999px;
+    filter: drop-shadow(0 8px 18px rgba(0, 0, 0, 0.32));
+    transition:
+      transform 0.28s ease,
+      filter 0.28s ease;
   }
 
-  .wm-logo {
-    box-sizing: border-box;
-    flex-shrink: 0;
+  .wear-me-3d-final:hover {
+    transform: translateY(-3px);
+    filter: drop-shadow(0 14px 28px rgba(198, 167, 125, 0.42));
+  }
+
+  .wear-me-3d-final:focus-visible {
+    outline: 2px solid #e2cfb4;
+    outline-offset: 4px;
+  }
+
+  .wear-me-3d-final:active {
+    transform: translateY(-1px);
+  }
+
+  .brushed-surface {
     display: inline-flex;
     align-items: center;
-    justify-content: center;
-    width: 30px;
-    height: 30px;
-    margin-right: 15px;
-    border: 2px solid #2c241f;
-    border-radius: 50%;
-    font-family: inherit;
-    font-size: 14px;
-    font-weight: 900;
-    line-height: 1;
-    color: #2c241f;
+    gap: 0.875rem;
+    padding: 10px 22px 10px 12px;
+    border-radius: 9999px;
+    background:
+      linear-gradient(
+        152deg,
+        rgba(255, 255, 255, 0.42) 0%,
+        rgba(255, 255, 255, 0.06) 38%,
+        rgba(255, 255, 255, 0) 55%
+      ),
+      linear-gradient(
+        135deg,
+        #b8926a 0%,
+        #e8d4bc 24%,
+        #c6a77d 48%,
+        #9e7a52 74%,
+        #dcc5a8 100%
+      );
+    background-size: 100% 100%, 220% 220%;
+    background-position:
+      0 0,
+      35% 32%;
+    border: 1px solid rgba(255, 255, 255, 0.45);
+    box-shadow:
+      0 5px 0 rgba(44, 36, 31, 0.18),
+      0 8px 24px rgba(0, 0, 0, 0.22),
+      inset 0 2px 3px rgba(255, 255, 255, 0.6),
+      inset 0 -3px 5px rgba(60, 48, 40, 0.18);
   }
 
-  .wear-me-btn .wm-text {
-    font-family: inherit;
-    font-weight: inherit;
-    font-size: inherit;
-    letter-spacing: 2px;
-    line-height: inherit;
-    color: inherit;
+  .monogram-frame {
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 52px;
+    height: 52px;
+    border-radius: 50%;
+    background: linear-gradient(165deg, rgba(255, 255, 255, 0.35), rgba(44, 36, 31, 0.06));
+    border: 2px solid rgba(44, 36, 31, 0.55);
+    box-shadow:
+      inset 0 2px 5px rgba(255, 255, 255, 0.45),
+      inset 0 -2px 4px rgba(44, 36, 31, 0.22),
+      0 2px 6px rgba(0, 0, 0, 0.12);
+  }
+
+  .intertwined-wm {
+    display: block;
+    width: 48px;
+    height: 48px;
+  }
+
+  .intertwined-wm text {
+    fill: #2c241f;
+  }
+
+  .btn-text-luxury {
+    font-family: ui-serif, Georgia, Cambria, "Times New Roman", Times, serif;
+    font-weight: 700;
+    font-size: 14px;
+    letter-spacing: 0.2em;
+    color: #2c241f;
+    text-transform: uppercase;
+    line-height: 1;
+    white-space: nowrap;
   }
 }
 

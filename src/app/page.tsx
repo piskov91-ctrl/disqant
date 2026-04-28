@@ -1,6 +1,5 @@
 import { Footer } from "@/components/Footer";
 import { Header } from "@/components/Header";
-import Link from "next/link";
 
 export default function Home() {
   return (
@@ -31,14 +30,32 @@ export default function Home() {
                   Trusted by fashion retailers worldwide.
                 </p>
 
-                <Link
-                  href="/demo"
-                  className="wear-me-btn mt-8 w-fit sm:mt-10"
-                  aria-label="Wear Me — try the demo"
-                >
-                  <span className="wm-logo">WM</span>
-                  <span className="wm-text">WEAR ME</span>
-                </Link>
+                <form action="/demo" className="mt-8 block w-fit sm:mt-10">
+                  <button type="submit" className="wear-me-3d-final" aria-label="Wear Me — try the demo">
+                    <div className="brushed-surface">
+                      <div className="monogram-frame">
+                        <svg viewBox="0 0 100 100" className="intertwined-wm">
+                          <text x="10" y="72" style={{ fontFamily: "serif", fontSize: "65px", fontWeight: "bold" }}>
+                            W
+                          </text>
+                          <text
+                            x="36"
+                            y="72"
+                            style={{
+                              fontFamily: "serif",
+                              fontSize: "65px",
+                              fontWeight: "bold",
+                              opacity: 0.9,
+                            }}
+                          >
+                            M
+                          </text>
+                        </svg>
+                      </div>
+                      <span className="btn-text-luxury">WEAR ME</span>
+                    </div>
+                  </button>
+                </form>
               </div>
 
               <div className="order-2 flex w-full min-w-0 justify-center md:justify-end">
