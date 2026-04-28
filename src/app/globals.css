@@ -409,7 +409,7 @@ body footer a:hover {
   }
 
   /**
-   * Demo product cards — compact Wear Me (same look as home, slightly smaller padding + type).
+   * Demo product cards — compact Wear Me (padding / label / WM circle tuned for overlay cards).
    */
   .wear-me-3d-final.wear-me-3d-demo {
     filter: drop-shadow(0 6px 14px rgba(0, 0, 0, 0.28));
@@ -420,23 +420,23 @@ body footer a:hover {
   }
 
   .wear-me-3d-final.wear-me-3d-demo .brushed-surface {
-    gap: 0.65rem;
-    padding: 8px 17px 8px 10px;
+    gap: 0.45rem;
+    padding: 8px 20px;
   }
 
   .wear-me-3d-final.wear-me-3d-demo .monogram-frame {
-    width: 44px;
-    height: 44px;
+    width: 22px;
+    height: 22px;
   }
 
   .wear-me-3d-final.wear-me-3d-demo .intertwined-wm {
-    width: 40px;
-    height: 40px;
+    width: 18px;
+    height: 18px;
   }
 
   .wear-me-3d-final.wear-me-3d-demo .btn-text-luxury {
-    font-size: 12px;
-    letter-spacing: 0.17em;
+    font-size: 14px;
+    letter-spacing: 0.14em;
   }
 }
 
