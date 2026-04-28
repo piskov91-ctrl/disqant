@@ -1,6 +1,5 @@
 import { Footer } from "@/components/Footer";
 import { Header } from "@/components/Header";
-import Image from "next/image";
 import Link from "next/link";
 
 const HOME_HERO_BG =
@@ -15,14 +14,11 @@ export default function Home() {
           aria-label="Home hero"
           className="relative isolate min-h-[calc(100dvh-4rem)] overflow-hidden text-white"
         >
-          <div className="pointer-events-none absolute inset-0 z-0">
-            <Image
-              src={HOME_HERO_BG}
-              alt=""
-              fill
-              className="object-cover object-center"
-              priority
-              sizes="100vw"
+          <div className="pointer-events-none absolute inset-0 z-0 overflow-hidden bg-black">
+            <div
+              className="absolute inset-[-14%] bg-cover bg-center bg-no-repeat"
+              style={{ backgroundImage: `url("${HOME_HERO_BG}")` }}
+              aria-hidden
             />
             <div
               className="absolute inset-0 bg-gradient-to-b from-black/75 via-black/60 to-black/70"
