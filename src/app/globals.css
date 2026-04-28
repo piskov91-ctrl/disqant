@@ -407,6 +407,37 @@ body footer a:hover {
     line-height: 1;
     white-space: nowrap;
   }
+
+  /**
+   * Demo product cards — compact Wear Me (same look as home, slightly smaller padding + type).
+   */
+  .wear-me-3d-final.wear-me-3d-demo {
+    filter: drop-shadow(0 6px 14px rgba(0, 0, 0, 0.28));
+  }
+
+  .wear-me-3d-final.wear-me-3d-demo:hover {
+    filter: drop-shadow(0 11px 22px rgba(198, 167, 125, 0.38));
+  }
+
+  .wear-me-3d-final.wear-me-3d-demo .brushed-surface {
+    gap: 0.65rem;
+    padding: 8px 17px 8px 10px;
+  }
+
+  .wear-me-3d-final.wear-me-3d-demo .monogram-frame {
+    width: 44px;
+    height: 44px;
+  }
+
+  .wear-me-3d-final.wear-me-3d-demo .intertwined-wm {
+    width: 40px;
+    height: 40px;
+  }
+
+  .wear-me-3d-final.wear-me-3d-demo .btn-text-luxury {
+    font-size: 12px;
+    letter-spacing: 0.17em;
+  }
 }
 
 @layer utilities {
