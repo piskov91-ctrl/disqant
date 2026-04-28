@@ -10,12 +10,19 @@ export async function GET() {
     return Response.json({ error: "Unauthorized." }, { status: 401 });
   }
 
-  const client = await getClientKeyRecordById(user.clientId);
-  if (!client) {
+  const client = user.clientId ? await getClientKeyRecordById(user.clientId) : null;
+  if (user.clientId && !client) {
     return Response.json(
       { error: "Account data is incomplete. Contact support.", user: toPublicRetailer(user) },
       { status: 500 },
     );
+  }
+
+  if (!client) {
+    return Response.json({
+      user: toPublicRetailer(user),
+      client: null,
+    });
   }
 
   const { fashnApiKey: _f, ...clientSafe } = client;

@@ -54,10 +54,15 @@ const plans: Plan[] = [
   },
 ];
 
-export function Pricing() {
+type PricingProps = {
+  /** Omit or set empty to avoid a duplicate `id` when this block is already the page subject (e.g. `/subscriptions`). */
+  sectionId?: string;
+};
+
+export function Pricing({ sectionId = "subscriptions" }: PricingProps) {
   return (
     <section
-      id="subscriptions"
+      id={sectionId || undefined}
       className="scroll-mt-28 border-t border-white/10 bg-zinc-950/40 py-20 md:py-24"
     >
       <div className="mx-auto max-w-6xl px-6">

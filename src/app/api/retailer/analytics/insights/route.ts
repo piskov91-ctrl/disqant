@@ -9,9 +9,12 @@ export async function GET() {
   const user = await getRetailerSessionUser();
   if (!user) return Response.json({ error: "Unauthorized." }, { status: 401 });
 
-  const client = await getClientKeyRecordById(user.clientId);
+  const client = user.clientId ? await getClientKeyRecordById(user.clientId) : null;
   if (!client) {
-    return Response.json({ error: "Account data is incomplete." }, { status: 500 });
+    return Response.json(
+      { error: "No active plan. Choose a subscription to get an API key." },
+      { status: 403 },
+    );
   }
 
   const [{ tryOnByHourUtc }, products] = await Promise.all([

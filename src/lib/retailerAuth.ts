@@ -1,7 +1,7 @@
 import crypto from "node:crypto";
 import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
-import { createClientKey, deleteClientKey, getRedis } from "@/lib/apiKeyStore";
+import { getRedis } from "@/lib/apiKeyStore";
 import { RETAILER_PASSWORD_MAX, RETAILER_PASSWORD_MIN } from "@/lib/retailerPasswordPolicy";
 
 export const RETAILER_SESSION_COOKIE = "disquant_retailer_session";
@@ -42,7 +42,8 @@ export type RetailerUser = {
   websiteUrl: string;
   passwordSalt: string;
   passwordHash: string;
-  clientId: string;
+  /** Set when the account has an API key / active plan (admin or checkout). */
+  clientId: string | null;
   createdAt: string;
 };
 
@@ -104,12 +105,14 @@ export async function getRetailerById(id: string): Promise<RetailerUser | null> 
   if (!raw) return null;
   if (typeof raw === "string") {
     try {
-      return JSON.parse(raw) as RetailerUser;
+      const u = JSON.parse(raw) as RetailerUser;
+      return { ...u, clientId: u.clientId ?? null };
     } catch {
       return null;
     }
   }
-  return raw as RetailerUser;
+  const u = raw as RetailerUser;
+  return { ...u, clientId: u.clientId ?? null };
 }
 
 export async function findRetailerByEmail(email: string): Promise<RetailerUser | null> {
@@ -128,11 +131,6 @@ function redisUserIdFromIndex(raw: unknown): string | null {
     return s.length > 0 ? s : null;
   }
   return null;
-}
-
-function defaultSignupTryOnLimit() {
-  const n = Number(process.env.RETAILER_SIGNUP_TRYON_LIMIT ?? "500");
-  return Math.floor(Number.isFinite(n) && n > 0 ? n : 500);
 }
 
 export async function registerRetailer(params: {
@@ -175,9 +173,6 @@ export async function registerRetailer(params: {
     throw new Error("Company name must be at most 200 characters.");
   }
 
-  const clientDisplayName =
-    companyName || `${firstName} ${lastName}`.trim() || email.split("@")[0] || "Retailer";
-
   let websiteUrl: string;
   try {
     websiteUrl = normalizeOptionalWebsiteUrl(params.websiteUrl);
@@ -199,15 +194,6 @@ export async function registerRetailer(params: {
     throw new Error("An account with this email already exists.");
   }
 
-  const usageLimit = defaultSignupTryOnLimit();
-  let client;
-  try {
-    client = await createClientKey({ clientName: clientDisplayName, usageLimit });
-  } catch (e) {
-    const msg = e instanceof Error ? e.message : "Could not create API key.";
-    throw new Error(msg);
-  }
-
   const id = crypto.randomUUID();
   const now = new Date().toISOString();
   const { salt, hash } = hashRetailerPassword(password);
@@ -220,7 +206,7 @@ export async function registerRetailer(params: {
     websiteUrl,
     passwordSalt: salt,
     passwordHash: hash,
-    clientId: client.id,
+    clientId: null,
     createdAt: now,
   };
 
@@ -229,7 +215,6 @@ export async function registerRetailer(params: {
     await redis.set(userKey(id), JSON.stringify(user));
   } catch (e) {
     await redis.del(emailIndexKey(email));
-    await deleteClientKey(client.id).catch(() => {});
     throw e instanceof Error ? e : new Error("Registration failed.");
   }
 

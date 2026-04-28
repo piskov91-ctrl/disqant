@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import { redirect } from "next/navigation";
 import { Footer } from "@/components/Footer";
 import { Header } from "@/components/Header";
@@ -18,8 +19,9 @@ export default async function DashboardPage() {
   const user = await getRetailerSessionUser();
   if (!user) redirect("/login?next=/dashboard");
 
-  const client = await getClientKeyRecordById(user.clientId);
-  if (!client) {
+  const client = user.clientId ? await getClientKeyRecordById(user.clientId) : null;
+
+  if (user.clientId && !client) {
     return (
       <>
         <Header />
@@ -33,6 +35,48 @@ export default async function DashboardPage() {
               .
             </p>
           </div>
+        </main>
+        <Footer />
+      </>
+    );
+  }
+
+  if (!client) {
+    return (
+      <>
+        <Header />
+        <main className="pt-16">
+          <section className="border-b border-white/10 py-14">
+            <div className="mx-auto max-w-6xl px-6">
+              <h1 className="text-balance text-4xl font-semibold tracking-tight text-zinc-50 md:text-5xl">
+                Dashboard
+              </h1>
+              <p className="mt-4 max-w-2xl text-lg leading-relaxed text-zinc-400">
+                {[
+                  [user.firstName, user.lastName].filter(Boolean).join(" "),
+                  user.companyName?.trim(),
+                ]
+                  .filter(Boolean)
+                  .join(" · ") || "Account"}
+              </p>
+            </div>
+          </section>
+          <section className="py-16">
+            <div className="mx-auto max-w-2xl px-6">
+              <div className="rounded-2xl border border-white/10 bg-zinc-900/40 p-8 text-center backdrop-blur-sm md:p-10">
+                <p className="text-lg leading-relaxed text-zinc-200">
+                  Welcome! You don&apos;t have an active plan yet. Choose a plan from our Subscriptions page to get
+                  started.
+                </p>
+                <Link
+                  href="/subscriptions"
+                  className="btn-accent-gradient mt-8 inline-flex h-12 items-center justify-center px-8 text-sm font-semibold"
+                >
+                  View subscriptions
+                </Link>
+              </div>
+            </div>
+          </section>
         </main>
         <Footer />
       </>
