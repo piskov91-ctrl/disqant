@@ -64,9 +64,17 @@ function LoginFormInner() {
         />
       </div>
       <div>
-        <label htmlFor="li-password" className="block text-sm font-medium text-zinc-200">
-          Password
-        </label>
+        <div className="flex items-baseline justify-between gap-3">
+          <label htmlFor="li-password" className="block text-sm font-medium text-zinc-200">
+            Password
+          </label>
+          <Link
+            href="/forgot-password"
+            className="shrink-0 text-sm font-medium text-zinc-400 underline-offset-2 transition hover:text-zinc-200 hover:underline"
+          >
+            Forgot password?
+          </Link>
+        </div>
         <input
           id="li-password"
           name="password"
