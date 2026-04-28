@@ -28,7 +28,7 @@ export function HeroCarousel() {
         </p>
 
         <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:items-center">
-          <Link href="/demo" className="btn-accent-gradient text-center sm:inline-flex">
+          <Link href="/demo" className="wear-me-btn text-center sm:inline-flex">
             Try the demo
           </Link>
           <a

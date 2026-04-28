@@ -117,7 +117,7 @@ export function HeaderNav() {
           </Link>
         </>
       ) : null}
-      <Link href="/demo" className="btn-accent-gradient shrink-0">
+      <Link href="/demo" className="wear-me-btn shrink-0">
         Try it now
       </Link>
 
@@ -224,7 +224,7 @@ export function HeaderNav() {
               ) : null}
               <Link
                 href="/demo"
-                className="btn-accent-gradient mt-1 w-full"
+                className="wear-me-btn mt-1 w-full"
                 onClick={() => setOpen(false)}
               >
                 Try it now

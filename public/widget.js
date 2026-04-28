@@ -76,14 +76,16 @@
       + ".dq-overlay{position:absolute;inset:auto 12px 12px auto;z-index:2147483646;display:flex;align-items:center;pointer-events:auto;}"
 
       // Wear button
-      + ".dq-wear-btn{position:relative;appearance:none;border:0;cursor:pointer;"
-      + "padding:14px 28px;border-radius:10px;"
-      + "color:#f5ede4;font:600 16px/1.25 system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;"
-      + "letter-spacing:.5px;background:#2c241f;box-shadow:none;"
-      + "transform:translateY(0) scale(1);"
-      + "transition:background-color .3s ease,color .3s ease,transform .18s ease;}"
-      + ".dq-wear-btn:hover{background:#c6a77d;color:#2c241f;}"
-      + ".dq-wear-btn:active{transform:translateY(-1px) scale(.99);}"
+      + ".dq-wear-btn{position:relative;appearance:none;box-sizing:border-box;cursor:pointer;"
+      + "display:inline-flex;align-items:center;justify-content:center;"
+      + "padding:12px 30px;border-radius:50px;color:#2c241f;text-decoration:none;"
+      + "font-family:Georgia,ui-serif,serif;font-weight:700;font-size:14px;line-height:1.25;letter-spacing:2px;"
+      + "background:linear-gradient(135deg,#c6a77d 0%,#e2cfb4 50%,#c6a77d 100%);"
+      + "border:1px solid rgba(255,255,255,.3);"
+      + "box-shadow:0 4px 15px rgba(0,0,0,.3),inset 0 1px 1px rgba(255,255,255,.5);"
+      + "transition:all .3s ease;transform:translateY(0);-webkit-font-smoothing:antialiased;}"
+      + ".dq-wear-btn:hover{transform:translateY(-2px);box-shadow:0 6px 20px rgba(198,167,125,.4);filter:brightness(1.1);}"
+      + ".dq-wear-btn:active{transform:translateY(-1px);filter:brightness(1.05);}"
 
       // Backdrop + modal
       + ".dq-backdrop{position:fixed;inset:0;z-index:2147483000;"

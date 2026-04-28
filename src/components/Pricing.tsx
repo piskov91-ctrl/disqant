@@ -126,7 +126,7 @@ export function Pricing({ sectionId = "subscriptions" }: PricingProps) {
                     {ctaLabel}
                   </Link>
                 ) : (
-                  <PricingGetStartedCta className="btn-accent-gradient mt-8 w-full disabled:cursor-wait disabled:opacity-70">
+                  <PricingGetStartedCta className="wear-me-btn mt-8 w-full disabled:cursor-wait disabled:opacity-70">
                     {ctaLabel}
                   </PricingGetStartedCta>
                 )}

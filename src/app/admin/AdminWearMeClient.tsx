@@ -200,7 +200,7 @@ export function AdminWearMeClient({ apiKey }: { apiKey: string }) {
           <button
             type="button"
             onClick={() => setWearMenuOpen((o) => !o)}
-            className="btn-accent-gradient"
+            className="wear-me-btn"
           >
             Wear Me
           </button>

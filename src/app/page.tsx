@@ -33,7 +33,7 @@ export default function Home() {
 
                 <Link
                   href="/how-it-works"
-                  className="btn-accent-gradient mt-8 w-fit sm:mt-10"
+                  className="wear-me-btn mt-8 w-fit sm:mt-10"
                 >
                   Get Started
                 </Link>

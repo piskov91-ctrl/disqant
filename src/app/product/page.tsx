@@ -38,7 +38,7 @@ export default function ProductPage() {
               enough that you can roll it out across your catalogue without turning it into a months-long project.
             </p>
             <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:items-center">
-              <Link href="/pricing" className="btn-accent-gradient sm:inline-flex">
+              <Link href="/pricing" className="wear-me-btn sm:inline-flex">
                 Get started
               </Link>
             </div>
@@ -448,7 +448,7 @@ export default function ProductPage() {
                     low-risk rollout tends to feel a lot more realistic than a big-bang project.
                   </p>
                 </div>
-                <Link href="/demo" className="btn-accent-gradient text-center sm:inline-flex">
+                <Link href="/demo" className="wear-me-btn text-center sm:inline-flex">
                   Try Wear Me
                 </Link>
               </div>

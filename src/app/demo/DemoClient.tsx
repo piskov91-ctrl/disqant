@@ -994,7 +994,7 @@ export default function DemoClient() {
                         <div className="pointer-events-none absolute inset-x-0 bottom-0 z-10 flex justify-center bg-gradient-to-t from-black/70 via-black/35 to-transparent pb-3 pt-12">
                           <button
                             type="button"
-                            className="dq-wear-btn pointer-events-auto"
+                            className="wear-me-btn pointer-events-auto"
                             aria-label="Wear Me"
                             onClick={(e) => {
                               e.preventDefault();
