@@ -22,7 +22,7 @@ export default async function DashboardPage() {
 
   const greeting = retailerWelcomeGreetingName(user);
   const welcomeHeader = (
-    <section className="border-b border-white/10 bg-zinc-950/95 px-6 py-10">
+    <section className="border-b border-white/10 bg-zinc-950/95 px-6 pb-12 pt-6 md:pb-14 md:pt-8">
       <div className="mx-auto max-w-6xl">
         <p className="text-balance text-2xl font-semibold tracking-tight text-zinc-50 md:text-3xl">
           Welcome back, {greeting}!
@@ -38,7 +38,7 @@ export default async function DashboardPage() {
     return (
       <>
         <Header />
-        <main className="min-h-dvh bg-zinc-950">
+        <main className="min-h-dvh bg-zinc-950 pt-28 md:pt-36 lg:pt-40">
           {welcomeHeader}
           <div className="mx-auto max-w-6xl px-6 py-16">
             <p className="text-zinc-300">
@@ -59,7 +59,7 @@ export default async function DashboardPage() {
     return (
       <>
         <Header />
-        <main className="min-h-dvh bg-zinc-950">
+        <main className="min-h-dvh bg-zinc-950 pt-28 md:pt-36 lg:pt-40">
           {welcomeHeader}
           <section className="py-16 md:py-20">
             <div className="mx-auto max-w-lg px-6">
@@ -118,7 +118,7 @@ export default async function DashboardPage() {
   return (
     <>
       <Header />
-      <main className="min-h-dvh bg-zinc-950">
+      <main className="min-h-dvh bg-zinc-950 pt-28 md:pt-36 lg:pt-40">
         {welcomeHeader}
 
         <section className="border-b border-white/10 py-10">
