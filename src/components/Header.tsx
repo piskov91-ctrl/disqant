@@ -34,7 +34,7 @@ export function Header() {
             height={1024}
             priority
             sizes="128px"
-            className="h-8 w-auto max-h-8"
+            className="h-8 w-auto max-h-8 mix-blend-multiply"
           />
         </Link>
         <HeaderNavSlot />
