@@ -141,7 +141,7 @@ export function HeaderNav() {
           />
           <div
             id={menuId}
-            className="absolute right-0 top-16 w-[min(100vw,420px)] max-h-[calc(100dvh-4rem)] overflow-y-auto border-l border-b border-surface-border bg-white/95 p-4 shadow-2xl shadow-zinc-200/40 backdrop-blur-xl"
+            className="absolute right-0 top-20 w-[min(100vw,420px)] max-h-[calc(100dvh-5rem)] overflow-y-auto border-l border-b border-surface-border bg-white/95 p-4 shadow-2xl shadow-zinc-200/40 backdrop-blur-xl"
             role="dialog"
             aria-modal="true"
             aria-label="Mobile navigation"

@@ -12,7 +12,7 @@ export default function ContactPage() {
   return (
     <>
       <Header />
-      <main className="pt-16">
+      <main className="pt-20">
         <section className="border-b border-surface-border bg-white py-14">
           <div className="mx-auto max-w-6xl px-6">
             <p className="mb-4 inline-flex items-center gap-2 rounded-full border border-surface-border bg-surface-raised px-4 py-1.5 text-xs font-medium uppercase tracking-wider text-zinc-600">

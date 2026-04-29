@@ -15,7 +15,7 @@ export default function ProductPage() {
   return (
     <>
       <Header />
-      <main className="pt-16">
+      <main className="pt-20">
         {/* HERO */}
         <section className="border-b border-surface-border bg-white py-14">
           <div className="mx-auto max-w-6xl px-6">

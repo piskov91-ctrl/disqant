@@ -6,7 +6,7 @@ export default function StoriesPage() {
   return (
     <>
       <Header />
-      <main className="pt-16">
+      <main className="pt-20">
         <section className="border-b border-surface-border bg-white py-14">
           <div className="mx-auto max-w-6xl px-6">
             <h1 className="text-balance text-4xl font-semibold tracking-tight text-zinc-900 md:text-5xl">

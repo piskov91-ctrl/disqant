@@ -13,7 +13,7 @@ export default function RegisterPage() {
   return (
     <>
       <Header />
-      <main className="bg-zinc-950 pt-16">
+      <main className="bg-zinc-950 pt-20">
         <div className="mx-auto max-w-lg px-6 py-16 md:py-24">
           <h1 className="text-3xl font-semibold tracking-tight text-zinc-50">Sign up</h1>
           <p className="mt-2 text-sm leading-relaxed text-zinc-400">
