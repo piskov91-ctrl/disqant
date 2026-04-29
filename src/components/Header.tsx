@@ -34,7 +34,7 @@ export function Header() {
             height={1024}
             priority
             sizes="320px"
-            className="h-[80px] w-auto bg-transparent mix-blend-screen"
+            style={{ mixBlendMode: "multiply", backgroundColor: "transparent", height: "80px", width: "auto" }}
           />
         </Link>
         <HeaderNavSlot />
