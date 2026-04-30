@@ -5,7 +5,7 @@ export default function AboutPage() {
   return (
     <>
       <Header />
-      <main className="pt-[120px]">
+      <main className="pt-[60px]">
         {/* HERO */}
         <section className="border-b border-surface-border bg-white py-14">
           <div className="mx-auto max-w-6xl px-6">

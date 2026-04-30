@@ -32,7 +32,7 @@ export default async function UsagePage(props: UsagePageProps) {
   return (
     <>
       <Header />
-      <main className="pt-[120px]">
+      <main className="pt-[60px]">
         <section className="border-b border-white/10 py-14">
           <div className="mx-auto max-w-6xl px-6">
             <h1 className="text-balance text-4xl font-semibold tracking-tight text-zinc-50 md:text-5xl">
