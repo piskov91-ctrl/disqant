@@ -5,10 +5,10 @@ export default function Home() {
   return (
     <>
       <Header />
-      <main className="pt-[80px]">
+      <main className="pt-[150px]">
         <section
           aria-label="Home hero"
-          className="relative min-h-[calc(100dvh-80px)] overflow-hidden text-white"
+          className="relative min-h-[calc(100dvh-150px)] overflow-hidden text-white"
         >
           <div className="relative z-10 mx-auto max-w-6xl px-4 py-12 sm:px-6 sm:py-16 md:py-20 lg:py-24 xl:py-28">
             <div className="grid grid-cols-1 items-center gap-10 md:grid-cols-2 md:gap-10 lg:gap-14 xl:gap-16">

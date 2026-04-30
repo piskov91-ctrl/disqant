@@ -12,7 +12,7 @@ export default function SubscriptionsPage() {
   return (
     <>
       <Header />
-      <main className="relative min-h-dvh pt-[80px]">
+      <main className="relative min-h-dvh pt-[150px]">
         <div className="mx-auto max-w-6xl px-6 py-14 text-center md:py-20">
           <h1 className="text-balance text-3xl font-semibold tracking-tight text-[#F5EDE4] md:text-4xl">
             Subscriptions

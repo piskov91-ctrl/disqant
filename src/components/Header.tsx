@@ -25,7 +25,7 @@ function HeaderNavSlot() {
 export function Header() {
   return (
     <header className="site-header fixed top-0 left-0 right-0 z-[60] border-b border-white/10 bg-transparent backdrop-blur-md">
-      <div className="mx-auto flex h-[80px] max-h-[80px] min-h-[80px] max-w-6xl shrink-0 items-center justify-between gap-3 overflow-hidden px-5 md:px-6">
+      <div className="mx-auto flex h-[150px] max-h-[150px] min-h-[150px] max-w-6xl shrink-0 items-center justify-between gap-3 overflow-hidden px-5 md:px-6">
         <Link href="/" className="flex h-full min-h-0 min-w-0 shrink-0 items-center overflow-hidden">
           <Image
             src="/logo.png"
@@ -33,13 +33,14 @@ export function Header() {
             width={1024}
             height={1024}
             priority
-            sizes="360px"
-            className="box-border max-h-[80px] w-auto max-w-[min(340px,58vw)] object-contain object-left brightness-[1.06] contrast-[1.03]"
+            sizes="480px"
+            className="box-border max-h-[150px] w-auto max-w-[min(380px,62vw)] object-contain object-left brightness-[1.06] contrast-[1.03]"
             style={{
+              height: "150px",
+              width: "auto",
+              display: "block",
               mixBlendMode: "multiply",
               backgroundColor: "transparent",
-              height: "80px",
-              width: "auto",
               objectFit: "contain",
             }}
           />

@@ -24,7 +24,7 @@ export default async function PlanPage() {
   return (
     <>
       <Header />
-      <main className="min-h-dvh bg-zinc-950 pt-[80px]">
+      <main className="min-h-dvh bg-zinc-950 pt-[150px]">
         <div className="mx-auto max-w-2xl px-6 py-12 md:py-16">
           <h1 className="text-3xl font-semibold tracking-tight text-zinc-50">My plan</h1>
           <p className="mt-2 text-sm text-zinc-400">Your Wear Me subscription and API usage.</p>
