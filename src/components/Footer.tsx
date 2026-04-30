@@ -2,7 +2,7 @@ import Link from "next/link";
 
 export function Footer() {
   return (
-    <footer className="border-t border-white/10 bg-zinc-950/40 py-10 text-center text-sm text-zinc-500 backdrop-blur-sm">
+    <footer className="border-t border-white/10 bg-zinc-950/40 py-10 text-center text-xs text-zinc-500 backdrop-blur-sm">
       <div className="mx-auto flex max-w-4xl flex-col items-center gap-4 px-6">
         <p className="text-zinc-400">
           <span className="whitespace-normal sm:whitespace-nowrap">
@@ -36,7 +36,7 @@ export function Footer() {
             Privacy &amp; Cookies
           </Link>
         </nav>
-        <p className="text-xs text-zinc-600">© 2026 Fit Room Ltd. All rights reserved.</p>
+        <p className="text-zinc-600">© 2026 Fit Room Ltd. All rights reserved.</p>
       </div>
     </footer>
   );
