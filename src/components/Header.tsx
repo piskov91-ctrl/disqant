@@ -22,9 +22,15 @@ function HeaderNavSlot() {
   );
 }
 
-export function Header() {
+type HeaderProps = {
+  className?: string;
+};
+
+export function Header({ className = "" }: HeaderProps) {
   return (
-    <header className="site-header fixed top-0 left-0 right-0 z-[60] border-b border-white/10 bg-transparent backdrop-blur-md">
+    <header
+      className={`site-header fixed left-0 right-0 top-0 z-[60] border-b border-white/10 bg-transparent backdrop-blur-md ${className}`.trim()}
+    >
       <div className="mx-auto flex h-40 max-w-6xl items-center justify-between px-6">
         <Link href="/" className="flex shrink-0 items-center leading-none">
           <Image
