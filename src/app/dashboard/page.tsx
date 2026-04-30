@@ -38,7 +38,7 @@ export default async function DashboardPage() {
     return (
       <>
         <Header />
-        <main className="min-h-dvh bg-zinc-950 pt-[60px]">
+        <main className="min-h-dvh bg-zinc-950 pt-[120px]">
           {welcomeHeader}
           <div className="mx-auto max-w-6xl px-6 py-16">
             <p className="text-zinc-300">
@@ -59,7 +59,7 @@ export default async function DashboardPage() {
     return (
       <>
         <Header />
-        <main className="min-h-dvh bg-zinc-950 pt-[60px]">
+        <main className="min-h-dvh bg-zinc-950 pt-[120px]">
           {welcomeHeader}
           <section className="py-16 md:py-20">
             <div className="mx-auto max-w-lg px-6">
@@ -118,7 +118,7 @@ export default async function DashboardPage() {
   return (
     <>
       <Header />
-      <main className="min-h-dvh bg-zinc-950 pt-[60px]">
+      <main className="min-h-dvh bg-zinc-950 pt-[120px]">
         {welcomeHeader}
 
         <section className="border-b border-white/10 py-10">
