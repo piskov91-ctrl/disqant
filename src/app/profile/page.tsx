@@ -18,7 +18,7 @@ export default async function ProfilePage() {
   return (
     <>
       <Header />
-      <main className="min-h-dvh bg-zinc-950 pt-20 md:pt-24">
+      <main className="min-h-dvh bg-zinc-950 pt-40 md:pt-44">
         <div className="mx-auto max-w-lg px-6 py-12 md:py-16">
           <h1 className="text-3xl font-semibold tracking-tight text-zinc-50">Profile settings</h1>
           <p className="mt-2 text-sm leading-relaxed text-zinc-400">

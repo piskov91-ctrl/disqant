@@ -889,7 +889,7 @@ export default function DemoClient() {
       )}
       <Header />
 
-      <main className="mx-auto max-w-5xl px-6 pb-12 pt-24 md:pb-16">
+      <main className="mx-auto max-w-5xl px-6 pb-12 pt-44 md:pb-16">
         <div className="min-w-0">
           <h1 className="text-balance text-3xl font-semibold tracking-tight text-zinc-50 md:text-4xl">
             Virtual try-on demo

@@ -12,7 +12,7 @@ export default function ForgotPasswordPage() {
   return (
     <>
       <Header />
-      <main className="min-h-dvh bg-zinc-950 pt-20">
+      <main className="min-h-dvh bg-zinc-950 pt-40">
         <div className="mx-auto max-w-md px-6 py-16 md:py-24">
           <h1 className="text-3xl font-semibold tracking-tight text-zinc-50">Forgot password?</h1>
           <p className="mt-4 text-sm leading-relaxed text-zinc-400">

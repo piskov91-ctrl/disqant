@@ -14,7 +14,7 @@ export default function PricingPage() {
   return (
     <>
       <Header />
-      <main className="pt-20">
+      <main className="pt-40">
         <UsageLookup />
         <section className="border-b border-white/10 py-14">
           <div className="mx-auto max-w-6xl px-6">
