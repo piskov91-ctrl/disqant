@@ -2,8 +2,8 @@ import Link from "next/link";
 
 export function Footer() {
   return (
-    <footer className="border-t border-white/10 bg-zinc-950/40 py-10 text-center text-xs text-zinc-500 backdrop-blur-sm">
-      <div className="mx-auto flex max-w-4xl flex-col items-center gap-4 px-6">
+    <footer className="border-t border-white/10 bg-zinc-950/40 py-5 text-center text-xs text-zinc-500 backdrop-blur-sm md:py-6">
+      <div className="mx-auto flex max-w-4xl flex-col items-center gap-2.5 px-5 md:gap-3 md:px-6">
         <p className="text-zinc-400">
           <span className="whitespace-normal sm:whitespace-nowrap">
             Fit Room Ltd <span className="text-zinc-600">|</span> London, UK{" "}

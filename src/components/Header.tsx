@@ -9,8 +9,8 @@ function HeaderNavSlot() {
     <Suspense
       fallback={
         <div className="flex min-w-0 flex-1 items-center justify-end gap-3" aria-hidden>
-          <div className="hidden h-9 w-[22rem] rounded-lg bg-zinc-200/80 md:block" />
-          <div className="h-9 w-24 rounded-full bg-zinc-200/80" />
+          <div className="hidden h-8 w-[22rem] rounded-lg bg-zinc-200/80 md:block" />
+          <div className="h-8 w-24 rounded-full bg-zinc-200/80" />
           <div className="h-9 w-10 rounded-full border border-surface-border bg-white" />
         </div>
       }
@@ -25,7 +25,7 @@ function HeaderNavSlot() {
 export function Header() {
   return (
     <header className="site-header fixed top-0 left-0 right-0 z-[60] border-b border-white/10 bg-transparent backdrop-blur-md">
-      <div className="mx-auto flex h-40 max-w-6xl items-center justify-between px-6">
+      <div className="mx-auto flex h-[60px] max-w-6xl items-center justify-between px-5 md:px-6">
         <Link href="/" className="flex shrink-0 items-center leading-none">
           <Image
             src="/logo.png"
@@ -33,8 +33,8 @@ export function Header() {
             width={1024}
             height={1024}
             priority
-            sizes="640px"
-            style={{ mixBlendMode: "multiply", backgroundColor: "transparent", height: "160px", width: "auto" }}
+            sizes="240px"
+            style={{ mixBlendMode: "multiply", backgroundColor: "transparent", height: "60px", width: "auto" }}
           />
         </Link>
         <HeaderNavSlot />
