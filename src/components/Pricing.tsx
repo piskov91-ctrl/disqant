@@ -62,7 +62,7 @@ export function Pricing({ sectionId = "subscriptions" }: PricingProps) {
   return (
     <section
       id={sectionId || undefined}
-      className="scroll-mt-28 border-t border-[#C6A77D]/15 bg-[#2C241F] py-20 md:py-24"
+      className="scroll-mt-28 border-t border-[#C6A77D]/15 bg-transparent py-20 md:py-24"
     >
       <div className="mx-auto max-w-6xl px-6">
         <h2 className="text-center text-sm font-semibold uppercase tracking-widest text-[#C6A77D]">

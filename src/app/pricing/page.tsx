@@ -13,7 +13,7 @@ export default function PricingPage() {
   return (
     <>
       <Header />
-      <main className="min-h-dvh bg-[#2C241F] pt-40">
+      <main className="relative min-h-dvh pt-40">
         <section className="border-b border-[#C6A77D]/15 py-14">
           <div className="mx-auto max-w-6xl px-6">
             <h1 className="text-balance text-4xl font-semibold tracking-tight text-[#F5EDE4] md:text-5xl">

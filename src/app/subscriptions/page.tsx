@@ -1,5 +1,4 @@
 import type { Metadata } from "next";
-import Link from "next/link";
 import { Footer } from "@/components/Footer";
 import { Header } from "@/components/Header";
 import { Pricing } from "@/components/Pricing";
@@ -13,7 +12,7 @@ export default function SubscriptionsPage() {
   return (
     <>
       <Header />
-      <main className="min-h-dvh bg-[#2C241F] pt-40">
+      <main className="relative min-h-dvh pt-40">
         <div className="mx-auto max-w-6xl px-6 py-14 text-center md:py-20">
           <h1 className="text-balance text-3xl font-semibold tracking-tight text-[#F5EDE4] md:text-4xl">
             Subscriptions
