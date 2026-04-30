@@ -673,7 +673,11 @@ export default function DemoClient() {
   }, [openCatalogDef, openCatalog, selectedPresetId]);
 
   return (
-    <div className="min-h-dvh bg-zinc-950 text-zinc-100">
+    <div className="relative min-h-dvh text-[#F5EDE4]">
+      {/*
+        Full-page backdrop comes from root layout <SiteBackground /> (fittingroom.png + dark gradient).
+        No opaque page bg here so the fitting-room photo reads through like the home page.
+      */}
       {wearOpen && (
         <div
           role="presentation"
@@ -889,24 +893,22 @@ export default function DemoClient() {
       )}
       <Header />
 
-      <main className="mx-auto max-w-5xl px-6 pb-12 pt-44 md:pb-16">
+      <main className="relative z-10 mx-auto max-w-5xl px-6 pb-12 pt-44 md:pb-16">
         <div className="min-w-0">
-          <h1 className="text-balance text-3xl font-semibold tracking-tight text-zinc-50 md:text-4xl">
+          <h1 className="text-balance text-3xl font-semibold tracking-tight text-[#F5EDE4] md:text-4xl">
             Virtual try-on demo
           </h1>
-          <p className="mt-4 text-zinc-400">
-            Tap <span className="font-semibold text-zinc-100">Wear Me</span> on a sample product, then upload your
+          <p className="mt-4 text-[#F5EDE4]/75">
+            Tap <span className="font-semibold text-[#F5EDE4]">Wear Me</span> on a sample product, then upload your
             photo in the modal (gallery or camera), generate, and download your try-on.
           </p>
         </div>
 
-        <div
-          className="mt-8 rounded-2xl border border-zinc-800 bg-zinc-900/60 p-5 shadow-lg shadow-black/20 backdrop-blur-sm"
-        >
+        <div className="mt-8 rounded-2xl border border-[#C6A77D]/25 bg-[#2C241F]/88 p-5 shadow-[0_12px_40px_rgba(0,0,0,0.35)] backdrop-blur-md">
           {!openCatalog ? (
             <>
-              <p className="text-sm font-medium text-zinc-200">Product catalog</p>
-              <p className="mt-1 text-xs text-zinc-500">Choose a category, then pick a product to try on.</p>
+              <p className="text-sm font-semibold uppercase tracking-wide text-[#C6A77D]">Product catalog</p>
+              <p className="mt-1 text-xs text-[#F5EDE4]/65">Choose a category, then pick a product to try on.</p>
               <ul
                 className="mt-6 grid list-none grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5"
                 role="list"
@@ -918,26 +920,28 @@ export default function DemoClient() {
                       <button
                         type="button"
                         onClick={() => openProductCatalog(cat.id)}
-                        className="group flex w-full flex-col items-center text-center"
+                        className="group flex w-full flex-col items-center text-center transition-transform duration-300 ease-out will-change-transform hover:-translate-y-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C6A77D]/70 focus-visible:ring-offset-2 focus-visible:ring-offset-[#2C241F]"
                       >
                         <div
-                          className="relative w-full max-w-xs overflow-hidden rounded-2xl border border-zinc-700/90 bg-gradient-to-b from-zinc-800/95 to-zinc-950/90 p-0 shadow-md shadow-black/40 transition group-hover:border-accent/45 group-hover:shadow-lg group-hover:shadow-violet-900/20"
+                          className="relative w-full max-w-xs overflow-hidden rounded-2xl border border-[#C6A77D]/45 bg-[#2C241F] p-0 shadow-[0_10px_32px_rgba(0,0,0,0.42)] transition-all duration-300 ease-out will-change-transform group-hover:-translate-y-0.5 group-hover:border-[#C6A77D] group-hover:shadow-[0_16px_48px_rgba(0,0,0,0.48),0_0_36px_-8px_rgba(198,167,125,0.42)]"
                         >
-                          <div className="flex items-center justify-center border-b border-zinc-700/80 bg-zinc-800/80 py-2">
-                            <Folder className="h-4 w-4 text-zinc-500" strokeWidth={2} aria-hidden />
-                            <span className="ml-1.5 text-[11px] font-medium uppercase tracking-wide text-zinc-500">
+                          <div className="flex items-center justify-center border-b border-[#C6A77D]/25 bg-[#231e1a]/95 py-2">
+                            <Folder className="h-4 w-4 text-[#C6A77D]/85" strokeWidth={2} aria-hidden />
+                            <span className="ml-1.5 text-[11px] font-medium uppercase tracking-wide text-[#F5EDE4]/55">
                               Category
                             </span>
                           </div>
                           <div className="flex flex-col items-center justify-center gap-2 px-6 py-8">
-                            <span className="inline-flex h-16 w-16 items-center justify-center rounded-2xl bg-zinc-900/80 text-violet-300 ring-1 ring-zinc-600/60">
-                              <Icon className="h-8 w-8" strokeWidth={1.8} aria-hidden />
+                            <span className="inline-flex h-16 w-16 items-center justify-center rounded-2xl bg-[#1a1614] text-[#C6A77D] shadow-inner shadow-black/25 ring-1 ring-[#C6A77D]/35 transition-all duration-300 ease-out group-hover:ring-[#C6A77D]/75 group-hover:shadow-[0_0_24px_-6px_rgba(198,167,125,0.55)]">
+                              <Icon className="h-8 w-8 transition-transform duration-300 ease-out group-hover:scale-[1.06]" strokeWidth={1.8} aria-hidden />
                             </span>
-                            <p className="text-sm font-medium text-zinc-300">{cat.line}</p>
+                            <p className="text-sm font-medium text-[#F5EDE4]/85">{cat.line}</p>
                           </div>
                         </div>
-                        <p className="mt-3 text-base font-semibold tracking-tight text-zinc-100">{cat.title}</p>
-                        <span className="text-xs text-zinc-500">Open folder</span>
+                        <p className="mt-3 text-base font-semibold tracking-tight text-[#F5EDE4]">{cat.title}</p>
+                        <span className="text-xs text-[#C6A77D]/70 transition-colors duration-300 group-hover:text-[#C6A77D]">
+                          Open folder
+                        </span>
                       </button>
                     </li>
                   );
@@ -950,21 +954,21 @@ export default function DemoClient() {
                 <button
                   type="button"
                   onClick={backToProductCategories}
-                  className="inline-flex items-center gap-1.5 rounded-full border border-zinc-600 bg-zinc-800/80 px-3 py-1.5 text-sm font-medium text-zinc-200 transition hover:border-zinc-500 hover:bg-zinc-800"
+                  className="inline-flex items-center gap-1.5 rounded-full border border-[#C6A77D]/40 bg-[#231e1a]/95 px-3 py-1.5 text-sm font-medium text-[#F5EDE4] shadow-sm transition-all duration-300 hover:border-[#C6A77D] hover:bg-[#2C241F] hover:shadow-[0_0_24px_-8px_rgba(198,167,125,0.35)]"
                 >
                   <ChevronLeft className="h-4 w-4" strokeWidth={2} aria-hidden />
                   All categories
                 </button>
                 {openCatalogDef ? (
                   <div className="min-w-0 text-left">
-                    <p className="text-sm font-medium text-zinc-200">Sample products</p>
-                    <p className="text-xs text-zinc-500">
+                    <p className="text-sm font-medium text-[#F5EDE4]">Sample products</p>
+                    <p className="text-xs text-[#F5EDE4]/65">
                       {openCatalogDef.title} — {openCatalogDef.line}
                     </p>
                   </div>
                 ) : null}
               </div>
-              <p className="mt-3 text-xs text-zinc-500">
+              <p className="mt-3 text-xs text-[#F5EDE4]/55">
                 Highlighted card is your current selection for try-on.
               </p>
               <div className="mt-4 grid gap-3 sm:grid-cols-2">
@@ -973,10 +977,10 @@ export default function DemoClient() {
                   return (
                     <article
                       key={p.id}
-                      className={`group overflow-hidden rounded-2xl border text-left shadow-sm transition ${
+                      className={`group overflow-hidden rounded-2xl border text-left shadow-[0_8px_28px_rgba(0,0,0,0.35)] transition-all duration-300 ease-out will-change-transform hover:-translate-y-0.5 ${
                         selected
-                          ? "border-accent/50 bg-zinc-900 ring-2 ring-accent/25"
-                          : "border-zinc-700 bg-zinc-900/50 hover:border-zinc-500 hover:shadow-md"
+                          ? "border-[#C6A77D] bg-[#2C241F] shadow-[0_12px_40px_rgba(0,0,0,0.42),0_0_32px_-10px_rgba(198,167,125,0.35)] ring-2 ring-[#C6A77D]/35"
+                          : "border-[#C6A77D]/30 bg-[#2C241F]/85 hover:border-[#C6A77D]/65 hover:shadow-[0_14px_44px_rgba(0,0,0,0.42),0_0_28px_-8px_rgba(198,167,125,0.28)]"
                       }`}
                     >
                       <div
@@ -1029,11 +1033,11 @@ export default function DemoClient() {
                       </div>
                       <div
                         role="presentation"
-                        className="cursor-pointer border-t border-zinc-800 p-4"
+                        className="cursor-pointer border-t border-[#C6A77D]/20 bg-[#231e1a]/90 p-4"
                         onClick={() => setSelectedPresetId(p.id)}
                       >
-                        <p className="text-sm font-semibold text-zinc-100">{p.name}</p>
-                        <p className="mt-1 text-xs font-medium text-zinc-400">{p.label}</p>
+                        <p className="text-sm font-semibold text-[#F5EDE4]">{p.name}</p>
+                        <p className="mt-1 text-xs font-medium text-[#F5EDE4]/60">{p.label}</p>
                       </div>
                     </article>
                   );
@@ -1043,7 +1047,7 @@ export default function DemoClient() {
           )}
         </div>
 
-        <p className="mt-6 max-w-3xl text-xs leading-relaxed text-zinc-500">
+        <p className="mt-6 max-w-3xl text-xs leading-relaxed text-[#F5EDE4]/55">
           All product images shown are for demonstration purposes only. These are sample items used to showcase the
           virtual try-on technology and do not represent real products for sale.
         </p>
