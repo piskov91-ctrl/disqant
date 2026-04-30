@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { usePathname } from "next/navigation";
-import { ChevronLeft, Folder, SwitchCamera } from "lucide-react";
+import { ChevronLeft, SwitchCamera } from "lucide-react";
 import {
   DEMO_CATALOG,
   GARMENT_PRESETS,
@@ -910,7 +910,7 @@ export default function DemoClient() {
               <p className="text-sm font-semibold uppercase tracking-wide text-[#C6A77D]">Product catalog</p>
               <p className="mt-1 text-xs text-[#F5EDE4]/65">Choose a category, then pick a product to try on.</p>
               <ul
-                className="mt-6 grid list-none grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5"
+                className="mt-6 grid list-none grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5"
                 role="list"
               >
                 {DEMO_CATALOG.map((cat) => {
@@ -920,28 +920,22 @@ export default function DemoClient() {
                       <button
                         type="button"
                         onClick={() => openProductCatalog(cat.id)}
-                        className="group flex w-full flex-col items-center text-center transition-transform duration-300 ease-out will-change-transform hover:-translate-y-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C6A77D]/70 focus-visible:ring-offset-2 focus-visible:ring-offset-[#2C241F]"
+                        aria-label={`View ${cat.title}`}
+                        className="group relative flex min-h-[280px] w-full flex-col items-center rounded-2xl border border-[#C6A77D]/22 bg-[#2C241F]/48 px-6 pb-8 pt-10 text-center shadow-[0_14px_44px_rgba(0,0,0,0.32)] backdrop-blur-md transition-[transform,box-shadow,border-color,background-color] duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] will-change-transform hover:scale-[1.035] hover:border-[#C6A77D] hover:bg-[#2C241F]/68 hover:shadow-[0_22px_60px_rgba(0,0,0,0.42),0_0_44px_-10px_rgba(198,167,125,0.42)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C6A77D]/65 focus-visible:ring-offset-2 focus-visible:ring-offset-[#1a1512] active:scale-[1.02]"
                       >
-                        <div
-                          className="relative w-full max-w-xs overflow-hidden rounded-2xl border border-[#C6A77D]/45 bg-[#2C241F] p-0 shadow-[0_10px_32px_rgba(0,0,0,0.42)] transition-all duration-300 ease-out will-change-transform group-hover:-translate-y-0.5 group-hover:border-[#C6A77D] group-hover:shadow-[0_16px_48px_rgba(0,0,0,0.48),0_0_36px_-8px_rgba(198,167,125,0.42)]"
-                        >
-                          <div className="flex items-center justify-center border-b border-[#C6A77D]/25 bg-[#231e1a]/95 py-2">
-                            <Folder className="h-4 w-4 text-[#C6A77D]/85" strokeWidth={2} aria-hidden />
-                            <span className="ml-1.5 text-[11px] font-medium uppercase tracking-wide text-[#F5EDE4]/55">
-                              Category
-                            </span>
-                          </div>
-                          <div className="flex flex-col items-center justify-center gap-2 px-6 py-8">
-                            <span className="inline-flex h-16 w-16 items-center justify-center rounded-2xl bg-[#1a1614] text-[#C6A77D] shadow-inner shadow-black/25 ring-1 ring-[#C6A77D]/35 transition-all duration-300 ease-out group-hover:ring-[#C6A77D]/75 group-hover:shadow-[0_0_24px_-6px_rgba(198,167,125,0.55)]">
-                              <Icon className="h-8 w-8 transition-transform duration-300 ease-out group-hover:scale-[1.06]" strokeWidth={1.8} aria-hidden />
-                            </span>
-                            <p className="text-sm font-medium text-[#F5EDE4]/85">{cat.line}</p>
-                          </div>
-                        </div>
-                        <p className="mt-3 text-base font-semibold tracking-tight text-[#F5EDE4]">{cat.title}</p>
-                        <span className="text-xs text-[#C6A77D]/70 transition-colors duration-300 group-hover:text-[#C6A77D]">
-                          Open folder
+                        <span className="flex h-[5.5rem] w-[5.5rem] shrink-0 items-center justify-center rounded-full bg-[#1a1614]/85 text-[#C6A77D] shadow-[inset_0_1px_0_rgba(255,255,255,0.06)] ring-1 ring-[#C6A77D]/20 transition-[box-shadow,transform,ring-color] duration-500 ease-out group-hover:ring-[#C6A77D]/55 group-hover:shadow-[0_0_36px_-10px_rgba(198,167,125,0.55)]">
+                          <Icon
+                            className="h-[2.65rem] w-[2.65rem] transition-transform duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] group-hover:scale-110"
+                            strokeWidth={1.15}
+                            aria-hidden
+                          />
                         </span>
+                        <p className="mt-9 font-serif text-[1.5rem] font-normal leading-[1.15] tracking-[0.06em] text-[#F5EDE4] md:text-[1.625rem] md:tracking-[0.08em]">
+                          {cat.title}
+                        </p>
+                        <p className="mt-3 max-w-[15rem] text-[11px] font-normal leading-relaxed text-[#F5EDE4]/50 md:text-xs md:leading-relaxed">
+                          {cat.line}
+                        </p>
                       </button>
                     </li>
                   );
