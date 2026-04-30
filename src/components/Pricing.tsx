@@ -62,16 +62,16 @@ export function Pricing({ sectionId = "subscriptions" }: PricingProps) {
   return (
     <section
       id={sectionId || undefined}
-      className="scroll-mt-28 border-t border-white/10 bg-zinc-950/40 py-20 md:py-24"
+      className="scroll-mt-28 border-t border-[#C6A77D]/15 bg-[#2C241F] py-20 md:py-24"
     >
       <div className="mx-auto max-w-6xl px-6">
-        <h2 className="text-center text-sm font-semibold uppercase tracking-widest text-accent">
+        <h2 className="text-center text-sm font-semibold uppercase tracking-widest text-[#C6A77D]">
           Subscriptions
         </h2>
-        <p className="mx-auto mt-3 max-w-2xl text-center text-3xl font-semibold tracking-tight text-zinc-50 md:text-4xl">
+        <p className="mx-auto mt-3 max-w-2xl text-center text-3xl font-semibold tracking-tight text-[#F5EDE4] md:text-4xl">
           Plans for every stage
         </p>
-        <p className="mx-auto mt-4 max-w-xl text-center text-sm leading-relaxed text-zinc-400 md:text-base">
+        <p className="mx-auto mt-4 max-w-xl text-center text-sm leading-relaxed text-[#F5EDE4]/70 md:text-base">
           All plans include core try-on and integration support. Upgrade as your store grows.
         </p>
 
@@ -85,35 +85,35 @@ export function Pricing({ sectionId = "subscriptions" }: PricingProps) {
                 key={plan.name}
                 className={`relative flex min-h-0 flex-col rounded-2xl border p-7 md:p-8 ${
                   plan.highlighted
-                    ? "border-accent/50 bg-zinc-900/80 shadow-lg shadow-black/20 ring-1 ring-accent/30"
-                    : "border-white/10 bg-zinc-900/40"
+                    ? "border-[#C6A77D]/55 bg-[#231e1a] shadow-lg shadow-black/30 ring-1 ring-[#C6A77D]/35"
+                    : "border-[#C6A77D]/20 bg-[#1f1b17]/90"
                 }`}
               >
                 {plan.highlighted && (
-                  <span className="absolute -top-3 left-1/2 -translate-x-1/2 whitespace-nowrap rounded-full bg-gradient-to-r from-[#7c3aed] to-[#ec4899] px-3 py-0.5 text-xs font-semibold text-white">
+                  <span className="absolute -top-3 left-1/2 -translate-x-1/2 whitespace-nowrap rounded-full bg-gradient-to-r from-[#C6A77D] to-[#e8d4bc] px-3 py-0.5 text-xs font-semibold text-[#2C241F]">
                     Most popular
                   </span>
                 )}
 
-                <h3 className="text-lg font-semibold text-zinc-50">{plan.name}</h3>
+                <h3 className="text-lg font-semibold text-[#F5EDE4]">{plan.name}</h3>
 
                 {isContact ? (
-                  <p className="mt-6 min-h-[3.5rem] text-2xl font-semibold tracking-tight text-zinc-50">
+                  <p className="mt-6 min-h-[3.5rem] text-2xl font-semibold tracking-tight text-[#F5EDE4]">
                     {plan.subtitle ?? "Contact us"}
                   </p>
                 ) : (
                   <div className="mt-6 flex min-h-[3.5rem] items-baseline gap-1">
-                    <span className="text-4xl font-semibold tracking-tight text-zinc-50">
+                    <span className="text-4xl font-semibold tracking-tight text-[#F5EDE4]">
                       {plan.price}
                     </span>
-                    <span className="text-sm text-zinc-500">{plan.period}</span>
+                    <span className="text-sm text-[#F5EDE4]/55">{plan.period}</span>
                   </div>
                 )}
 
-                <ul className="mt-6 flex-1 space-y-3 text-sm text-zinc-300">
+                <ul className="mt-6 flex-1 space-y-3 text-sm text-[#F5EDE4]/85">
                   {plan.features.map((f) => (
                     <li key={f} className="flex gap-2">
-                      <span className="shrink-0 text-accent" aria-hidden>
+                      <span className="shrink-0 text-[#C6A77D]" aria-hidden>
                         ✓
                       </span>
                       <span>{f}</span>

@@ -13,12 +13,12 @@ export default function SubscriptionsPage() {
   return (
     <>
       <Header />
-      <main className="pt-40">
+      <main className="min-h-dvh bg-[#2C241F] pt-40">
         <div className="mx-auto max-w-6xl px-6 py-14 text-center md:py-20">
-          <h1 className="text-balance text-3xl font-semibold tracking-tight text-zinc-50 md:text-4xl">
+          <h1 className="text-balance text-3xl font-semibold tracking-tight text-[#F5EDE4] md:text-4xl">
             Subscriptions
           </h1>
-          <p className="mx-auto mt-4 max-w-2xl text-lg leading-relaxed text-zinc-400">
+          <p className="mx-auto mt-4 max-w-2xl text-lg leading-relaxed text-[#F5EDE4]/75">
             Pick a plan that fits your try-on volume. All plans include core Wear Me features and integration
             support.
           </p>

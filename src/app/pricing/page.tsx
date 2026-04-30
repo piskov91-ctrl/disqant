@@ -2,7 +2,6 @@ import type { Metadata } from "next";
 import { Footer } from "@/components/Footer";
 import { Header } from "@/components/Header";
 import { Pricing } from "@/components/Pricing";
-import { UsageLookup } from "@/components/UsageLookup";
 
 export const metadata: Metadata = {
   title: "Subscriptions",
@@ -14,14 +13,13 @@ export default function PricingPage() {
   return (
     <>
       <Header />
-      <main className="pt-40">
-        <UsageLookup />
-        <section className="border-b border-white/10 py-14">
+      <main className="min-h-dvh bg-[#2C241F] pt-40">
+        <section className="border-b border-[#C6A77D]/15 py-14">
           <div className="mx-auto max-w-6xl px-6">
-            <h1 className="text-balance text-4xl font-semibold tracking-tight text-zinc-50 md:text-5xl">
+            <h1 className="text-balance text-4xl font-semibold tracking-tight text-[#F5EDE4] md:text-5xl">
               Subscriptions
             </h1>
-            <p className="mt-4 max-w-2xl text-lg leading-relaxed text-zinc-400">
+            <p className="mt-4 max-w-2xl text-lg leading-relaxed text-[#F5EDE4]/75">
               Transparent try-on plans that scale with your store. Upgrade when you are ready.
             </p>
           </div>
