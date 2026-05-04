@@ -93,6 +93,9 @@ export default function AdminClient() {
   const [savingEdit, setSavingEdit] = useState(false);
 
   const [clientName, setClientName] = useState("");
+  const [retailerSignupEmail, setRetailerSignupEmail] = useState("");
+  const [lookupBusy, setLookupBusy] = useState(false);
+  const [lookupNotice, setLookupNotice] = useState<string | null>(null);
   const [fashnApiKey, setFashnApiKey] = useState("");
   const [usageLimit, setUsageLimit] = useState("1000");
   const [creating, setCreating] = useState(false);
@@ -192,6 +195,37 @@ export default function AdminClient() {
   useEffect(() => {
     if (activeTab === "analytics") void loadAnalytics();
   }, [activeTab]);
+
+  async function applyStoreNameFromRegistration() {
+    const em = retailerSignupEmail.trim();
+    setLookupNotice(null);
+    if (!em) {
+      setLookupNotice("Enter the retailer's signup email.");
+      return;
+    }
+    setLookupBusy(true);
+    try {
+      const res = await fetch(`/api/admin/retailer?email=${encodeURIComponent(em)}`);
+      const data = (await res.json()) as { storeName?: string; error?: string };
+      if (!res.ok) {
+        setLookupNotice(data.error || "Could not look up that account.");
+        return;
+      }
+      const sn = (data.storeName ?? "").trim();
+      if (!sn) {
+        setLookupNotice(
+          "No store name on file (legacy account). Enter Client name manually or ask them to add it under Profile.",
+        );
+        return;
+      }
+      setClientName(sn);
+      setLookupNotice(`Client name set from registration: "${sn}".`);
+    } catch {
+      setLookupNotice("Lookup failed.");
+    } finally {
+      setLookupBusy(false);
+    }
+  }
 
   async function createKey(e: React.FormEvent) {
     e.preventDefault();
@@ -685,8 +719,40 @@ export default function AdminClient() {
               <section className="mt-8 w-full overflow-hidden rounded-2xl border border-zinc-800 bg-zinc-900/60 p-6 shadow-sm md:p-8">
                 <h2 className="text-base font-semibold text-zinc-100">Create new client</h2>
                 <p className="mt-1 text-sm text-zinc-400">
-                  Create a client API key with a try-on limit.
+                  Create a client API key with a try-on limit. After payment, use the retailer&apos;s signup email to
+                  prefill <span className="text-zinc-300">Client name</span> with their registered store name.
                 </p>
+
+                <div className="mt-5 rounded-xl border border-zinc-800 bg-zinc-950/50 p-4">
+                  <label htmlFor="admin-retailer-email" className="block text-sm font-medium text-zinc-200">
+                    Retailer signup email
+                  </label>
+                  <div className="mt-2 flex flex-col gap-2 sm:flex-row sm:items-center">
+                    <input
+                      id="admin-retailer-email"
+                      type="email"
+                      autoComplete="email"
+                      inputMode="email"
+                      value={retailerSignupEmail}
+                      onChange={(e) => setRetailerSignupEmail(e.target.value)}
+                      placeholder="same email they used to register"
+                      className="block w-full max-w-md rounded-xl border border-zinc-700 bg-zinc-950 px-4 py-3 text-sm text-zinc-100 outline-none placeholder:text-zinc-600 transition focus:border-accent/60"
+                    />
+                    <button
+                      type="button"
+                      disabled={lookupBusy}
+                      onClick={() => void applyStoreNameFromRegistration()}
+                      className="inline-flex h-11 shrink-0 items-center justify-center rounded-full border border-zinc-600 bg-zinc-900 px-5 text-sm font-semibold text-zinc-100 transition hover:border-zinc-500 hover:bg-zinc-800 disabled:cursor-not-allowed disabled:opacity-60"
+                    >
+                      {lookupBusy ? "Loading…" : "Use store name"}
+                    </button>
+                  </div>
+                  {lookupNotice ? (
+                    <p className="mt-3 text-sm text-zinc-400" role="status">
+                      {lookupNotice}
+                    </p>
+                  ) : null}
+                </div>
 
                 <form onSubmit={createKey} className="mt-6 grid gap-4 md:grid-cols-12 md:items-end">
                   <div className="md:col-span-4">

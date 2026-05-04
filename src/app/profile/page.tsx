@@ -22,13 +22,14 @@ export default async function ProfilePage() {
         <div className="mx-auto max-w-lg px-6 py-12 md:py-16">
           <h1 className="text-3xl font-semibold tracking-tight text-zinc-50">Profile settings</h1>
           <p className="mt-2 text-sm leading-relaxed text-zinc-400">
-            Update your name, email, company, and website. Changes apply to your dashboard and account label.
+            Update your name, email, company, store, and website. Your store name is used when we set up your API access.
           </p>
           <ProfileForm
             initial={{
               firstName: user.firstName,
               lastName: user.lastName,
               email: user.email,
+              storeName: user.storeName,
               companyName: user.companyName,
               websiteUrl: user.websiteUrl,
             }}

@@ -11,6 +11,7 @@ export type ProfileInitialUser = {
   firstName?: string;
   lastName?: string;
   email: string;
+  storeName: string;
   companyName: string;
   websiteUrl: string;
 };
@@ -33,6 +34,7 @@ export function ProfileForm({ initial }: { initial: ProfileInitialUser }) {
   const router = useRouter();
   const [firstName, setFirstName] = useState(initial.firstName ?? "");
   const [lastName, setLastName] = useState(initial.lastName ?? "");
+  const [storeName, setStoreName] = useState(initial.storeName ?? "");
   const [companyName, setCompanyName] = useState(initial.companyName ?? "");
   const [email, setEmail] = useState(initial.email ?? "");
   const [websiteUrl, setWebsiteUrl] = useState(initial.websiteUrl ?? "");
@@ -45,6 +47,8 @@ export function ProfileForm({ initial }: { initial: ProfileInitialUser }) {
     if (firstName.trim().length > 100) return "First name must be at most 100 characters.";
     if (!lastName.trim()) return "Last name is required.";
     if (lastName.trim().length > 100) return "Last name must be at most 100 characters.";
+    if (!storeName.trim()) return "Store name is required.";
+    if (storeName.trim().length > 200) return "Store name must be at most 200 characters.";
     if (companyName.trim().length > 200) return "Company name must be at most 200 characters.";
     const em = email.trim();
     if (!em) return "Email is required.";
@@ -52,7 +56,7 @@ export function ProfileForm({ initial }: { initial: ProfileInitialUser }) {
       return "Enter a valid email address.";
     }
     return validateWebsiteIfPresent(websiteUrl);
-  }, [firstName, lastName, companyName, email, websiteUrl]);
+  }, [firstName, lastName, storeName, companyName, email, websiteUrl]);
 
   function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -73,6 +77,7 @@ export function ProfileForm({ initial }: { initial: ProfileInitialUser }) {
           body: JSON.stringify({
             firstName: firstName.trim(),
             lastName: lastName.trim(),
+            storeName: storeName.trim(),
             companyName: companyName.trim(),
             email: email.trim(),
             websiteUrl: websiteUrl.trim(),
@@ -86,6 +91,7 @@ export function ProfileForm({ initial }: { initial: ProfileInitialUser }) {
         if (data.user) {
           setFirstName(data.user.firstName ?? "");
           setLastName(data.user.lastName ?? "");
+          setStoreName(data.user.storeName ?? "");
           setCompanyName(data.user.companyName ?? "");
           setEmail(data.user.email);
           setWebsiteUrl(data.user.websiteUrl ?? "");
@@ -134,6 +140,26 @@ export function ProfileForm({ initial }: { initial: ProfileInitialUser }) {
               required
             />
           </div>
+        </div>
+
+        <div>
+          <label htmlFor="pf-store" className="block text-sm font-medium text-zinc-200">
+            Store name <span className="text-red-400">*</span>
+          </label>
+          <input
+            id="pf-store"
+            name="storeName"
+            type="text"
+            autoComplete="organization"
+            value={storeName}
+            onChange={(e) => setStoreName(e.target.value)}
+            maxLength={200}
+            className={inputClass}
+            required
+          />
+          <p className="mt-1.5 text-xs leading-relaxed text-zinc-500">
+            This will be used to identify your store in our system.
+          </p>
         </div>
 
         <div>

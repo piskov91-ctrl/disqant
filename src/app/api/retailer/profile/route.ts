@@ -7,6 +7,7 @@ type Body = {
   firstName?: unknown;
   lastName?: unknown;
   email?: unknown;
+  storeName?: unknown;
   companyName?: unknown;
   websiteUrl?: unknown;
 };
@@ -27,6 +28,7 @@ export async function PATCH(req: Request) {
   const firstName = typeof body.firstName === "string" ? body.firstName : "";
   const lastName = typeof body.lastName === "string" ? body.lastName : "";
   const email = typeof body.email === "string" ? body.email.trim() : "";
+  const storeName = typeof body.storeName === "string" ? body.storeName : "";
   const companyName = typeof body.companyName === "string" ? body.companyName : "";
   const websiteUrl = typeof body.websiteUrl === "string" ? body.websiteUrl : "";
 
@@ -36,6 +38,7 @@ export async function PATCH(req: Request) {
       firstName,
       lastName,
       email,
+      storeName,
       companyName,
       websiteUrl,
     });

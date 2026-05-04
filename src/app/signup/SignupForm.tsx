@@ -28,6 +28,7 @@ function validateWebsiteIfPresent(raw: string): string | null {
 export function SignupForm() {
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
+  const [storeName, setStoreName] = useState("");
   const [companyName, setCompanyName] = useState("");
   const [email, setEmail] = useState("");
   const [websiteUrl, setWebsiteUrl] = useState("");
@@ -43,6 +44,8 @@ export function SignupForm() {
     if (firstName.trim().length > 100) return "First name must be at most 100 characters.";
     if (!lastName.trim()) return "Last name is required.";
     if (lastName.trim().length > 100) return "Last name must be at most 100 characters.";
+    if (!storeName.trim()) return "Store name is required.";
+    if (storeName.trim().length > 200) return "Store name must be at most 200 characters.";
     if (companyName.trim().length > 200) return "Company name must be at most 200 characters.";
     const em = email.trim();
     if (!em) return "Email is required.";
@@ -60,6 +63,7 @@ export function SignupForm() {
   }, [
     firstName,
     lastName,
+    storeName,
     companyName,
     email,
     websiteUrl,
@@ -87,6 +91,7 @@ export function SignupForm() {
           body: JSON.stringify({
             firstName: firstName.trim(),
             lastName: lastName.trim(),
+            storeName: storeName.trim(),
             companyName: companyName.trim(),
             email: email.trim(),
             websiteUrl: websiteUrl.trim(),
@@ -144,6 +149,27 @@ export function SignupForm() {
               placeholder="Doe"
             />
           </div>
+        </div>
+
+        <div>
+          <label htmlFor="su-store" className="block text-sm font-medium text-zinc-200">
+            Store name <span className="text-red-400">*</span>
+          </label>
+          <input
+            id="su-store"
+            name="storeName"
+            type="text"
+            autoComplete="off"
+            value={storeName}
+            onChange={(e) => setStoreName(e.target.value)}
+            maxLength={200}
+            aria-required="true"
+            className={inputClass}
+            placeholder="e.g. My Boutique"
+          />
+          <p className="mt-1.5 text-xs leading-relaxed text-zinc-500">
+            This will be used to identify your store in our system.
+          </p>
         </div>
 
         <div>

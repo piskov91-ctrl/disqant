@@ -11,6 +11,7 @@ export const runtime = "nodejs";
 type Body = {
   firstName?: unknown;
   lastName?: unknown;
+  storeName?: unknown;
   companyName?: unknown;
   email?: unknown;
   websiteUrl?: unknown;
@@ -30,6 +31,7 @@ export async function POST(req: Request) {
 
   const firstName = typeof body.firstName === "string" ? body.firstName : "";
   const lastName = typeof body.lastName === "string" ? body.lastName : "";
+  const storeName = typeof body.storeName === "string" ? body.storeName : "";
   const companyName = typeof body.companyName === "string" ? body.companyName : "";
   const email = typeof body.email === "string" ? body.email.trim() : "";
   const websiteUrl = typeof body.websiteUrl === "string" ? body.websiteUrl : "";
@@ -42,6 +44,7 @@ export async function POST(req: Request) {
     const user = await registerRetailer({
       firstName,
       lastName,
+      storeName,
       companyName,
       email,
       websiteUrl,

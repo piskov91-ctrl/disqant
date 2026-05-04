@@ -101,14 +101,22 @@ function parseRetailerUserRaw(raw: unknown): RetailerUser | null {
   if (typeof raw === "string") {
     try {
       const u = JSON.parse(raw) as RetailerUser;
-      return { ...u, clientId: u.clientId ?? null };
+      return {
+        ...u,
+        clientId: u.clientId ?? null,
+        storeName: typeof u.storeName === "string" ? u.storeName : "",
+      };
     } catch {
       return null;
     }
   }
   if (raw && typeof raw === "object") {
     const u = raw as RetailerUser;
-    return { ...u, clientId: u.clientId ?? null };
+    return {
+      ...u,
+      clientId: u.clientId ?? null,
+      storeName: typeof u.storeName === "string" ? u.storeName : "",
+    };
   }
   return null;
 }
@@ -155,6 +163,8 @@ export type RetailerUser = {
   firstName?: string;
   lastName?: string;
   email: string;
+  /** Public store label used for API client keys in admin; required for new signups. */
+  storeName: string;
   companyName: string;
   /** Normalized URL or empty string if omitted at signup. */
   websiteUrl: string;
@@ -243,6 +253,7 @@ function redisUserIdFromIndex(raw: unknown): string | null {
 export async function registerRetailer(params: {
   firstName: string;
   lastName: string;
+  storeName: string;
   /** Display/organization name; may be empty (API client label falls back to full name). */
   companyName: string;
   email: string;
@@ -274,6 +285,13 @@ export async function registerRetailer(params: {
   const email = normalizeRetailerEmail(params.email);
   if (!email || email.length > 320 || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
     throw new Error("Invalid email address.");
+  }
+  const storeName = params.storeName.trim();
+  if (!storeName) {
+    throw new Error("Store name is required.");
+  }
+  if (storeName.length > 200) {
+    throw new Error("Store name must be at most 200 characters.");
   }
   const companyName = params.companyName.trim();
   if (companyName.length > 200) {
@@ -308,6 +326,7 @@ export async function registerRetailer(params: {
     firstName,
     lastName,
     email,
+    storeName,
     companyName: companyName,
     websiteUrl,
     passwordSalt: salt,
@@ -342,6 +361,7 @@ export async function updateRetailerProfile(params: {
   firstName: string;
   lastName: string;
   email: string;
+  storeName: string;
   companyName: string;
   websiteUrl: string;
 }): Promise<RetailerUser> {
@@ -366,6 +386,14 @@ export async function updateRetailerProfile(params: {
   const email = normalizeRetailerEmail(params.email);
   if (!email || email.length > 320 || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
     throw new Error("Invalid email address.");
+  }
+
+  const storeName = params.storeName.trim();
+  if (!storeName) {
+    throw new Error("Store name is required.");
+  }
+  if (storeName.length > 200) {
+    throw new Error("Store name must be at most 200 characters.");
   }
 
   const companyName = params.companyName.trim();
@@ -394,6 +422,7 @@ export async function updateRetailerProfile(params: {
     firstName,
     lastName,
     email,
+    storeName,
     companyName,
     websiteUrl,
   };
