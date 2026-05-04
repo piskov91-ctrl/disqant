@@ -25,10 +25,10 @@ function HeaderNavSlot() {
 export function Header() {
   return (
     <header className="site-header fixed top-0 left-0 right-0 z-[60] overflow-visible border-b border-white/10 bg-transparent backdrop-blur-md">
-      <div className="mx-auto grid h-[var(--site-header-height)] max-h-[var(--site-header-height)] min-h-[var(--site-header-height)] w-full max-w-6xl shrink-0 grid-cols-[auto_minmax(0,1fr)] items-center gap-x-6 overflow-visible px-4 md:gap-x-10 md:px-5">
+      <div className="mx-auto grid h-[var(--site-header-height)] max-h-[var(--site-header-height)] min-h-[var(--site-header-height)] w-full max-w-6xl shrink-0 grid-cols-[auto_minmax(0,1fr)] items-center justify-items-stretch gap-x-6 overflow-visible pl-0 pr-4 md:gap-x-10 md:pr-5">
         <Link
           href="/"
-          className="relative z-0 flex min-h-0 min-w-0 shrink-0 items-center justify-self-start py-0"
+          className="relative z-0 flex min-h-0 min-w-0 shrink-0 items-center justify-self-start ml-0 pl-0 py-0"
         >
           <Image
             src="/logo.png"
