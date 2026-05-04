@@ -157,9 +157,6 @@ export function ProfileForm({ initial }: { initial: ProfileInitialUser }) {
             className={inputClass}
             required
           />
-          <p className="mt-1.5 text-xs leading-relaxed text-zinc-500">
-            This will be used to identify your store in our system.
-          </p>
         </div>
 
         <div>
