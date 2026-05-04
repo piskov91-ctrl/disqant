@@ -52,7 +52,7 @@ export async function POST(req: Request) {
   const monthlyVisitors = typeof b.monthlyVisitors === "string" ? b.monthlyVisitors : "";
 
   if (!name) return Response.json({ error: "Name is required." }, { status: 400 });
-  if (!company) return Response.json({ error: "Company name is required." }, { status: 400 });
+  if (!company) return Response.json({ error: "Store name is required." }, { status: 400 });
   if (!message) return Response.json({ error: "Message is required." }, { status: 400 });
   if (!VISITOR_OPTIONS.has(monthlyVisitors)) {
     return Response.json({ error: "Please select monthly visitors." }, { status: 400 });
@@ -72,7 +72,7 @@ export async function POST(req: Request) {
   const visitorsLabel = VISITOR_LABEL[monthlyVisitors] ?? monthlyVisitors;
   const text = [
     `Name: ${name}`,
-    `Company: ${company}`,
+    `Store name: ${company}`,
     `Website: ${websiteLine}`,
     `Monthly visitors: ${visitorsLabel}`,
     "",
@@ -82,7 +82,7 @@ export async function POST(req: Request) {
   const html = `
   <h2>Contact form — Fit Room</h2>
   <p><strong>Name</strong><br/>${escapeHtml(name)}</p>
-  <p><strong>Company</strong><br/>${escapeHtml(company)}</p>
+  <p><strong>Store name</strong><br/>${escapeHtml(company)}</p>
   <p><strong>Website</strong><br/>${escapeHtml(websiteLine)}</p>
   <p><strong>Monthly visitors</strong><br/>${escapeHtml(visitorsLabel)}</p>
   <p><strong>Message</strong></p>

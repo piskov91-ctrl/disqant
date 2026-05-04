@@ -98,11 +98,11 @@ export function ContactForm() {
       </div>
 
       <div>
-        <label htmlFor="contact-company" className="block text-sm font-medium text-zinc-900">
-          Company name <span className="text-red-600">*</span>
+        <label htmlFor="contact-store" className="block text-sm font-medium text-zinc-900">
+          Store name <span className="text-red-600">*</span>
         </label>
         <input
-          id="contact-company"
+          id="contact-store"
           name="company"
           type="text"
           autoComplete="organization"
@@ -112,6 +112,7 @@ export function ContactForm() {
           disabled={disabled}
           className="mt-2 block w-full rounded-xl border border-surface-border bg-white px-4 py-3 text-sm text-zinc-900 outline-none transition focus:border-accent/60"
         />
+        <p className="mt-1.5 text-xs text-zinc-500">This will be used to identify your store in our system.</p>
       </div>
 
       <div>
