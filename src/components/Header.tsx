@@ -33,11 +33,11 @@ export function Header() {
           <Image
             src="/logo.png"
             alt="Fit Room"
-            width={300}
-            height={100}
+            width={1536}
+            height={1024}
             priority
-            sizes="300px"
-            className="h-12 w-auto"
+            sizes="(max-width: 640px) 360px, (max-width: 767px) 420px, 720px"
+            className="header-logo-lockup mt-10"
           />
         </Link>
         <HeaderNavSlot />
