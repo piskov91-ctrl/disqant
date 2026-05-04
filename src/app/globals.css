@@ -3,6 +3,9 @@
 @tailwind utilities;
 
 :root {
+  /** Fixed header height — keep in sync with main content `padding-top` below header. */
+  --site-header-height: 172px;
+
   --foreground: #fafafa;
   --muted: #a1a1aa;
 }
@@ -198,6 +201,33 @@ body header.site-header {
 
 body header.site-header a {
   color: inherit;
+}
+
+/**
+ * Logo in main site header (`Header.tsx`): larger lockup on dark blurred header,
+ * crop baked-in subtitle ("Virtual Try-On Platform"), brighten gold for contrast.
+ */
+.header-logo-lockup {
+  box-sizing: border-box;
+  display: block;
+  height: calc(var(--site-header-height) - 14px);
+  width: auto;
+  max-width: min(600px, 80vw);
+  object-fit: contain;
+  object-position: left center;
+  /* Crop lower tagline so it doesn't hang below the wordmark */
+  clip-path: inset(0 0 14% 0);
+  -webkit-clip-path: inset(0 0 14% 0);
+  /* Lift “FIT ROOM” on dark BG: luminous gold + subtle light rim (no multiply blend) */
+  filter: brightness(1.26) contrast(1.07) saturate(1.06) drop-shadow(0 0 1px rgb(255 255 255 / 0.55))
+    drop-shadow(0 0 16px rgb(255 239 207 / 0.32)) drop-shadow(0 2px 10px rgb(0 0 0 / 0.78));
+}
+
+@media (max-width: 640px) {
+  .header-logo-lockup {
+    max-width: min(92vw, 520px);
+    height: calc(var(--site-header-height) - 20px);
+  }
 }
 
 body footer a:hover {

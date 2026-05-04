@@ -25,24 +25,16 @@ function HeaderNavSlot() {
 export function Header() {
   return (
     <header className="site-header fixed top-0 left-0 right-0 z-[60] border-b border-white/10 bg-transparent backdrop-blur-md">
-      <div className="mx-auto flex h-[150px] max-h-[150px] min-h-[150px] max-w-6xl shrink-0 items-center justify-between gap-3 overflow-hidden px-5 md:px-6">
-        <Link href="/" className="flex h-full min-h-0 min-w-0 shrink-0 items-center overflow-hidden">
+      <div className="mx-auto flex h-[var(--site-header-height)] max-h-[var(--site-header-height)] min-h-[var(--site-header-height)] max-w-6xl shrink-0 items-center justify-between gap-3 px-5 md:px-6">
+        <Link href="/" className="flex min-h-0 min-w-0 shrink-0 items-center py-2">
           <Image
             src="/logo.png"
             alt="Fit Room"
-            width={1024}
+            width={1536}
             height={1024}
             priority
-            sizes="480px"
-            className="box-border max-h-[150px] w-auto max-w-[min(380px,62vw)] object-contain object-left brightness-[1.06] contrast-[1.03]"
-            style={{
-              height: "150px",
-              width: "auto",
-              display: "block",
-              mixBlendMode: "multiply",
-              backgroundColor: "transparent",
-              objectFit: "contain",
-            }}
+            sizes="(max-width: 640px) 92vw, 600px"
+            className="header-logo-lockup"
           />
         </Link>
         <HeaderNavSlot />
