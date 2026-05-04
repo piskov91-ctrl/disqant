@@ -5,6 +5,7 @@
  * Calls `/api/tryon` with the retailer `x-api-key` from the admin key picker.
  */
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
+import { SwitchCamera } from "lucide-react";
 import {
   compressImageToMax1000px,
   formatTryOnApiError,
@@ -25,6 +26,8 @@ export function AdminWearMeClient({ apiKey }: { apiKey: string }) {
   const [loading, setLoading] = useState(false);
   const [wearMenuOpen, setWearMenuOpen] = useState(false);
   const [cameraOpen, setCameraOpen] = useState(false);
+  const [cameraFacing, setCameraFacing] = useState<"user" | "environment">("user");
+  const [flippingCamera, setFlippingCamera] = useState(false);
 
   const modelUploadRef = useRef<HTMLInputElement>(null);
   const garmentInputRef = useRef<HTMLInputElement>(null);
@@ -107,7 +110,7 @@ export function AdminWearMeClient({ apiKey }: { apiKey: string }) {
     try {
       stopStream();
       const stream = await navigator.mediaDevices.getUserMedia({
-        video: { facingMode: { ideal: "user" } },
+        video: { facingMode: { ideal: cameraFacing } },
         audio: false,
       });
       streamRef.current = stream;
@@ -115,7 +118,44 @@ export function AdminWearMeClient({ apiKey }: { apiKey: string }) {
     } catch {
       setError("Camera not available. Use upload instead.");
     }
-  }, [stopStream]);
+  }, [stopStream, cameraFacing]);
+
+  const onFlipCamera = useCallback(async () => {
+    if (!cameraOpen) return;
+    setError(null);
+    const previous = cameraFacing;
+    const next: "user" | "environment" = previous === "user" ? "environment" : "user";
+    setFlippingCamera(true);
+    try {
+      stopStream();
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: { facingMode: { ideal: next } },
+        audio: false,
+      });
+      streamRef.current = stream;
+      if (videoRef.current) {
+        videoRef.current.srcObject = stream;
+        void videoRef.current.play();
+      }
+      setCameraFacing(next);
+    } catch {
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({
+          video: { facingMode: { ideal: previous } },
+          audio: false,
+        });
+        streamRef.current = stream;
+        if (videoRef.current) {
+          videoRef.current.srcObject = stream;
+          void videoRef.current.play();
+        }
+      } catch {
+        setError("Could not switch camera. Try again or use upload.");
+      }
+    } finally {
+      setFlippingCamera(false);
+    }
+  }, [cameraOpen, cameraFacing, stopStream]);
 
   const onCapturePhoto = useCallback(() => {
     const video = videoRef.current;
@@ -325,21 +365,38 @@ export function AdminWearMeClient({ apiKey }: { apiKey: string }) {
             </div>
             <div className="p-4">
               <video ref={videoRef} className="aspect-[3/4] w-full rounded-lg bg-black object-cover" playsInline muted />
-              <div className="mt-4 flex justify-end gap-2">
+              <div className="mt-4 flex flex-wrap items-center justify-between gap-3">
                 <button
                   type="button"
-                  onClick={closeCamera}
-                  className="rounded-full border border-zinc-600 bg-zinc-800 px-4 py-2 text-sm font-semibold text-zinc-100 hover:border-zinc-500"
+                  onClick={() => void onFlipCamera()}
+                  disabled={flippingCamera}
+                  aria-label={
+                    cameraFacing === "user" ? "Switch to back camera" : "Switch to front camera"
+                  }
+                  title={cameraFacing === "user" ? "Use back camera" : "Use front camera"}
+                  className="inline-flex items-center gap-2 rounded-full border border-zinc-600 bg-zinc-800 px-4 py-2 text-sm font-semibold text-zinc-100 transition hover:border-zinc-500 hover:bg-zinc-700 disabled:cursor-not-allowed disabled:opacity-55"
                 >
-                  Cancel
+                  <SwitchCamera className="h-5 w-5 shrink-0 opacity-90" strokeWidth={2} aria-hidden />
+                  Flip
                 </button>
-                <button
-                  type="button"
-                  onClick={onCapturePhoto}
-                  className="btn-accent-gradient"
-                >
-                  Capture
-                </button>
+                <div className="flex flex-wrap gap-2">
+                  <button
+                    type="button"
+                    onClick={closeCamera}
+                    disabled={flippingCamera}
+                    className="rounded-full border border-zinc-600 bg-zinc-800 px-4 py-2 text-sm font-semibold text-zinc-100 hover:border-zinc-500 disabled:cursor-not-allowed disabled:opacity-55"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="button"
+                    onClick={onCapturePhoto}
+                    disabled={flippingCamera}
+                    className="btn-accent-gradient disabled:cursor-not-allowed disabled:opacity-55"
+                  >
+                    Capture
+                  </button>
+                </div>
               </div>
             </div>
           </div>
