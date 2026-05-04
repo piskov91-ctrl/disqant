@@ -34,7 +34,7 @@ export function Header() {
             height={1024}
             priority
             sizes="(max-width: 640px) 96vw, 92vw"
-            className="header-logo-lockup mt-2"
+            className="header-logo-lockup mt-4"
           />
         </Link>
         <HeaderNavSlot />
