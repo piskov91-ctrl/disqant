@@ -210,9 +210,10 @@ body header.site-header a {
 .header-logo-lockup {
   box-sizing: border-box;
   display: block;
-  height: calc(var(--site-header-height) - 14px);
+  /** Taller than the header row so it reads larger; vertically centered — does not change header/bar height */
+  height: calc(var(--site-header-height) + 24px);
   width: auto;
-  max-width: min(600px, 80vw);
+  max-width: min(760px, 88vw);
   object-fit: contain;
   object-position: left center;
   /* Crop lower tagline so it doesn't hang below the wordmark */
@@ -225,8 +226,8 @@ body header.site-header a {
 
 @media (max-width: 640px) {
   .header-logo-lockup {
-    max-width: min(92vw, 520px);
-    height: calc(var(--site-header-height) - 20px);
+    max-width: min(94vw, 580px);
+    height: calc(var(--site-header-height) + 16px);
   }
 }
 

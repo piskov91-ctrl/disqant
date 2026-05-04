@@ -33,7 +33,7 @@ export function Header() {
             width={1536}
             height={1024}
             priority
-            sizes="(max-width: 640px) 92vw, 600px"
+            sizes="(max-width: 640px) 94vw, 760px"
             className="header-logo-lockup"
           />
         </Link>
