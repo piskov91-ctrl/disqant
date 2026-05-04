@@ -3,8 +3,8 @@
 @tailwind utilities;
 
 :root {
-  /** Fixed header height — keep in sync with main content `padding-top` below header. */
-  --site-header-height: 172px;
+  /** Slim fixed header row; keep `padding-top` on main content aligned to this height. Logo size is scaled separately. */
+  --site-header-height: 108px;
 
   --foreground: #fafafa;
   --muted: #a1a1aa;
@@ -204,16 +204,15 @@ body header.site-header a {
 }
 
 /**
- * Logo in main site header (`Header.tsx`): larger lockup on dark blurred header,
- * crop baked-in subtitle ("Virtual Try-On Platform"), brighten gold for contrast.
+ * Logo in main site header (`Header.tsx`): oversized vs slim bar; cropped tagline; contrast on dark BG.
  */
 .header-logo-lockup {
   box-sizing: border-box;
   display: block;
-  /** Taller than the header row so it reads larger; vertically centered — does not change header/bar height */
-  height: calc(var(--site-header-height) + 24px);
+  /** ~150% of prior rendered height `calc(172px + 24px)` before header slim-down */
+  height: calc((172px + 24px) * 1.5);
   width: auto;
-  max-width: min(760px, 88vw);
+  max-width: min(1140px, 92vw);
   object-fit: contain;
   object-position: left center;
   /* Crop lower tagline so it doesn't hang below the wordmark */
@@ -226,8 +225,9 @@ body header.site-header a {
 
 @media (max-width: 640px) {
   .header-logo-lockup {
-    max-width: min(94vw, 580px);
-    height: calc(var(--site-header-height) + 16px);
+    /** ~150% of prior mobile height `calc(172px + 16px)` */
+    height: calc((172px + 16px) * 1.5);
+    max-width: min(960px, 96vw);
   }
 }
 

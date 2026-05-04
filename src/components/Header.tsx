@@ -15,7 +15,7 @@ function HeaderNavSlot() {
         </div>
       }
     >
-      <div className="flex min-w-0 flex-1 justify-end">
+      <div className="relative z-10 flex min-w-0 flex-1 justify-end">
         <HeaderNav />
       </div>
     </Suspense>
@@ -24,16 +24,16 @@ function HeaderNavSlot() {
 
 export function Header() {
   return (
-    <header className="site-header fixed top-0 left-0 right-0 z-[60] border-b border-white/10 bg-transparent backdrop-blur-md">
-      <div className="mx-auto flex h-[var(--site-header-height)] max-h-[var(--site-header-height)] min-h-[var(--site-header-height)] max-w-6xl shrink-0 items-center justify-between gap-3 px-5 md:px-6">
-        <Link href="/" className="flex min-h-0 min-w-0 shrink-0 items-center py-2">
+    <header className="site-header fixed top-0 left-0 right-0 z-[60] overflow-visible border-b border-white/10 bg-transparent backdrop-blur-md">
+      <div className="mx-auto flex h-[var(--site-header-height)] max-h-[var(--site-header-height)] min-h-[var(--site-header-height)] max-w-6xl shrink-0 items-center justify-between gap-3 overflow-visible px-4 md:px-5">
+        <Link href="/" className="flex min-h-0 min-w-0 shrink-0 items-center py-0">
           <Image
             src="/logo.png"
             alt="Fit Room"
             width={1536}
             height={1024}
             priority
-            sizes="(max-width: 640px) 94vw, 760px"
+            sizes="(max-width: 640px) 96vw, 92vw"
             className="header-logo-lockup"
           />
         </Link>
