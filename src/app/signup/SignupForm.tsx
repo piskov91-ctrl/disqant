@@ -29,7 +29,6 @@ export function SignupForm() {
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
   const [storeName, setStoreName] = useState("");
-  const [companyName, setCompanyName] = useState("");
   const [email, setEmail] = useState("");
   const [websiteUrl, setWebsiteUrl] = useState("");
   const [password, setPassword] = useState("");
@@ -46,7 +45,6 @@ export function SignupForm() {
     if (lastName.trim().length > 100) return "Last name must be at most 100 characters.";
     if (!storeName.trim()) return "Store name is required.";
     if (storeName.trim().length > 200) return "Store name must be at most 200 characters.";
-    if (companyName.trim().length > 200) return "Company name must be at most 200 characters.";
     const em = email.trim();
     if (!em) return "Email is required.";
     if (em.length > 320 || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(em)) {
@@ -64,7 +62,6 @@ export function SignupForm() {
     firstName,
     lastName,
     storeName,
-    companyName,
     email,
     websiteUrl,
     password,
@@ -92,7 +89,7 @@ export function SignupForm() {
             firstName: firstName.trim(),
             lastName: lastName.trim(),
             storeName: storeName.trim(),
-            companyName: companyName.trim(),
+            companyName: "",
             email: email.trim(),
             websiteUrl: websiteUrl.trim(),
             password,
@@ -159,33 +156,17 @@ export function SignupForm() {
             id="su-store"
             name="storeName"
             type="text"
-            autoComplete="off"
+            autoComplete="organization"
             value={storeName}
             onChange={(e) => setStoreName(e.target.value)}
             maxLength={200}
             aria-required="true"
             className={inputClass}
-            placeholder="e.g. My Boutique"
+            placeholder="Your store or brand"
           />
           <p className="mt-1.5 text-xs leading-relaxed text-zinc-500">
             This will be used to identify your store in our system.
           </p>
-        </div>
-
-        <div>
-          <label htmlFor="su-company" className="block text-sm font-medium text-zinc-200">
-            Company name <span className="font-normal text-zinc-500">(optional)</span>
-          </label>
-          <input
-            id="su-company"
-            name="companyName"
-            autoComplete="organization"
-            value={companyName}
-            onChange={(e) => setCompanyName(e.target.value)}
-            maxLength={200}
-            className={inputClass}
-            placeholder="Your store or brand"
-          />
         </div>
 
         <div>
