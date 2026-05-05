@@ -1,10 +1,7 @@
 import crypto from "node:crypto";
 import { Redis } from "@upstash/redis";
 import { isFitRoomSmtpConfigured } from "@/lib/fitRoomSmtp";
-import {
-  usageIncrementShouldPersistEightyPctEmailFlag,
-  usageIncrementShouldPersistHundredPctEmailFlag,
-} from "@/lib/usageTryOnQuotaEmailPolicy";
+import { usageIncrementShouldPersistEightyPctEmailFlag, usageIncrementShouldPersistHundredPctEmailFlag } from "@/lib/usageTryOnQuotaEmailPolicy";
 
 export type ClientApiKeyRecord = {
   id: string;
@@ -231,9 +228,11 @@ export async function incrementUsageOrThrow(id: string) {
   const persistHundred =
     smtpOk && usageIncrementShouldPersistHundredPctEmailFlag({ prev: rec, next: nextBase });
 
-  let next: ClientApiKeyRecord = { ...nextBase };
-  if (persistEighty) next.usageEightPctEmailSentForLimit = next.usageLimit;
-  if (persistHundred) next.usageHundredPctEmailSentForLimit = next.usageLimit;
+  const next: ClientApiKeyRecord = {
+    ...nextBase,
+    ...(persistEighty ? { usageEightPctEmailSentForLimit: nextBase.usageLimit } : null),
+    ...(persistHundred ? { usageHundredPctEmailSentForLimit: nextBase.usageLimit } : null),
+  };
 
   await redis.set(redisKey, next);
   if (persistEighty || persistHundred) {
