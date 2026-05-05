@@ -13,6 +13,8 @@ const VISITOR_LABEL: Record<string, string> = {
   "100k-plus": "100k+",
 };
 
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
 function isNonEmptyString(v: unknown): v is string {
   return typeof v === "string" && v.trim().length > 0;
 }
@@ -46,12 +48,15 @@ export async function POST(req: Request) {
 
   const b = body as Record<string, unknown>;
   const name = isNonEmptyString(b.name) ? b.name.trim() : null;
+  const emailRaw = isNonEmptyString(b.email) ? b.email.trim() : "";
+  const email = EMAIL_RE.test(emailRaw) ? emailRaw : null;
   const company = isNonEmptyString(b.company) ? b.company.trim() : null;
   const message = isNonEmptyString(b.message) ? b.message.trim() : null;
   const websiteUrlRaw = typeof b.websiteUrl === "string" ? b.websiteUrl : "";
   const monthlyVisitors = typeof b.monthlyVisitors === "string" ? b.monthlyVisitors : "";
 
   if (!name) return Response.json({ error: "Name is required." }, { status: 400 });
+  if (!email) return Response.json({ error: "A valid email is required." }, { status: 400 });
   if (!company) return Response.json({ error: "Store name is required." }, { status: 400 });
   if (!message) return Response.json({ error: "Message is required." }, { status: 400 });
   if (!VISITOR_OPTIONS.has(monthlyVisitors)) {
@@ -72,6 +77,7 @@ export async function POST(req: Request) {
   const visitorsLabel = VISITOR_LABEL[monthlyVisitors] ?? monthlyVisitors;
   const text = [
     `Name: ${name}`,
+    `Email: ${email}`,
     `Store name: ${company}`,
     `Website: ${websiteLine}`,
     `Monthly visitors: ${visitorsLabel}`,
@@ -82,6 +88,7 @@ export async function POST(req: Request) {
   const html = `
   <h2>Contact form — Fit Room</h2>
   <p><strong>Name</strong><br/>${escapeHtml(name)}</p>
+  <p><strong>Email</strong><br/><a href="mailto:${escapeHtml(email)}">${escapeHtml(email)}</a></p>
   <p><strong>Store name</strong><br/>${escapeHtml(company)}</p>
   <p><strong>Website</strong><br/>${escapeHtml(websiteLine)}</p>
   <p><strong>Monthly visitors</strong><br/>${escapeHtml(visitorsLabel)}</p>
