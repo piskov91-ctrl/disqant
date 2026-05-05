@@ -5,6 +5,7 @@ import { resolveFitRoomSmtpFrom } from "@/lib/fitRoomSmtp";
 import {
   TRY_ON_QUOTA_EIGHTY_PCT_EMAIL_SUBJECT,
   buildTryOnQuotaEightyPctEmailBody,
+  buildTryOnQuotaEightyPctEmailHtml,
   getTryOnQuotaUpgradePlanUrl,
   sampleTryOnUsageCountAtLeastEightyPercent,
 } from "@/lib/usageTryOnQuotaEmail";
@@ -42,21 +43,24 @@ export async function GET(req: Request) {
   }
 
   const sampleUsed = sampleTryOnUsageCountAtLeastEightyPercent(usageLimit);
-  const body = buildTryOnQuotaEightyPctEmailBody({
+  const previewParams = {
     storeName: previewStoreLabel,
     used: sampleUsed,
     limit: usageLimit,
-  });
+  };
+  const body = buildTryOnQuotaEightyPctEmailBody(previewParams);
+  const html = buildTryOnQuotaEightyPctEmailHtml(previewParams);
 
   return Response.json({
     subject: TRY_ON_QUOTA_EIGHTY_PCT_EMAIL_SUBJECT,
     body,
+    html,
     from: resolveFitRoomSmtpFrom(),
     upgradeUrl: getTryOnQuotaUpgradePlanUrl(),
     sampleUsed,
     sampleLimit: usageLimit,
     previewStoreLabel,
     caption:
-      "Uses illustrative counts at roughly 80% of the plan's try-on limit — same plaintext template merchants receive.",
+      "Uses illustrative counts at roughly 80% of the plan's try-on limit — multipart email (HTML + plain text) matches what linked retailers receive.",
   });
 }

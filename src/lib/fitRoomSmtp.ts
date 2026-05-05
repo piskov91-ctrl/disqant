@@ -52,3 +52,15 @@ export async function sendFitRoomPlainTextMail(params: { to: string; subject: st
     text: params.text,
   });
 }
+
+/** Multipart alternative: clients that support HTML show the rich body; others fall back to `text`. */
+export async function sendFitRoomMail(params: { to: string; subject: string; text: string; html: string }) {
+  const transport = createFitRoomSmtpTransport();
+  await transport.sendMail({
+    from: resolveFitRoomSmtpFrom(),
+    to: params.to,
+    subject: params.subject,
+    text: params.text,
+    html: params.html,
+  });
+}

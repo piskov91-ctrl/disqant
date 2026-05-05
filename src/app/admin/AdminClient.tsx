@@ -110,6 +110,7 @@ export default function AdminClient() {
   type QuotaEmailPreviewPayload = {
     subject: string;
     body: string;
+    html: string;
     from: string;
     upgradeUrl: string;
     sampleUsed: number;
@@ -561,7 +562,7 @@ export default function AdminClient() {
                   80% try-on limit reminder
                 </p>
                 <p className="mt-1 text-sm text-zinc-400">
-                  Plaintext preview — no email is sent from this screen.
+                  HTML + plain text preview — no email is sent from this screen.
                 </p>
               </div>
               <button
@@ -624,9 +625,21 @@ export default function AdminClient() {
                       try-ons ({quotaPreviewData.previewStoreLabel})
                     </p>
                   </div>
-                  <pre className="mt-4 whitespace-pre-wrap font-sans text-[13px] leading-relaxed text-zinc-200">
-                    {quotaPreviewData.body}
-                  </pre>
+                  <div className="mt-4">
+                    <p className="text-xs font-medium uppercase tracking-wide text-zinc-500">HTML</p>
+                    <iframe
+                      title="Quota email HTML preview"
+                      className="mt-2 h-[min(420px,50dvh)] w-full rounded-lg border border-zinc-800 bg-white"
+                      sandbox=""
+                      srcDoc={quotaPreviewData.html}
+                    />
+                  </div>
+                  <div className="mt-4">
+                    <p className="text-xs font-medium uppercase tracking-wide text-zinc-500">Plain text</p>
+                    <pre className="mt-2 whitespace-pre-wrap rounded-lg border border-zinc-800 bg-zinc-950/40 p-3 font-sans text-[13px] leading-relaxed text-zinc-200">
+                      {quotaPreviewData.body}
+                    </pre>
+                  </div>
                 </div>
                 <p className="text-xs text-zinc-500">
                   Upgrade link in this preview:{" "}
