@@ -92,7 +92,7 @@ export function sampleTryOnUsageCountAtLeastEightyPercent(limit: number): number
   return Math.min(Math.ceil((limit * 4) / 5), limit);
 }
 
-/** Fire-and-forget: linked retailer signup email(s) only. */
+/** Fire-and-forget: linked retailer signup emails + optional admin {@link ClientApiKeyRecord.contactEmail}. */
 export function sendTryOnLimitEightyPctNoticeAsync(params: {
   client: ClientApiKeyRecord;
 }) {
@@ -102,7 +102,17 @@ export function sendTryOnLimitEightyPctNoticeAsync(params: {
     const client = params.client;
     try {
       const retailers = await listRetailersLinkedToClientId(client.id);
-      const emailTargets = [...new Map(retailers.map((r) => [r.email.toLowerCase(), r.email])).values()];
+      const fromRetailers = retailers.map((r) => r.email.trim()).filter(Boolean);
+      const contact = client.contactEmail?.trim();
+      const merged: string[] = [];
+      const seen = new Set<string>();
+      for (const addr of [...fromRetailers, ...(contact ? [contact] : [])]) {
+        const k = addr.toLowerCase();
+        if (seen.has(k)) continue;
+        seen.add(k);
+        merged.push(addr);
+      }
+      const emailTargets = merged;
       if (emailTargets.length === 0) return;
 
       const storeName =

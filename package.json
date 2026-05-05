@@ -7,7 +7,8 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "reset-retailer-auth": "node scripts/reset-retailer-auth.mjs"
+    "reset-retailer-auth": "node scripts/reset-retailer-auth.mjs",
+    "set-test-client-email": "node scripts/set-test-client-contact-email.mjs"
   },
   "dependencies": {
     "@react-three/fiber": "^9.6.0",
