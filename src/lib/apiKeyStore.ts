@@ -1,7 +1,10 @@
 import crypto from "node:crypto";
 import { Redis } from "@upstash/redis";
 import { isFitRoomSmtpConfigured } from "@/lib/fitRoomSmtp";
-import { usageIncrementShouldPersistEightyPctEmailFlag } from "@/lib/usageTryOnQuotaEmailPolicy";
+import {
+  usageIncrementShouldPersistEightyPctEmailFlag,
+  usageIncrementShouldPersistHundredPctEmailFlag,
+} from "@/lib/usageTryOnQuotaEmailPolicy";
 
 export type ClientApiKeyRecord = {
   id: string;
@@ -14,6 +17,8 @@ export type ClientApiKeyRecord = {
   usageCount: number;
   /** When equal to usageLimit, the 80% try-on quota email was already sent for this limit tier (reset on usage reset). */
   usageEightPctEmailSentForLimit?: number;
+  /** When equal to usageLimit, the 100% try-on limit email was already sent for this limit tier (reset on usage reset). */
+  usageHundredPctEmailSentForLimit?: number;
   createdAt: string; // ISO
 };
 
@@ -220,17 +225,22 @@ export async function incrementUsageOrThrow(id: string) {
   const { rec, redisKey } = bundle;
   if (rec.usageCount >= rec.usageLimit) throw new Error("Try-on limit exceeded.");
   const nextBase: ClientApiKeyRecord = { ...rec, usageCount: rec.usageCount + 1 };
-  const persistCandidate = usageIncrementShouldPersistEightyPctEmailFlag({
-    prev: rec,
-    next: nextBase,
-  });
-  const persistEighty = persistCandidate && isFitRoomSmtpConfigured();
-  const next: ClientApiKeyRecord = persistEighty
-    ? { ...nextBase, usageEightPctEmailSentForLimit: nextBase.usageLimit }
-    : nextBase;
+  const smtpOk = isFitRoomSmtpConfigured();
+  const persistEighty =
+    smtpOk && usageIncrementShouldPersistEightyPctEmailFlag({ prev: rec, next: nextBase });
+  const persistHundred =
+    smtpOk && usageIncrementShouldPersistHundredPctEmailFlag({ prev: rec, next: nextBase });
+
+  let next: ClientApiKeyRecord = { ...nextBase };
+  if (persistEighty) next.usageEightPctEmailSentForLimit = next.usageLimit;
+  if (persistHundred) next.usageHundredPctEmailSentForLimit = next.usageLimit;
+
   await redis.set(redisKey, next);
-  if (persistEighty) {
-    void import("@/lib/usageTryOnQuotaEmail").then((m) => m.sendTryOnLimitEightyPctNoticeAsync({ client: next }));
+  if (persistEighty || persistHundred) {
+    void import("@/lib/usageTryOnQuotaEmail").then((m) => {
+      if (persistEighty) m.sendTryOnLimitEightyPctNoticeAsync({ client: next });
+      if (persistHundred) m.sendTryOnLimitFullNoticeAsync({ client: next });
+    });
   }
   return next;
 }
@@ -242,6 +252,7 @@ export async function resetUsage(id: string) {
   const { rec, redisKey } = bundle;
   const next: ClientApiKeyRecord = { ...rec, usageCount: 0 };
   delete next.usageEightPctEmailSentForLimit;
+  delete next.usageHundredPctEmailSentForLimit;
   await redis.set(redisKey, next);
   return next;
 }

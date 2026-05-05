@@ -5,7 +5,9 @@ import { listRetailersLinkedToClientId } from "@/lib/retailerAuth";
 export const TRY_ON_QUOTA_EIGHTY_PCT_EMAIL_SUBJECT =
   "You're almost there — your Fit Room try-ons are running low" as const;
 
-/** Upgrade CTA for the 80% usage reminder (HTML button + plain-text fallback). */
+export const TRY_ON_QUOTA_FULL_LIMIT_EMAIL_SUBJECT = "Your Fit Room try-ons have been used up" as const;
+
+/** Upgrade CTA for quota emails (HTML button + plain-text fallback). */
 export const FIT_ROOM_TRY_ON_QUOTA_UPGRADE_URL = "https://fit-room.com/subscriptions" as const;
 
 function escapeHtml(text: string): string {
@@ -14,6 +16,28 @@ function escapeHtml(text: string): string {
     .replace(/</g, "&lt;")
     .replace(/>/g, "&gt;")
     .replace(/"/g, "&quot;");
+}
+
+async function resolveQuotaNoticeRecipients(client: ClientApiKeyRecord): Promise<{
+  emailTargets: string[];
+  storeName: string;
+}> {
+  const retailers = await listRetailersLinkedToClientId(client.id);
+  const fromRetailers = retailers.map((r) => r.email.trim()).filter(Boolean);
+  const contact = client.contactEmail?.trim();
+  const merged: string[] = [];
+  const seen = new Set<string>();
+  for (const addr of [...fromRetailers, ...(contact ? [contact] : [])]) {
+    const k = addr.toLowerCase();
+    if (seen.has(k)) continue;
+    seen.add(k);
+    merged.push(addr);
+  }
+  const storeName =
+    retailers.find((r) => r.storeName.trim().length > 0)?.storeName.trim() ||
+    client.clientName.trim() ||
+    "there";
+  return { emailTargets: merged, storeName };
 }
 
 function buildQuotaPlainText(storeName: string, used: number, limit: number, upgradeUrl: string) {
@@ -62,6 +86,51 @@ function buildQuotaHtml(storeName: string, used: number, limit: number, upgradeU
 </html>`;
 }
 
+function buildFullLimitPlainText(storeName: string, limit: number, upgradeUrl: string) {
+  return [
+    `Hi ${storeName},`,
+    "",
+    `Thank you for using Fit Room — you've now used all ${limit} try-ons included in your current plan this month.`,
+    "",
+    "We hope your customers loved the virtual try-on experience. When you're ready to welcome more try-ons, you can upgrade your plan in just a few clicks and keep everything running smoothly.",
+    "",
+    upgradeUrl,
+    "",
+    "Questions? Just reply to this email — we're glad to help.",
+    "",
+    "Warm regards,",
+    "The Fit Room Team",
+  ].join("\n");
+}
+
+function buildFullLimitHtml(storeName: string, limit: number, upgradeUrl: string) {
+  const safeName = escapeHtml(storeName);
+  const escapedUrl = escapeHtml(upgradeUrl);
+  const paragraphStyle = "margin:0 0 16px;font-size:15px;line-height:1.6;color:#3f3f46;";
+  return `<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>${TRY_ON_QUOTA_FULL_LIMIT_EMAIL_SUBJECT}</title>
+</head>
+<body style="margin:0;padding:24px;font-family:ui-sans-serif,system-ui,-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;background-color:#fafafa;color:#3f3f46;">
+  <p style="${paragraphStyle}">Hi ${safeName},</p>
+  <p style="${paragraphStyle}">Thank you for using Fit Room — you've now used all ${limit} try-ons included in your current plan this month.</p>
+  <p style="${paragraphStyle}">We hope your customers loved the virtual try-on experience. When you're ready to welcome more try-ons, you can upgrade your plan in just a few clicks and keep everything running smoothly.</p>
+  <table role="presentation" cellspacing="0" cellpadding="0" border="0" style="margin:24px 0;">
+    <tr>
+      <td align="left" style="border-radius:10px;background-color:#18181b;">
+        <a href="${escapedUrl}" style="display:inline-block;padding:14px 28px;font-size:15px;font-weight:600;color:#fafafa;text-decoration:none;border-radius:10px;line-height:1.2;">View plans &amp; upgrade</a>
+      </td>
+    </tr>
+  </table>
+  <p style="${paragraphStyle}">Questions? Just reply to this email — we're glad to help.</p>
+  <p style="margin:24px 0 0;font-size:15px;line-height:1.6;color:#3f3f46;">Warm regards,<br>The Fit Room Team</p>
+</body>
+</html>`;
+}
+
 export function getTryOnQuotaUpgradePlanUrl(): string {
   return FIT_ROOM_TRY_ON_QUOTA_UPGRADE_URL;
 }
@@ -86,6 +155,16 @@ export function buildTryOnQuotaEightyPctEmailHtml(params: {
   return buildQuotaHtml(params.storeName, params.used, params.limit, upgradeUrl);
 }
 
+/** Plain-text for the 100% limit reached email. */
+export function buildTryOnQuotaFullLimitEmailBody(params: { storeName: string; limit: number }): string {
+  return buildFullLimitPlainText(params.storeName, params.limit, FIT_ROOM_TRY_ON_QUOTA_UPGRADE_URL);
+}
+
+/** HTML for the 100% limit reached email. */
+export function buildTryOnQuotaFullLimitEmailHtml(params: { storeName: string; limit: number }): string {
+  return buildFullLimitHtml(params.storeName, params.limit, FIT_ROOM_TRY_ON_QUOTA_UPGRADE_URL);
+}
+
 /** Smallest usage count ≥ 80% of `limit`, capped at `limit` (whole try-ons only). */
 export function sampleTryOnUsageCountAtLeastEightyPercent(limit: number): number {
   if (!Number.isFinite(limit) || limit <= 0) return 800;
@@ -101,22 +180,8 @@ export function sendTryOnLimitEightyPctNoticeAsync(params: {
   void (async () => {
     const client = params.client;
     try {
-      const retailers = await listRetailersLinkedToClientId(client.id);
-      const fromRetailers = retailers.map((r) => r.email.trim()).filter(Boolean);
-      const contact = client.contactEmail?.trim();
-      const merged: string[] = [];
-      const seen = new Set<string>();
-      for (const addr of [...fromRetailers, ...(contact ? [contact] : [])]) {
-        const k = addr.toLowerCase();
-        if (seen.has(k)) continue;
-        seen.add(k);
-        merged.push(addr);
-      }
-      const emailTargets = merged;
+      const { emailTargets, storeName } = await resolveQuotaNoticeRecipients(client);
       if (emailTargets.length === 0) return;
-
-      const storeName =
-        retailers.find((r) => r.storeName.trim().length > 0)?.storeName.trim() || client.clientName.trim() || "there";
 
       const bodyParams = {
         storeName,
@@ -139,6 +204,45 @@ export function sendTryOnLimitEightyPctNoticeAsync(params: {
       );
     } catch (e) {
       console.error("[fit-room] try-on quota 80% email pipeline failed", {
+        clientId: client.id,
+        message: e instanceof Error ? e.message : String(e),
+      });
+    }
+  })();
+}
+
+/** Fire-and-forget when monthly try-ons are fully used: same recipients as 80% notice. */
+export function sendTryOnLimitFullNoticeAsync(params: { client: ClientApiKeyRecord }) {
+  if (!isFitRoomSmtpConfigured()) return;
+
+  void (async () => {
+    const client = params.client;
+    try {
+      const { emailTargets, storeName } = await resolveQuotaNoticeRecipients(client);
+      if (emailTargets.length === 0) return;
+
+      const bodyParams = { storeName, limit: client.usageLimit };
+      const text = buildTryOnQuotaFullLimitEmailBody(bodyParams);
+      const html = buildTryOnQuotaFullLimitEmailHtml(bodyParams);
+
+      await Promise.all(
+        emailTargets.map((to) =>
+          sendFitRoomMail({
+            to,
+            subject: TRY_ON_QUOTA_FULL_LIMIT_EMAIL_SUBJECT,
+            text,
+            html,
+          }).catch((err: unknown) => {
+            console.error("[fit-room] try-on quota 100% email failed", {
+              clientId: client.id,
+              to,
+              message: err instanceof Error ? err.message : String(err),
+            });
+          }),
+        ),
+      );
+    } catch (e) {
+      console.error("[fit-room] try-on quota 100% email pipeline failed", {
         clientId: client.id,
         message: e instanceof Error ? e.message : String(e),
       });
