@@ -65,12 +65,19 @@ export function AdminWearMeClient({ apiKey }: { apiKey: string }) {
 
   useEffect(() => {
     if (!wearMenuOpen) return;
+    let raf = 0;
     function onDocMouseDown(e: MouseEvent) {
       const el = wearMenuRef.current;
       if (el && !el.contains(e.target as Node)) setWearMenuOpen(false);
     }
-    document.addEventListener("mousedown", onDocMouseDown);
-    return () => document.removeEventListener("mousedown", onDocMouseDown);
+    /** Defer attaching so the same user gesture (e.g. file picker) isn't treated as an outside click. */
+    raf = requestAnimationFrame(() => {
+      document.addEventListener("mousedown", onDocMouseDown);
+    });
+    return () => {
+      cancelAnimationFrame(raf);
+      document.removeEventListener("mousedown", onDocMouseDown);
+    };
   }, [wearMenuOpen]);
 
   const stopStream = useCallback(() => {
@@ -180,6 +187,10 @@ export function AdminWearMeClient({ apiKey }: { apiKey: string }) {
 
   const onGenerate = useCallback(async () => {
     if (!modelFile || !garmentFile || inFlightRef.current) return;
+    if (!apiKey?.trim()) {
+      setError("Select a client key for this session.");
+      return;
+    }
     inFlightRef.current = true;
     setError(null);
     setLoading(true);
@@ -203,7 +214,14 @@ export function AdminWearMeClient({ apiKey }: { apiKey: string }) {
         body: fd,
         credentials: "include",
       });
-      const data = (await res.json()) as TryOnResponse;
+      let data: TryOnResponse = {} as TryOnResponse;
+      try {
+        const text = await res.text();
+        if (text.trim()) data = JSON.parse(text) as TryOnResponse;
+      } catch {
+        setError(`Server returned an unreadable response (${res.status}).`);
+        return;
+      }
       if (!res.ok) {
         if (res.status === 402) {
           setError("Try-on is temporarily unavailable for this account.");
@@ -231,7 +249,7 @@ export function AdminWearMeClient({ apiKey }: { apiKey: string }) {
     }
   }, [apiKey, garmentFile, modelFile]);
 
-  const canGenerate = Boolean(modelFile && garmentFile && !loading);
+  const canGenerate = Boolean(modelFile && garmentFile && apiKey?.trim() && !loading);
 
   return (
     <div className="space-y-6">
@@ -245,7 +263,7 @@ export function AdminWearMeClient({ apiKey }: { apiKey: string }) {
             Wear Me
           </button>
           {wearMenuOpen ? (
-            <div className="absolute left-0 top-full z-20 mt-2 min-w-[200px] rounded-xl border border-zinc-700 bg-zinc-900 py-1 shadow-xl">
+            <div className="absolute left-0 top-full z-[60] mt-2 min-w-[200px] rounded-xl border border-zinc-700 bg-zinc-900 py-1 shadow-xl">
               <button
                 type="button"
                 onClick={() => void openCamera()}
@@ -278,7 +296,7 @@ export function AdminWearMeClient({ apiKey }: { apiKey: string }) {
           />
         </div>
 
-        <div>
+        <div className="min-w-0 shrink-0">
           <label className="block text-sm font-medium text-zinc-200">Garment image</label>
           <input
             ref={garmentInputRef}
@@ -288,6 +306,7 @@ export function AdminWearMeClient({ apiKey }: { apiKey: string }) {
             onChange={(e) => {
               const f = e.target.files?.[0];
               if (f) setGarmentFromFile(f);
+              e.target.value = "";
             }}
           />
         </div>
@@ -296,7 +315,7 @@ export function AdminWearMeClient({ apiKey }: { apiKey: string }) {
           type="button"
           disabled={!canGenerate}
           onClick={() => void onGenerate()}
-          className="btn-accent-gradient disabled:cursor-not-allowed disabled:opacity-50"
+          className="relative z-[70] shrink-0 btn-accent-gradient disabled:cursor-not-allowed disabled:opacity-50"
         >
           {loading ? "Generating…" : "Generate"}
         </button>

@@ -942,7 +942,7 @@ export default function AdminClient() {
               </section>
             </>
           ) : activeTab === "wearMe" ? (
-            <section className="mt-8 w-full overflow-hidden rounded-2xl border border-zinc-800 bg-zinc-900/60 p-6 shadow-sm md:p-8">
+            <section className="mt-8 w-full overflow-visible rounded-2xl border border-zinc-800 bg-zinc-900/60 p-6 shadow-sm md:p-8">
               <h2 className="text-base font-semibold text-zinc-100">Wear Me</h2>
               <p className="mt-1 text-sm text-zinc-400">
                 Quick try-on test using the selected client&apos;s API key (counts against their quota).
