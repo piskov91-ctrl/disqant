@@ -1,5 +1,7 @@
 import crypto from "node:crypto";
 import { Redis } from "@upstash/redis";
+import { isFitRoomSmtpConfigured } from "@/lib/fitRoomSmtp";
+import { usageIncrementShouldPersistEightyPctEmailFlag } from "@/lib/usageTryOnQuotaEmailPolicy";
 
 export type ClientApiKeyRecord = {
   id: string;
@@ -8,6 +10,8 @@ export type ClientApiKeyRecord = {
   fashnApiKey: string;
   usageLimit: number;
   usageCount: number;
+  /** When equal to usageLimit, the 80% try-on quota email was already sent for this limit tier (reset on usage reset). */
+  usageEightPctEmailSentForLimit?: number;
   createdAt: string; // ISO
 };
 
@@ -199,8 +203,19 @@ export async function incrementUsageOrThrow(id: string) {
   if (!bundle) throw new Error("Client key not found.");
   const { rec, redisKey } = bundle;
   if (rec.usageCount >= rec.usageLimit) throw new Error("Try-on limit exceeded.");
-  const next: ClientApiKeyRecord = { ...rec, usageCount: rec.usageCount + 1 };
+  const nextBase: ClientApiKeyRecord = { ...rec, usageCount: rec.usageCount + 1 };
+  const persistCandidate = usageIncrementShouldPersistEightyPctEmailFlag({
+    prev: rec,
+    next: nextBase,
+  });
+  const persistEighty = persistCandidate && isFitRoomSmtpConfigured();
+  const next: ClientApiKeyRecord = persistEighty
+    ? { ...nextBase, usageEightPctEmailSentForLimit: nextBase.usageLimit }
+    : nextBase;
   await redis.set(redisKey, next);
+  if (persistEighty) {
+    void import("@/lib/usageTryOnQuotaEmail").then((m) => m.sendTryOnLimitEightyPctNoticeAsync({ client: next }));
+  }
   return next;
 }
 
@@ -210,6 +225,7 @@ export async function resetUsage(id: string) {
   if (!bundle) throw new Error("Client key not found.");
   const { rec, redisKey } = bundle;
   const next: ClientApiKeyRecord = { ...rec, usageCount: 0 };
+  delete next.usageEightPctEmailSentForLimit;
   await redis.set(redisKey, next);
   return next;
 }

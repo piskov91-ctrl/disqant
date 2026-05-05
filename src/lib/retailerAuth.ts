@@ -240,6 +240,52 @@ export async function findRetailerByEmail(email: string): Promise<RetailerUser |
   return getRetailerById(id);
 }
 
+export type RetailerEmailForQuotaNotice = {
+  email: string;
+  storeName: string;
+};
+
+/**
+ * Finds retailer accounts pointing at `clientId` via Redis SCAN over user records.
+ */
+export async function listRetailersLinkedToClientId(
+  clientId: string,
+): Promise<RetailerEmailForQuotaNotice[]> {
+  const cid = clientId.trim();
+  if (!cid) return [];
+
+  const redis = getRedis();
+  const merged = new Map<string, RetailerEmailForQuotaNotice>();
+
+  async function scanBucket(matchLiteralPrefix: string) {
+    let cursor = 0;
+    for (;;) {
+      const tuple = await redis.scan(cursor, { match: `${matchLiteralPrefix}*`, count: 200 });
+      const nextRaw = tuple[0] as unknown;
+      const cursorNum =
+        typeof nextRaw === "string"
+          ? parseInt(nextRaw, 10)
+          : typeof nextRaw === "number" && Number.isFinite(nextRaw)
+            ? nextRaw
+            : 0;
+      const keys = (tuple[1] ?? []) as string[];
+      for (const key of keys) {
+        const raw = await redis.get(key);
+        const u = parseRetailerUserRaw(raw);
+        if (!u?.email?.trim() || u.clientId?.trim() !== cid) continue;
+        merged.set(u.id, { email: u.email.trim(), storeName: typeof u.storeName === "string" ? u.storeName : "" });
+      }
+      if (!Number.isFinite(cursorNum) || cursorNum === 0) break;
+      cursor = cursorNum;
+    }
+  }
+
+  await scanBucket(USER_PREFIX);
+  await scanBucket(LEGACY_USER_PREFIX);
+
+  return [...merged.values()];
+}
+
 /** Email index stores a UUID string; Upstash may return string or (rarely) another shape. */
 function redisUserIdFromIndex(raw: unknown): string | null {
   if (raw == null) return null;
