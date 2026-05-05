@@ -225,8 +225,11 @@ export async function incrementUsageOrThrow(id: string) {
   const smtpOk = isFitRoomSmtpConfigured();
   const persistEighty =
     smtpOk && usageIncrementShouldPersistEightyPctEmailFlag({ prev: rec, next: nextBase });
+  const hasContactEmail = Boolean(rec.contactEmail?.trim());
   const persistHundred =
-    smtpOk && usageIncrementShouldPersistHundredPctEmailFlag({ prev: rec, next: nextBase });
+    smtpOk &&
+    hasContactEmail &&
+    usageIncrementShouldPersistHundredPctEmailFlag({ prev: rec, next: nextBase });
 
   const next: ClientApiKeyRecord = {
     ...nextBase,

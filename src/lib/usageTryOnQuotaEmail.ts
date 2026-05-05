@@ -211,36 +211,33 @@ export function sendTryOnLimitEightyPctNoticeAsync(params: {
   })();
 }
 
-/** Fire-and-forget when monthly try-ons are fully used: same recipients as 80% notice. */
+/** Fire-and-forget when monthly try-ons are fully used: admin {@link ClientApiKeyRecord.contactEmail} only (same SMTP as 80%). */
 export function sendTryOnLimitFullNoticeAsync(params: { client: ClientApiKeyRecord }) {
   if (!isFitRoomSmtpConfigured()) return;
 
   void (async () => {
     const client = params.client;
-    try {
-      const { emailTargets, storeName } = await resolveQuotaNoticeRecipients(client);
-      if (emailTargets.length === 0) return;
+    const to = client.contactEmail?.trim();
+    if (!to) return;
 
+    try {
+      const storeName = client.clientName.trim() || "there";
       const bodyParams = { storeName, limit: client.usageLimit };
       const text = buildTryOnQuotaFullLimitEmailBody(bodyParams);
       const html = buildTryOnQuotaFullLimitEmailHtml(bodyParams);
 
-      await Promise.all(
-        emailTargets.map((to) =>
-          sendFitRoomMail({
-            to,
-            subject: TRY_ON_QUOTA_FULL_LIMIT_EMAIL_SUBJECT,
-            text,
-            html,
-          }).catch((err: unknown) => {
-            console.error("[fit-room] try-on quota 100% email failed", {
-              clientId: client.id,
-              to,
-              message: err instanceof Error ? err.message : String(err),
-            });
-          }),
-        ),
-      );
+      await sendFitRoomMail({
+        to,
+        subject: TRY_ON_QUOTA_FULL_LIMIT_EMAIL_SUBJECT,
+        text,
+        html,
+      }).catch((err: unknown) => {
+        console.error("[fit-room] try-on quota 100% email failed", {
+          clientId: client.id,
+          to,
+          message: err instanceof Error ? err.message : String(err),
+        });
+      });
     } catch (e) {
       console.error("[fit-room] try-on quota 100% email pipeline failed", {
         clientId: client.id,
