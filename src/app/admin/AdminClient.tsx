@@ -289,6 +289,9 @@ export default function AdminClient() {
         return;
       }
       setClientName(sn);
+      if (!billingEmail.trim()) {
+        setBillingEmail(em);
+      }
       setLookupNotice(`Client name set from registration: "${sn}".`);
     } catch {
       setLookupNotice("Lookup failed.");
@@ -737,13 +740,13 @@ export default function AdminClient() {
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-zinc-200">Billing email</label>
+                <label className="block text-sm font-medium text-zinc-200">Client email</label>
                 <input
                   value={editBillingEmail}
                   onChange={(e) => setEditBillingEmail(e.target.value)}
                   type="email"
-                  autoComplete="off"
-                  placeholder="owner@their-store.com — receives 80% try-on reminders"
+                  autoComplete="email"
+                  placeholder="Stored with API key · 80% try-on reminders when set"
                   className="mt-3 block w-full rounded-xl border border-zinc-700 bg-zinc-950 px-4 py-3 text-sm text-zinc-100 outline-none transition placeholder:text-zinc-600 focus:border-accent/60"
                 />
                 <p className="mt-2 text-xs text-zinc-500">
@@ -955,7 +958,7 @@ export default function AdminClient() {
                 </div>
 
                 <form onSubmit={createKey} className="mt-6 grid gap-4 md:grid-cols-12 md:items-end">
-                  <div className="md:col-span-4">
+                  <div className="md:col-span-3">
                     <label className="block text-sm font-medium text-zinc-200">Client name</label>
                     <input
                       value={clientName}
@@ -964,7 +967,23 @@ export default function AdminClient() {
                       className="mt-2 block w-full rounded-xl border border-zinc-700 bg-zinc-950 px-4 py-3 text-sm text-zinc-100 outline-none placeholder:text-zinc-600 transition focus:border-accent/60"
                     />
                   </div>
-                  <div className="md:col-span-5">
+                  <div className="md:col-span-3">
+                    <label htmlFor="admin-new-client-email" className="block text-sm font-medium text-zinc-200">
+                      Client email
+                    </label>
+                    <input
+                      id="admin-new-client-email"
+                      type="email"
+                      autoComplete="email"
+                      inputMode="email"
+                      value={billingEmail}
+                      onChange={(e) => setBillingEmail(e.target.value)}
+                      placeholder="owner@example.com"
+                      className="mt-2 block w-full rounded-xl border border-zinc-700 bg-zinc-950 px-4 py-3 text-sm text-zinc-100 outline-none placeholder:text-zinc-600 transition focus:border-accent/60"
+                    />
+                    <p className="mt-1 text-xs text-zinc-600">Stored with the API key · optional</p>
+                  </div>
+                  <div className="md:col-span-4">
                     <label className="block text-sm font-medium text-zinc-200">Fashn.ai API key</label>
                     <input
                       value={fashnApiKey}
@@ -984,24 +1003,6 @@ export default function AdminClient() {
                       placeholder="1000"
                       className="mt-2 block w-full rounded-xl border border-zinc-700 bg-zinc-950 px-4 py-3 text-sm text-zinc-100 outline-none placeholder:text-zinc-600 transition focus:border-accent/60"
                     />
-                  </div>
-                  <div className="md:col-span-12">
-                    <label htmlFor="admin-new-billing-email" className="block text-sm font-medium text-zinc-200">
-                      Billing email
-                    </label>
-                    <input
-                      id="admin-new-billing-email"
-                      type="email"
-                      value={billingEmail}
-                      onChange={(e) => setBillingEmail(e.target.value)}
-                      autoComplete="off"
-                      placeholder="Receives 80% try-on reminders (Hostinger SMTP)"
-                      className="mt-2 block w-full max-w-lg rounded-xl border border-zinc-700 bg-zinc-950 px-4 py-3 text-sm text-zinc-100 outline-none placeholder:text-zinc-600 transition focus:border-accent/60"
-                    />
-                    <p className="mt-2 text-xs text-zinc-500">
-                      Optional. If empty, reminders use linked retailer emails when available. From support@fit-room.com
-                      via SMTP (set SMTP_USER and SMTP_PASSWORD; host defaults to smtp.hostinger.com:587 with TLS).
-                    </p>
                   </div>
                   <div className="md:col-span-12">
                     <button
@@ -1074,7 +1075,7 @@ export default function AdminClient() {
                                 {k.billingEmail}
                               </div>
                             ) : (
-                              <div className="mt-0.5 text-sm text-zinc-600">No billing email</div>
+                              <div className="mt-0.5 text-sm text-zinc-600">No client email</div>
                             )}
                           </div>
                           <div>

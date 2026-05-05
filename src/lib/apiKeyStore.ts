@@ -6,7 +6,7 @@ import { usageIncrementShouldPersistEightyPctEmailFlag } from "@/lib/usageTryOnQ
 export type ClientApiKeyRecord = {
   id: string;
   clientName: string;
-  /** When set, 80% try-on reminders go here (SMTP). Otherwise linked retailer signup emails are used. */
+  /** Stored with the client key (Upstash Redis). Primary address for try-on quota emails when set. */
   billingEmail?: string;
   key: string;
   fashnApiKey: string;
