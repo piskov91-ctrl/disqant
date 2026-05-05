@@ -9,7 +9,6 @@ import { AdminWearMeClient } from "@/app/admin/AdminWearMeClient";
 type KeyRecord = {
   id: string;
   clientName: string;
-  billingEmail?: string;
   key: string;
   usageLimit: number;
   usageCount: number;
@@ -90,16 +89,11 @@ export default function AdminClient() {
   const [editing, setEditing] = useState<KeyRecord | null>(null);
   const [editClientName, setEditClientName] = useState("");
   const [editFashnApiKey, setEditFashnApiKey] = useState("");
-  const [editBillingEmail, setEditBillingEmail] = useState("");
   const [editUsageLimit, setEditUsageLimit] = useState("");
   const [savingEdit, setSavingEdit] = useState(false);
 
   const [clientName, setClientName] = useState("");
-  const [retailerSignupEmail, setRetailerSignupEmail] = useState("");
-  const [lookupBusy, setLookupBusy] = useState(false);
-  const [lookupNotice, setLookupNotice] = useState<string | null>(null);
   const [fashnApiKey, setFashnApiKey] = useState("");
-  const [billingEmail, setBillingEmail] = useState("");
   const [usageLimit, setUsageLimit] = useState("1000");
   const [creating, setCreating] = useState(false);
 
@@ -122,7 +116,6 @@ export default function AdminClient() {
     sampleLimit: number;
     previewStoreLabel: string;
     caption: string;
-    deliveryHint: string;
   };
 
   const [quotaPreviewOpen, setQuotaPreviewOpen] = useState(false);
@@ -266,40 +259,6 @@ export default function AdminClient() {
     };
   }, [quotaPreviewOpen]);
 
-  async function applyStoreNameFromRegistration() {
-    const em = retailerSignupEmail.trim();
-    setLookupNotice(null);
-    if (!em) {
-      setLookupNotice("Enter the retailer's signup email.");
-      return;
-    }
-    setLookupBusy(true);
-    try {
-      const res = await fetch(`/api/admin/retailer?email=${encodeURIComponent(em)}`);
-      const data = (await res.json()) as { storeName?: string; error?: string };
-      if (!res.ok) {
-        setLookupNotice(data.error || "Could not look up that account.");
-        return;
-      }
-      const sn = (data.storeName ?? "").trim();
-      if (!sn) {
-        setLookupNotice(
-          "No store name on file (legacy account). Enter Client name manually or ask them to add it under Profile.",
-        );
-        return;
-      }
-      setClientName(sn);
-      if (!billingEmail.trim()) {
-        setBillingEmail(em);
-      }
-      setLookupNotice(`Client name set from registration: "${sn}".`);
-    } catch {
-      setLookupNotice("Lookup failed.");
-    } finally {
-      setLookupBusy(false);
-    }
-  }
-
   async function createKey(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
@@ -312,7 +271,6 @@ export default function AdminClient() {
           clientName,
           fashnApiKey,
           usageLimit: Number(usageLimit),
-          billingEmail: billingEmail.trim(),
         }),
       });
       const data = (await res.json()) as { key?: KeyRecord; error?: string };
@@ -323,7 +281,6 @@ export default function AdminClient() {
       if (data.key) {
         setKeys((prev) => [data.key!, ...prev]);
         setClientName("");
-        setBillingEmail("");
         setFashnApiKey("");
       }
     } catch (e) {
@@ -418,7 +375,6 @@ export default function AdminClient() {
     setError(null);
     setEditing(rec);
     setEditClientName(rec.clientName);
-    setEditBillingEmail(rec.billingEmail ?? "");
     setEditUsageLimit(String(rec.usageLimit));
     setEditFashnApiKey("");
   }
@@ -426,7 +382,6 @@ export default function AdminClient() {
   function closeEditModal() {
     setEditing(null);
     setEditClientName("");
-    setEditBillingEmail("");
     setEditFashnApiKey("");
     setEditUsageLimit("");
     setSavingEdit(false);
@@ -442,7 +397,6 @@ export default function AdminClient() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           clientName: editClientName,
-          billingEmail: editBillingEmail.trim(),
           ...(editFashnApiKey.trim() ? { fashnApiKey: editFashnApiKey.trim() } : null),
           usageLimit: Number(editUsageLimit),
         }),
@@ -655,7 +609,6 @@ export default function AdminClient() {
             ) : quotaPreviewData ? (
               <div className="mt-6 space-y-4">
                 <p className="text-xs text-zinc-500">{quotaPreviewData.caption}</p>
-                <p className="text-xs text-zinc-400">{quotaPreviewData.deliveryHint}</p>
                 <div className="rounded-xl border border-zinc-800 bg-zinc-950/60 p-4 text-sm text-zinc-300">
                   <div className="space-y-1 border-b border-zinc-800 pb-3 text-zinc-100">
                     <p>
@@ -716,8 +669,7 @@ export default function AdminClient() {
                   Edit client
                 </p>
                 <p className="mt-1 text-sm text-zinc-400">
-                  Update client name, billing email (try-on reminders), try-on limit, and (optionally) replace the
-                  Fashn.ai API key.
+                  Update client name, try-on limit, and (optionally) replace the Fashn.ai API key.
                 </p>
               </div>
               <button
@@ -738,20 +690,6 @@ export default function AdminClient() {
                   onChange={(e) => setEditClientName(e.target.value)}
                   className="mt-3 block w-full rounded-xl border border-zinc-700 bg-zinc-950 px-4 py-3 text-sm text-zinc-100 outline-none transition focus:border-accent/60"
                 />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-zinc-200">Client email</label>
-                <input
-                  value={editBillingEmail}
-                  onChange={(e) => setEditBillingEmail(e.target.value)}
-                  type="email"
-                  autoComplete="email"
-                  placeholder="Stored with API key · 80% try-on reminders when set"
-                  className="mt-3 block w-full rounded-xl border border-zinc-700 bg-zinc-950 px-4 py-3 text-sm text-zinc-100 outline-none transition placeholder:text-zinc-600 focus:border-accent/60"
-                />
-                <p className="mt-2 text-xs text-zinc-500">
-                  Leave blank to deliver reminders to linked retailer signup email(s) only, when available.
-                </p>
               </div>
               <div>
                 <label className="block text-sm font-medium text-zinc-200">Fashn.ai API key</label>
@@ -921,44 +859,10 @@ export default function AdminClient() {
             <>
               <section className="mt-8 w-full overflow-hidden rounded-2xl border border-zinc-800 bg-zinc-900/60 p-6 shadow-sm md:p-8">
                 <h2 className="text-base font-semibold text-zinc-100">Create new client</h2>
-                <p className="mt-1 text-sm text-zinc-400">
-                  Create a client API key with a try-on limit. After payment, use the retailer&apos;s signup email to
-                  prefill <span className="text-zinc-300">Client name</span> with their registered store name.
-                </p>
-
-                <div className="mt-5 rounded-xl border border-zinc-800 bg-zinc-950/50 p-4">
-                  <label htmlFor="admin-retailer-email" className="block text-sm font-medium text-zinc-200">
-                    Retailer signup email
-                  </label>
-                  <div className="mt-2 flex flex-col gap-2 sm:flex-row sm:items-center">
-                    <input
-                      id="admin-retailer-email"
-                      type="email"
-                      autoComplete="email"
-                      inputMode="email"
-                      value={retailerSignupEmail}
-                      onChange={(e) => setRetailerSignupEmail(e.target.value)}
-                      placeholder="same email they used to register"
-                      className="block w-full max-w-md rounded-xl border border-zinc-700 bg-zinc-950 px-4 py-3 text-sm text-zinc-100 outline-none placeholder:text-zinc-600 transition focus:border-accent/60"
-                    />
-                    <button
-                      type="button"
-                      disabled={lookupBusy}
-                      onClick={() => void applyStoreNameFromRegistration()}
-                      className="inline-flex h-11 shrink-0 items-center justify-center rounded-full border border-zinc-600 bg-zinc-900 px-5 text-sm font-semibold text-zinc-100 transition hover:border-zinc-500 hover:bg-zinc-800 disabled:cursor-not-allowed disabled:opacity-60"
-                    >
-                      {lookupBusy ? "Loading…" : "Use store name"}
-                    </button>
-                  </div>
-                  {lookupNotice ? (
-                    <p className="mt-3 text-sm text-zinc-400" role="status">
-                      {lookupNotice}
-                    </p>
-                  ) : null}
-                </div>
+                <p className="mt-1 text-sm text-zinc-400">Create a client API key with a try-on limit.</p>
 
                 <form onSubmit={createKey} className="mt-6 grid gap-4 md:grid-cols-12 md:items-end">
-                  <div className="md:col-span-3">
+                  <div className="md:col-span-4">
                     <label className="block text-sm font-medium text-zinc-200">Client name</label>
                     <input
                       value={clientName}
@@ -967,23 +871,7 @@ export default function AdminClient() {
                       className="mt-2 block w-full rounded-xl border border-zinc-700 bg-zinc-950 px-4 py-3 text-sm text-zinc-100 outline-none placeholder:text-zinc-600 transition focus:border-accent/60"
                     />
                   </div>
-                  <div className="md:col-span-3">
-                    <label htmlFor="admin-new-client-email" className="block text-sm font-medium text-zinc-200">
-                      Client email
-                    </label>
-                    <input
-                      id="admin-new-client-email"
-                      type="email"
-                      autoComplete="email"
-                      inputMode="email"
-                      value={billingEmail}
-                      onChange={(e) => setBillingEmail(e.target.value)}
-                      placeholder="owner@example.com"
-                      className="mt-2 block w-full rounded-xl border border-zinc-700 bg-zinc-950 px-4 py-3 text-sm text-zinc-100 outline-none placeholder:text-zinc-600 transition focus:border-accent/60"
-                    />
-                    <p className="mt-1 text-xs text-zinc-600">Stored with the API key · optional</p>
-                  </div>
-                  <div className="md:col-span-4">
+                  <div className="md:col-span-5">
                     <label className="block text-sm font-medium text-zinc-200">Fashn.ai API key</label>
                     <input
                       value={fashnApiKey}
@@ -1070,13 +958,6 @@ export default function AdminClient() {
                         >
                           <div className="min-w-0">
                             <div className="truncate font-semibold text-zinc-100">{k.clientName}</div>
-                            {k.billingEmail ? (
-                              <div className="mt-0.5 truncate text-sm text-sky-400/90" title={k.billingEmail}>
-                                {k.billingEmail}
-                              </div>
-                            ) : (
-                              <div className="mt-0.5 text-sm text-zinc-600">No client email</div>
-                            )}
                           </div>
                           <div>
                             <span className="rounded-md border border-zinc-700 bg-zinc-950 px-2 py-1 font-mono text-sm text-zinc-300">

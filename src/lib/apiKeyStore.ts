@@ -6,8 +6,6 @@ import { usageIncrementShouldPersistEightyPctEmailFlag } from "@/lib/usageTryOnQ
 export type ClientApiKeyRecord = {
   id: string;
   clientName: string;
-  /** Stored with the client key (Upstash Redis). Primary address for try-on quota emails when set. */
-  billingEmail?: string;
   key: string;
   fashnApiKey: string;
   usageLimit: number;
@@ -98,19 +96,9 @@ function generateKey() {
   return crypto.randomBytes(32).toString("base64url");
 }
 
-export function normalizeClientBillingEmailInput(raw: string | undefined): string | undefined {
-  const t = (raw ?? "").trim();
-  if (!t) return undefined;
-  if (t.length > 320 || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(t)) {
-    throw new Error("Invalid billing email address.");
-  }
-  return t;
-}
-
 export async function createClientKey(params: {
   clientName: string;
   usageLimit: number;
-  billingEmail?: string;
   fashnApiKey?: string;
 }) {
   const clientName = params.clientName.trim();
@@ -129,12 +117,6 @@ export async function createClientKey(params: {
     throw new Error("Missing Fashn.ai API key. Set FASHN_API_KEY in the server environment.");
   }
 
-  const billingRaw = params.billingEmail;
-  const billingEmail =
-    billingRaw !== undefined
-      ? normalizeClientBillingEmailInput(String(billingRaw).trim() || undefined)
-      : undefined;
-
   const rec: ClientApiKeyRecord = {
     id: crypto.randomUUID(),
     clientName,
@@ -142,7 +124,6 @@ export async function createClientKey(params: {
     fashnApiKey,
     usageLimit: Math.floor(params.usageLimit),
     usageCount: 0,
-    ...(billingEmail ? { billingEmail } : null),
     createdAt: now,
   };
 
@@ -253,7 +234,6 @@ export async function updateClientKey(params: {
   id: string;
   clientName: string;
   usageLimit: number;
-  billingEmail: string | undefined;
   fashnApiKey?: string;
 }) {
   const redis = getRedis();
@@ -270,10 +250,6 @@ export async function updateClientKey(params: {
   if (!bundle) throw new Error("Client key not found.");
   const { rec, redisKey } = bundle;
 
-  const billingEmailNormalized = normalizeClientBillingEmailInput(
-    (params.billingEmail ?? "").trim() || undefined,
-  );
-
   const next: ClientApiKeyRecord = {
     ...rec,
     clientName,
@@ -281,11 +257,7 @@ export async function updateClientKey(params: {
     ...(params.fashnApiKey && params.fashnApiKey.trim()
       ? { fashnApiKey: params.fashnApiKey.trim() }
       : null),
-    ...(billingEmailNormalized ? { billingEmail: billingEmailNormalized } : null),
   };
-  if (!billingEmailNormalized) {
-    delete next.billingEmail;
-  }
   await redis.set(redisKey, next);
   return next;
 }

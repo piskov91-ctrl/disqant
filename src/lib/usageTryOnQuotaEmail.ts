@@ -1,5 +1,4 @@
 import type { ClientApiKeyRecord } from "@/lib/apiKeyStore";
-import { normalizeClientBillingEmailInput } from "@/lib/apiKeyStore";
 import { isFitRoomSmtpConfigured, sendFitRoomPlainTextMail } from "@/lib/fitRoomSmtp";
 import { listRetailersLinkedToClientId } from "@/lib/retailerAuth";
 
@@ -63,27 +62,7 @@ export function sampleTryOnUsageCountAtLeastEightyPercent(limit: number): number
   return Math.min(Math.ceil((limit * 4) / 5), limit);
 }
 
-function resolveTryOnQuotaNotificationRecipients(
-  client: ClientApiKeyRecord,
-  retailers: Awaited<ReturnType<typeof listRetailersLinkedToClientId>>,
-): string[] {
-  try {
-    const fromStored = normalizeClientBillingEmailInput(client.billingEmail);
-    if (fromStored) return [fromStored];
-  } catch {
-    // Skip invalid stored value (should not happen).
-  }
-  return [...new Map(retailers.map((r) => [r.email.toLowerCase(), r.email])).values()];
-}
-
-function greetingStoreNameFromContext(
-  client: ClientApiKeyRecord,
-  retailers: Awaited<ReturnType<typeof listRetailersLinkedToClientId>>,
-): string {
-  return retailers.find((r) => r.storeName.trim().length > 0)?.storeName.trim() || client.clientName.trim() || "there";
-}
-
-/** Fire-and-forget; uses client billing email when set, else linked retailer signup addresses. */
+/** Fire-and-forget: linked retailer signup email(s) only. */
 export function sendTryOnLimitEightyPctNoticeAsync(params: {
   client: ClientApiKeyRecord;
 }) {
@@ -93,10 +72,11 @@ export function sendTryOnLimitEightyPctNoticeAsync(params: {
     const client = params.client;
     try {
       const retailers = await listRetailersLinkedToClientId(client.id);
-      const emailTargets = resolveTryOnQuotaNotificationRecipients(client, retailers);
+      const emailTargets = [...new Map(retailers.map((r) => [r.email.toLowerCase(), r.email])).values()];
       if (emailTargets.length === 0) return;
 
-      const storeName = greetingStoreNameFromContext(client, retailers);
+      const storeName =
+        retailers.find((r) => r.storeName.trim().length > 0)?.storeName.trim() || client.clientName.trim() || "there";
 
       const text = buildTryOnQuotaEightyPctEmailBody({
         storeName,
