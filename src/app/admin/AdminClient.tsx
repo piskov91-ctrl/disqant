@@ -110,6 +110,23 @@ export default function AdminClient() {
   const [wearMeKeyId, setWearMeKeyId] = useState<string | null>(null);
   const [analyticsInsightsOpen, setAnalyticsInsightsOpen] = useState(false);
 
+  type QuotaEmailPreviewPayload = {
+    subject: string;
+    body: string;
+    from: string;
+    upgradeUrl: string;
+    sampleUsed: number;
+    sampleLimit: number;
+    previewStoreLabel: string;
+    caption: string;
+  };
+
+  const [quotaPreviewOpen, setQuotaPreviewOpen] = useState(false);
+  const [quotaPreviewClientId, setQuotaPreviewClientId] = useState("");
+  const [quotaPreviewLoading, setQuotaPreviewLoading] = useState(false);
+  const [quotaPreviewErr, setQuotaPreviewErr] = useState<string | null>(null);
+  const [quotaPreviewData, setQuotaPreviewData] = useState<QuotaEmailPreviewPayload | null>(null);
+
   const remainingTotal = useMemo(() => {
     const used = keys.reduce((s, k) => s + k.usageCount, 0);
     const limit = keys.reduce((s, k) => s + k.usageLimit, 0);
@@ -180,6 +197,37 @@ export default function AdminClient() {
     }
   }
 
+  async function loadQuotaPreview(forClientId?: string) {
+    setQuotaPreviewLoading(true);
+    setQuotaPreviewErr(null);
+    try {
+      const q = forClientId ? `?clientId=${encodeURIComponent(forClientId)}` : "";
+      const res = await fetch(`/api/admin/try-on-quota-email-preview${q}`);
+      const data = (await res.json()) as QuotaEmailPreviewPayload & { error?: string };
+      if (!res.ok) {
+        if (data.error === "Unauthorized.") window.location.reload();
+        setQuotaPreviewData(null);
+        setQuotaPreviewErr(data.error || "Could not load email preview.");
+        return;
+      }
+      setQuotaPreviewData(data);
+    } catch (e) {
+      setQuotaPreviewData(null);
+      setQuotaPreviewErr(e instanceof Error ? e.message : "Could not load email preview.");
+    } finally {
+      setQuotaPreviewLoading(false);
+    }
+  }
+
+  function openQuotaEmailPreviewModal() {
+    const defaultClientId = keys[0]?.id ?? "";
+    setQuotaPreviewClientId(defaultClientId);
+    setQuotaPreviewErr(null);
+    setQuotaPreviewData(null);
+    setQuotaPreviewOpen(true);
+    void loadQuotaPreview(defaultClientId ? defaultClientId : undefined);
+  }
+
   useEffect(() => {
     void load();
   }, []);
@@ -195,6 +243,24 @@ export default function AdminClient() {
   useEffect(() => {
     if (activeTab === "analytics") void loadAnalytics();
   }, [activeTab]);
+
+  useEffect(() => {
+    if (!quotaPreviewOpen) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setQuotaPreviewOpen(false);
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [quotaPreviewOpen]);
+
+  useEffect(() => {
+    if (!quotaPreviewOpen || typeof document === "undefined") return;
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = prev;
+    };
+  }, [quotaPreviewOpen]);
 
   async function applyStoreNameFromRegistration() {
     const em = retailerSignupEmail.trim();
@@ -515,6 +581,108 @@ export default function AdminClient() {
           </div>
         </div>
       )}
+      {quotaPreviewOpen && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm sm:p-6"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="quota-email-preview-title"
+        >
+          <div className="max-h-[90dvh] w-full max-w-2xl overflow-y-auto rounded-2xl border border-zinc-700 bg-zinc-900 p-6 shadow-xl">
+            <div className="flex items-start justify-between gap-4">
+              <div className="min-w-0">
+                <p id="quota-email-preview-title" className="text-base font-semibold text-zinc-100">
+                  80% try-on limit reminder
+                </p>
+                <p className="mt-1 text-sm text-zinc-400">
+                  Plaintext preview — no email is sent from this screen.
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setQuotaPreviewOpen(false)}
+                className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-zinc-600 bg-zinc-800 text-zinc-200 transition hover:border-zinc-500 hover:bg-zinc-700"
+                aria-label="Close"
+              >
+                ✕
+              </button>
+            </div>
+
+            <div className="mt-5">
+              <label htmlFor="quota-preview-client" className="block text-sm font-medium text-zinc-200">
+                Preview as
+              </label>
+              <select
+                id="quota-preview-client"
+                value={quotaPreviewClientId}
+                onChange={(e) => {
+                  const v = e.target.value;
+                  setQuotaPreviewClientId(v);
+                  void loadQuotaPreview(v ? v : undefined);
+                }}
+                disabled={quotaPreviewLoading}
+                className="mt-2 block w-full max-w-md rounded-xl border border-zinc-700 bg-zinc-950 px-4 py-3 text-sm text-zinc-100 outline-none transition focus:border-accent/60 disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                <option value="">Example store (sample numbers)</option>
+                {keys.map((k) => (
+                  <option key={k.id} value={k.id}>
+                    {k.clientName}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            {quotaPreviewErr ? (
+              <div className="mt-4 rounded-xl border border-red-900/60 bg-red-950/40 px-4 py-3 text-sm text-red-200">
+                {quotaPreviewErr}
+              </div>
+            ) : null}
+
+            {quotaPreviewLoading ? (
+              <div className="mt-6 text-sm text-zinc-500">Loading preview…</div>
+            ) : quotaPreviewData ? (
+              <div className="mt-6 space-y-4">
+                <p className="text-xs text-zinc-500">{quotaPreviewData.caption}</p>
+                <div className="rounded-xl border border-zinc-800 bg-zinc-950/60 p-4 text-sm text-zinc-300">
+                  <div className="space-y-1 border-b border-zinc-800 pb-3 text-zinc-100">
+                    <p>
+                      <span className="text-zinc-500">From</span>{" "}
+                      <span className="font-medium">{quotaPreviewData.from}</span>
+                    </p>
+                    <p>
+                      <span className="text-zinc-500">Subject</span>{" "}
+                      <span className="font-medium">{quotaPreviewData.subject}</span>
+                    </p>
+                    <p className="text-xs text-zinc-500">
+                      Sample counts for this preview: {quotaPreviewData.sampleUsed} / {quotaPreviewData.sampleLimit}{" "}
+                      try-ons ({quotaPreviewData.previewStoreLabel})
+                    </p>
+                  </div>
+                  <pre className="mt-4 whitespace-pre-wrap font-sans text-[13px] leading-relaxed text-zinc-200">
+                    {quotaPreviewData.body}
+                  </pre>
+                </div>
+                <p className="text-xs text-zinc-500">
+                  Upgrade link in this preview:{" "}
+                  <span className="break-all font-mono text-zinc-400">{quotaPreviewData.upgradeUrl}</span>
+                </p>
+              </div>
+            ) : !quotaPreviewErr ? (
+              <div className="mt-6 text-sm text-zinc-500">No preview loaded.</div>
+            ) : null}
+
+            <div className="mt-6 flex justify-end">
+              <button
+                type="button"
+                onClick={() => setQuotaPreviewOpen(false)}
+                className="inline-flex h-11 items-center justify-center rounded-full border border-zinc-600 bg-zinc-800 px-6 text-sm font-semibold text-zinc-100 transition hover:border-zinc-500 hover:bg-zinc-700"
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
       <AnalyticsInsightsModal
         open={analyticsInsightsOpen}
         onClose={() => setAnalyticsInsightsOpen(false)}
@@ -656,6 +824,13 @@ export default function AdminClient() {
                 className="inline-flex h-11 items-center justify-center rounded-full border border-zinc-600 bg-zinc-800 px-5 text-sm font-semibold text-zinc-100 transition hover:border-zinc-500 hover:bg-zinc-700"
               >
                 Credit Calculator
+              </button>
+              <button
+                type="button"
+                onClick={() => openQuotaEmailPreviewModal()}
+                className="inline-flex h-11 items-center justify-center rounded-full border border-sky-500/40 bg-sky-950/50 px-5 text-sm font-semibold text-sky-100 transition hover:border-sky-400/50 hover:bg-sky-900/40"
+              >
+                Preview email
               </button>
               <button
                 type="button"

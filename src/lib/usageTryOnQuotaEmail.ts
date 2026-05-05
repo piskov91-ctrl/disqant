@@ -2,7 +2,8 @@ import type { ClientApiKeyRecord } from "@/lib/apiKeyStore";
 import { isFitRoomSmtpConfigured, sendFitRoomPlainTextMail } from "@/lib/fitRoomSmtp";
 import { listRetailersLinkedToClientId } from "@/lib/retailerAuth";
 
-const SUBJECT = "You're almost there — your Fit Room try-ons are running low";
+export const TRY_ON_QUOTA_EIGHTY_PCT_EMAIL_SUBJECT =
+  "You're almost there — your Fit Room try-ons are running low" as const;
 
 function resolveSiteOrigin(): string {
   const explicit = process.env.FIT_ROOM_SITE_URL ?? process.env.NEXT_PUBLIC_SITE_URL;
@@ -41,6 +42,26 @@ function buildQuotaBody(storeName: string, used: number, limit: number, upgradeU
   ].join("\n");
 }
 
+export function getTryOnQuotaUpgradePlanUrl(): string {
+  return resolveUpgradePlanUrl();
+}
+
+/** Plaintext body for the 80% usage reminder (upgrade URL mirrors production env). */
+export function buildTryOnQuotaEightyPctEmailBody(params: {
+  storeName: string;
+  used: number;
+  limit: number;
+}): string {
+  const upgradeUrl = resolveUpgradePlanUrl();
+  return buildQuotaBody(params.storeName, params.used, params.limit, upgradeUrl);
+}
+
+/** Smallest usage count ≥ 80% of `limit`, capped at `limit` (whole try-ons only). */
+export function sampleTryOnUsageCountAtLeastEightyPercent(limit: number): number {
+  if (!Number.isFinite(limit) || limit <= 0) return 800;
+  return Math.min(Math.ceil((limit * 4) / 5), limit);
+}
+
 /** Fire-and-forget: notifies linked retailer account(s); safe to omit if SMTP or recipients missing. */
 export function sendTryOnLimitEightyPctNoticeAsync(params: {
   client: ClientApiKeyRecord;
@@ -56,12 +77,14 @@ export function sendTryOnLimitEightyPctNoticeAsync(params: {
 
       const storeName =
         retailers.find((r) => r.storeName.trim().length > 0)?.storeName.trim() || client.clientName.trim() || "there";
-      const upgradeUrl = resolveUpgradePlanUrl();
-      const text = buildQuotaBody(storeName, client.usageCount, client.usageLimit, upgradeUrl);
-
+      const text = buildTryOnQuotaEightyPctEmailBody({
+        storeName,
+        used: client.usageCount,
+        limit: client.usageLimit,
+      });
       await Promise.all(
         emailTargets.map((to) =>
-          sendFitRoomPlainTextMail({ to, subject: SUBJECT, text }).catch((err: unknown) => {
+          sendFitRoomPlainTextMail({ to, subject: TRY_ON_QUOTA_EIGHTY_PCT_EMAIL_SUBJECT, text }).catch((err: unknown) => {
             console.error("[fit-room] try-on quota 80% email failed", {
               clientId: client.id,
               to,
