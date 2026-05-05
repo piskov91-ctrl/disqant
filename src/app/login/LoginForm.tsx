@@ -100,13 +100,6 @@ function LoginFormInner() {
       >
         {loading ? "Signing in…" : "Sign In"}
       </button>
-
-      <p className="text-center text-sm text-zinc-500">
-        No account?{" "}
-        <Link href="/register" className="font-medium text-zinc-200 underline-offset-2 hover:underline">
-          Sign up
-        </Link>
-      </p>
     </form>
   );
 }

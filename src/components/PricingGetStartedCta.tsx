@@ -17,7 +17,7 @@ export function PricingGetStartedCta({ className, children }: PricingGetStartedC
       setPending(true);
       try {
         const res = await fetch("/api/retailer/me", { credentials: "include" });
-        router.push(res.ok ? "/dashboard" : "/register");
+        router.push(res.ok ? "/dashboard" : "/login?next=/subscriptions");
       } finally {
         setPending(false);
       }

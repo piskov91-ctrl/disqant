@@ -23,6 +23,12 @@ export default function LoginPage() {
               Back to home
             </Link>
           </p>
+          <p className="mt-6 text-center text-sm text-zinc-500">
+            Don&apos;t have an account?{" "}
+            <Link href="/register" className="font-medium text-zinc-200 underline-offset-2 hover:underline">
+              Sign up here
+            </Link>
+          </p>
         </div>
       </main>
       <Footer />
