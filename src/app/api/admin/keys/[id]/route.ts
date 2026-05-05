@@ -9,7 +9,12 @@ async function requireAdmin() {
   return isAdminAuthorizedCookieValue(jar.get(ADMIN_AUTH_COOKIE)?.value);
 }
 
-type PatchBody = { clientName?: unknown; usageLimit?: unknown; fashnApiKey?: unknown };
+type PatchBody = {
+  clientName?: unknown;
+  contactEmail?: unknown;
+  usageLimit?: unknown;
+  fashnApiKey?: unknown;
+};
 
 export async function PATCH(req: Request, ctx: { params: Promise<{ id: string }> }) {
   if (!(await requireAdmin())) return Response.json({ error: "Unauthorized." }, { status: 401 });
@@ -23,15 +28,27 @@ export async function PATCH(req: Request, ctx: { params: Promise<{ id: string }>
   }
 
   const clientName = typeof body.clientName === "string" ? body.clientName : "";
-  const fashnApiKey = typeof body.fashnApiKey === "string" ? body.fashnApiKey : "";
   const usageLimitNum =
     typeof body.usageLimit === "number"
       ? body.usageLimit
       : typeof body.usageLimit === "string"
         ? Number(body.usageLimit)
         : NaN;
+
+  const patch: Parameters<typeof updateClientKey>[0] = {
+    id,
+    clientName,
+    usageLimit: usageLimitNum,
+  };
+  if (typeof body.fashnApiKey === "string" && body.fashnApiKey.trim()) {
+    patch.fashnApiKey = body.fashnApiKey.trim();
+  }
+  if (typeof body.contactEmail === "string") {
+    patch.contactEmail = body.contactEmail;
+  }
+
   try {
-    const rec = await updateClientKey({ id, clientName, usageLimit: usageLimitNum, fashnApiKey });
+    const rec = await updateClientKey(patch);
     const { fashnApiKey: rawFashn, ...rest } = rec;
     void rawFashn;
     return Response.json({ key: rest });

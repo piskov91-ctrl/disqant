@@ -9,6 +9,7 @@ import { AdminWearMeClient } from "@/app/admin/AdminWearMeClient";
 type KeyRecord = {
   id: string;
   clientName: string;
+  contactEmail?: string;
   key: string;
   usageLimit: number;
   usageCount: number;
@@ -81,6 +82,11 @@ function formatGbp(n: number) {
   return `£${n.toFixed(2)}`;
 }
 
+function isValidContactEmail(s: string): boolean {
+  const t = s.trim();
+  return t.length > 0 && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(t);
+}
+
 export default function AdminClient() {
   const [activeTab, setActiveTab] = useState<AdminTab>("clients");
   const [keys, setKeys] = useState<KeyRecord[]>([]);
@@ -88,11 +94,13 @@ export default function AdminClient() {
   const [error, setError] = useState<string | null>(null);
   const [editing, setEditing] = useState<KeyRecord | null>(null);
   const [editClientName, setEditClientName] = useState("");
+  const [editContactEmail, setEditContactEmail] = useState("");
   const [editFashnApiKey, setEditFashnApiKey] = useState("");
   const [editUsageLimit, setEditUsageLimit] = useState("");
   const [savingEdit, setSavingEdit] = useState(false);
 
   const [clientName, setClientName] = useState("");
+  const [contactEmail, setContactEmail] = useState("");
   const [fashnApiKey, setFashnApiKey] = useState("");
   const [usageLimit, setUsageLimit] = useState("1000");
   const [creating, setCreating] = useState(false);
@@ -270,6 +278,7 @@ export default function AdminClient() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           clientName,
+          contactEmail,
           fashnApiKey,
           usageLimit: Number(usageLimit),
         }),
@@ -282,6 +291,7 @@ export default function AdminClient() {
       if (data.key) {
         setKeys((prev) => [data.key!, ...prev]);
         setClientName("");
+        setContactEmail("");
         setFashnApiKey("");
       }
     } catch (e) {
@@ -376,6 +386,7 @@ export default function AdminClient() {
     setError(null);
     setEditing(rec);
     setEditClientName(rec.clientName);
+    setEditContactEmail(rec.contactEmail?.trim() ?? "");
     setEditUsageLimit(String(rec.usageLimit));
     setEditFashnApiKey("");
   }
@@ -383,6 +394,7 @@ export default function AdminClient() {
   function closeEditModal() {
     setEditing(null);
     setEditClientName("");
+    setEditContactEmail("");
     setEditFashnApiKey("");
     setEditUsageLimit("");
     setSavingEdit(false);
@@ -398,6 +410,7 @@ export default function AdminClient() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           clientName: editClientName,
+          contactEmail: editContactEmail.trim(),
           ...(editFashnApiKey.trim() ? { fashnApiKey: editFashnApiKey.trim() } : null),
           usageLimit: Number(editUsageLimit),
         }),
@@ -682,7 +695,7 @@ export default function AdminClient() {
                   Edit client
                 </p>
                 <p className="mt-1 text-sm text-zinc-400">
-                  Update client name, try-on limit, and (optionally) replace the Fashn.ai API key.
+                  Update client name, contact email, try-on limit, and (optionally) replace the Fashn.ai API key.
                 </p>
               </div>
               <button
@@ -701,6 +714,16 @@ export default function AdminClient() {
                 <input
                   value={editClientName}
                   onChange={(e) => setEditClientName(e.target.value)}
+                  className="mt-3 block w-full rounded-xl border border-zinc-700 bg-zinc-950 px-4 py-3 text-sm text-zinc-100 outline-none transition focus:border-accent/60"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-zinc-200">Contact email</label>
+                <input
+                  type="email"
+                  autoComplete="email"
+                  value={editContactEmail}
+                  onChange={(e) => setEditContactEmail(e.target.value)}
                   className="mt-3 block w-full rounded-xl border border-zinc-700 bg-zinc-950 px-4 py-3 text-sm text-zinc-100 outline-none transition focus:border-accent/60"
                 />
               </div>
@@ -742,7 +765,10 @@ export default function AdminClient() {
                 type="button"
                 onClick={saveEdit}
                 disabled={
-                  savingEdit || editClientName.trim().length === 0 || Number(editUsageLimit) <= 0
+                  savingEdit ||
+                  editClientName.trim().length === 0 ||
+                  !isValidContactEmail(editContactEmail) ||
+                  Number(editUsageLimit) <= 0
                 }
                 className="btn-accent-gradient flex-1 disabled:cursor-not-allowed disabled:opacity-60"
               >
@@ -872,7 +898,7 @@ export default function AdminClient() {
             <>
               <section className="mt-8 w-full overflow-hidden rounded-2xl border border-zinc-800 bg-zinc-900/60 p-6 shadow-sm md:p-8">
                 <h2 className="text-base font-semibold text-zinc-100">Create new client</h2>
-                <p className="mt-1 text-sm text-zinc-400">Create a client API key with a try-on limit.</p>
+                <p className="mt-1 text-sm text-zinc-400">Create a client API key with contact email and try-on limit.</p>
 
                 <form onSubmit={createKey} className="mt-6 grid gap-4 md:grid-cols-12 md:items-end">
                   <div className="md:col-span-4">
@@ -884,7 +910,18 @@ export default function AdminClient() {
                       className="mt-2 block w-full rounded-xl border border-zinc-700 bg-zinc-950 px-4 py-3 text-sm text-zinc-100 outline-none placeholder:text-zinc-600 transition focus:border-accent/60"
                     />
                   </div>
-                  <div className="md:col-span-5">
+                  <div className="md:col-span-4">
+                    <label className="block text-sm font-medium text-zinc-200">Contact email</label>
+                    <input
+                      type="email"
+                      autoComplete="email"
+                      value={contactEmail}
+                      onChange={(e) => setContactEmail(e.target.value)}
+                      placeholder="billing@example.com"
+                      className="mt-2 block w-full rounded-xl border border-zinc-700 bg-zinc-950 px-4 py-3 text-sm text-zinc-100 outline-none placeholder:text-zinc-600 transition focus:border-accent/60"
+                    />
+                  </div>
+                  <div className="md:col-span-4">
                     <label className="block text-sm font-medium text-zinc-200">Fashn.ai API key</label>
                     <input
                       value={fashnApiKey}
@@ -911,6 +948,7 @@ export default function AdminClient() {
                       disabled={
                         creating ||
                         clientName.trim().length === 0 ||
+                        !isValidContactEmail(contactEmail) ||
                         fashnApiKey.trim().length === 0 ||
                         Number(usageLimit) <= 0
                       }
@@ -971,6 +1009,14 @@ export default function AdminClient() {
                         >
                           <div className="min-w-0">
                             <div className="truncate font-semibold text-zinc-100">{k.clientName}</div>
+                            {k.contactEmail ? (
+                              <div
+                                className="mt-0.5 truncate text-sm text-sky-400/90"
+                                title={k.contactEmail}
+                              >
+                                {k.contactEmail}
+                              </div>
+                            ) : null}
                           </div>
                           <div>
                             <span className="rounded-md border border-zinc-700 bg-zinc-950 px-2 py-1 font-mono text-sm text-zinc-300">

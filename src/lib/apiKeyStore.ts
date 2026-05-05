@@ -6,6 +6,8 @@ import { usageIncrementShouldPersistEightyPctEmailFlag } from "@/lib/usageTryOnQ
 export type ClientApiKeyRecord = {
   id: string;
   clientName: string;
+  /** Primary contact / billing email for this client (admin). */
+  contactEmail?: string;
   key: string;
   fashnApiKey: string;
   usageLimit: number;
@@ -96,8 +98,18 @@ function generateKey() {
   return crypto.randomBytes(32).toString("base64url");
 }
 
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+function normalizeContactEmailInput(raw: string | undefined): string | undefined {
+  const t = typeof raw === "string" ? raw.trim() : "";
+  if (!t) return undefined;
+  if (!EMAIL_RE.test(t)) throw new Error("Enter a valid contact email.");
+  return t;
+}
+
 export async function createClientKey(params: {
   clientName: string;
+  contactEmail?: string;
   usageLimit: number;
   fashnApiKey?: string;
 }) {
@@ -106,6 +118,9 @@ export async function createClientKey(params: {
   if (!Number.isFinite(params.usageLimit) || params.usageLimit <= 0) {
     throw new Error("Try-on limit must be a positive number.");
   }
+
+  const contactEmail = normalizeContactEmailInput(params.contactEmail);
+  if (!contactEmail) throw new Error("Contact email is required.");
 
   const redis = getRedis();
   const now = new Date().toISOString();
@@ -120,6 +135,7 @@ export async function createClientKey(params: {
   const rec: ClientApiKeyRecord = {
     id: crypto.randomUUID(),
     clientName,
+    contactEmail,
     key: generateKey(),
     fashnApiKey,
     usageLimit: Math.floor(params.usageLimit),
@@ -233,6 +249,7 @@ export async function resetUsage(id: string) {
 export async function updateClientKey(params: {
   id: string;
   clientName: string;
+  contactEmail?: string;
   usageLimit: number;
   fashnApiKey?: string;
 }) {
@@ -258,6 +275,12 @@ export async function updateClientKey(params: {
       ? { fashnApiKey: params.fashnApiKey.trim() }
       : null),
   };
+
+  if (params.contactEmail !== undefined) {
+    const normalized = normalizeContactEmailInput(params.contactEmail);
+    if (normalized) next.contactEmail = normalized;
+    else delete next.contactEmail;
+  }
   await redis.set(redisKey, next);
   return next;
 }
