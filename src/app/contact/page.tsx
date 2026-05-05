@@ -34,10 +34,10 @@ export default function ContactPage() {
             <p className="mt-8 text-center text-sm text-zinc-500">
               You can also email us at{" "}
               <a
-                href="mailto:hello@fit-room.com"
+                href="mailto:support@fit-room.com"
                 className="font-medium text-zinc-800 underline decoration-zinc-300 underline-offset-2 hover:decoration-zinc-500"
               >
-                hello@fit-room.com
+                support@fit-room.com
               </a>
               .
             </p>

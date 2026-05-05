@@ -21,10 +21,10 @@ export default function ForgotPasswordPage() {
           </p>
           <p className="mt-6 text-sm text-zinc-300">
             <a
-              href="mailto:hello@fit-room.com"
+              href="mailto:support@fit-room.com"
               className="font-medium text-accent underline-offset-2 hover:underline"
             >
-              hello@fit-room.com
+              support@fit-room.com
             </a>
           </p>
           <p className="mt-10 text-center text-sm text-zinc-500">

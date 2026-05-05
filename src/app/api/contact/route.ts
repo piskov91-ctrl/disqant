@@ -1,6 +1,6 @@
 import { Resend } from "resend";
 
-const TO_EMAIL = process.env.CONTACT_TO ?? "hello@fit-room.com";
+const TO_EMAIL = process.env.CONTACT_TO ?? "support@fit-room.com";
 /** Verifiable sender; default works with Resend test API until you set a domain. */
 const FROM_EMAIL = process.env.RESEND_FROM ?? "Fit Room <onboarding@resend.dev>";
 

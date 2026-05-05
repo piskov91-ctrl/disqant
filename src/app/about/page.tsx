@@ -137,8 +137,8 @@ export default function AboutPage() {
                 questions—how it installs, what shoppers experience, and what to measure after you go live.
               </p>
               <div className="mt-6">
-                <a className="btn-accent-gradient" href="mailto:hello@fit-room.com">
-                  hello@fit-room.com
+                <a className="btn-accent-gradient" href="mailto:support@fit-room.com">
+                  support@fit-room.com
                 </a>
               </div>
             </div>

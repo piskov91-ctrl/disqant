@@ -9,10 +9,10 @@ export function Footer() {
             Fit Room Ltd <span className="text-zinc-600">|</span> London, UK{" "}
             <span className="text-zinc-600">|</span>{" "}
             <a
-              href="mailto:hello@fit-room.com"
+              href="mailto:support@fit-room.com"
               className="text-zinc-300 underline decoration-zinc-600 underline-offset-2 transition hover:text-white hover:decoration-zinc-400"
             >
-              hello@fit-room.com
+              support@fit-room.com
             </a>
           </span>
         </p>

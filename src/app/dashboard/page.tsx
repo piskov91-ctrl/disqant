@@ -43,8 +43,8 @@ export default async function DashboardPage() {
           <div className="mx-auto max-w-6xl px-6 py-16">
             <p className="text-zinc-300">
               We couldn&apos;t load your API key record. Please contact{" "}
-              <a href="mailto:hello@fit-room.com" className="text-accent underline-offset-2 hover:underline">
-                hello@fit-room.com
+              <a href="mailto:support@fit-room.com" className="text-accent underline-offset-2 hover:underline">
+                support@fit-room.com
               </a>
               .
             </p>
