@@ -1,13 +1,32 @@
 "use client";
 
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { RetailerDashboardClient } from "./RetailerDashboardClient";
+
+type ClientUsagePayload = {
+  error?: string;
+  usageCount?: number;
+  usageLimit?: number;
+};
 
 type DashboardKeyUsagePanelProps = {
   initialApiKey: string;
   initialUsed: number;
   initialLimit: number;
 };
+
+function applyUsagePayload(
+  data: ClientUsagePayload,
+  setUsed: (n: number) => void,
+  setLimit: (n: number) => void,
+): boolean {
+  if (typeof data.usageCount === "number" && typeof data.usageLimit === "number") {
+    setUsed(data.usageCount);
+    setLimit(data.usageLimit);
+    return true;
+  }
+  return false;
+}
 
 export function DashboardKeyUsagePanel({
   initialApiKey,
@@ -27,7 +46,32 @@ export function DashboardKeyUsagePanel({
   );
   const blocked = limit > 0 && used >= limit;
 
-  const applyKey = useCallback(async () => {
+  const fetchLinkedUsageOnLoad = useCallback(async () => {
+    setError(null);
+    setLoading(true);
+    try {
+      const res = await fetch("/api/retailer/client-usage", {
+        method: "GET",
+        credentials: "include",
+      });
+      const data = (await res.json()) as ClientUsagePayload;
+      if (!res.ok) {
+        setError(data.error || "Could not load try-on usage.");
+        return;
+      }
+      applyUsagePayload(data, setUsed, setLimit);
+    } catch {
+      setError("Something went wrong. Please try again.");
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    void fetchLinkedUsageOnLoad();
+  }, [fetchLinkedUsageOnLoad]);
+
+  const loadUsageByKey = useCallback(async () => {
     setError(null);
     setLoading(true);
     try {
@@ -37,19 +81,12 @@ export function DashboardKeyUsagePanel({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ apiKey: apiKeyInput.trim() }),
       });
-      const data = (await res.json()) as {
-        error?: string;
-        usageCount?: number;
-        usageLimit?: number;
-      };
+      const data = (await res.json()) as ClientUsagePayload;
       if (!res.ok) {
         setError(data.error || "Could not load usage for this key.");
         return;
       }
-      if (typeof data.usageCount === "number" && typeof data.usageLimit === "number") {
-        setUsed(data.usageCount);
-        setLimit(data.usageLimit);
-      }
+      applyUsagePayload(data, setUsed, setLimit);
     } catch {
       setError("Something went wrong. Please try again.");
     } finally {
@@ -59,12 +96,15 @@ export function DashboardKeyUsagePanel({
 
   return (
     <div className="rounded-2xl border border-white/10 bg-zinc-900/50 p-8 shadow-lg shadow-black/10 backdrop-blur-sm">
-      <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+      <p className="text-xs text-zinc-500">
+        Try-on totals below match your linked API key and refresh automatically when you open this page.
+      </p>
+
+      <div className="mt-6 flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
         <div className="min-w-0 flex-1">
           <p className="text-sm font-medium text-zinc-400">API key</p>
           <p className="mt-1 text-xs text-zinc-500">
-            Paste the key you use for <span className="font-mono text-zinc-400">data-fit-room-key</span> or{" "}
-            <span className="font-mono text-zinc-400">?key=</span>, then load usage.
+            Your embed key (also below). Paste another key tied to your account and press Load usage to verify.
           </p>
           <label htmlFor="dash-api-key" className="sr-only">
             API key
@@ -83,7 +123,7 @@ export function DashboardKeyUsagePanel({
             <button
               type="button"
               disabled={loading || !apiKeyInput.trim()}
-              onClick={() => void applyKey()}
+              onClick={() => void loadUsageByKey()}
               className="btn-accent-gradient inline-flex h-11 min-w-[10rem] items-center justify-center disabled:cursor-not-allowed disabled:opacity-50"
             >
               {loading ? "Loading…" : "Load usage"}
@@ -113,15 +153,15 @@ export function DashboardKeyUsagePanel({
       <div className="mt-8 grid gap-6 md:grid-cols-3">
         <div className="rounded-2xl border border-white/10 bg-zinc-950/40 p-6">
           <p className="text-sm font-medium text-zinc-400">Try-ons used</p>
-          <p className="mt-2 text-3xl font-semibold tracking-tight text-zinc-50">{used}</p>
+          <p className="mt-2 text-3xl font-semibold tabular-nums tracking-tight text-zinc-50">{used}</p>
         </div>
         <div className="rounded-2xl border border-white/10 bg-zinc-950/40 p-6">
           <p className="text-sm font-medium text-zinc-400">Try-ons remaining</p>
-          <p className="mt-2 text-3xl font-semibold tracking-tight text-zinc-50">{remaining}</p>
+          <p className="mt-2 text-3xl font-semibold tabular-nums tracking-tight text-zinc-50">{remaining}</p>
         </div>
         <div className="rounded-2xl border border-white/10 bg-zinc-950/40 p-6">
           <p className="text-sm font-medium text-zinc-400">Try-on limit</p>
-          <p className="mt-2 text-3xl font-semibold tracking-tight text-zinc-50">{limit}</p>
+          <p className="mt-2 text-3xl font-semibold tabular-nums tracking-tight text-zinc-50">{limit}</p>
         </div>
       </div>
 

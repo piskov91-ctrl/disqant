@@ -1,8 +1,34 @@
 import { NextResponse } from "next/server";
-import { getClientByApiKey } from "@/lib/apiKeyStore";
+import { getClientByApiKey, getClientKeyRecordById } from "@/lib/apiKeyStore";
 import { getRetailerSessionUser } from "@/lib/retailerAuth";
 
 export const runtime = "nodejs";
+
+/**
+ * Returns try-on usage for the logged-in retailer's linked client (no API key in request).
+ */
+export async function GET() {
+  const user = await getRetailerSessionUser();
+  if (!user) {
+    return NextResponse.json({ error: "Unauthorized." }, { status: 401 });
+  }
+
+  const linkedId = user.clientId?.trim() ?? "";
+  if (!linkedId) {
+    return NextResponse.json({ error: "No linked API key." }, { status: 404 });
+  }
+
+  const client = await getClientKeyRecordById(linkedId);
+  if (!client) {
+    return NextResponse.json({ error: "Client not found." }, { status: 404 });
+  }
+
+  return NextResponse.json({
+    clientName: client.clientName,
+    usageCount: client.usageCount,
+    usageLimit: client.usageLimit,
+  });
+}
 
 /**
  * Returns try-on usage for an API key when it matches the logged-in retailer's linked client.
