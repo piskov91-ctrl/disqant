@@ -1,4 +1,5 @@
 import type { ClientApiKeyRecord } from "@/lib/apiKeyStore";
+import { normalizeClientBillingEmailInput } from "@/lib/apiKeyStore";
 import { isFitRoomSmtpConfigured, sendFitRoomPlainTextMail } from "@/lib/fitRoomSmtp";
 import { listRetailersLinkedToClientId } from "@/lib/retailerAuth";
 
@@ -62,7 +63,27 @@ export function sampleTryOnUsageCountAtLeastEightyPercent(limit: number): number
   return Math.min(Math.ceil((limit * 4) / 5), limit);
 }
 
-/** Fire-and-forget: notifies linked retailer account(s); safe to omit if SMTP or recipients missing. */
+function resolveTryOnQuotaNotificationRecipients(
+  client: ClientApiKeyRecord,
+  retailers: Awaited<ReturnType<typeof listRetailersLinkedToClientId>>,
+): string[] {
+  try {
+    const fromStored = normalizeClientBillingEmailInput(client.billingEmail);
+    if (fromStored) return [fromStored];
+  } catch {
+    // Skip invalid stored value (should not happen).
+  }
+  return [...new Map(retailers.map((r) => [r.email.toLowerCase(), r.email])).values()];
+}
+
+function greetingStoreNameFromContext(
+  client: ClientApiKeyRecord,
+  retailers: Awaited<ReturnType<typeof listRetailersLinkedToClientId>>,
+): string {
+  return retailers.find((r) => r.storeName.trim().length > 0)?.storeName.trim() || client.clientName.trim() || "there";
+}
+
+/** Fire-and-forget; uses client billing email when set, else linked retailer signup addresses. */
 export function sendTryOnLimitEightyPctNoticeAsync(params: {
   client: ClientApiKeyRecord;
 }) {
@@ -72,16 +93,17 @@ export function sendTryOnLimitEightyPctNoticeAsync(params: {
     const client = params.client;
     try {
       const retailers = await listRetailersLinkedToClientId(client.id);
-      const emailTargets = [...new Map(retailers.map((r) => [r.email.toLowerCase(), r.email])).values()];
+      const emailTargets = resolveTryOnQuotaNotificationRecipients(client, retailers);
       if (emailTargets.length === 0) return;
 
-      const storeName =
-        retailers.find((r) => r.storeName.trim().length > 0)?.storeName.trim() || client.clientName.trim() || "there";
+      const storeName = greetingStoreNameFromContext(client, retailers);
+
       const text = buildTryOnQuotaEightyPctEmailBody({
         storeName,
         used: client.usageCount,
         limit: client.usageLimit,
       });
+
       await Promise.all(
         emailTargets.map((to) =>
           sendFitRoomPlainTextMail({ to, subject: TRY_ON_QUOTA_EIGHTY_PCT_EMAIL_SUBJECT, text }).catch((err: unknown) => {
@@ -101,4 +123,3 @@ export function sendTryOnLimitEightyPctNoticeAsync(params: {
     }
   })();
 }
-

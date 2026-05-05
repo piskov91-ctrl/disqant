@@ -9,6 +9,7 @@ import { AdminWearMeClient } from "@/app/admin/AdminWearMeClient";
 type KeyRecord = {
   id: string;
   clientName: string;
+  billingEmail?: string;
   key: string;
   usageLimit: number;
   usageCount: number;
@@ -89,6 +90,7 @@ export default function AdminClient() {
   const [editing, setEditing] = useState<KeyRecord | null>(null);
   const [editClientName, setEditClientName] = useState("");
   const [editFashnApiKey, setEditFashnApiKey] = useState("");
+  const [editBillingEmail, setEditBillingEmail] = useState("");
   const [editUsageLimit, setEditUsageLimit] = useState("");
   const [savingEdit, setSavingEdit] = useState(false);
 
@@ -97,6 +99,7 @@ export default function AdminClient() {
   const [lookupBusy, setLookupBusy] = useState(false);
   const [lookupNotice, setLookupNotice] = useState<string | null>(null);
   const [fashnApiKey, setFashnApiKey] = useState("");
+  const [billingEmail, setBillingEmail] = useState("");
   const [usageLimit, setUsageLimit] = useState("1000");
   const [creating, setCreating] = useState(false);
 
@@ -119,6 +122,7 @@ export default function AdminClient() {
     sampleLimit: number;
     previewStoreLabel: string;
     caption: string;
+    deliveryHint: string;
   };
 
   const [quotaPreviewOpen, setQuotaPreviewOpen] = useState(false);
@@ -305,6 +309,7 @@ export default function AdminClient() {
           clientName,
           fashnApiKey,
           usageLimit: Number(usageLimit),
+          billingEmail: billingEmail.trim(),
         }),
       });
       const data = (await res.json()) as { key?: KeyRecord; error?: string };
@@ -315,6 +320,7 @@ export default function AdminClient() {
       if (data.key) {
         setKeys((prev) => [data.key!, ...prev]);
         setClientName("");
+        setBillingEmail("");
         setFashnApiKey("");
       }
     } catch (e) {
@@ -409,6 +415,7 @@ export default function AdminClient() {
     setError(null);
     setEditing(rec);
     setEditClientName(rec.clientName);
+    setEditBillingEmail(rec.billingEmail ?? "");
     setEditUsageLimit(String(rec.usageLimit));
     setEditFashnApiKey("");
   }
@@ -416,6 +423,7 @@ export default function AdminClient() {
   function closeEditModal() {
     setEditing(null);
     setEditClientName("");
+    setEditBillingEmail("");
     setEditFashnApiKey("");
     setEditUsageLimit("");
     setSavingEdit(false);
@@ -431,6 +439,7 @@ export default function AdminClient() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           clientName: editClientName,
+          billingEmail: editBillingEmail.trim(),
           ...(editFashnApiKey.trim() ? { fashnApiKey: editFashnApiKey.trim() } : null),
           usageLimit: Number(editUsageLimit),
         }),
@@ -643,6 +652,7 @@ export default function AdminClient() {
             ) : quotaPreviewData ? (
               <div className="mt-6 space-y-4">
                 <p className="text-xs text-zinc-500">{quotaPreviewData.caption}</p>
+                <p className="text-xs text-zinc-400">{quotaPreviewData.deliveryHint}</p>
                 <div className="rounded-xl border border-zinc-800 bg-zinc-950/60 p-4 text-sm text-zinc-300">
                   <div className="space-y-1 border-b border-zinc-800 pb-3 text-zinc-100">
                     <p>
@@ -703,7 +713,8 @@ export default function AdminClient() {
                   Edit client
                 </p>
                 <p className="mt-1 text-sm text-zinc-400">
-                  Update client name, try-on limit, and (optionally) replace the Fashn.ai API key.
+                  Update client name, billing email (try-on reminders), try-on limit, and (optionally) replace the
+                  Fashn.ai API key.
                 </p>
               </div>
               <button
@@ -724,6 +735,20 @@ export default function AdminClient() {
                   onChange={(e) => setEditClientName(e.target.value)}
                   className="mt-3 block w-full rounded-xl border border-zinc-700 bg-zinc-950 px-4 py-3 text-sm text-zinc-100 outline-none transition focus:border-accent/60"
                 />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-zinc-200">Billing email</label>
+                <input
+                  value={editBillingEmail}
+                  onChange={(e) => setEditBillingEmail(e.target.value)}
+                  type="email"
+                  autoComplete="off"
+                  placeholder="owner@their-store.com — receives 80% try-on reminders"
+                  className="mt-3 block w-full rounded-xl border border-zinc-700 bg-zinc-950 px-4 py-3 text-sm text-zinc-100 outline-none transition placeholder:text-zinc-600 focus:border-accent/60"
+                />
+                <p className="mt-2 text-xs text-zinc-500">
+                  Leave blank to deliver reminders to linked retailer signup email(s) only, when available.
+                </p>
               </div>
               <div>
                 <label className="block text-sm font-medium text-zinc-200">Fashn.ai API key</label>
@@ -961,6 +986,24 @@ export default function AdminClient() {
                     />
                   </div>
                   <div className="md:col-span-12">
+                    <label htmlFor="admin-new-billing-email" className="block text-sm font-medium text-zinc-200">
+                      Billing email
+                    </label>
+                    <input
+                      id="admin-new-billing-email"
+                      type="email"
+                      value={billingEmail}
+                      onChange={(e) => setBillingEmail(e.target.value)}
+                      autoComplete="off"
+                      placeholder="Receives 80% try-on reminders (Hostinger SMTP)"
+                      className="mt-2 block w-full max-w-lg rounded-xl border border-zinc-700 bg-zinc-950 px-4 py-3 text-sm text-zinc-100 outline-none placeholder:text-zinc-600 transition focus:border-accent/60"
+                    />
+                    <p className="mt-2 text-xs text-zinc-500">
+                      Optional. If empty, reminders use linked retailer emails when available. From support@fit-room.com
+                      via SMTP (set SMTP_USER and SMTP_PASSWORD; host defaults to smtp.hostinger.com:587 with TLS).
+                    </p>
+                  </div>
+                  <div className="md:col-span-12">
                     <button
                       type="submit"
                       disabled={
@@ -1026,6 +1069,13 @@ export default function AdminClient() {
                         >
                           <div className="min-w-0">
                             <div className="truncate font-semibold text-zinc-100">{k.clientName}</div>
+                            {k.billingEmail ? (
+                              <div className="mt-0.5 truncate text-sm text-sky-400/90" title={k.billingEmail}>
+                                {k.billingEmail}
+                              </div>
+                            ) : (
+                              <div className="mt-0.5 text-sm text-zinc-600">No billing email</div>
+                            )}
                           </div>
                           <div>
                             <span className="rounded-md border border-zinc-700 bg-zinc-950 px-2 py-1 font-mono text-sm text-zinc-300">

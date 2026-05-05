@@ -2,12 +2,11 @@ import nodemailer from "nodemailer";
 
 const DEFAULT_FROM = "Fit Room <support@fit-room.com>";
 
+/** Default host when `SMTP_HOST` is unset (Hostinger). */
+const HOSTINGER_SMTP_HOST = "smtp.hostinger.com";
+
 export function isFitRoomSmtpConfigured(): boolean {
-  return Boolean(
-    process.env.SMTP_HOST?.trim() &&
-      process.env.SMTP_USER?.trim() &&
-      process.env.SMTP_PASSWORD?.trim(),
-  );
+  return Boolean(process.env.SMTP_USER?.trim() && process.env.SMTP_PASSWORD?.trim());
 }
 
 export function resolveFitRoomSmtpFrom(): string {
@@ -16,11 +15,13 @@ export function resolveFitRoomSmtpFrom(): string {
 }
 
 export function createFitRoomSmtpTransport() {
-  const host = process.env.SMTP_HOST?.trim();
+  const host = process.env.SMTP_HOST?.trim() || HOSTINGER_SMTP_HOST;
   const user = process.env.SMTP_USER?.trim();
   const pass = process.env.SMTP_PASSWORD?.trim();
-  if (!host || !user || !pass) {
-    throw new Error("SMTP is not configured. Set SMTP_HOST, SMTP_USER, and SMTP_PASSWORD.");
+  if (!user || !pass) {
+    throw new Error(
+      "SMTP is not configured. Set SMTP_USER and SMTP_PASSWORD (optional SMTP_HOST, default smtp.hostinger.com; port 587 STARTTLS).",
+    );
   }
 
   const portRaw = process.env.SMTP_PORT?.trim();
@@ -37,6 +38,7 @@ export function createFitRoomSmtpTransport() {
     host,
     port,
     secure,
+    requireTLS: !secure && port === 587,
     auth: { user, pass },
   });
 }
