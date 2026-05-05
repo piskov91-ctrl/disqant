@@ -175,13 +175,29 @@ export function sampleTryOnUsageCountAtLeastEightyPercent(limit: number): number
 export function sendTryOnLimitEightyPctNoticeAsync(params: {
   client: ClientApiKeyRecord;
 }) {
-  if (!isFitRoomSmtpConfigured()) return;
+  const smtp = isFitRoomSmtpConfigured();
+  console.log("[fit-room][email-debug] sendTryOnLimitEightyPctNoticeAsync", {
+    clientId: params.client.id,
+    smtpConfigured: smtp,
+  });
+  if (!smtp) {
+    console.log("[fit-room][email-debug] sendTryOnLimitEightyPctNoticeAsync skipped (SMTP not configured)");
+    return;
+  }
 
   void (async () => {
     const client = params.client;
     try {
       const { emailTargets, storeName } = await resolveQuotaNoticeRecipients(client);
-      if (emailTargets.length === 0) return;
+      if (emailTargets.length === 0) {
+        console.log("[fit-room][email-debug] sendTryOnLimitEightyPctNoticeAsync skipped (no recipient emails)");
+        return;
+      }
+
+      console.log("[fit-room][email-debug] sendTryOnLimitEightyPctNoticeAsync sending", {
+        clientId: client.id,
+        recipientCount: emailTargets.length,
+      });
 
       const bodyParams = {
         storeName,
@@ -213,12 +229,28 @@ export function sendTryOnLimitEightyPctNoticeAsync(params: {
 
 /** Fire-and-forget when monthly try-ons are fully used: admin {@link ClientApiKeyRecord.contactEmail} only (same SMTP as 80%). */
 export function sendTryOnLimitFullNoticeAsync(params: { client: ClientApiKeyRecord }) {
-  if (!isFitRoomSmtpConfigured()) return;
+  const smtp = isFitRoomSmtpConfigured();
+  const to = params.client.contactEmail?.trim();
+  console.log("[fit-room][email-debug] sendTryOnLimitFullNoticeAsync", {
+    clientId: params.client.id,
+    smtpConfigured: smtp,
+    hasContactEmail: Boolean(to),
+    usageAtSend: params.client.usageCount,
+    limit: params.client.usageLimit,
+  });
+
+  if (!smtp) {
+    console.log("[fit-room][email-debug] sendTryOnLimitFullNoticeAsync skipped (SMTP not configured)");
+    return;
+  }
 
   void (async () => {
     const client = params.client;
-    const to = client.contactEmail?.trim();
-    if (!to) return;
+    const resolvedTo = client.contactEmail?.trim();
+    if (!resolvedTo) {
+      console.log("[fit-room][email-debug] sendTryOnLimitFullNoticeAsync skipped (no contactEmail on client)");
+      return;
+    }
 
     try {
       const storeName = client.clientName.trim() || "there";
@@ -226,15 +258,20 @@ export function sendTryOnLimitFullNoticeAsync(params: { client: ClientApiKeyReco
       const text = buildTryOnQuotaFullLimitEmailBody(bodyParams);
       const html = buildTryOnQuotaFullLimitEmailHtml(bodyParams);
 
+      console.log("[fit-room][email-debug] sendTryOnLimitFullNoticeAsync calling sendFitRoomMail", {
+        to: resolvedTo,
+        subject: TRY_ON_QUOTA_FULL_LIMIT_EMAIL_SUBJECT,
+      });
+
       await sendFitRoomMail({
-        to,
+        to: resolvedTo,
         subject: TRY_ON_QUOTA_FULL_LIMIT_EMAIL_SUBJECT,
         text,
         html,
       }).catch((err: unknown) => {
         console.error("[fit-room] try-on quota 100% email failed", {
           clientId: client.id,
-          to,
+          to: resolvedTo,
           message: err instanceof Error ? err.message : String(err),
         });
       });

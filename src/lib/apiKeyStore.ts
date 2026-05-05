@@ -237,8 +237,25 @@ export async function incrementUsageOrThrow(id: string) {
     ...(persistHundred ? { usageHundredPctEmailSentForLimit: nextBase.usageLimit } : null),
   };
 
+  const atLimit = nextBase.usageCount >= nextBase.usageLimit && nextBase.usageLimit > 0;
+  console.log("[fit-room][email-debug] incrementUsageOrThrow", {
+    clientId: rec.id,
+    smtpConfigured: smtpOk,
+    usageBefore: rec.usageCount,
+    usageAfter: nextBase.usageCount,
+    limit: nextBase.usageLimit,
+    reachedFullLimit: atLimit,
+    hasContactEmail: hasContactEmail,
+    willQueue80PctEmail: persistEighty,
+    willQueue100PctEmail: persistHundred,
+  });
+
   await redis.set(redisKey, next);
   if (persistEighty || persistHundred) {
+    console.log("[fit-room][email-debug] scheduling quota email(s)", {
+      eighty: persistEighty,
+      hundred: persistHundred,
+    });
     void import("@/lib/usageTryOnQuotaEmail").then((m) => {
       if (persistEighty) m.sendTryOnLimitEightyPctNoticeAsync({ client: next });
       if (persistHundred) m.sendTryOnLimitFullNoticeAsync({ client: next });
