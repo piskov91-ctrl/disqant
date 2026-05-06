@@ -32,6 +32,13 @@ import {
   type TryOnResponse,
 } from "@/lib/wearMeShared";
 
+/** Unsplash thumbnails for catalog category tiles keyed by {@link DEMO_CATALOG} ids. Omit keys to fall back to the Lucide icon. */
+const DEMO_CATEGORY_GRID_IMAGES: Partial<Record<DemoCatalogId, string>> = {
+  // Matches `sofa_corner` preset — Simona Sergi / Unsplash License. https://unsplash.com/photos/orange-couch-beside-white-wall-81DlU0Woxs4
+  home:
+    "https://images.unsplash.com/photo-1610276099788-b3ec27dec3c6?auto=format&fit=crop&w=800&q=80",
+};
+
 export default function DemoClient() {
   const pathname = usePathname();
   const [urlKey, setUrlKey] = useState<string | null>(null);
@@ -915,6 +922,7 @@ export default function DemoClient() {
               >
                 {DEMO_CATALOG.map((cat) => {
                   const Icon = cat.Icon;
+                  const gridThumb = DEMO_CATEGORY_GRID_IMAGES[cat.id];
                   return (
                     <li key={cat.id} className="w-full">
                       <button
@@ -923,12 +931,22 @@ export default function DemoClient() {
                         aria-label={`View ${cat.title}`}
                         className="group relative flex min-h-[280px] w-full flex-col items-center rounded-2xl border border-[#C6A77D]/22 bg-[#2C241F]/48 px-6 pb-8 pt-10 text-center shadow-[0_14px_44px_rgba(0,0,0,0.32)] backdrop-blur-md transition-[transform,box-shadow,border-color,background-color] duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] will-change-transform hover:scale-[1.035] hover:border-[#C6A77D] hover:bg-[#2C241F]/68 hover:shadow-[0_22px_60px_rgba(0,0,0,0.42),0_0_44px_-10px_rgba(198,167,125,0.42)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C6A77D]/65 focus-visible:ring-offset-2 focus-visible:ring-offset-[#1a1512] active:scale-[1.02]"
                       >
-                        <span className="flex h-[5.5rem] w-[5.5rem] shrink-0 items-center justify-center rounded-full bg-[#1a1614]/85 text-[#C6A77D] shadow-[inset_0_1px_0_rgba(255,255,255,0.06)] ring-1 ring-[#C6A77D]/20 transition-[box-shadow,transform,ring-color] duration-500 ease-out group-hover:ring-[#C6A77D]/55 group-hover:shadow-[0_0_36px_-10px_rgba(198,167,125,0.55)]">
-                          <Icon
-                            className="h-[2.65rem] w-[2.65rem] transition-transform duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] group-hover:scale-110"
-                            strokeWidth={1.15}
-                            aria-hidden
-                          />
+                        <span className="relative flex h-[5.5rem] w-[5.5rem] shrink-0 items-center justify-center overflow-hidden rounded-full bg-[#1a1614]/85 text-[#C6A77D] shadow-[inset_0_1px_0_rgba(255,255,255,0.06)] ring-1 ring-[#C6A77D]/20 transition-[box-shadow,transform,ring-color] duration-500 ease-out group-hover:ring-[#C6A77D]/55 group-hover:shadow-[0_0_36px_-10px_rgba(198,167,125,0.55)]">
+                          {gridThumb ? (
+                            // eslint-disable-next-line @next/next/no-img-element — remote Unsplash CDN thumb
+                            <img
+                              src={gridThumb}
+                              alt=""
+                              className="absolute inset-0 h-full w-full object-cover transition-transform duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] group-hover:scale-110"
+                              loading="lazy"
+                            />
+                          ) : (
+                            <Icon
+                              className="relative z-[1] h-[2.65rem] w-[2.65rem] transition-transform duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] group-hover:scale-110"
+                              strokeWidth={1.15}
+                              aria-hidden
+                            />
+                          )}
                         </span>
                         <p className="mt-9 font-serif text-[1.5rem] font-normal leading-[1.15] tracking-[0.06em] text-[#F5EDE4] md:text-[1.625rem] md:tracking-[0.08em]">
                           {cat.title}

@@ -3,8 +3,8 @@
 import {
   Gem,
   Glasses,
+  Home,
   Shirt,
-  Sofa,
   Snowflake,
   Waves,
   type LucideIcon,
@@ -286,7 +286,7 @@ export type DemoCatalogId =
   | "winter"
   | "swimwear"
   | "eyewear"
-  | "furniture";
+  | "home";
 
 export const DEMO_CATALOG: readonly {
   id: DemoCatalogId;
@@ -332,10 +332,10 @@ export const DEMO_CATALOG: readonly {
     presetIds: ["sunglasses_aviator", "sunglasses_round", "sunglasses_wayfarer", "eyeglasses"],
   },
   {
-    id: "furniture",
-    title: "Furniture",
-    line: "Sofa and seating (staging-style shots)",
-    Icon: Sofa,
+    id: "home",
+    title: "Home",
+    line: "Sofa and living-room seating (staging-style shots)",
+    Icon: Home,
     presetIds: ["sofa_corner"],
   },
 ] as const;
