@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { usePathname } from "next/navigation";
 import { ChevronLeft, SwitchCamera } from "lucide-react";
@@ -7,7 +8,6 @@ import {
   DEMO_CATALOG,
   GARMENT_PRESETS,
   PRESET_BY_ID,
-  PRESET_ID_SET,
   catalogIdFromHistoryState,
   cloneHistoryStatePatch,
   type DemoCatalogId,
@@ -933,12 +933,12 @@ export default function DemoClient() {
                       >
                         <span className="relative flex h-[5.5rem] w-[5.5rem] shrink-0 items-center justify-center overflow-hidden rounded-full bg-[#1a1614]/85 text-[#C6A77D] shadow-[inset_0_1px_0_rgba(255,255,255,0.06)] ring-1 ring-[#C6A77D]/20 transition-[box-shadow,transform,ring-color] duration-500 ease-out group-hover:ring-[#C6A77D]/55 group-hover:shadow-[0_0_36px_-10px_rgba(198,167,125,0.55)]">
                           {gridThumb ? (
-                            // eslint-disable-next-line @next/next/no-img-element — remote Unsplash CDN thumb
-                            <img
+                            <Image
                               src={gridThumb}
                               alt=""
-                              className="absolute inset-0 h-full w-full object-cover transition-transform duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] group-hover:scale-110"
-                              loading="lazy"
+                              fill
+                              sizes="88px"
+                              className="object-cover transition-transform duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] group-hover:scale-110"
                             />
                           ) : (
                             <Icon
