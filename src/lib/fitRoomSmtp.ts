@@ -1,9 +1,19 @@
-import nodemailer from "nodemailer";
+import { Resend } from "resend";
 
 const DEFAULT_FROM = "Fit Room <support@fit-room.com>";
 
-/** Default host when `SMTP_HOST` is unset (Hostinger). */
-const HOSTINGER_SMTP_HOST = "smtp.hostinger.com";
+let resendSingleton: Resend | null = null;
+
+function getResendClient(): Resend {
+  const apiKey = process.env.RESEND_API_KEY?.trim();
+  if (!apiKey) {
+    throw new Error(
+      "Resend is not configured. Set RESEND_API_KEY (create a key at https://resend.com/api-keys). Verify a sending domain and use an address from that domain for FIT_ROOM_EMAIL_FROM.",
+    );
+  }
+  resendSingleton ??= new Resend(apiKey);
+  return resendSingleton;
+}
 
 /** Truncate long strings for readable server logs (HTML can be several KB). */
 function previewForLog(content: string, maxChars: number): string {
@@ -11,114 +21,82 @@ function previewForLog(content: string, maxChars: number): string {
   return `${content.slice(0, maxChars)}… [truncated, ${content.length} chars total]`;
 }
 
-function logFitRoomMailSmtpFailure(
+function logFitRoomMailSendFailure(
   sender: string,
   ctx: { from: string; to: string; subject: string },
   err: unknown,
 ) {
   const message = err instanceof Error ? err.message : String(err);
   const stack = err instanceof Error ? err.stack : undefined;
-  const ext =
-    err && typeof err === "object"
+  const resendErr =
+    err && typeof err === "object" && "statusCode" in err && "name" in err
       ? {
-          ...(typeof (err as { code?: unknown }).code === "string" && {
-            errnoCode: (err as { code: string }).code,
-          }),
-          ...(typeof (err as { syscall?: unknown }).syscall === "string" && {
-            syscall: (err as { syscall: string }).syscall,
-          }),
-          ...(typeof (err as { responseCode?: unknown }).responseCode !== "undefined" && {
-            responseCode: String((err as { responseCode: string | number }).responseCode),
-          }),
-          ...(typeof (err as { response?: unknown }).response === "string" && {
-            smtpResponse: (err as { response: string }).response,
-          }),
-          ...(typeof (err as { command?: unknown }).command === "string" && {
-            command: (err as { command: string }).command,
-          }),
+          resendErrorName: String((err as { name: string }).name),
+          resendStatusCode: (err as { statusCode: number | null }).statusCode,
         }
       : {};
-  console.error(`[fit-room][email-debug] ${sender} SMTP error`, {
+  console.error(`[fit-room][email-debug] ${sender} Resend send error`, {
     ...ctx,
     message,
     stack,
-    ...ext,
+    ...resendErr,
     errName: err instanceof Error ? err.name : typeof err,
   });
 }
 
+/** True when Fit Room transactional email can be sent via Resend. */
 export function isFitRoomSmtpConfigured(): boolean {
-  return Boolean(process.env.SMTP_USER?.trim() && process.env.SMTP_PASSWORD?.trim());
+  return Boolean(process.env.RESEND_API_KEY?.trim());
 }
 
+/**
+ * Verified-domain `from` for Resend. Prefer `FIT_ROOM_EMAIL_FROM`; `FIT_ROOM_SMTP_FROM` is still read for migration.
+ */
 export function resolveFitRoomSmtpFrom(): string {
-  const raw = process.env.FIT_ROOM_SMTP_FROM?.trim();
-  return raw || DEFAULT_FROM;
-}
-
-export function createFitRoomSmtpTransport() {
-  const host = process.env.SMTP_HOST?.trim() || HOSTINGER_SMTP_HOST;
-  const user = process.env.SMTP_USER?.trim();
-  const pass = process.env.SMTP_PASSWORD?.trim();
-  if (!user || !pass) {
-    throw new Error(
-      "SMTP is not configured. Set SMTP_USER and SMTP_PASSWORD (optional SMTP_HOST, default smtp.hostinger.com; port 587 STARTTLS).",
-    );
-  }
-
-  const portRaw = process.env.SMTP_PORT?.trim();
-  const port = portRaw ? Number(portRaw) : 587;
-
-  const secureEnv = process.env.SMTP_SECURE?.trim();
-  const secure =
-    secureEnv === "1" ||
-    secureEnv === "true" ||
-    secureEnv?.toLowerCase() === "yes" ||
-    port === 465;
-
-  return nodemailer.createTransport({
-    host,
-    port,
-    secure,
-    requireTLS: !secure && port === 587,
-    auth: { user, pass },
-  });
+  const fromEmail =
+    process.env.FIT_ROOM_EMAIL_FROM?.trim() || process.env.FIT_ROOM_SMTP_FROM?.trim();
+  return fromEmail || DEFAULT_FROM;
 }
 
 export async function sendFitRoomPlainTextMail(params: { to: string; subject: string; text: string }) {
   const from = resolveFitRoomSmtpFrom();
-  const host = process.env.SMTP_HOST?.trim() || HOSTINGER_SMTP_HOST;
-  const smtpUser = process.env.SMTP_USER?.trim() || "";
-  const port = process.env.SMTP_PORT?.trim() ? Number(process.env.SMTP_PORT?.trim()) : 587;
-  console.log("[fit-room][email-debug] sendFitRoomPlainTextMail payload (before SMTP)", {
-    smtpHost: host,
-    smtpPort: port,
-    smtpAuthUser: smtpUser || "(unset)",
+  console.log("[fit-room][email-debug] sendFitRoomPlainTextMail payload (before Resend)", {
     from,
     to: params.to,
     subject: params.subject,
     textBody: params.text,
   });
-  const transport = createFitRoomSmtpTransport();
+  const resend = getResendClient();
+  let loggedFailure = false;
   try {
-    const info = await transport.sendMail({
+    const { data, error } = await resend.emails.send({
       from,
       to: params.to,
       subject: params.subject,
       text: params.text,
     });
-    console.log("[fit-room][email-debug] sendFitRoomPlainTextMail smtpAccepted", {
+    if (error) {
+      logFitRoomMailSendFailure(
+        "sendFitRoomPlainTextMail",
+        { from, to: params.to, subject: params.subject },
+        error,
+      );
+      loggedFailure = true;
+      throw new Error(error.message);
+    }
+    console.log("[fit-room][email-debug] sendFitRoomPlainTextMail resendAccepted", {
       to: params.to,
       subject: params.subject,
-      messageId: info.messageId,
-      response: info.response,
+      resendEmailId: data?.id,
     });
   } catch (err: unknown) {
-    logFitRoomMailSmtpFailure(
-      "sendFitRoomPlainTextMail",
-      { from, to: params.to, subject: params.subject },
-      err,
-    );
+    if (!loggedFailure) {
+      logFitRoomMailSendFailure(
+        "sendFitRoomPlainTextMail",
+        { from, to: params.to, subject: params.subject },
+        err,
+      );
+    }
     throw err;
   }
 }
@@ -126,13 +104,7 @@ export async function sendFitRoomPlainTextMail(params: { to: string; subject: st
 /** Multipart alternative: clients that support HTML show the rich body; others fall back to `text`. */
 export async function sendFitRoomMail(params: { to: string; subject: string; text: string; html: string }) {
   const from = resolveFitRoomSmtpFrom();
-  const host = process.env.SMTP_HOST?.trim() || HOSTINGER_SMTP_HOST;
-  const smtpUser = process.env.SMTP_USER?.trim() || "";
-  const port = process.env.SMTP_PORT?.trim() ? Number(process.env.SMTP_PORT?.trim()) : 587;
-  console.log("[fit-room][email-debug] sendFitRoomMail payload (before SMTP)", {
-    smtpHost: host,
-    smtpPort: port,
-    smtpAuthUser: smtpUser || "(unset)",
+  console.log("[fit-room][email-debug] sendFitRoomMail payload (before Resend)", {
     from,
     to: params.to,
     subject: params.subject,
@@ -141,28 +113,31 @@ export async function sendFitRoomMail(params: { to: string; subject: string; tex
     htmlPreview: previewForLog(params.html, 1200),
   });
 
-  const transport = createFitRoomSmtpTransport();
+  const resend = getResendClient();
+  let loggedFailure = false;
   try {
-    const info = await transport.sendMail({
+    const { data, error } = await resend.emails.send({
       from,
       to: params.to,
       subject: params.subject,
       text: params.text,
       html: params.html,
     });
+    if (error) {
+      logFitRoomMailSendFailure("sendFitRoomMail", { from, to: params.to, subject: params.subject }, error);
+      loggedFailure = true;
+      throw new Error(error.message);
+    }
 
-    console.log("[fit-room][email-debug] sendFitRoomMail smtpAccepted", {
+    console.log("[fit-room][email-debug] sendFitRoomMail resendAccepted", {
       to: params.to,
       subject: params.subject,
-      messageId: info.messageId,
-      response: info.response,
+      resendEmailId: data?.id,
     });
   } catch (err: unknown) {
-    logFitRoomMailSmtpFailure(
-      "sendFitRoomMail",
-      { from, to: params.to, subject: params.subject },
-      err,
-    );
+    if (!loggedFailure) {
+      logFitRoomMailSendFailure("sendFitRoomMail", { from, to: params.to, subject: params.subject }, err);
+    }
     throw err;
   }
 }
