@@ -15,13 +15,21 @@ export function alreadySentTryOnUsageEightyEmailForCycle(rec: ClientApiKeyRecord
   return sentFor === rec.usageLimit;
 }
 
-function crossedTryOnUsageHundredPct(
+/** True on the increment where usage reaches the plan limit (final allowed try-on). */
+export function usageIncrementReachedQuotaLimit(
   prev: ClientApiKeyRecord,
   next: ClientApiKeyRecord,
 ): boolean {
   const lim = next.usageLimit;
   if (!(lim > 0)) return false;
   return prev.usageCount < lim && next.usageCount >= lim;
+}
+
+function crossedTryOnUsageHundredPct(
+  prev: ClientApiKeyRecord,
+  next: ClientApiKeyRecord,
+): boolean {
+  return usageIncrementReachedQuotaLimit(prev, next);
 }
 
 export function alreadySentTryOnUsageHundredEmailForCycle(rec: ClientApiKeyRecord): boolean {

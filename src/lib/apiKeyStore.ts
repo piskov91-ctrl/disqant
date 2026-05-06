@@ -1,7 +1,11 @@
 import crypto from "node:crypto";
 import { Redis } from "@upstash/redis";
 import { isFitRoomEmailConfigured } from "@/lib/fitRoomEmail";
-import { usageIncrementShouldPersistEightyPctEmailFlag, usageIncrementShouldPersistHundredPctEmailFlag } from "@/lib/usageTryOnQuotaEmailPolicy";
+import {
+  usageIncrementReachedQuotaLimit,
+  usageIncrementShouldPersistEightyPctEmailFlag,
+  usageIncrementShouldPersistHundredPctEmailFlag,
+} from "@/lib/usageTryOnQuotaEmailPolicy";
 
 export type ClientApiKeyRecord = {
   id: string;
@@ -223,13 +227,17 @@ export async function incrementUsageOrThrow(id: string) {
   if (rec.usageCount >= rec.usageLimit) throw new Error("Try-on limit exceeded.");
   const nextBase: ClientApiKeyRecord = { ...rec, usageCount: rec.usageCount + 1 };
   const resendConfigured = isFitRoomEmailConfigured();
-  const persistEighty =
-    resendConfigured && usageIncrementShouldPersistEightyPctEmailFlag({ prev: rec, next: nextBase });
+  const reachedQuotaLimit = usageIncrementReachedQuotaLimit(rec, nextBase);
   const hasContactEmail = Boolean(rec.contactEmail?.trim());
   const persistHundred =
     resendConfigured &&
     hasContactEmail &&
     usageIncrementShouldPersistHundredPctEmailFlag({ prev: rec, next: nextBase });
+  /** If this increment exhausts quota, send only the 100% mail (never 80%+100% together; same for tiny limits where both thresholds fall on one step). */
+  const persistEighty =
+    !reachedQuotaLimit &&
+    resendConfigured &&
+    usageIncrementShouldPersistEightyPctEmailFlag({ prev: rec, next: nextBase });
 
   const next: ClientApiKeyRecord = {
     ...nextBase,
