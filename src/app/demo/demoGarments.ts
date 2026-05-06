@@ -3,7 +3,6 @@
 import {
   Gem,
   Glasses,
-  Home,
   Shirt,
   Snowflake,
   Waves,
@@ -36,8 +35,7 @@ export type GarmentPreset = {
     | "bracelet"
     | "swim_men"
     | "swim_women"
-    | "eyeglasses"
-    | "sofa_corner";
+    | "eyeglasses";
   label: string;
   name: string;
   /** Hint for `/api/try-on` (echoed in JSON); sneakers use `bottoms` like other non-top apparel. */
@@ -262,15 +260,6 @@ export const GARMENT_PRESETS: GarmentPreset[] = [
     imageUrl:
       "https://images.unsplash.com/photo-1646084081219-1090f72a531c?auto=format&fit=crop&w=1400&q=80",
   },
-  {
-    id: "sofa_corner",
-    label: "Sofa",
-    name: "Velvet sofa in bright corner — white walls, natural light",
-    category: "bottoms",
-    // Simona Sergi — couch beside white interior wall / corner. Free under Unsplash License. https://unsplash.com/photos/orange-couch-beside-white-wall-81DlU0Woxs4
-    imageUrl:
-      "https://images.unsplash.com/photo-1610276099788-b3ec27dec3c6?auto=format&fit=crop&w=1400&q=80",
-  },
 ];
 
 export const PRESET_BY_ID = Object.fromEntries(GARMENT_PRESETS.map((p) => [p.id, p])) as Record<
@@ -280,13 +269,7 @@ export const PRESET_BY_ID = Object.fromEntries(GARMENT_PRESETS.map((p) => [p.id,
 
 export const PRESET_ID_SET = new Set<string>(GARMENT_PRESETS.map((p) => p.id));
 
-export type DemoCatalogId =
-  | "clothing"
-  | "accessories"
-  | "winter"
-  | "swimwear"
-  | "eyewear"
-  | "home";
+export type DemoCatalogId = "clothing" | "accessories" | "winter" | "swimwear" | "eyewear";
 
 export const DEMO_CATALOG: readonly {
   id: DemoCatalogId;
@@ -330,13 +313,6 @@ export const DEMO_CATALOG: readonly {
     line: "Aviator, round, and wayfarer sunglasses; prescription glasses",
     Icon: Glasses,
     presetIds: ["sunglasses_aviator", "sunglasses_round", "sunglasses_wayfarer", "eyeglasses"],
-  },
-  {
-    id: "home",
-    title: "Home",
-    line: "Sofa and living-room seating (staging-style shots)",
-    Icon: Home,
-    presetIds: ["sofa_corner"],
   },
 ] as const;
 
