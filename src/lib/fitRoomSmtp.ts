@@ -1,6 +1,6 @@
 import { Resend } from "resend";
 
-const DEFAULT_FROM = "Fit Room <support@fit-room.com>";
+const DEFAULT_FROM = "support@fit-room.com";
 
 let resendSingleton: Resend | null = null;
 
@@ -8,7 +8,7 @@ function getResendClient(): Resend {
   const apiKey = process.env.RESEND_API_KEY?.trim();
   if (!apiKey) {
     throw new Error(
-      "Resend is not configured. Set RESEND_API_KEY (create a key at https://resend.com/api-keys). Verify a sending domain and use an address from that domain for FIT_ROOM_EMAIL_FROM.",
+      "Resend is not configured. Set RESEND_API_KEY. Verify fit-room.com in Resend; mail sends from support@fit-room.com unless FIT_ROOM_EMAIL_FROM overrides it.",
     );
   }
   resendSingleton ??= new Resend(apiKey);
@@ -50,12 +50,11 @@ export function isFitRoomSmtpConfigured(): boolean {
 }
 
 /**
- * Verified-domain `from` for Resend. Prefer `FIT_ROOM_EMAIL_FROM`; `FIT_ROOM_SMTP_FROM` is still read for migration.
+ * Verified `from` for Resend. Optional `FIT_ROOM_EMAIL_FROM` overrides; defaults to support@fit-room.com.
  */
 export function resolveFitRoomSmtpFrom(): string {
-  const fromEmail =
-    process.env.FIT_ROOM_EMAIL_FROM?.trim() || process.env.FIT_ROOM_SMTP_FROM?.trim();
-  return fromEmail || DEFAULT_FROM;
+  const fromEnv = process.env.FIT_ROOM_EMAIL_FROM?.trim();
+  return fromEnv || DEFAULT_FROM;
 }
 
 export async function sendFitRoomPlainTextMail(params: { to: string; subject: string; text: string }) {
