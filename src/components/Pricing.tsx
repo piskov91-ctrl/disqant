@@ -1,5 +1,6 @@
 import Link from "next/link";
-import { PricingGetStartedCta } from "@/components/PricingGetStartedCta";
+import type { SubscriptionPlanKey } from "@/lib/subscriptionPlans";
+import { StripeSubscribeButton } from "@/components/StripeSubscribeButton";
 
 type Plan = {
   name: string;
@@ -10,8 +11,10 @@ type Plan = {
   contactOnly?: boolean;
   /** Shown instead of price for contact tier (e.g. "Contact us"). */
   subtitle?: string;
-  /** Only for Enterprise — self-serve plans use {@link PricingGetStartedCta}. */
+  /** Only for Enterprise — self-serve plans use Stripe checkout or Contact. */
   href?: string;
+  /** When set, the CTA starts a Stripe Subscription Checkout for this tier. */
+  stripePlan?: SubscriptionPlanKey;
 };
 
 const plans: Plan[] = [
@@ -26,6 +29,7 @@ const plans: Plan[] = [
       "Easy integration",
     ],
     highlighted: false,
+    stripePlan: "starter",
   },
   {
     name: "Growth",
@@ -33,6 +37,7 @@ const plans: Plan[] = [
     period: "/month",
     features: ["600 try-ons", "For growing stores", "Priority support"],
     highlighted: true,
+    stripePlan: "growth",
   },
   {
     name: "Pro",
@@ -40,6 +45,7 @@ const plans: Plan[] = [
     period: "/month",
     features: ["1,200 try-ons", "For large stores", "Dedicated support"],
     highlighted: false,
+    stripePlan: "pro",
   },
   {
     name: "Enterprise",
@@ -78,7 +84,8 @@ export function Pricing({ sectionId = "subscriptions" }: PricingProps) {
         <div className="mt-14 grid gap-6 sm:grid-cols-2 xl:grid-cols-4">
           {plans.map((plan) => {
             const isContact = Boolean(plan.contactOnly);
-            const ctaLabel = isContact ? "Contact us" : "Get Started";
+            const ctaLabel =
+              isContact ? "Contact us" : plan.stripePlan ? "Subscribe" : "Get Started";
 
             return (
               <article
@@ -125,11 +132,14 @@ export function Pricing({ sectionId = "subscriptions" }: PricingProps) {
                   <Link href={plan.href ?? "/contact"} className="btn-accent-gradient mt-8 w-full">
                     {ctaLabel}
                   </Link>
-                ) : (
-                  <PricingGetStartedCta className="wear-me-btn mt-8 w-full disabled:cursor-wait disabled:opacity-70">
+                ) : plan.stripePlan ? (
+                  <StripeSubscribeButton
+                    planKey={plan.stripePlan}
+                    className="wear-me-btn mt-8 w-full disabled:cursor-wait disabled:opacity-70"
+                  >
                     {ctaLabel}
-                  </PricingGetStartedCta>
-                )}
+                  </StripeSubscribeButton>
+                ) : null}
               </article>
             );
           })}

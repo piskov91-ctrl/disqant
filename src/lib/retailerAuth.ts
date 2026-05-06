@@ -231,6 +231,17 @@ export async function getRetailerById(id: string): Promise<RetailerUser | null> 
   return row?.user ?? null;
 }
 
+/** Associates a retailer dashboard account with a Fit Room client API key record (after checkout or admin assignment). */
+export async function linkRetailerToClientId(retailerUserId: string, clientApiKeyRecordId: string): Promise<void> {
+  const row = await loadRetailerRecord(retailerUserId.trim());
+  if (!row) throw new Error("Retailer account not found.");
+  const cid = clientApiKeyRecordId.trim();
+  if (!cid) throw new Error("Client id is required.");
+
+  const next: RetailerUser = { ...row.user, clientId: cid };
+  await getRedis().set(row.userRedisKey, JSON.stringify(next));
+}
+
 export async function findRetailerByEmail(email: string): Promise<RetailerUser | null> {
   const redis = getRedis();
   const norm = normalizeRetailerEmail(email);
