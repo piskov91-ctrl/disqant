@@ -1,6 +1,6 @@
 import crypto from "node:crypto";
 import { Redis } from "@upstash/redis";
-import { isFitRoomSmtpConfigured } from "@/lib/fitRoomSmtp";
+import { isFitRoomEmailConfigured } from "@/lib/fitRoomEmail";
 import { usageIncrementShouldPersistEightyPctEmailFlag, usageIncrementShouldPersistHundredPctEmailFlag } from "@/lib/usageTryOnQuotaEmailPolicy";
 
 export type ClientApiKeyRecord = {
@@ -222,12 +222,12 @@ export async function incrementUsageOrThrow(id: string) {
   const { rec, redisKey } = bundle;
   if (rec.usageCount >= rec.usageLimit) throw new Error("Try-on limit exceeded.");
   const nextBase: ClientApiKeyRecord = { ...rec, usageCount: rec.usageCount + 1 };
-  const smtpOk = isFitRoomSmtpConfigured();
+  const resendConfigured = isFitRoomEmailConfigured();
   const persistEighty =
-    smtpOk && usageIncrementShouldPersistEightyPctEmailFlag({ prev: rec, next: nextBase });
+    resendConfigured && usageIncrementShouldPersistEightyPctEmailFlag({ prev: rec, next: nextBase });
   const hasContactEmail = Boolean(rec.contactEmail?.trim());
   const persistHundred =
-    smtpOk &&
+    resendConfigured &&
     hasContactEmail &&
     usageIncrementShouldPersistHundredPctEmailFlag({ prev: rec, next: nextBase });
 
@@ -240,7 +240,7 @@ export async function incrementUsageOrThrow(id: string) {
   const atLimit = nextBase.usageCount >= nextBase.usageLimit && nextBase.usageLimit > 0;
   console.log("[fit-room][email-debug] incrementUsageOrThrow", {
     clientId: rec.id,
-    smtpConfigured: smtpOk,
+    resendConfigured,
     usageBefore: rec.usageCount,
     usageAfter: nextBase.usageCount,
     limit: nextBase.usageLimit,

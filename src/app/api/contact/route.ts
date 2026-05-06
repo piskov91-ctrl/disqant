@@ -1,8 +1,8 @@
 import { Resend } from "resend";
 
 const TO_EMAIL = process.env.CONTACT_TO ?? "support@fit-room.com";
-/** Verifiable sender; default works with Resend test API until you set a domain. */
-const FROM_EMAIL = process.env.RESEND_FROM ?? "Fit Room <onboarding@resend.dev>";
+/** Verifiable sender; override with RESEND_FROM. Default matches Fit Room transactional mail. */
+const FROM_EMAIL = process.env.RESEND_FROM?.trim() ?? "Fit Room <support@fit-room.com>";
 
 const VISITOR_OPTIONS = new Set(["under-10k", "10k-50k", "50k-100k", "100k-plus"]);
 

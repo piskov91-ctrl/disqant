@@ -1,5 +1,5 @@
 import type { ClientApiKeyRecord } from "@/lib/apiKeyStore";
-import { isFitRoomSmtpConfigured, sendFitRoomMail } from "@/lib/fitRoomSmtp";
+import { isFitRoomEmailConfigured, sendFitRoomMail } from "@/lib/fitRoomEmail";
 import { listRetailersLinkedToClientId } from "@/lib/retailerAuth";
 
 export const TRY_ON_QUOTA_EIGHTY_PCT_EMAIL_SUBJECT =
@@ -175,13 +175,13 @@ export function sampleTryOnUsageCountAtLeastEightyPercent(limit: number): number
 export function sendTryOnLimitEightyPctNoticeAsync(params: {
   client: ClientApiKeyRecord;
 }) {
-  const smtp = isFitRoomSmtpConfigured();
+  const resendConfigured = isFitRoomEmailConfigured();
   console.log("[fit-room][email-debug] sendTryOnLimitEightyPctNoticeAsync", {
     clientId: params.client.id,
-    smtpConfigured: smtp,
+    resendConfigured,
   });
-  if (!smtp) {
-    console.log("[fit-room][email-debug] sendTryOnLimitEightyPctNoticeAsync skipped (SMTP not configured)");
+  if (!resendConfigured) {
+    console.log("[fit-room][email-debug] sendTryOnLimitEightyPctNoticeAsync skipped (RESEND_API_KEY not set)");
     return;
   }
 
@@ -227,20 +227,20 @@ export function sendTryOnLimitEightyPctNoticeAsync(params: {
   })();
 }
 
-/** Fire-and-forget when monthly try-ons are fully used: admin {@link ClientApiKeyRecord.contactEmail} only (same SMTP as 80%). */
+/** Fire-and-forget when monthly try-ons are fully used: admin {@link ClientApiKeyRecord.contactEmail} only (same Resend pipeline as 80%). */
 export function sendTryOnLimitFullNoticeAsync(params: { client: ClientApiKeyRecord }) {
-  const smtp = isFitRoomSmtpConfigured();
+  const resendConfigured = isFitRoomEmailConfigured();
   const to = params.client.contactEmail?.trim();
   console.log("[fit-room][email-debug] sendTryOnLimitFullNoticeAsync", {
     clientId: params.client.id,
-    smtpConfigured: smtp,
+    resendConfigured,
     hasContactEmail: Boolean(to),
     usageAtSend: params.client.usageCount,
     limit: params.client.usageLimit,
   });
 
-  if (!smtp) {
-    console.log("[fit-room][email-debug] sendTryOnLimitFullNoticeAsync skipped (SMTP not configured)");
+  if (!resendConfigured) {
+    console.log("[fit-room][email-debug] sendTryOnLimitFullNoticeAsync skipped (RESEND_API_KEY not set)");
     return;
   }
 

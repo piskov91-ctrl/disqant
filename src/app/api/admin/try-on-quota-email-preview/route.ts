@@ -1,7 +1,7 @@
 import { cookies } from "next/headers";
 import { ADMIN_AUTH_COOKIE, isAdminAuthorizedCookieValue } from "@/lib/adminAuth";
 import { getClientKeyRecordById } from "@/lib/apiKeyStore";
-import { resolveFitRoomSmtpFrom } from "@/lib/fitRoomSmtp";
+import { resolveFitRoomEmailFrom } from "@/lib/fitRoomEmail";
 import {
   TRY_ON_QUOTA_EIGHTY_PCT_EMAIL_SUBJECT,
   buildTryOnQuotaEightyPctEmailBody,
@@ -55,7 +55,7 @@ export async function GET(req: Request) {
     subject: TRY_ON_QUOTA_EIGHTY_PCT_EMAIL_SUBJECT,
     body,
     html,
-    from: resolveFitRoomSmtpFrom(),
+    from: resolveFitRoomEmailFrom(),
     upgradeUrl: getTryOnQuotaUpgradePlanUrl(),
     sampleUsed,
     sampleLimit: usageLimit,

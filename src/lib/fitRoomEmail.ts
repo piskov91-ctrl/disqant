@@ -1,19 +1,7 @@
 import { Resend } from "resend";
 
-const DEFAULT_FROM = "support@fit-room.com";
-
-let resendSingleton: Resend | null = null;
-
-function getResendClient(): Resend {
-  const apiKey = process.env.RESEND_API_KEY?.trim();
-  if (!apiKey) {
-    throw new Error(
-      "Resend is not configured. Set RESEND_API_KEY. Verify fit-room.com in Resend; mail sends from support@fit-room.com unless FIT_ROOM_EMAIL_FROM overrides it.",
-    );
-  }
-  resendSingleton ??= new Resend(apiKey);
-  return resendSingleton;
-}
+/** Default sender for Fit Room transactional mail (verify fit-room.com in Resend). */
+const DEFAULT_FROM = "Fit Room <support@fit-room.com>";
 
 /** Truncate long strings for readable server logs (HTML can be several KB). */
 function previewForLog(content: string, maxChars: number): string {
@@ -44,28 +32,38 @@ function logFitRoomMailSendFailure(
   });
 }
 
+function requireResendApiKey(): string {
+  const apiKey = process.env.RESEND_API_KEY?.trim();
+  if (!apiKey) {
+    throw new Error(
+      "Resend is not configured. Set RESEND_API_KEY. Verify fit-room.com in Resend; default sender is Fit Room <support@fit-room.com> (override with FIT_ROOM_EMAIL_FROM).",
+    );
+  }
+  return apiKey;
+}
+
 /** True when Fit Room transactional email can be sent via Resend. */
-export function isFitRoomSmtpConfigured(): boolean {
+export function isFitRoomEmailConfigured(): boolean {
   return Boolean(process.env.RESEND_API_KEY?.trim());
 }
 
 /**
- * Verified `from` for Resend. Optional `FIT_ROOM_EMAIL_FROM` overrides; defaults to support@fit-room.com.
+ * Verified `from` for Resend. Optional `FIT_ROOM_EMAIL_FROM` overrides the default (Fit Room plus support@fit-room.com).
  */
-export function resolveFitRoomSmtpFrom(): string {
+export function resolveFitRoomEmailFrom(): string {
   const fromEnv = process.env.FIT_ROOM_EMAIL_FROM?.trim();
   return fromEnv || DEFAULT_FROM;
 }
 
 export async function sendFitRoomPlainTextMail(params: { to: string; subject: string; text: string }) {
-  const from = resolveFitRoomSmtpFrom();
+  const from = resolveFitRoomEmailFrom();
   console.log("[fit-room][email-debug] sendFitRoomPlainTextMail payload (before Resend)", {
     from,
     to: params.to,
     subject: params.subject,
     textBody: params.text,
   });
-  const resend = getResendClient();
+  const resend = new Resend(requireResendApiKey());
   let loggedFailure = false;
   try {
     const { data, error } = await resend.emails.send({
@@ -102,7 +100,7 @@ export async function sendFitRoomPlainTextMail(params: { to: string; subject: st
 
 /** Multipart alternative: clients that support HTML show the rich body; others fall back to `text`. */
 export async function sendFitRoomMail(params: { to: string; subject: string; text: string; html: string }) {
-  const from = resolveFitRoomSmtpFrom();
+  const from = resolveFitRoomEmailFrom();
   console.log("[fit-room][email-debug] sendFitRoomMail payload (before Resend)", {
     from,
     to: params.to,
@@ -112,7 +110,7 @@ export async function sendFitRoomMail(params: { to: string; subject: string; tex
     htmlPreview: previewForLog(params.html, 1200),
   });
 
-  const resend = getResendClient();
+  const resend = new Resend(requireResendApiKey());
   let loggedFailure = false;
   try {
     const { data, error } = await resend.emails.send({
