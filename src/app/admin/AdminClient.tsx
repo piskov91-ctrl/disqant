@@ -13,6 +13,10 @@ type KeyRecord = {
   key: string;
   usageLimit: number;
   usageCount: number;
+  /** Equals `usageLimit` when the 80% quota warning was sent this cycle */
+  usageEightPctEmailSentForLimit?: number;
+  /** Equals `usageLimit` when the 100% exhausted email was sent this cycle */
+  usageHundredPctEmailSentForLimit?: number;
   createdAt: string;
 };
 
@@ -85,6 +89,55 @@ function formatGbp(n: number) {
 function isValidContactEmail(s: string): boolean {
   const t = s.trim();
   return t.length > 0 && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(t);
+}
+
+function quotaNoticeSentForCurrentTier(sentForLimit: number | undefined, usageLimit: number): boolean {
+  return typeof sentForLimit === "number" && Number.isFinite(sentForLimit) && sentForLimit === usageLimit;
+}
+
+/** Small badges for 80% / 100% quota transactional emails sent for the current limit tier (cleared on usage reset). */
+function QuotaEmailNoticeBadges({ k }: { k: KeyRecord }) {
+  const eighty = quotaNoticeSentForCurrentTier(k.usageEightPctEmailSentForLimit, k.usageLimit);
+  const hundred = quotaNoticeSentForCurrentTier(k.usageHundredPctEmailSentForLimit, k.usageLimit);
+  const base =
+    "inline-flex items-center justify-center rounded border px-1.5 py-0.5 text-[10px] font-bold leading-none tabular-nums tracking-tight";
+
+  return (
+    <div
+      className="flex shrink-0 flex-wrap items-center justify-end gap-1"
+      role="group"
+      aria-label="Quota email notices for current try-on cycle"
+    >
+      <span
+        className={
+          eighty
+            ? `${base} border-amber-700/70 bg-amber-950/50 text-amber-200`
+            : `${base} border-zinc-700/70 bg-zinc-950/30 text-zinc-500`
+        }
+        title={
+          eighty
+            ? "80% “running low” email was sent for this try-on limit tier."
+            : "80% warning not sent for this tier yet, or the try-on limit changed after it was sent."
+        }
+      >
+        80%
+      </span>
+      <span
+        className={
+          hundred
+            ? `${base} border-rose-800/70 bg-rose-950/45 text-rose-200`
+            : `${base} border-zinc-700/70 bg-zinc-950/30 text-zinc-500`
+        }
+        title={
+          hundred
+            ? "100% “try-ons used up” email was sent for this tier (requires contact email on the client)."
+            : "100% limit email not sent for this tier yet, or limit changed — also skipped if contact email is missing."
+        }
+      >
+        100%
+      </span>
+    </div>
+  );
 }
 
 export default function AdminClient() {
@@ -972,7 +1025,8 @@ export default function AdminClient() {
                     <h2 className="text-base font-semibold text-zinc-100">Clients</h2>
                     <p className="mt-1 text-sm text-zinc-400">
                       {keys.length} clients · Try-ons used {remainingTotal.used} / {remainingTotal.limit} try-on limit
-                      (summed across clients)
+                      (summed across clients). Badges beside each name show whether quota emails were sent this cycle
+                      (reset clears them).
                     </p>
                   </div>
                 </div>
@@ -1008,15 +1062,20 @@ export default function AdminClient() {
                           className="grid w-full grid-cols-[minmax(0,1.35fr)_minmax(0,0.7fr)_minmax(0,1.6fr)_minmax(0,0.7fr)_minmax(0,0.55fr)_minmax(0,0.7fr)_minmax(0,0.55fr)_minmax(0,0.6fr)_minmax(0,0.7fr)] items-center gap-2 border-b border-zinc-800 px-4 py-4 text-base md:px-6"
                         >
                           <div className="min-w-0">
-                            <div className="truncate font-semibold text-zinc-100">{k.clientName}</div>
-                            {k.contactEmail ? (
-                              <div
-                                className="mt-0.5 truncate text-sm text-sky-400/90"
-                                title={k.contactEmail}
-                              >
-                                {k.contactEmail}
+                            <div className="flex min-w-0 items-start justify-between gap-2">
+                              <div className="min-w-0 flex-1">
+                                <div className="truncate font-semibold text-zinc-100">{k.clientName}</div>
+                                {k.contactEmail ? (
+                                  <div
+                                    className="mt-0.5 truncate text-sm text-sky-400/90"
+                                    title={k.contactEmail}
+                                  >
+                                    {k.contactEmail}
+                                  </div>
+                                ) : null}
                               </div>
-                            ) : null}
+                              <QuotaEmailNoticeBadges k={k} />
+                            </div>
                           </div>
                           <div>
                             <span className="rounded-md border border-zinc-700 bg-zinc-950 px-2 py-1 font-mono text-sm text-zinc-300">
