@@ -11,6 +11,42 @@ function previewForLog(content: string, maxChars: number): string {
   return `${content.slice(0, maxChars)}… [truncated, ${content.length} chars total]`;
 }
 
+function logFitRoomMailSmtpFailure(
+  sender: string,
+  ctx: { from: string; to: string; subject: string },
+  err: unknown,
+) {
+  const message = err instanceof Error ? err.message : String(err);
+  const stack = err instanceof Error ? err.stack : undefined;
+  const ext =
+    err && typeof err === "object"
+      ? {
+          ...(typeof (err as { code?: unknown }).code === "string" && {
+            errnoCode: (err as { code: string }).code,
+          }),
+          ...(typeof (err as { syscall?: unknown }).syscall === "string" && {
+            syscall: (err as { syscall: string }).syscall,
+          }),
+          ...(typeof (err as { responseCode?: unknown }).responseCode !== "undefined" && {
+            responseCode: String((err as { responseCode: string | number }).responseCode),
+          }),
+          ...(typeof (err as { response?: unknown }).response === "string" && {
+            smtpResponse: (err as { response: string }).response,
+          }),
+          ...(typeof (err as { command?: unknown }).command === "string" && {
+            command: (err as { command: string }).command,
+          }),
+        }
+      : {};
+  console.error(`[fit-room][email-debug] ${sender} SMTP error`, {
+    ...ctx,
+    message,
+    stack,
+    ...ext,
+    errName: err instanceof Error ? err.name : typeof err,
+  });
+}
+
 export function isFitRoomSmtpConfigured(): boolean {
   return Boolean(process.env.SMTP_USER?.trim() && process.env.SMTP_PASSWORD?.trim());
 }
@@ -64,18 +100,27 @@ export async function sendFitRoomPlainTextMail(params: { to: string; subject: st
     textBody: params.text,
   });
   const transport = createFitRoomSmtpTransport();
-  const info = await transport.sendMail({
-    from,
-    to: params.to,
-    subject: params.subject,
-    text: params.text,
-  });
-  console.log("[fit-room][email-debug] sendFitRoomPlainTextMail smtpAccepted", {
-    to: params.to,
-    subject: params.subject,
-    messageId: info.messageId,
-    response: info.response,
-  });
+  try {
+    const info = await transport.sendMail({
+      from,
+      to: params.to,
+      subject: params.subject,
+      text: params.text,
+    });
+    console.log("[fit-room][email-debug] sendFitRoomPlainTextMail smtpAccepted", {
+      to: params.to,
+      subject: params.subject,
+      messageId: info.messageId,
+      response: info.response,
+    });
+  } catch (err: unknown) {
+    logFitRoomMailSmtpFailure(
+      "sendFitRoomPlainTextMail",
+      { from, to: params.to, subject: params.subject },
+      err,
+    );
+    throw err;
+  }
 }
 
 /** Multipart alternative: clients that support HTML show the rich body; others fall back to `text`. */
@@ -97,18 +142,27 @@ export async function sendFitRoomMail(params: { to: string; subject: string; tex
   });
 
   const transport = createFitRoomSmtpTransport();
-  const info = await transport.sendMail({
-    from,
-    to: params.to,
-    subject: params.subject,
-    text: params.text,
-    html: params.html,
-  });
+  try {
+    const info = await transport.sendMail({
+      from,
+      to: params.to,
+      subject: params.subject,
+      text: params.text,
+      html: params.html,
+    });
 
-  console.log("[fit-room][email-debug] sendFitRoomMail smtpAccepted", {
-    to: params.to,
-    subject: params.subject,
-    messageId: info.messageId,
-    response: info.response,
-  });
+    console.log("[fit-room][email-debug] sendFitRoomMail smtpAccepted", {
+      to: params.to,
+      subject: params.subject,
+      messageId: info.messageId,
+      response: info.response,
+    });
+  } catch (err: unknown) {
+    logFitRoomMailSmtpFailure(
+      "sendFitRoomMail",
+      { from, to: params.to, subject: params.subject },
+      err,
+    );
+    throw err;
+  }
 }
