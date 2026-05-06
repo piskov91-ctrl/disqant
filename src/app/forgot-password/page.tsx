@@ -29,7 +29,7 @@ export default function ForgotPasswordPage() {
           </p>
           <p className="mt-10 text-center text-sm text-zinc-500">
             <Link href="/login" className="font-medium text-zinc-200 underline-offset-2 hover:underline">
-              Back to sign in
+              Back to log in
             </Link>
           </p>
         </div>

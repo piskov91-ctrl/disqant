@@ -5,8 +5,8 @@ import { Header } from "@/components/Header";
 import { LoginForm } from "./LoginForm";
 
 export const metadata: Metadata = {
-  title: "Sign In",
-  description: "Sign in to your Fit Room retailer dashboard.",
+  title: "Log In",
+  description: "Log in to your Fit Room retailer dashboard.",
 };
 
 export default function LoginPage() {
@@ -15,7 +15,7 @@ export default function LoginPage() {
       <Header />
       <main className="pt-[var(--site-header-height)]">
         <div className="mx-auto max-w-md px-6 py-16 md:py-24">
-          <h1 className="text-3xl font-semibold tracking-tight text-zinc-50">Sign In</h1>
+          <h1 className="text-3xl font-semibold tracking-tight text-zinc-50">Log In</h1>
           <p className="mt-2 text-sm text-zinc-400">Access your dashboard, API key, and try-on statistics.</p>
           <LoginForm />
           <p className="mt-8 text-center text-xs text-zinc-600">

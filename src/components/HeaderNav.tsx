@@ -107,7 +107,7 @@ export function HeaderNav() {
             href="/login"
             className={`${navAuthBtnClass}${pathname === "/login" ? " ring-2 ring-[#c6a77d]/50 ring-offset-2 ring-offset-zinc-950" : ""}`}
           >
-            Sign In
+            Log In
           </Link>
           <Link
             href="/register"
@@ -207,7 +207,7 @@ export function HeaderNav() {
                     className="btn-accent-gradient w-full"
                     onClick={() => setOpen(false)}
                   >
-                    Sign In
+                    Log In
                   </Link>
                   <Link
                     href="/register"

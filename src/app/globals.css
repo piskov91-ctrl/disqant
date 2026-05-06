@@ -245,7 +245,7 @@ body footer a:hover {
 
 @layer components {
   /**
-   * Luxury primary actions (form submits, Sign In / Sign Up, secondary CTAs, etc.)
+   * Luxury primary actions (form submits, Log In / Sign Up, secondary CTAs, etc.)
    */
   .btn-accent-gradient {
     display: inline-flex;

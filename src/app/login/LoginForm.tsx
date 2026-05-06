@@ -34,7 +34,7 @@ function LoginFormInner() {
         });
         const data = (await res.json()) as { error?: string };
         if (!res.ok) {
-          setError(data.error || "Could not sign in.");
+          setError(data.error || "Could not log in.");
           return;
         }
         window.location.assign(next);
@@ -98,7 +98,7 @@ function LoginFormInner() {
         disabled={loading}
         className="btn-accent-gradient w-full disabled:cursor-not-allowed disabled:opacity-60"
       >
-        {loading ? "Signing in…" : "Sign In"}
+        {loading ? "Logging in…" : "Log In"}
       </button>
     </form>
   );
