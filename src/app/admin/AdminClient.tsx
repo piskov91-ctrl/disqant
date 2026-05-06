@@ -95,12 +95,14 @@ function quotaNoticeSentForCurrentTier(sentForLimit: number | undefined, usageLi
   return typeof sentForLimit === "number" && Number.isFinite(sentForLimit) && sentForLimit === usageLimit;
 }
 
+const QUOTA_EMAIL_NOTICE_BADGE_BASE =
+  "inline-flex items-center justify-center rounded border px-1.5 py-0.5 text-[10px] font-bold leading-none tabular-nums tracking-tight";
+
 /** Small badges for 80% / 100% quota transactional emails sent for the current limit tier (cleared on usage reset). */
 function QuotaEmailNoticeBadges({ k }: { k: KeyRecord }) {
   const eighty = quotaNoticeSentForCurrentTier(k.usageEightPctEmailSentForLimit, k.usageLimit);
   const hundred = quotaNoticeSentForCurrentTier(k.usageHundredPctEmailSentForLimit, k.usageLimit);
-  const base =
-    "inline-flex items-center justify-center rounded border px-1.5 py-0.5 text-[10px] font-bold leading-none tabular-nums tracking-tight";
+  const base = QUOTA_EMAIL_NOTICE_BADGE_BASE;
 
   return (
     <div
@@ -387,15 +389,25 @@ export default function AdminClient() {
       const res = await fetch(`/api/admin/keys/${encodeURIComponent(id)}/reset`, {
         method: "POST",
       });
-      const data = (await res.json()) as { ok?: true; usageCount?: number; error?: string };
+      const data = (await res.json()) as { ok?: true; key?: KeyRecord; error?: string };
       if (!res.ok) {
         if (data.error === "Unauthorized.") window.location.reload();
         setError(data.error || "Failed to reset try-ons used.");
         return;
       }
-      setKeys((prev) =>
-        prev.map((k) => (k.id === id ? { ...k, usageCount: 0 } : k)),
-      );
+      if (data.key && data.key.id === id) {
+        setKeys((prev) => prev.map((k) => (k.id === id ? data.key! : k)));
+      } else {
+        setKeys((prev) =>
+          prev.map((k) => {
+            if (k.id !== id) return k;
+            const next = { ...k, usageCount: 0 };
+            delete next.usageEightPctEmailSentForLimit;
+            delete next.usageHundredPctEmailSentForLimit;
+            return next;
+          }),
+        );
+      }
     } catch (e) {
       setError(e instanceof Error ? e.message : "Failed to reset try-ons used.");
     }
@@ -1025,8 +1037,7 @@ export default function AdminClient() {
                     <h2 className="text-base font-semibold text-zinc-100">Clients</h2>
                     <p className="mt-1 text-sm text-zinc-400">
                       {keys.length} clients · Try-ons used {remainingTotal.used} / {remainingTotal.limit} try-on limit
-                      (summed across clients). Badges beside each name show whether quota emails were sent this cycle
-                      (reset clears them).
+                      (summed across clients).
                     </p>
                   </div>
                 </div>
@@ -1161,9 +1172,62 @@ export default function AdminClient() {
                   </div>
                 )}
 
-                <p className="px-6 py-5 text-xs text-zinc-500 md:px-8">
-                  Stored in Redis under <span className="font-mono text-zinc-400">fit-room:clientKeys:*</span>.
-                </p>
+                <div className="space-y-4 border-t border-zinc-800 px-6 py-5 md:px-8">
+                  <div>
+                    <p className="text-xs font-semibold uppercase tracking-wider text-zinc-500">
+                      Quota email badges
+                    </p>
+                    <ul className="mt-3 list-none space-y-2.5 text-xs leading-relaxed text-zinc-400">
+                      <li className="flex flex-wrap items-center gap-2">
+                        <span
+                          className={`${QUOTA_EMAIL_NOTICE_BADGE_BASE} border-amber-700/70 bg-amber-950/50 text-amber-200`}
+                          aria-hidden
+                        >
+                          80%
+                        </span>
+                        <span>
+                          Yellow <strong className="font-medium text-zinc-300">80%</strong> badge: the &quot;running
+                          low&quot; warning email was sent for this try-on cycle (at ~80% of their limit).
+                        </span>
+                      </li>
+                      <li className="flex flex-wrap items-center gap-2">
+                        <span
+                          className={`${QUOTA_EMAIL_NOTICE_BADGE_BASE} border-rose-800/70 bg-rose-950/45 text-rose-200`}
+                          aria-hidden
+                        >
+                          100%
+                        </span>
+                        <span>
+                          Red <strong className="font-medium text-zinc-300">100%</strong> badge: the &quot;try-ons used
+                          up&quot; email was sent when they hit their limit (requires a contact email on the client).
+                        </span>
+                      </li>
+                      <li className="flex flex-wrap items-center gap-2">
+                        <span className="flex items-center gap-1" aria-hidden>
+                          <span
+                            className={`${QUOTA_EMAIL_NOTICE_BADGE_BASE} border-zinc-700/70 bg-zinc-950/30 text-zinc-500`}
+                          >
+                            80%
+                          </span>
+                          <span
+                            className={`${QUOTA_EMAIL_NOTICE_BADGE_BASE} border-zinc-700/70 bg-zinc-950/30 text-zinc-500`}
+                          >
+                            100%
+                          </span>
+                        </span>
+                        <span>
+                          Dim grey badges: that notice has{' '}
+                          <strong className="font-medium text-zinc-300">not</strong> been sent yet for the current
+                          cycle (or the try-on limit changed after a send). Resetting try-ons used clears both email
+                          flags for a fresh cycle.
+                        </span>
+                      </li>
+                    </ul>
+                  </div>
+                  <p className="text-xs text-zinc-500">
+                    Stored in Redis under <span className="font-mono text-zinc-400">fit-room:clientKeys:*</span>.
+                  </p>
+                </div>
               </section>
             </>
           ) : activeTab === "wearMe" ? (

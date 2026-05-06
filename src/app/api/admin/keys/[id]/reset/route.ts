@@ -14,7 +14,9 @@ export async function POST(_req: Request, ctx: { params: Promise<{ id: string }>
   const { id } = await ctx.params;
   try {
     const rec = await resetUsage(id);
-    return Response.json({ ok: true, usageCount: rec.usageCount });
+    const { fashnApiKey, ...rest } = rec;
+    void fashnApiKey;
+    return Response.json({ ok: true, key: rest });
   } catch (e) {
     return Response.json(
       { error: e instanceof Error ? e.message : "Failed to reset try-ons used." },
