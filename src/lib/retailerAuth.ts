@@ -6,6 +6,7 @@ import {
   getClientKeyRecordById,
   getRedis,
   type ClientApiKeyRecord,
+  markClientKeyDeleted,
 } from "@/lib/apiKeyStore";
 import { validateRetailerPasswordStrength } from "@/lib/retailerPasswordPolicy";
 
@@ -281,6 +282,12 @@ export async function deleteRetailerAccount(params: {
   await redis.set(row.userRedisKey, JSON.stringify(next));
   // Remove email index so the email can be reused for a new signup if desired.
   await redis.del(emailIdxKey).catch(() => {});
+
+  // Soft-delete linked client key record so it moves to recovery and is not usable by embeds.
+  const linkedClientId = row.user.clientId?.trim() || "";
+  if (linkedClientId) {
+    await markClientKeyDeleted({ id: linkedClientId, deletedAt: now }).catch(() => {});
+  }
 
   const t = params.sessionToken?.trim();
   if (t) {

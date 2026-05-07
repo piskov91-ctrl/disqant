@@ -21,6 +21,8 @@ export type ClientApiKeyRecord = {
   /** When equal to usageLimit, the 99% try-on quota email was already sent for this limit tier (reset on usage reset). */
   usageNinetyNinePctEmailSentForLimit?: number;
   createdAt: string; // ISO
+  /** Soft-delete timestamp (e.g. retailer deleted account). Deleted keys are removed from active admin lists and rejected for usage. */
+  deletedAt?: string | null;
 };
 
 const KEY_INDEX = "fit-room:clientKeys:index"; // list of ids (newest first)
@@ -213,7 +215,32 @@ export async function getClientByApiKey(apiKey: string) {
   }
   if (!id) return null;
   const recKey = legacy ? recordKeyLegacy(id) : recordKey(id);
-  return (await redis.get(recKey)) as ClientApiKeyRecord | null;
+  const rec = (await redis.get(recKey)) as ClientApiKeyRecord | null;
+  if (!rec || rec.deletedAt) return null;
+  return rec;
+}
+
+export async function markClientKeyDeleted(params: { id: string; deletedAt?: string }): Promise<ClientApiKeyRecord> {
+  const redis = getRedis();
+  const bundle = await getRecordForMutation(params.id);
+  if (!bundle) throw new Error("Client key not found.");
+  const { rec, redisKey } = bundle;
+
+  const now = params.deletedAt ?? new Date().toISOString();
+  const next: ClientApiKeyRecord = { ...rec, deletedAt: now };
+  await redis.set(redisKey, next);
+
+  // Remove from active index so it disappears from the Clients list.
+  const indexKey = redisKey.startsWith(KEY_PREFIX) ? KEY_INDEX : LEGACY_KEY_INDEX;
+  await redis.lrem(indexKey, 0, rec.id);
+
+  // Disable the API key so embeds can no longer use it.
+  if (rec.key?.trim()) {
+    const lookupKey = redisKey.startsWith(KEY_PREFIX) ? keyLookupKey(rec.key) : keyLookupKeyLegacy(rec.key);
+    await redis.del(lookupKey).catch(() => {});
+  }
+
+  return next;
 }
 
 /** Load a client key record by internal id (e.g. retailer dashboard). */
