@@ -28,7 +28,13 @@ export async function POST(req: Request) {
   }
 
   const user = await findRetailerByEmail(email);
-  if (!user || !verifyRetailerPassword(password, user.passwordSalt, user.passwordHash)) {
+  if (
+    !user ||
+    user.deletedAt ||
+    !user.passwordSalt ||
+    !user.passwordHash ||
+    !verifyRetailerPassword(password, user.passwordSalt, user.passwordHash)
+  ) {
     return NextResponse.json({ error: "Invalid email or password." }, { status: 401 });
   }
 

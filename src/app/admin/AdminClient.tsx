@@ -49,7 +49,18 @@ type AnalyticsSummary = {
   demoVisitors: DemoVisitorAnalyticsRow[];
 };
 
-type AdminTab = "clients" | "analytics" | "wearMe";
+type AdminTab = "clients" | "analytics" | "wearMe" | "recovery";
+type RecoveryAccountRow = {
+  userId: string;
+  email: string;
+  storeName: string;
+  companyName: string;
+  clientId: string | null;
+  deletedAt: string;
+  remainingTryOns: number | null;
+  usageLimit: number | null;
+  usageCount: number | null;
+};
 
 const CREDIT_PLANS = [
   {
@@ -169,6 +180,9 @@ export default function AdminClient() {
   /** Which client key powers admin Wear Me (retailer `/api/tryon`, not the public demo). */
   const [wearMeKeyId, setWearMeKeyId] = useState<string | null>(null);
   const [analyticsInsightsOpen, setAnalyticsInsightsOpen] = useState(false);
+  const [recovery, setRecovery] = useState<RecoveryAccountRow[]>([]);
+  const [recoveryLoading, setRecoveryLoading] = useState(false);
+  const [recoveryError, setRecoveryError] = useState<string | null>(null);
 
   type QuotaEmailPreviewPayload = {
     subject: string;
@@ -258,6 +272,25 @@ export default function AdminClient() {
     }
   }
 
+  async function loadRecovery() {
+    setRecoveryLoading(true);
+    setRecoveryError(null);
+    try {
+      const res = await fetch("/api/admin/recovery");
+      const data = (await res.json()) as { accounts?: RecoveryAccountRow[]; error?: string };
+      if (!res.ok) {
+        if (data.error === "Unauthorized.") window.location.reload();
+        setRecoveryError(data.error || "Failed to load recovery.");
+        return;
+      }
+      setRecovery(Array.isArray(data.accounts) ? data.accounts : []);
+    } catch (e) {
+      setRecoveryError(e instanceof Error ? e.message : "Failed to load recovery.");
+    } finally {
+      setRecoveryLoading(false);
+    }
+  }
+
   async function loadQuotaPreview(forClientId?: string) {
     setQuotaPreviewLoading(true);
     setQuotaPreviewErr(null);
@@ -303,6 +336,7 @@ export default function AdminClient() {
 
   useEffect(() => {
     if (activeTab === "analytics") void loadAnalytics();
+    if (activeTab === "recovery") void loadRecovery();
   }, [activeTab]);
 
   useEffect(() => {
@@ -499,11 +533,16 @@ export default function AdminClient() {
 
   function refreshCurrentTab() {
     if (activeTab === "clients" || activeTab === "wearMe") void load();
-    else void loadAnalytics();
+    else if (activeTab === "analytics") void loadAnalytics();
+    else void loadRecovery();
   }
 
   const tabBusy =
-    activeTab === "clients" || activeTab === "wearMe" ? loading : analyticsLoading;
+    activeTab === "clients" || activeTab === "wearMe"
+      ? loading
+      : activeTab === "analytics"
+        ? analyticsLoading
+        : recoveryLoading;
 
   const wearMeKeyRecord = useMemo(
     () => keys.find((k) => k.id === wearMeKeyId) ?? null,
@@ -957,6 +996,19 @@ export default function AdminClient() {
             >
               Wear Me
             </button>
+            <button
+              type="button"
+              role="tab"
+              aria-selected={activeTab === "recovery"}
+              onClick={() => setActiveTab("recovery")}
+              className={`rounded-full px-5 py-2 text-sm font-semibold transition ${
+                activeTab === "recovery"
+                  ? "bg-zinc-800 text-zinc-100 shadow-sm"
+                  : "text-zinc-500 hover:text-zinc-300"
+              }`}
+            >
+              Recovery
+            </button>
           </div>
 
           {activeTab === "clients" ? (
@@ -1277,6 +1329,56 @@ export default function AdminClient() {
                   {wearMeKeyRecord ? (
                     <AdminWearMeClient key={wearMeKeyRecord.id} apiKey={wearMeKeyRecord.key} />
                   ) : null}
+                </div>
+              )}
+            </section>
+          ) : activeTab === "recovery" ? (
+            <section className="mt-8 w-full overflow-hidden rounded-2xl border border-zinc-800 bg-zinc-900/60 p-6 shadow-sm md:p-8">
+              <h2 className="text-base font-semibold text-zinc-100">Recovery</h2>
+              <p className="mt-1 text-sm text-zinc-400">
+                Soft-deleted retailer accounts. Use this list to inspect remaining try-ons and when the deletion happened.
+              </p>
+
+              {recoveryError ? (
+                <div className="mt-6 rounded-xl border border-red-900/60 bg-red-950/40 px-4 py-3 text-sm text-red-200">
+                  {recoveryError}
+                </div>
+              ) : null}
+
+              {recoveryLoading ? (
+                <div className="mt-8 text-sm text-zinc-500">Loading…</div>
+              ) : recovery.length === 0 ? (
+                <div className="mt-8 text-sm text-zinc-500">No deleted accounts.</div>
+              ) : (
+                <div className="mt-6 w-full overflow-x-auto">
+                  <div className="min-w-[860px]">
+                    <div className="grid grid-cols-[minmax(0,1.2fr)_minmax(0,0.9fr)_minmax(0,0.9fr)_minmax(0,0.9fr)] gap-3 border-b border-zinc-800 px-3 py-2 text-xs font-semibold uppercase tracking-wider text-zinc-500">
+                      <div>Account</div>
+                      <div>Try-ons remaining</div>
+                      <div>Client id</div>
+                      <div>Deleted</div>
+                    </div>
+                    {recovery.map((r) => {
+                      const remainingLabel =
+                        typeof r.remainingTryOns === "number" && typeof r.usageLimit === "number" && typeof r.usageCount === "number"
+                          ? `${r.remainingTryOns} (${r.usageCount}/${r.usageLimit} used)`
+                          : "—";
+                      return (
+                        <div
+                          key={r.userId}
+                          className="grid grid-cols-[minmax(0,1.2fr)_minmax(0,0.9fr)_minmax(0,0.9fr)_minmax(0,0.9fr)] items-start gap-3 border-b border-zinc-800 px-3 py-3 text-sm text-zinc-200"
+                        >
+                          <div className="min-w-0">
+                            <div className="truncate font-semibold text-zinc-100">{r.storeName || r.companyName || "—"}</div>
+                            <div className="truncate text-xs text-zinc-500">{r.email}</div>
+                          </div>
+                          <div className="text-sm text-zinc-200">{remainingLabel}</div>
+                          <div className="font-mono text-xs text-zinc-400">{r.clientId ?? "—"}</div>
+                          <div className="text-xs text-zinc-500">{new Date(r.deletedAt).toLocaleString()}</div>
+                        </div>
+                      );
+                    })}
+                  </div>
                 </div>
               )}
             </section>

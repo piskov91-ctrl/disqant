@@ -173,6 +173,8 @@ export type RetailerUser = {
   /** Set when the account has an API key / active plan (admin or checkout). */
   clientId: string | null;
   createdAt: string;
+  /** Soft-delete timestamp; deleted accounts are hidden from login/session and shown in admin recovery. */
+  deletedAt?: string | null;
 };
 
 export type RetailerPublic = Omit<RetailerUser, "passwordSalt" | "passwordHash">;
@@ -228,7 +230,10 @@ function normalizeOptionalWebsiteUrl(raw: string): string {
 
 export async function getRetailerById(id: string): Promise<RetailerUser | null> {
   const row = await loadRetailerRecord(id);
-  return row?.user ?? null;
+  const user = row?.user ?? null;
+  if (!user) return null;
+  if (user.deletedAt) return null;
+  return user;
 }
 
 /** Associates a retailer dashboard account with a Fit Room client API key record (after checkout or admin assignment). */
@@ -248,7 +253,9 @@ export async function findRetailerByEmail(email: string): Promise<RetailerUser |
   let id = redisUserIdFromIndex(await redis.get(emailIndexKey(norm)));
   if (!id) id = redisUserIdFromIndex(await redis.get(emailIndexKeyLegacy(norm)));
   if (!id) return null;
-  return getRetailerById(id);
+  const u = await getRetailerById(id);
+  if (!u || u.deletedAt) return null;
+  return u;
 }
 
 export async function deleteRetailerAccount(params: {
@@ -263,14 +270,71 @@ export async function deleteRetailerAccount(params: {
   const emailNorm = normalizeRetailerEmail(row.user.email);
   const emailIdxKey = row.legacy ? emailIndexKeyLegacy(emailNorm) : emailIndexKey(emailNorm);
 
+  const now = new Date().toISOString();
+  const next: RetailerUser = {
+    ...row.user,
+    deletedAt: now,
+    // Ensure credentials cannot be used even if indexes are re-created.
+    passwordSalt: "",
+    passwordHash: "",
+  };
+  await redis.set(row.userRedisKey, JSON.stringify(next));
+  // Remove email index so the email can be reused for a new signup if desired.
   await redis.del(emailIdxKey).catch(() => {});
-  await redis.del(row.userRedisKey).catch(() => {});
 
   const t = params.sessionToken?.trim();
   if (t) {
     await redis.del(sessionKey(t)).catch(() => {});
     await redis.del(sessionKeyLegacy(t)).catch(() => {});
   }
+}
+
+export type DeletedRetailerAccountRow = {
+  userId: string;
+  email: string;
+  storeName: string;
+  companyName: string;
+  clientId: string | null;
+  deletedAt: string;
+};
+
+export async function listDeletedRetailerAccounts(limit = 200): Promise<DeletedRetailerAccountRow[]> {
+  const redis = getRedis();
+
+  async function scanPrefix(prefix: string): Promise<DeletedRetailerAccountRow[]> {
+    const rows: DeletedRetailerAccountRow[] = [];
+    let cursor = 0;
+    while (rows.length < limit) {
+      const res = (await (redis as unknown as { scan: Function }).scan(cursor, {
+        match: `${prefix}*`,
+        count: 200,
+      })) as [number, string[]];
+      cursor = res[0];
+      const keys = res[1] ?? [];
+      if (keys.length > 0) {
+        const vals = (await redis.mget(...keys)) as Array<string | RetailerUser | null>;
+        for (const raw of vals) {
+          const u = parseRetailerUserRaw(raw);
+          if (!u?.deletedAt) continue;
+          rows.push({
+            userId: u.id,
+            email: u.email,
+            storeName: u.storeName,
+            companyName: u.companyName,
+            clientId: u.clientId ?? null,
+            deletedAt: u.deletedAt,
+          });
+          if (rows.length >= limit) break;
+        }
+      }
+      if (cursor === 0) break;
+    }
+    return rows;
+  }
+
+  const merged = [...(await scanPrefix(USER_PREFIX)), ...(await scanPrefix(LEGACY_USER_PREFIX))];
+  merged.sort((a, b) => (a.deletedAt < b.deletedAt ? 1 : a.deletedAt > b.deletedAt ? -1 : 0));
+  return merged.slice(0, limit);
 }
 
 export type RetailerEmailForQuotaNotice = {

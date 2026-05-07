@@ -5,6 +5,7 @@ import {
   registerRetailer,
   toPublicRetailer,
 } from "@/lib/retailerAuth";
+import { isFitRoomEmailConfigured, sendFitRoomPlainTextMail } from "@/lib/fitRoomEmail";
 
 export const runtime = "nodejs";
 
@@ -56,6 +57,28 @@ export async function POST(req: Request) {
     const token = await createRetailerSessionToken(user.id);
     const res = NextResponse.json({ ok: true, user: toPublicRetailer(user) });
     applyRetailerSessionToNextResponse(res, token);
+
+    if (isFitRoomEmailConfigured()) {
+      const greeting = user.firstName?.trim() || "there";
+      const store = user.storeName?.trim() || user.companyName?.trim() || "your store";
+      void sendFitRoomPlainTextMail({
+        to: user.email,
+        subject: "Welcome to Fit Room",
+        text: [
+          `Hi ${greeting},`,
+          "",
+          "Welcome to Fit Room — we’re excited to have you.",
+          "",
+          `Your account for ${store} is ready. Next, choose a subscription to activate your try-on quota and get your embed API key.`,
+          "",
+          "If you need a hand getting set up, just reply to this email — we’re happy to help.",
+          "",
+          "Warm regards,",
+          "The Fit Room Team",
+        ].join("\n"),
+      }).catch(() => {});
+    }
+
     return res;
   } catch (e) {
     const msg = e instanceof Error ? e.message : "Registration failed.";

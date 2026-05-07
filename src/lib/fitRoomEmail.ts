@@ -33,13 +33,10 @@ function logFitRoomMailSendFailure(
 }
 
 function requireResendApiKey(): string {
-  const apiKey =
-    process.env.RESEND_API_KEY?.trim() ||
-    process.env.RESEND_API_TOKEN?.trim() ||
-    process.env.RESEND_TOKEN?.trim();
+  const apiKey = process.env.RESEND_API_KEY?.trim();
   if (!apiKey) {
     throw new Error(
-      "Resend is not configured. Set RESEND_API_KEY (or RESEND_API_TOKEN / RESEND_TOKEN). Verify fit-room.com in Resend; default sender is Fit Room <support@fit-room.com> (override with FIT_ROOM_EMAIL_FROM).",
+      "Resend is not configured. Set RESEND_API_KEY. Verify fit-room.com in Resend; default sender is Fit Room <support@fit-room.com> (override with FIT_ROOM_EMAIL_FROM).",
     );
   }
   return apiKey;
@@ -47,11 +44,7 @@ function requireResendApiKey(): string {
 
 /** True when Fit Room transactional email can be sent via Resend. */
 export function isFitRoomEmailConfigured(): boolean {
-  return Boolean(
-    process.env.RESEND_API_KEY?.trim() ||
-      process.env.RESEND_API_TOKEN?.trim() ||
-      process.env.RESEND_TOKEN?.trim(),
-  );
+  return Boolean(process.env.RESEND_API_KEY?.trim());
 }
 
 /**
