@@ -20,20 +20,12 @@ export function StripeSubscribeButton({ planKey, className, children }: StripeSu
       try {
         const res = await fetch("/api/stripe/checkout", {
           method: "POST",
-          credentials: "include",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ plan: planKey }),
         });
-        const data = (await res.json()) as { url?: string; error?: string };
-        if (!res.ok) {
-          setError(data.error || "Could not start checkout.");
-          return;
-        }
-        if (!data.url) {
-          setError("Checkout URL missing. Please try again.");
-          return;
-        }
-        window.location.assign(data.url);
+        const data = (await res.json()) as { url?: string };
+        if (data.url) window.location.assign(data.url);
+        else setError("Could not start checkout");
       } catch {
         setError("Something went wrong. Please try again.");
       } finally {
