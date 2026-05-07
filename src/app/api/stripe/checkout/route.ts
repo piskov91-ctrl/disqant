@@ -1,8 +1,11 @@
-import { getStripe, checkoutSiteOrigin } from "@/lib/stripeServer";
+import { getStripe } from "@/lib/stripeServer";
 import { SUBSCRIPTION_PLANS, parseSubscriptionPlanKey } from "@/lib/subscriptionPlans";
 import { getRetailerSessionUser } from "@/lib/retailerAuth";
 
 export const runtime = "nodejs";
+
+const STRIPE_SUCCESS_URL = "https://fit-room.com/subscriptions?checkout=success" as const;
+const STRIPE_CANCEL_URL = "https://fit-room.com/subscriptions?checkout=cancelled" as const;
 
 async function createCheckoutSessionUrl(params: { req: Request; planKey: keyof typeof SUBSCRIPTION_PLANS }) {
   const user = await getRetailerSessionUser();
@@ -10,7 +13,6 @@ async function createCheckoutSessionUrl(params: { req: Request; planKey: keyof t
 
   const def = SUBSCRIPTION_PLANS[params.planKey];
   const stripe = getStripe();
-  const origin = checkoutSiteOrigin(params.req);
 
   const session = await stripe.checkout.sessions.create({
     mode: "subscription",
@@ -29,8 +31,8 @@ async function createCheckoutSessionUrl(params: { req: Request; planKey: keyof t
         },
       },
     ],
-    success_url: `${origin}/subscriptions?checkout=success`,
-    cancel_url: `${origin}/subscriptions?checkout=cancelled`,
+    success_url: STRIPE_SUCCESS_URL,
+    cancel_url: STRIPE_CANCEL_URL,
     metadata: {
       retailer_user_id: user.id,
       plan: params.planKey,
@@ -46,7 +48,7 @@ async function createCheckoutSessionUrl(params: { req: Request; planKey: keyof t
     allow_promotion_codes: true,
   });
 
-  if (!session.url) {
+  if (!session.url || typeof session.url !== "string") {
     throw new Error("Stripe did not return a checkout URL.");
   }
   return { kind: "ok" as const, url: session.url };
@@ -62,8 +64,7 @@ export async function GET(req: Request) {
   try {
     const res = await createCheckoutSessionUrl({ req, planKey });
     if (res.kind === "unauthorized") {
-      const origin = checkoutSiteOrigin(req);
-      return Response.redirect(`${origin}/login?next=/subscriptions`, 303);
+      return Response.redirect("/login?next=/subscriptions", 303);
     }
     return Response.redirect(res.url, 303);
   } catch (e) {
