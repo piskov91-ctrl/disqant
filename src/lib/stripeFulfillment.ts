@@ -1,9 +1,7 @@
 import type Stripe from "stripe";
 import {
   createClientKey,
-  getClientKeyRecordById,
   getRedis,
-  updateClientKey,
 } from "@/lib/apiKeyStore";
 import { getRetailerById, linkRetailerToClientId, type RetailerUser } from "@/lib/retailerAuth";
 import { getSubscriptionPlanDefinition, parseSubscriptionPlanKey } from "@/lib/subscriptionPlans";
@@ -48,21 +46,9 @@ async function fulfillPaidSubscriptionCheckoutSession(session: Stripe.Checkout.S
   ).slice(0, 200);
 
   const contactEmail = user.email.trim();
-  const existingClientId = user.clientId?.trim();
 
-  if (existingClientId) {
-    const existing = await getClientKeyRecordById(existingClientId);
-    if (existing) {
-      await updateClientKey({
-        id: existing.id,
-        clientName: clientName || existing.clientName,
-        contactEmail,
-        usageLimit: tryOnLimit,
-      });
-      return;
-    }
-  }
-
+  // Always provision a brand-new client key on paid checkout, even if the account had an older key.
+  // This ensures each paying customer gets a unique API key and avoids accidentally reusing any shared/demo key.
   const rec = await createClientKey({
     clientName,
     contactEmail,

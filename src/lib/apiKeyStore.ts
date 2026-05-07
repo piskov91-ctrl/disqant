@@ -106,8 +106,10 @@ function generateKey() {
 
 async function generateUniqueClientApiKey(redis: Redis): Promise<string> {
   // Collisions are astronomically unlikely, but enforce uniqueness defensively.
+  const demoKey = process.env.DEMO_API_KEY?.trim() || null;
   for (let i = 0; i < 8; i += 1) {
     const k = generateKey();
+    if (demoKey && k === demoKey) continue;
     const exists = (await redis.get(keyLookupKey(k))) as string | null;
     if (!exists) return k;
   }
