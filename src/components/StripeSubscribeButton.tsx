@@ -1,6 +1,5 @@
 "use client";
 
-import { useRouter } from "next/navigation";
 import { useCallback, useState } from "react";
 import type { SubscriptionPlanKey } from "@/lib/subscriptionPlans";
 
@@ -19,8 +18,22 @@ export function StripeSubscribeButton({ planKey, className, children }: StripeSu
       setPending(true);
       setError(null);
       try {
-        // Hard redirect so the browser follows Stripe's hosted checkout immediately.
-        window.location.assign(`/api/stripe/checkout?plan=${encodeURIComponent(planKey)}`);
+        const res = await fetch("/api/stripe/checkout", {
+          method: "POST",
+          credentials: "include",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ plan: planKey }),
+        });
+        const data = (await res.json()) as { url?: string; error?: string };
+        if (!res.ok) {
+          setError(data.error || "Could not start checkout.");
+          return;
+        }
+        if (!data.url) {
+          setError("Checkout URL missing. Please try again.");
+          return;
+        }
+        window.location.assign(data.url);
       } catch {
         setError("Something went wrong. Please try again.");
       } finally {
