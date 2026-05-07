@@ -157,20 +157,12 @@ export async function POST(req: Request) {
       ? req.headers.get("authorization")!.slice("Bearer ".length)
       : null);
 
-  let effectiveClientApiKey =
-    clientApiKey ||
-    process.env.DEMO_API_KEY?.trim() ||
-    process.env.FIT_ROOM_DEMO_TEST_CLIENT_KEY?.trim() ||
-    process.env.DISQUANT_DEMO_TEST_CLIENT_KEY?.trim() ||
-    null;
+  const effectiveClientApiKey = clientApiKey || process.env.DEMO_API_KEY?.trim() || null;
   if (!effectiveClientApiKey) {
-    // Final fallback for /demo: use the newest key in the DB so the demo works
-    // without exposing keys in the UI or URL.
-    const keys = await listClientKeys();
-    effectiveClientApiKey = keys[0]?.key ?? null;
-  }
-  if (!effectiveClientApiKey) {
-    return Response.json({ error: "Missing client API key." }, { status: 401 });
+    return Response.json(
+      { error: "Demo is not configured. Set DEMO_API_KEY for this environment." },
+      { status: 503 },
+    );
   }
 
   /** Caller sent an integrator key (retailer/embed); otherwise usage is attributed to demo/visitor. */
