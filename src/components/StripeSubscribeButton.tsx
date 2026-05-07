@@ -11,7 +11,6 @@ type StripeSubscribeButtonProps = {
 };
 
 export function StripeSubscribeButton({ planKey, className, children }: StripeSubscribeButtonProps) {
-  const router = useRouter();
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -20,33 +19,15 @@ export function StripeSubscribeButton({ planKey, className, children }: StripeSu
       setPending(true);
       setError(null);
       try {
-        const checkoutRes = await fetch("/api/stripe/checkout", {
-          method: "POST",
-          credentials: "include",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ plan: planKey }),
-        });
-        const data = (await checkoutRes.json()) as { url?: string; error?: string };
-        if (!checkoutRes.ok) {
-          if (data.error === "Unauthorized.") {
-            router.push("/login?next=/subscriptions");
-            return;
-          }
-          setError(data.error || "Could not start checkout.");
-          return;
-        }
-        if (!data.url) {
-          setError("Checkout URL missing. Please try again.");
-          return;
-        }
-        window.location.assign(data.url);
+        // Hard redirect so the browser follows Stripe's hosted checkout immediately.
+        window.location.assign(`/api/stripe/checkout?plan=${encodeURIComponent(planKey)}`);
       } catch {
         setError("Something went wrong. Please try again.");
       } finally {
         setPending(false);
       }
     })();
-  }, [planKey, router]);
+  }, [planKey]);
 
   return (
     <div className="flex w-full flex-col gap-2">
