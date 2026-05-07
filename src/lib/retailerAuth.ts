@@ -301,14 +301,20 @@ export type DeletedRetailerAccountRow = {
 export async function listDeletedRetailerAccounts(limit = 200): Promise<DeletedRetailerAccountRow[]> {
   const redis = getRedis();
 
+  type RedisScanResult = [number, string[]];
+  type RedisScanFn = (
+    cursor: number,
+    opts: { match: string; count?: number },
+  ) => Promise<RedisScanResult>;
+
   async function scanPrefix(prefix: string): Promise<DeletedRetailerAccountRow[]> {
     const rows: DeletedRetailerAccountRow[] = [];
     let cursor = 0;
     while (rows.length < limit) {
-      const res = (await (redis as unknown as { scan: Function }).scan(cursor, {
+      const res = await (redis as unknown as { scan: RedisScanFn }).scan(cursor, {
         match: `${prefix}*`,
         count: 200,
-      })) as [number, string[]];
+      });
       cursor = res[0];
       const keys = res[1] ?? [];
       if (keys.length > 0) {

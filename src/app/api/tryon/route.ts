@@ -1,6 +1,6 @@
 import { randomUUID } from "node:crypto";
 import { cookies } from "next/headers";
-import { assertClientCanUseByApiKey, incrementUsageOrThrow, listClientKeys } from "@/lib/apiKeyStore";
+import { assertClientCanUseByApiKey, incrementUsageOrThrow } from "@/lib/apiKeyStore";
 import {
   DEMO_ANALYTICS_SESSION_COOKIE,
   getRequestClientIp,

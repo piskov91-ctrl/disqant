@@ -1,7 +1,6 @@
 "use client";
 
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
-import { usePathname } from "next/navigation";
 import { ChevronLeft, SwitchCamera } from "lucide-react";
 import {
   DEMO_CATALOG,
@@ -32,8 +31,6 @@ import {
 } from "@/lib/wearMeShared";
 
 export default function DemoClient() {
-  const pathname = usePathname();
-
   const [selectedPresetId, setSelectedPresetId] = useState<GarmentPreset["id"]>(
     GARMENT_PRESETS[0]?.id ?? "tee",
   );
