@@ -113,7 +113,7 @@ function QuotaEmailNoticeBadges({ k }: { k: KeyRecord }) {
       <span
         className={
           eighty
-            ? `${base} border-amber-700/70 bg-amber-950/50 text-amber-200`
+            ? `${base} border-amber-700/70 bg-amber-950/50 text-amber-200 motion-safe:animate-pulse`
             : `${base} border-zinc-700/70 bg-zinc-950/30 text-zinc-500`
         }
         title={

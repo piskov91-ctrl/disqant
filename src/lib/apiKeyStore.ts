@@ -104,6 +104,16 @@ function generateKey() {
   return crypto.randomBytes(32).toString("base64url");
 }
 
+async function generateUniqueClientApiKey(redis: Redis): Promise<string> {
+  // Collisions are astronomically unlikely, but enforce uniqueness defensively.
+  for (let i = 0; i < 8; i += 1) {
+    const k = generateKey();
+    const exists = (await redis.get(keyLookupKey(k))) as string | null;
+    if (!exists) return k;
+  }
+  throw new Error("Could not generate a unique API key. Please try again.");
+}
+
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 function normalizeContactEmailInput(raw: string | undefined): string | undefined {
@@ -137,12 +147,13 @@ export async function createClientKey(params: {
   if (!fashnApiKey) {
     throw new Error("Missing Fashn.ai API key. Set FASHN_API_KEY in the server environment.");
   }
+  const apiKey = await generateUniqueClientApiKey(redis);
 
   const rec: ClientApiKeyRecord = {
     id: crypto.randomUUID(),
     clientName,
     contactEmail,
-    key: generateKey(),
+    key: apiKey,
     fashnApiKey,
     usageLimit: Math.floor(params.usageLimit),
     usageCount: 0,
