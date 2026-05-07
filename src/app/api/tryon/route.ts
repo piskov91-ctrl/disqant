@@ -159,6 +159,7 @@ export async function POST(req: Request) {
 
   let effectiveClientApiKey =
     clientApiKey ||
+    process.env.DEMO_API_KEY?.trim() ||
     process.env.FIT_ROOM_DEMO_TEST_CLIENT_KEY?.trim() ||
     process.env.DISQUANT_DEMO_TEST_CLIENT_KEY?.trim() ||
     null;

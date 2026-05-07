@@ -33,7 +33,6 @@ import {
 
 export default function DemoClient() {
   const pathname = usePathname();
-  const [urlKey, setUrlKey] = useState<string | null>(null);
 
   const [selectedPresetId, setSelectedPresetId] = useState<GarmentPreset["id"]>(
     GARMENT_PRESETS[0]?.id ?? "tee",
@@ -267,15 +266,7 @@ export default function DemoClient() {
 
   useEffect(() => {
     if (typeof window === "undefined") return;
-    const raw = new URLSearchParams(window.location.search).get("key");
-    setUrlKey(raw?.trim() || null);
-  }, [pathname]);
-
-  useEffect(() => {
-    if (typeof window === "undefined") return;
     const onPopState = (e: PopStateEvent) => {
-      const raw = new URLSearchParams(window.location.search).get("key");
-      setUrlKey(raw?.trim() || null);
       applyDemoPopState(e.state);
     };
     window.addEventListener("popstate", onPopState);
@@ -546,7 +537,6 @@ export default function DemoClient() {
       fd.set("generationMode", "balanced");
       const tryOnTrace = globalThis.crypto?.randomUUID?.() ?? `tryon-${Date.now()}-${Math.random()}`;
       const reqHeaders: Record<string, string> = { "x-tryon-trace": tryOnTrace };
-      if (urlKey) reqHeaders["x-api-key"] = urlKey;
       console.log(
         "[fit-room] browser: about to fetch POST /api/tryon (one successful log per try-on; if you see 2+ per click, the client is firing more than one request before the in-flight ref blocks it)",
         { tryOnTrace },
@@ -617,7 +607,6 @@ export default function DemoClient() {
   }, [
     clearWearProgressTimer,
     startWearFakeProgress,
-    urlKey,
     wearGarmentFile,
     wearModelFile,
     wearPreset,
