@@ -20,11 +20,6 @@ export function StripeSubscribeButton({ planKey, className, children }: StripeSu
       setPending(true);
       setError(null);
       try {
-        const meRes = await fetch("/api/retailer/me", { credentials: "include" });
-        if (!meRes.ok) {
-          router.push("/login?next=/subscriptions");
-          return;
-        }
         const checkoutRes = await fetch("/api/stripe/checkout", {
           method: "POST",
           credentials: "include",
