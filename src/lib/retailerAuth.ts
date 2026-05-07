@@ -251,6 +251,28 @@ export async function findRetailerByEmail(email: string): Promise<RetailerUser |
   return getRetailerById(id);
 }
 
+export async function deleteRetailerAccount(params: {
+  userId: string;
+  /** Current session token (if available) so we can invalidate it server-side. */
+  sessionToken?: string;
+}): Promise<void> {
+  const row = await loadRetailerRecord(params.userId.trim());
+  if (!row) throw new Error("Account not found.");
+
+  const redis = getRedis();
+  const emailNorm = normalizeRetailerEmail(row.user.email);
+  const emailIdxKey = row.legacy ? emailIndexKeyLegacy(emailNorm) : emailIndexKey(emailNorm);
+
+  await redis.del(emailIdxKey).catch(() => {});
+  await redis.del(row.userRedisKey).catch(() => {});
+
+  const t = params.sessionToken?.trim();
+  if (t) {
+    await redis.del(sessionKey(t)).catch(() => {});
+    await redis.del(sessionKeyLegacy(t)).catch(() => {});
+  }
+}
+
 export type RetailerEmailForQuotaNotice = {
   email: string;
   storeName: string;

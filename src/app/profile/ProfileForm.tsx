@@ -41,6 +41,10 @@ export function ProfileForm({ initial }: { initial: ProfileInitialUser }) {
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [deleteOpen, setDeleteOpen] = useState(false);
+  const [deleteEmail, setDeleteEmail] = useState("");
+  const [deleting, setDeleting] = useState(false);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
 
   const validate = useCallback((): string | null => {
     if (!firstName.trim()) return "First name is required.";
@@ -107,8 +111,9 @@ export function ProfileForm({ initial }: { initial: ProfileInitialUser }) {
   }
 
   return (
-    <div className="mt-8 rounded-2xl border border-zinc-700/80 bg-zinc-900/90 p-6 shadow-xl shadow-black/40 backdrop-blur-sm md:p-8">
-      <form onSubmit={handleSubmit} className="space-y-5" noValidate>
+    <div className="mt-8 space-y-8">
+      <div className="rounded-2xl border border-zinc-700/80 bg-zinc-900/90 p-6 shadow-xl shadow-black/40 backdrop-blur-sm md:p-8">
+        <form onSubmit={handleSubmit} className="space-y-5" noValidate>
         <div className="grid gap-5 sm:grid-cols-2">
           <div>
             <label htmlFor="pf-first" className="block text-sm font-medium text-zinc-200">
@@ -233,7 +238,105 @@ export function ProfileForm({ initial }: { initial: ProfileInitialUser }) {
             Back to dashboard
           </Link>
         </div>
-      </form>
+        </form>
+      </div>
+
+      <section className="rounded-2xl border border-red-900/60 bg-red-950/30 p-6 shadow-xl shadow-black/30 md:p-8">
+        <h2 className="text-base font-semibold text-red-100">Danger zone</h2>
+        <p className="mt-2 text-sm leading-relaxed text-red-200/80">
+          Deleting your account removes your dashboard login and profile details. This cannot be undone.
+        </p>
+
+        {!deleteOpen ? (
+          <button
+            type="button"
+            onClick={() => {
+              setDeleteOpen(true);
+              setDeleteEmail("");
+              setDeleteError(null);
+            }}
+            className="mt-5 inline-flex h-11 items-center justify-center rounded-full border border-red-700/70 bg-red-950/50 px-6 text-sm font-semibold text-red-100 transition hover:border-red-600 hover:bg-red-950/70"
+          >
+            Delete account
+          </button>
+        ) : (
+          <div className="mt-5 space-y-4">
+            <div className="rounded-xl border border-red-900/60 bg-red-950/40 px-4 py-3 text-sm text-red-100">
+              <p className="font-medium text-red-50">Type your email to confirm deletion</p>
+              <p className="mt-1 text-red-100/80">
+                Enter <span className="font-semibold">{initial.email}</span> to permanently delete your account.
+              </p>
+            </div>
+
+            <div>
+              <label htmlFor="da-email" className="block text-sm font-medium text-red-100">
+                Email confirmation
+              </label>
+              <input
+                id="da-email"
+                name="deleteEmail"
+                type="email"
+                autoComplete="email"
+                value={deleteEmail}
+                onChange={(e) => setDeleteEmail(e.target.value)}
+                className="mt-2 block w-full rounded-xl border border-red-900/60 bg-zinc-950 px-4 py-3 text-sm text-zinc-100 outline-none transition focus:border-red-600/70 focus:ring-1 focus:ring-red-600/25"
+              />
+            </div>
+
+            {deleteError ? (
+              <div className="rounded-xl border border-red-700/60 bg-red-950/60 px-4 py-3 text-sm text-red-100">
+                {deleteError}
+              </div>
+            ) : null}
+
+            <div className="flex flex-wrap gap-3">
+              <button
+                type="button"
+                disabled={deleting || deleteEmail.trim().toLowerCase() !== initial.email.trim().toLowerCase()}
+                onClick={() => {
+                  void (async () => {
+                    setDeleteError(null);
+                    setDeleting(true);
+                    try {
+                      const res = await fetch("/api/retailer/delete-account", {
+                        method: "POST",
+                        credentials: "include",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({ email: deleteEmail }),
+                      });
+                      const data = (await res.json()) as { ok?: true; error?: string };
+                      if (!res.ok) {
+                        setDeleteError(data.error || "Could not delete account.");
+                        return;
+                      }
+                      window.location.assign("/");
+                    } catch {
+                      setDeleteError("Something went wrong. Please try again.");
+                    } finally {
+                      setDeleting(false);
+                    }
+                  })();
+                }}
+                className="inline-flex h-11 items-center justify-center rounded-full bg-red-600 px-6 text-sm font-semibold text-white transition hover:bg-red-500 disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                {deleting ? "Deleting…" : "Permanently delete"}
+              </button>
+              <button
+                type="button"
+                disabled={deleting}
+                onClick={() => {
+                  setDeleteOpen(false);
+                  setDeleteEmail("");
+                  setDeleteError(null);
+                }}
+                className="inline-flex h-11 items-center justify-center rounded-full border border-zinc-700 bg-zinc-900/40 px-6 text-sm font-semibold text-zinc-200 transition hover:border-zinc-600 hover:bg-zinc-900/70 disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        )}
+      </section>
     </div>
   );
 }
