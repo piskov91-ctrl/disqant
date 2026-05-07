@@ -1,12 +1,13 @@
 import { randomUUID } from "node:crypto";
 import { cookies } from "next/headers";
-import { assertClientCanUseByApiKey, incrementUsageOrThrow } from "@/lib/apiKeyStore";
+import { assertClientCanUseByApiKey, getClientKeyRecordById, incrementUsageOrThrow } from "@/lib/apiKeyStore";
 import {
   DEMO_ANALYTICS_SESSION_COOKIE,
   getRequestClientIp,
   recordTryOnCompleted,
 } from "@/lib/platformAnalytics";
 import { recordTryOnProductUsage } from "@/lib/tryOnAnalytics";
+import { getRetailerSessionUser } from "@/lib/retailerAuth";
 
 export const runtime = "nodejs";
 
@@ -157,7 +158,20 @@ export async function POST(req: Request) {
       ? req.headers.get("authorization")!.slice("Bearer ".length)
       : null);
 
-  const effectiveClientApiKey = clientApiKey || process.env.DEMO_API_KEY?.trim() || null;
+  let effectiveClientApiKey = clientApiKey || null;
+  if (!effectiveClientApiKey) {
+    const user = await getRetailerSessionUser();
+    const linkedId = user?.clientId?.trim() || "";
+    if (linkedId) {
+      const client = await getClientKeyRecordById(linkedId);
+      if (client?.key?.trim()) {
+        effectiveClientApiKey = client.key.trim();
+      }
+    }
+  }
+  if (!effectiveClientApiKey) {
+    effectiveClientApiKey = process.env.DEMO_API_KEY?.trim() || null;
+  }
   if (!effectiveClientApiKey) {
     return Response.json(
       { error: "Demo is not configured. Set DEMO_API_KEY for this environment." },
