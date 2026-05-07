@@ -272,6 +272,27 @@ export async function deleteRetailerAccount(params: {
   const emailIdxKey = row.legacy ? emailIndexKeyLegacy(emailNorm) : emailIndexKey(emailNorm);
 
   const now = new Date().toISOString();
+
+  const linkedClientId = row.user.clientId?.trim() || "";
+  const clientRec = linkedClientId ? await getClientKeyRecordById(linkedClientId).catch(() => null) : null;
+  const remainingTryOns =
+    clientRec && Number.isFinite(clientRec.usageLimit) && Number.isFinite(clientRec.usageCount)
+      ? Math.max(0, clientRec.usageLimit - clientRec.usageCount)
+      : null;
+
+  // Persist a dedicated recovery record (used by the Admin Recovery tab).
+  await redis.set(
+    `fit-room:recovery:${row.user.id}`,
+    JSON.stringify({
+      userId: row.user.id,
+      storeName: row.user.storeName,
+      email: row.user.email,
+      deletedAt: now,
+      clientId: linkedClientId || null,
+      remainingTryOns,
+    }),
+  );
+
   const next: RetailerUser = {
     ...row.user,
     deletedAt: now,
@@ -284,7 +305,6 @@ export async function deleteRetailerAccount(params: {
   await redis.del(emailIdxKey).catch(() => {});
 
   // Soft-delete linked client key record so it moves to recovery and is not usable by embeds.
-  const linkedClientId = row.user.clientId?.trim() || "";
   if (linkedClientId) {
     await markClientKeyDeleted({ id: linkedClientId, deletedAt: now }).catch(() => {});
   }
@@ -304,6 +324,59 @@ export type DeletedRetailerAccountRow = {
   clientId: string | null;
   deletedAt: string;
 };
+
+export type RetailerRecoveryRecord = {
+  userId: string;
+  storeName: string;
+  email: string;
+  deletedAt: string;
+  clientId: string | null;
+  remainingTryOns: number | null;
+};
+
+export async function listRetailerRecoveryRecords(limit = 250): Promise<RetailerRecoveryRecord[]> {
+  const redis = getRedis();
+
+  type RedisScanResult = [number, string[]];
+  type RedisScanFn = (cursor: number, opts: { match: string; count?: number }) => Promise<RedisScanResult>;
+
+  const rows: RetailerRecoveryRecord[] = [];
+  let cursor = 0;
+  while (rows.length < limit) {
+    const res = await (redis as unknown as { scan: RedisScanFn }).scan(cursor, {
+      match: "fit-room:recovery:*",
+      count: 200,
+    });
+    cursor = res[0];
+    const keys = res[1] ?? [];
+    if (keys.length > 0) {
+      const vals = (await redis.mget(...keys)) as Array<string | null>;
+      for (const raw of vals) {
+        if (!raw) continue;
+        try {
+          const p = JSON.parse(raw) as RetailerRecoveryRecord;
+          if (!p?.userId || !p?.deletedAt) continue;
+          rows.push({
+            userId: String(p.userId),
+            storeName: String(p.storeName ?? ""),
+            email: String(p.email ?? ""),
+            deletedAt: String(p.deletedAt),
+            clientId: p.clientId ? String(p.clientId) : null,
+            remainingTryOns:
+              typeof p.remainingTryOns === "number" && Number.isFinite(p.remainingTryOns) ? p.remainingTryOns : null,
+          });
+        } catch {
+          // ignore invalid recovery payloads
+        }
+        if (rows.length >= limit) break;
+      }
+    }
+    if (cursor === 0) break;
+  }
+
+  rows.sort((a, b) => (a.deletedAt < b.deletedAt ? 1 : a.deletedAt > b.deletedAt ? -1 : 0));
+  return rows.slice(0, limit);
+}
 
 export async function listDeletedRetailerAccounts(limit = 200): Promise<DeletedRetailerAccountRow[]> {
   const redis = getRedis();
