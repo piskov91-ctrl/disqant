@@ -3,11 +3,11 @@ import { ADMIN_AUTH_COOKIE, isAdminAuthorizedCookieValue } from "@/lib/adminAuth
 import { getClientKeyRecordById } from "@/lib/apiKeyStore";
 import { resolveFitRoomEmailFrom } from "@/lib/fitRoomEmail";
 import {
-  TRY_ON_QUOTA_EIGHTY_PCT_EMAIL_SUBJECT,
-  buildTryOnQuotaEightyPctEmailBody,
-  buildTryOnQuotaEightyPctEmailHtml,
+  TRY_ON_QUOTA_NEAR_LIMIT_EMAIL_SUBJECT_PREFIX,
+  buildTryOnQuotaUsageEmailBody,
+  buildTryOnQuotaUsageEmailHtml,
   getTryOnQuotaUpgradePlanUrl,
-  sampleTryOnUsageCountAtLeastEightyPercent,
+  sampleTryOnUsageCountAtLeastSeventyFivePercent,
 } from "@/lib/usageTryOnQuotaEmail";
 import { listRetailersLinkedToClientId } from "@/lib/retailerAuth";
 
@@ -42,17 +42,20 @@ export async function GET(req: Request) {
       "your store";
   }
 
-  const sampleUsed = sampleTryOnUsageCountAtLeastEightyPercent(usageLimit);
+  const sampleUsed = sampleTryOnUsageCountAtLeastSeventyFivePercent(usageLimit);
   const previewParams = {
     storeName: previewStoreLabel,
     used: sampleUsed,
     limit: usageLimit,
   };
-  const body = buildTryOnQuotaEightyPctEmailBody(previewParams);
-  const html = buildTryOnQuotaEightyPctEmailHtml(previewParams);
+  const pct = Math.round(((sampleUsed / Math.max(1, usageLimit)) * 100) * 10) / 10;
+  const pctLabel = Number.isInteger(pct) ? `${pct.toFixed(0)}%` : `${pct.toFixed(1)}%`;
+  const subject = `${TRY_ON_QUOTA_NEAR_LIMIT_EMAIL_SUBJECT_PREFIX}${pctLabel} used`;
+  const body = buildTryOnQuotaUsageEmailBody(previewParams);
+  const html = buildTryOnQuotaUsageEmailHtml(previewParams);
 
   return Response.json({
-    subject: TRY_ON_QUOTA_EIGHTY_PCT_EMAIL_SUBJECT,
+    subject,
     body,
     html,
     from: resolveFitRoomEmailFrom(),
@@ -61,6 +64,6 @@ export async function GET(req: Request) {
     sampleLimit: usageLimit,
     previewStoreLabel,
     caption:
-      "Uses illustrative counts at roughly 80% of the plan's try-on limit — multipart email (HTML + plain text) matches what linked retailers receive.",
+      "Uses illustrative counts at roughly 75% of the plan's try-on limit — multipart email (HTML + plain text) matches what linked retailers receive.",
   });
 }

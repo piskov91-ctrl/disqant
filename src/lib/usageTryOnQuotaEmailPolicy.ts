@@ -1,16 +1,16 @@
 import type { ClientApiKeyRecord } from "@/lib/apiKeyStore";
 
-function crossedTryOnUsageEightyPct(
+function crossedTryOnUsageSeventyFivePct(
   prev: ClientApiKeyRecord,
   next: ClientApiKeyRecord,
 ): boolean {
   const lim = next.usageLimit;
   if (!(lim > 0)) return false;
-  return prev.usageCount * 5 < lim * 4 && next.usageCount * 5 >= lim * 4;
+  return prev.usageCount * 4 < lim * 3 && next.usageCount * 4 >= lim * 3;
 }
 
-export function alreadySentTryOnUsageEightyEmailForCycle(rec: ClientApiKeyRecord): boolean {
-  const sentFor = rec.usageEightPctEmailSentForLimit;
+export function alreadySentTryOnUsageSeventyFiveEmailForCycle(rec: ClientApiKeyRecord): boolean {
+  const sentFor = rec.usageSeventyFivePctEmailSentForLimit;
   if (sentFor == null || !Number.isFinite(sentFor)) return false;
   return sentFor === rec.usageLimit;
 }
@@ -25,35 +25,38 @@ export function usageIncrementReachedQuotaLimit(
   return prev.usageCount < lim && next.usageCount >= lim;
 }
 
-function crossedTryOnUsageHundredPct(
+function crossedTryOnUsageNinetyNinePct(
   prev: ClientApiKeyRecord,
   next: ClientApiKeyRecord,
 ): boolean {
-  return usageIncrementReachedQuotaLimit(prev, next);
+  const lim = next.usageLimit;
+  if (!(lim > 0)) return false;
+  if (usageIncrementReachedQuotaLimit(prev, next)) return false;
+  return prev.usageCount * 100 < lim * 99 && next.usageCount * 100 >= lim * 99;
 }
 
-export function alreadySentTryOnUsageHundredEmailForCycle(rec: ClientApiKeyRecord): boolean {
-  const sentFor = rec.usageHundredPctEmailSentForLimit;
+export function alreadySentTryOnUsageNinetyNineEmailForCycle(rec: ClientApiKeyRecord): boolean {
+  const sentFor = rec.usageNinetyNinePctEmailSentForLimit;
   if (sentFor == null || !Number.isFinite(sentFor)) return false;
   return sentFor === rec.usageLimit;
 }
 
-/** True after increment when usage reached the plan limit and we have not emailed for this usage limit tier yet. */
-export function usageIncrementShouldPersistHundredPctEmailFlag(params: {
+/** True after increment when we reached 99% and have not emailed for this usage limit tier yet. */
+export function usageIncrementShouldPersistNinetyNinePctEmailFlag(params: {
   prev: ClientApiKeyRecord;
   next: ClientApiKeyRecord;
 }): boolean {
   const { prev, next } = params;
-  if (!crossedTryOnUsageHundredPct(prev, next)) return false;
-  return !alreadySentTryOnUsageHundredEmailForCycle(prev);
+  if (!crossedTryOnUsageNinetyNinePct(prev, next)) return false;
+  return !alreadySentTryOnUsageNinetyNineEmailForCycle(prev);
 }
 
-/** True after increment when we crossed 80% and have not emailed for this usage limit tier yet. */
-export function usageIncrementShouldPersistEightyPctEmailFlag(params: {
+/** True after increment when we crossed 75% and have not emailed for this usage limit tier yet. */
+export function usageIncrementShouldPersistSeventyFivePctEmailFlag(params: {
   prev: ClientApiKeyRecord;
   next: ClientApiKeyRecord;
 }): boolean {
   const { prev, next } = params;
-  if (!crossedTryOnUsageEightyPct(prev, next)) return false;
-  return !alreadySentTryOnUsageEightyEmailForCycle(prev);
+  if (!crossedTryOnUsageSeventyFivePct(prev, next)) return false;
+  return !alreadySentTryOnUsageSeventyFiveEmailForCycle(prev);
 }

@@ -2,10 +2,13 @@ import type { ClientApiKeyRecord } from "@/lib/apiKeyStore";
 import { isFitRoomEmailConfigured, sendFitRoomMail } from "@/lib/fitRoomEmail";
 import { listRetailersLinkedToClientId } from "@/lib/retailerAuth";
 
-export const TRY_ON_QUOTA_EIGHTY_PCT_EMAIL_SUBJECT =
-  "You're almost there — your Fit Room try-ons are running low" as const;
+function formatPct(pct: number): string {
+  if (!Number.isFinite(pct)) return "0%";
+  const rounded1 = Math.round(pct * 10) / 10;
+  return Number.isInteger(rounded1) ? `${rounded1.toFixed(0)}%` : `${rounded1.toFixed(1)}%`;
+}
 
-export const TRY_ON_QUOTA_FULL_LIMIT_EMAIL_SUBJECT = "Your Fit Room try-ons have been used up" as const;
+export const TRY_ON_QUOTA_NEAR_LIMIT_EMAIL_SUBJECT_PREFIX = "Fit Room try-ons: " as const;
 
 /** Upgrade CTA for quota emails (HTML button + plain-text fallback). */
 export const FIT_ROOM_TRY_ON_QUOTA_UPGRADE_URL = "https://fit-room.com/subscriptions" as const;
@@ -41,10 +44,11 @@ async function resolveQuotaNoticeRecipients(client: ClientApiKeyRecord): Promise
 }
 
 function buildQuotaPlainText(storeName: string, used: number, limit: number, upgradeUrl: string) {
+  const pct = formatPct((used / Math.max(1, limit)) * 100);
   return [
     `Hi ${storeName},`,
     "",
-    `Just a quick heads-up — you've used ${used} out of your ${limit} monthly try-ons, which means you're 80% through your current plan.`,
+    `Just a quick heads-up — you've used ${used} out of your ${limit} monthly try-ons (${pct} of your plan).`,
     "",
     "Your customers are clearly loving the virtual try-on experience! To make sure they never miss out, you might want to consider upgrading before you hit the limit. It only takes a minute and your store will stay live without any interruption.",
     "",
@@ -61,17 +65,18 @@ function buildQuotaPlainText(storeName: string, used: number, limit: number, upg
 function buildQuotaHtml(storeName: string, used: number, limit: number, upgradeUrl: string) {
   const safeName = escapeHtml(storeName);
   const escapedUrl = escapeHtml(upgradeUrl);
+  const pct = escapeHtml(formatPct((used / Math.max(1, limit)) * 100));
   const paragraphStyle = "margin:0 0 16px;font-size:15px;line-height:1.6;color:#3f3f46;";
   return `<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>${TRY_ON_QUOTA_EIGHTY_PCT_EMAIL_SUBJECT}</title>
+<title>Fit Room try-ons update</title>
 </head>
 <body style="margin:0;padding:24px;font-family:ui-sans-serif,system-ui,-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;background-color:#fafafa;color:#3f3f46;">
   <p style="${paragraphStyle}">Hi ${safeName},</p>
-  <p style="${paragraphStyle}">Just a quick heads-up — you've used ${used} out of your ${limit} monthly try-ons, which means you're 80% through your current plan.</p>
+  <p style="${paragraphStyle}">Just a quick heads-up — you've used ${used} out of your ${limit} monthly try-ons (${pct} of your plan).</p>
   <p style="${paragraphStyle}">Your customers are clearly loving the virtual try-on experience! To make sure they never miss out, you might want to consider upgrading before you hit the limit. It only takes a minute and your store will stay live without any interruption.</p>
   <table role="presentation" cellspacing="0" cellpadding="0" border="0" style="margin:24px 0;">
     <tr>
@@ -86,57 +91,12 @@ function buildQuotaHtml(storeName: string, used: number, limit: number, upgradeU
 </html>`;
 }
 
-function buildFullLimitPlainText(storeName: string, limit: number, upgradeUrl: string) {
-  return [
-    `Hi ${storeName},`,
-    "",
-    `Thank you for using Fit Room — you've now used all ${limit} try-ons included in your current plan this month.`,
-    "",
-    "We hope your customers loved the virtual try-on experience. When you're ready to welcome more try-ons, you can upgrade your plan in just a few clicks and keep everything running smoothly.",
-    "",
-    upgradeUrl,
-    "",
-    "Questions? Just reply to this email — we're glad to help.",
-    "",
-    "Warm regards,",
-    "The Fit Room Team",
-  ].join("\n");
-}
-
-function buildFullLimitHtml(storeName: string, limit: number, upgradeUrl: string) {
-  const safeName = escapeHtml(storeName);
-  const escapedUrl = escapeHtml(upgradeUrl);
-  const paragraphStyle = "margin:0 0 16px;font-size:15px;line-height:1.6;color:#3f3f46;";
-  return `<!DOCTYPE html>
-<html lang="en">
-<head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>${TRY_ON_QUOTA_FULL_LIMIT_EMAIL_SUBJECT}</title>
-</head>
-<body style="margin:0;padding:24px;font-family:ui-sans-serif,system-ui,-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;background-color:#fafafa;color:#3f3f46;">
-  <p style="${paragraphStyle}">Hi ${safeName},</p>
-  <p style="${paragraphStyle}">Thank you for using Fit Room — you've now used all ${limit} try-ons included in your current plan this month.</p>
-  <p style="${paragraphStyle}">We hope your customers loved the virtual try-on experience. When you're ready to welcome more try-ons, you can upgrade your plan in just a few clicks and keep everything running smoothly.</p>
-  <table role="presentation" cellspacing="0" cellpadding="0" border="0" style="margin:24px 0;">
-    <tr>
-      <td align="left" style="border-radius:10px;background-color:#18181b;">
-        <a href="${escapedUrl}" style="display:inline-block;padding:14px 28px;font-size:15px;font-weight:600;color:#fafafa;text-decoration:none;border-radius:10px;line-height:1.2;">View plans &amp; upgrade</a>
-      </td>
-    </tr>
-  </table>
-  <p style="${paragraphStyle}">Questions? Just reply to this email — we're glad to help.</p>
-  <p style="margin:24px 0 0;font-size:15px;line-height:1.6;color:#3f3f46;">Warm regards,<br>The Fit Room Team</p>
-</body>
-</html>`;
-}
-
 export function getTryOnQuotaUpgradePlanUrl(): string {
   return FIT_ROOM_TRY_ON_QUOTA_UPGRADE_URL;
 }
 
-/** Plain-text part of the multipart 80% usage reminder. */
-export function buildTryOnQuotaEightyPctEmailBody(params: {
+/** Plain-text part of the multipart usage reminder (75% or 99%). */
+export function buildTryOnQuotaUsageEmailBody(params: {
   storeName: string;
   used: number;
   limit: number;
@@ -145,8 +105,8 @@ export function buildTryOnQuotaEightyPctEmailBody(params: {
   return buildQuotaPlainText(params.storeName, params.used, params.limit, upgradeUrl);
 }
 
-/** HTML part of the multipart 80% usage reminder (includes the upgrade button). */
-export function buildTryOnQuotaEightyPctEmailHtml(params: {
+/** HTML part of the multipart usage reminder (75% or 99%). */
+export function buildTryOnQuotaUsageEmailHtml(params: {
   storeName: string;
   used: number;
   limit: number;
@@ -155,33 +115,28 @@ export function buildTryOnQuotaEightyPctEmailHtml(params: {
   return buildQuotaHtml(params.storeName, params.used, params.limit, upgradeUrl);
 }
 
-/** Plain-text for the 100% limit reached email. */
-export function buildTryOnQuotaFullLimitEmailBody(params: { storeName: string; limit: number }): string {
-  return buildFullLimitPlainText(params.storeName, params.limit, FIT_ROOM_TRY_ON_QUOTA_UPGRADE_URL);
-}
-
-/** HTML for the 100% limit reached email. */
-export function buildTryOnQuotaFullLimitEmailHtml(params: { storeName: string; limit: number }): string {
-  return buildFullLimitHtml(params.storeName, params.limit, FIT_ROOM_TRY_ON_QUOTA_UPGRADE_URL);
-}
-
-/** Smallest usage count ≥ 80% of `limit`, capped at `limit` (whole try-ons only). */
-export function sampleTryOnUsageCountAtLeastEightyPercent(limit: number): number {
+/** Smallest usage count ≥ 75% of `limit`, capped at `limit` (whole try-ons only). */
+export function sampleTryOnUsageCountAtLeastSeventyFivePercent(limit: number): number {
   if (!Number.isFinite(limit) || limit <= 0) return 800;
-  return Math.min(Math.ceil((limit * 4) / 5), limit);
+  return Math.min(Math.ceil((limit * 3) / 4), limit);
 }
 
-/** Fire-and-forget: linked retailer signup emails + optional admin {@link ClientApiKeyRecord.contactEmail}. */
-export function sendTryOnLimitEightyPctNoticeAsync(params: {
+function buildUsageSubject(used: number, limit: number): string {
+  const pct = formatPct((used / Math.max(1, limit)) * 100);
+  return `${TRY_ON_QUOTA_NEAR_LIMIT_EMAIL_SUBJECT_PREFIX}${pct} used`;
+}
+
+/** Fire-and-forget: usage warning on first cross of 75%. */
+export function sendTryOnUsageSeventyFivePctNoticeAsync(params: {
   client: ClientApiKeyRecord;
 }) {
   const resendConfigured = isFitRoomEmailConfigured();
-  console.log("[fit-room][email-debug] sendTryOnLimitEightyPctNoticeAsync", {
+  console.log("[fit-room][email-debug] sendTryOnUsageSeventyFivePctNoticeAsync", {
     clientId: params.client.id,
     resendConfigured,
   });
   if (!resendConfigured) {
-    console.log("[fit-room][email-debug] sendTryOnLimitEightyPctNoticeAsync skipped (RESEND_API_KEY not set)");
+    console.log("[fit-room][email-debug] sendTryOnUsageSeventyFivePctNoticeAsync skipped (RESEND_API_KEY not set)");
     return;
   }
 
@@ -190,11 +145,11 @@ export function sendTryOnLimitEightyPctNoticeAsync(params: {
     try {
       const { emailTargets, storeName } = await resolveQuotaNoticeRecipients(client);
       if (emailTargets.length === 0) {
-        console.log("[fit-room][email-debug] sendTryOnLimitEightyPctNoticeAsync skipped (no recipient emails)");
+        console.log("[fit-room][email-debug] sendTryOnUsageSeventyFivePctNoticeAsync skipped (no recipient emails)");
         return;
       }
 
-      console.log("[fit-room][email-debug] sendTryOnLimitEightyPctNoticeAsync sending", {
+      console.log("[fit-room][email-debug] sendTryOnUsageSeventyFivePctNoticeAsync sending", {
         clientId: client.id,
         recipientCount: emailTargets.length,
       });
@@ -204,13 +159,14 @@ export function sendTryOnLimitEightyPctNoticeAsync(params: {
         used: client.usageCount,
         limit: client.usageLimit,
       };
-      const text = buildTryOnQuotaEightyPctEmailBody(bodyParams);
-      const html = buildTryOnQuotaEightyPctEmailHtml(bodyParams);
+      const subject = buildUsageSubject(bodyParams.used, bodyParams.limit);
+      const text = buildTryOnQuotaUsageEmailBody(bodyParams);
+      const html = buildTryOnQuotaUsageEmailHtml(bodyParams);
 
       await Promise.all(
         emailTargets.map((to) =>
-          sendFitRoomMail({ to, subject: TRY_ON_QUOTA_EIGHTY_PCT_EMAIL_SUBJECT, text, html }).catch((err: unknown) => {
-            console.error("[fit-room] try-on quota 80% email failed", {
+          sendFitRoomMail({ to, subject, text, html }).catch((err: unknown) => {
+            console.error("[fit-room] try-on quota 75% email failed", {
               clientId: client.id,
               to,
               message: err instanceof Error ? err.message : String(err),
@@ -219,7 +175,7 @@ export function sendTryOnLimitEightyPctNoticeAsync(params: {
         ),
       );
     } catch (e) {
-      console.error("[fit-room] try-on quota 80% email pipeline failed", {
+      console.error("[fit-room] try-on quota 75% email pipeline failed", {
         clientId: client.id,
         message: e instanceof Error ? e.message : String(e),
       });
@@ -227,56 +183,48 @@ export function sendTryOnLimitEightyPctNoticeAsync(params: {
   })();
 }
 
-/** Fire-and-forget when monthly try-ons are fully used: admin {@link ClientApiKeyRecord.contactEmail} only (same Resend pipeline as 80%). */
-export function sendTryOnLimitFullNoticeAsync(params: { client: ClientApiKeyRecord }) {
+/** Fire-and-forget: usage warning on first reach of 99% (about to hit the limit). */
+export function sendTryOnUsageNinetyNinePctNoticeAsync(params: { client: ClientApiKeyRecord }) {
   const resendConfigured = isFitRoomEmailConfigured();
-  const to = params.client.contactEmail?.trim();
-  console.log("[fit-room][email-debug] sendTryOnLimitFullNoticeAsync", {
+  console.log("[fit-room][email-debug] sendTryOnUsageNinetyNinePctNoticeAsync", {
     clientId: params.client.id,
     resendConfigured,
-    hasContactEmail: Boolean(to),
     usageAtSend: params.client.usageCount,
     limit: params.client.usageLimit,
   });
 
   if (!resendConfigured) {
-    console.log("[fit-room][email-debug] sendTryOnLimitFullNoticeAsync skipped (RESEND_API_KEY not set)");
+    console.log("[fit-room][email-debug] sendTryOnUsageNinetyNinePctNoticeAsync skipped (RESEND_API_KEY not set)");
     return;
   }
 
   void (async () => {
     const client = params.client;
-    const resolvedTo = client.contactEmail?.trim();
-    if (!resolvedTo) {
-      console.log("[fit-room][email-debug] sendTryOnLimitFullNoticeAsync skipped (no contactEmail on client)");
-      return;
-    }
-
     try {
-      const storeName = client.clientName.trim() || "there";
-      const bodyParams = { storeName, limit: client.usageLimit };
-      const text = buildTryOnQuotaFullLimitEmailBody(bodyParams);
-      const html = buildTryOnQuotaFullLimitEmailHtml(bodyParams);
+      const { emailTargets, storeName } = await resolveQuotaNoticeRecipients(client);
+      if (emailTargets.length === 0) {
+        console.log("[fit-room][email-debug] sendTryOnUsageNinetyNinePctNoticeAsync skipped (no recipient emails)");
+        return;
+      }
 
-      console.log("[fit-room][email-debug] sendTryOnLimitFullNoticeAsync calling sendFitRoomMail", {
-        to: resolvedTo,
-        subject: TRY_ON_QUOTA_FULL_LIMIT_EMAIL_SUBJECT,
-      });
+      const bodyParams = { storeName, used: client.usageCount, limit: client.usageLimit };
+      const subject = buildUsageSubject(bodyParams.used, bodyParams.limit);
+      const text = buildTryOnQuotaUsageEmailBody(bodyParams);
+      const html = buildTryOnQuotaUsageEmailHtml(bodyParams);
 
-      await sendFitRoomMail({
-        to: resolvedTo,
-        subject: TRY_ON_QUOTA_FULL_LIMIT_EMAIL_SUBJECT,
-        text,
-        html,
-      }).catch((err: unknown) => {
-        console.error("[fit-room] try-on quota 100% email failed", {
-          clientId: client.id,
-          to: resolvedTo,
-          message: err instanceof Error ? err.message : String(err),
-        });
-      });
+      await Promise.all(
+        emailTargets.map((to) =>
+          sendFitRoomMail({ to, subject, text, html }).catch((err: unknown) => {
+            console.error("[fit-room] try-on quota 99% email failed", {
+              clientId: client.id,
+              to,
+              message: err instanceof Error ? err.message : String(err),
+            });
+          }),
+        ),
+      );
     } catch (e) {
-      console.error("[fit-room] try-on quota 100% email pipeline failed", {
+      console.error("[fit-room] try-on quota 99% email pipeline failed", {
         clientId: client.id,
         message: e instanceof Error ? e.message : String(e),
       });

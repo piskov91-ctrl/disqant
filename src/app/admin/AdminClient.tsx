@@ -13,10 +13,10 @@ type KeyRecord = {
   key: string;
   usageLimit: number;
   usageCount: number;
-  /** Equals `usageLimit` when the 80% quota warning was sent this cycle */
-  usageEightPctEmailSentForLimit?: number;
-  /** Equals `usageLimit` when the 100% exhausted email was sent this cycle */
-  usageHundredPctEmailSentForLimit?: number;
+  /** Equals `usageLimit` when the 75% quota warning was sent this cycle */
+  usageSeventyFivePctEmailSentForLimit?: number;
+  /** Equals `usageLimit` when the 99% quota warning was sent this cycle */
+  usageNinetyNinePctEmailSentForLimit?: number;
   createdAt: string;
 };
 
@@ -111,8 +111,8 @@ const QUOTA_EMAIL_NOTICE_BADGE_BASE =
 
 /** Small badges for 80% / 100% quota transactional emails sent for the current limit tier (cleared on usage reset). */
 function QuotaEmailNoticeBadges({ k }: { k: KeyRecord }) {
-  const eighty = quotaNoticeSentForCurrentTier(k.usageEightPctEmailSentForLimit, k.usageLimit);
-  const hundred = quotaNoticeSentForCurrentTier(k.usageHundredPctEmailSentForLimit, k.usageLimit);
+  const seventyFive = quotaNoticeSentForCurrentTier(k.usageSeventyFivePctEmailSentForLimit, k.usageLimit);
+  const ninetyNine = quotaNoticeSentForCurrentTier(k.usageNinetyNinePctEmailSentForLimit, k.usageLimit);
   const base = QUOTA_EMAIL_NOTICE_BADGE_BASE;
 
   return (
@@ -123,31 +123,31 @@ function QuotaEmailNoticeBadges({ k }: { k: KeyRecord }) {
     >
       <span
         className={
-          eighty
+          seventyFive
             ? `${base} border-amber-700/70 bg-amber-950/50 text-amber-200 motion-safe:animate-pulse`
             : `${base} border-zinc-700/70 bg-zinc-950/30 text-zinc-500`
         }
         title={
-          eighty
-            ? "80% “running low” email was sent for this try-on limit tier."
-            : "80% warning not sent for this tier yet, or the try-on limit changed after it was sent."
+          seventyFive
+            ? "75% usage email was sent for this try-on limit tier."
+            : "75% email not sent for this tier yet, or the try-on limit changed after it was sent."
         }
       >
-        80%
+        75%
       </span>
       <span
         className={
-          hundred
+          ninetyNine
             ? `${base} border-rose-800/70 bg-rose-950/45 text-rose-200`
             : `${base} border-zinc-700/70 bg-zinc-950/30 text-zinc-500`
         }
         title={
-          hundred
-            ? "100% “try-ons used up” email was sent for this tier (requires contact email on the client)."
-            : "100% limit email not sent for this tier yet, or limit changed — also skipped if contact email is missing."
+          ninetyNine
+            ? "99% usage email was sent for this tier (about to hit the limit)."
+            : "99% email not sent for this tier yet, or the try-on limit changed after it was sent."
         }
       >
-        100%
+        99%
       </span>
     </div>
   );
@@ -436,8 +436,8 @@ export default function AdminClient() {
           prev.map((k) => {
             if (k.id !== id) return k;
             const next = { ...k, usageCount: 0 };
-            delete next.usageEightPctEmailSentForLimit;
-            delete next.usageHundredPctEmailSentForLimit;
+            delete next.usageSeventyFivePctEmailSentForLimit;
+            delete next.usageNinetyNinePctEmailSentForLimit;
             return next;
           }),
         );
@@ -676,7 +676,7 @@ export default function AdminClient() {
             <div className="flex items-start justify-between gap-4">
               <div className="min-w-0">
                 <p id="quota-email-preview-title" className="text-base font-semibold text-zinc-100">
-                  80% try-on limit reminder
+                  75% try-on usage reminder
                 </p>
                 <p className="mt-1 text-sm text-zinc-400">
                   HTML + plain text preview — no email is sent from this screen.
@@ -1235,11 +1235,11 @@ export default function AdminClient() {
                           className={`${QUOTA_EMAIL_NOTICE_BADGE_BASE} border-amber-700/70 bg-amber-950/50 text-amber-200`}
                           aria-hidden
                         >
-                          80%
+                          75%
                         </span>
                         <span>
-                          Yellow <strong className="font-medium text-zinc-300">80%</strong> badge: the &quot;running
-                          low&quot; warning email was sent for this try-on cycle (at ~80% of their limit).
+                          Yellow <strong className="font-medium text-zinc-300">75%</strong> badge: the first usage
+                          warning email was sent when they crossed 75% of their limit.
                         </span>
                       </li>
                       <li className="flex flex-wrap items-center gap-2">
@@ -1247,11 +1247,11 @@ export default function AdminClient() {
                           className={`${QUOTA_EMAIL_NOTICE_BADGE_BASE} border-rose-800/70 bg-rose-950/45 text-rose-200`}
                           aria-hidden
                         >
-                          100%
+                          99%
                         </span>
                         <span>
-                          Red <strong className="font-medium text-zinc-300">100%</strong> badge: the &quot;try-ons used
-                          up&quot; email was sent when they hit their limit (requires a contact email on the client).
+                          Red <strong className="font-medium text-zinc-300">99%</strong> badge: the near-limit warning
+                          email was sent when they reached 99% of their limit.
                         </span>
                       </li>
                       <li className="flex flex-wrap items-center gap-2">
@@ -1259,12 +1259,12 @@ export default function AdminClient() {
                           <span
                             className={`${QUOTA_EMAIL_NOTICE_BADGE_BASE} border-zinc-700/70 bg-zinc-950/30 text-zinc-500`}
                           >
-                            80%
+                            75%
                           </span>
                           <span
                             className={`${QUOTA_EMAIL_NOTICE_BADGE_BASE} border-zinc-700/70 bg-zinc-950/30 text-zinc-500`}
                           >
-                            100%
+                            99%
                           </span>
                         </span>
                         <span>
