@@ -959,6 +959,14 @@ export default function AdminClient() {
             Fit Room
           </Link>
           <div className="flex items-center gap-4">
+            <a
+              href="https://fit-room.com"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-sm text-zinc-400 transition hover:text-zinc-100"
+            >
+              Visit Site
+            </a>
             <Link href="/" className="text-sm text-zinc-400 transition hover:text-zinc-100">
               Back to landing
             </Link>
