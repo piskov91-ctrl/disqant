@@ -301,10 +301,8 @@ export default function AdminClient() {
     setRecoveryDeletingUserId(userId);
     setRecoveryError(null);
     try {
-      const res = await fetch("/api/admin/recovery", {
+      const res = await fetch(`/api/admin/recovery?userId=${encodeURIComponent(userId)}`, {
         method: "DELETE",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ userId }),
       });
       const data = (await res.json()) as { ok?: true; error?: string };
       if (!res.ok) {

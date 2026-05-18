@@ -43,14 +43,22 @@ type DeleteBody = {
 export async function DELETE(req: Request) {
   if (!(await requireAdmin())) return Response.json({ error: "Unauthorized." }, { status: 401 });
 
-  let body: DeleteBody;
-  try {
-    body = (await req.json()) as DeleteBody;
-  } catch {
-    return Response.json({ error: "Invalid JSON body." }, { status: 400 });
+  const fromQuery = new URL(req.url).searchParams.get("userId")?.trim() ?? "";
+  let userId = fromQuery;
+
+  if (!userId) {
+    const raw = await req.text();
+    if (raw.trim()) {
+      let body: DeleteBody;
+      try {
+        body = JSON.parse(raw) as DeleteBody;
+      } catch {
+        return Response.json({ error: "Invalid JSON body." }, { status: 400 });
+      }
+      userId = typeof body.userId === "string" ? body.userId.trim() : "";
+    }
   }
 
-  const userId = typeof body.userId === "string" ? body.userId.trim() : "";
   if (!userId) return Response.json({ error: "userId is required." }, { status: 400 });
 
   try {
