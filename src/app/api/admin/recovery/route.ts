@@ -1,7 +1,7 @@
 import { cookies } from "next/headers";
 import { ADMIN_AUTH_COOKIE, isAdminAuthorizedCookieValue } from "@/lib/adminAuth";
 import { getClientKeyRecordById } from "@/lib/apiKeyStore";
-import { listRetailerRecoveryRecords } from "@/lib/retailerAuth";
+import { deleteRetailerRecoveryRecord, listRetailerRecoveryRecords } from "@/lib/retailerAuth";
 
 export const runtime = "nodejs";
 
@@ -34,5 +34,33 @@ export async function GET() {
     }),
   );
   return Response.json({ accounts: rows });
+}
+
+type DeleteBody = {
+  userId?: unknown;
+};
+
+export async function DELETE(req: Request) {
+  if (!(await requireAdmin())) return Response.json({ error: "Unauthorized." }, { status: 401 });
+
+  let body: DeleteBody;
+  try {
+    body = (await req.json()) as DeleteBody;
+  } catch {
+    return Response.json({ error: "Invalid JSON body." }, { status: 400 });
+  }
+
+  const userId = typeof body.userId === "string" ? body.userId.trim() : "";
+  if (!userId) return Response.json({ error: "userId is required." }, { status: 400 });
+
+  try {
+    await deleteRetailerRecoveryRecord(userId);
+    return Response.json({ ok: true });
+  } catch (e) {
+    return Response.json(
+      { error: e instanceof Error ? e.message : "Failed to delete recovery record." },
+      { status: 400 },
+    );
+  }
 }
 

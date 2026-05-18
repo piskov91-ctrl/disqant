@@ -374,6 +374,13 @@ export async function listRetailerRecoveryRecords(limit = 250): Promise<Retailer
   return result;
 }
 
+/** Removes the admin Recovery-tab snapshot only (`fit-room:recovery:{userId}`). Does not restore the account. */
+export async function deleteRetailerRecoveryRecord(userId: string): Promise<void> {
+  const id = userId.trim();
+  if (!id) throw new Error("User id is required.");
+  await getRedis().del(`fit-room:recovery:${id}`);
+}
+
 export async function listDeletedRetailerAccounts(limit = 200): Promise<DeletedRetailerAccountRow[]> {
   const redis = getRedis();
 
