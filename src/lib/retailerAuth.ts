@@ -350,12 +350,20 @@ export async function listRetailerRecoveryRecords(limit = 250): Promise<Retailer
     return rows;
   }
 
-  const vals = (await redis.mget(...keys)) as Array<string | null>;
-  console.log(
-    "[listRetailerRecoveryRecords] mget payloads by key: %o",
-    keys.map((k, i) => ({ key: k, raw: vals[i] })),
-  );
+  const valsRaw = await redis.mget(...keys);
+  console.log("[listRetailerRecoveryRecords] redis.mget raw return:", valsRaw);
+  if (Array.isArray(valsRaw)) {
+    console.log(
+      "[listRetailerRecoveryRecords] redis.mget per key (typeof + raw value):",
+      valsRaw.map((v, i) => ({
+        key: keys[i],
+        typeof: v === null || v === undefined ? String(v) : typeof v,
+        raw: v,
+      })),
+    );
+  }
 
+  const vals = valsRaw as Array<string | null>;
   for (const raw of vals) {
     if (!raw) continue;
     try {
