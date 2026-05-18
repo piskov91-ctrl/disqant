@@ -353,23 +353,19 @@ export async function listRetailerRecoveryRecords(limit = 250): Promise<Retailer
   const vals = await redis.mget(...keys);
   console.log("[recovery] raw mget values:", JSON.stringify(vals));
 
-  for (const raw of vals as Array<string | null>) {
-    if (!raw) continue;
-    try {
-      const p = JSON.parse(raw) as RetailerRecoveryRecord;
-      if (!p?.userId || !p?.deletedAt) continue;
-      rows.push({
-        userId: String(p.userId),
-        storeName: String(p.storeName ?? ""),
-        email: String(p.email ?? ""),
-        deletedAt: String(p.deletedAt),
-        clientId: p.clientId ? String(p.clientId) : null,
-        remainingTryOns:
-          typeof p.remainingTryOns === "number" && Number.isFinite(p.remainingTryOns) ? p.remainingTryOns : null,
-      });
-    } catch {
-      // ignore invalid recovery payloads
-    }
+  for (const raw of vals as Array<unknown>) {
+    if (raw == null || typeof raw !== "object") continue;
+    const p = raw as Partial<RetailerRecoveryRecord>;
+    if (!p.userId || !p.deletedAt) continue;
+    rows.push({
+      userId: String(p.userId),
+      storeName: String(p.storeName ?? ""),
+      email: String(p.email ?? ""),
+      deletedAt: String(p.deletedAt),
+      clientId: p.clientId ? String(p.clientId) : null,
+      remainingTryOns:
+        typeof p.remainingTryOns === "number" && Number.isFinite(p.remainingTryOns) ? p.remainingTryOns : null,
+    });
   }
 
   rows.sort((a, b) => (a.deletedAt < b.deletedAt ? 1 : a.deletedAt > b.deletedAt ? -1 : 0));
