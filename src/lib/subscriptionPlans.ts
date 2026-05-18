@@ -31,3 +31,12 @@ export function parseSubscriptionPlanKey(raw: unknown): SubscriptionPlanKey | nu
 export function getSubscriptionPlanDefinition(key: SubscriptionPlanKey) {
   return SUBSCRIPTION_PLANS[key];
 }
+
+/** Map try-on limit to a known subscription name, or a generic label for custom/admin limits. */
+export function planLabelFromTryOnLimit(limit: number): string {
+  if (!Number.isFinite(limit) || limit <= 0) return "Plan";
+  for (const p of Object.values(SUBSCRIPTION_PLANS)) {
+    if (p.tryOnLimit === limit) return p.name;
+  }
+  return "Custom plan";
+}

@@ -6,8 +6,8 @@ import { Header } from "@/components/Header";
 import { getClientKeyRecordById } from "@/lib/apiKeyStore";
 import { retailerWelcomeGreetingName } from "@/lib/retailerDisplayName";
 import { getRetailerSessionUser } from "@/lib/retailerAuth";
-import { DashboardAnalyticsButton } from "./DashboardAnalyticsButton";
-import { DashboardKeyUsagePanel } from "./DashboardKeyUsagePanel";
+import { planLabelFromTryOnLimit } from "@/lib/subscriptionPlans";
+import { RetailerDashboardShell } from "./RetailerDashboardShell";
 
 export const metadata: Metadata = {
   title: "Dashboard",
@@ -16,13 +16,9 @@ export const metadata: Metadata = {
 
 export const runtime = "nodejs";
 
-export default async function DashboardPage() {
-  const user = await getRetailerSessionUser();
-  if (!user) redirect("/login?next=/dashboard");
-
-  const greeting = retailerWelcomeGreetingName(user);
-  const welcomeHeader = (
-    <section className="border-b border-white/10 bg-zinc-950/95 px-6 pb-10 pt-5 md:pb-12 md:pt-6">
+function welcomeStrip(greeting: string) {
+  return (
+    <section className="border-b border-white/10 bg-zinc-950/95 px-6 pb-8 pt-5 md:pb-10 md:pt-6">
       <div className="mx-auto max-w-6xl">
         <p className="text-balance text-2xl font-semibold tracking-tight text-zinc-50 md:text-3xl">
           Welcome back, {greeting}!
@@ -31,6 +27,13 @@ export default async function DashboardPage() {
       </div>
     </section>
   );
+}
+
+export default async function DashboardPage() {
+  const user = await getRetailerSessionUser();
+  if (!user) redirect("/login?next=/dashboard");
+
+  const greeting = retailerWelcomeGreetingName(user);
 
   const client = user.clientId ? await getClientKeyRecordById(user.clientId) : null;
 
@@ -39,7 +42,7 @@ export default async function DashboardPage() {
       <>
         <Header />
         <main className="min-h-dvh bg-zinc-950 pt-[var(--site-header-height)]">
-          {welcomeHeader}
+          {welcomeStrip(greeting)}
           <div className="mx-auto max-w-6xl px-6 py-16">
             <p className="text-zinc-300">
               We couldn&apos;t load your API key record. Please contact{" "}
@@ -60,7 +63,7 @@ export default async function DashboardPage() {
       <>
         <Header />
         <main className="min-h-dvh bg-zinc-950 pt-[var(--site-header-height)]">
-          {welcomeHeader}
+          {welcomeStrip(greeting)}
           <section className="py-16 md:py-20">
             <div className="mx-auto max-w-lg px-6">
               <div className="rounded-2xl border border-white/10 bg-zinc-900/50 p-10 text-center shadow-xl shadow-black/20 backdrop-blur-sm md:p-12">
@@ -111,54 +114,29 @@ export default async function DashboardPage() {
 
   const used = client.usageCount;
   const limit = client.usageLimit;
+  const planLabel = planLabelFromTryOnLimit(limit);
+
+  const accountSubtitle =
+    [
+      [user.firstName, user.lastName].filter(Boolean).join(" ").trim(),
+      user.companyName?.trim(),
+    ]
+      .filter(Boolean)
+      .join(" · ") || "Your retailer account";
 
   return (
     <>
       <Header />
       <main className="min-h-dvh bg-zinc-950 pt-[var(--site-header-height)]">
-        {welcomeHeader}
-
-        <section className="border-b border-white/10 py-10">
-          <div className="mx-auto max-w-6xl px-6">
-            <div className="flex flex-col gap-6 sm:flex-row sm:items-start sm:justify-between">
-              <div className="min-w-0">
-                <p className="text-lg leading-relaxed text-zinc-400">
-                  {[
-                    [user.firstName, user.lastName].filter(Boolean).join(" "),
-                    user.companyName?.trim(),
-                  ]
-                    .filter(Boolean)
-                    .join(" · ") || "Account"}{" "}
-                  · Try-on usage and your embed API key.
-                </p>
-                <p className="mt-2 text-sm text-zinc-500">
-                  Website:{" "}
-                  {user.websiteUrl ? (
-                    <a
-                      href={user.websiteUrl}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-zinc-300 underline-offset-2 hover:underline"
-                    >
-                      {user.websiteUrl}
-                    </a>
-                  ) : (
-                    <span className="text-zinc-600">Not provided</span>
-                  )}
-                </p>
-              </div>
-              <DashboardAnalyticsButton />
-            </div>
-          </div>
-        </section>
-
-        <section className="border-b border-white/10 py-16">
-          <div className="mx-auto max-w-6xl px-6">
-            <div className="space-y-8">
-              <DashboardKeyUsagePanel initialApiKey={client.key} initialUsed={used} initialLimit={limit} />
-            </div>
-          </div>
-        </section>
+        <RetailerDashboardShell
+          welcomeHeading={`Welcome back, ${greeting}!`}
+          accountSubtitle={accountSubtitle}
+          websiteUrl={user.websiteUrl?.trim() ? user.websiteUrl.trim() : null}
+          planLabel={planLabel}
+          apiKey={client.key}
+          initialUsed={used}
+          initialLimit={limit}
+        />
       </main>
       <Footer />
     </>

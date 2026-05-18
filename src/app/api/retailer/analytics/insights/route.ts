@@ -17,13 +17,14 @@ export async function GET() {
     );
   }
 
-  const [{ tryOnByHourUtc }, products] = await Promise.all([
+  const [timing, products] = await Promise.all([
     getTryOnTimingForClient(client.id),
     getAllTryOnProducts(client.id, 2000),
   ]);
 
   return Response.json({
-    tryOnByHourUtc,
+    tryOnByHourUtc: timing.tryOnByHourUtc,
+    tryOnByWeekdayUtc: timing.tryOnByWeekdayUtc,
     products: products.map((p) => ({
       productImageUrl: p.productImageUrl,
       displayName: productDisplayName(p.productImageUrl),
