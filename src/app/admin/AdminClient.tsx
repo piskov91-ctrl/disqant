@@ -960,7 +960,7 @@ export default function AdminClient() {
           </Link>
           <div className="flex items-center gap-4">
             <a
-              href="https://fit-room.com"
+              href="https://app.fashn.ai"
               target="_blank"
               rel="noopener noreferrer"
               className="text-sm text-zinc-400 transition hover:text-zinc-100"
