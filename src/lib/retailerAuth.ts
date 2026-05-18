@@ -337,41 +337,30 @@ export type RetailerRecoveryRecord = {
 export async function listRetailerRecoveryRecords(limit = 250): Promise<RetailerRecoveryRecord[]> {
   const redis = getRedis();
 
-  type RedisScanResult = [number, string[]];
-  type RedisScanFn = (cursor: number, opts: { match: string; count?: number }) => Promise<RedisScanResult>;
-
+  const keys = (await redis.keys("fit-room:recovery:*")) as string[];
   const rows: RetailerRecoveryRecord[] = [];
-  let cursor = 0;
-  while (rows.length < limit) {
-    const res = await (redis as unknown as { scan: RedisScanFn }).scan(cursor, {
-      match: "fit-room:recovery:*",
-      count: 200,
-    });
-    cursor = res[0];
-    const keys = res[1] ?? [];
-    if (keys.length > 0) {
-      const vals = (await redis.mget(...keys)) as Array<string | null>;
-      for (const raw of vals) {
-        if (!raw) continue;
-        try {
-          const p = JSON.parse(raw) as RetailerRecoveryRecord;
-          if (!p?.userId || !p?.deletedAt) continue;
-          rows.push({
-            userId: String(p.userId),
-            storeName: String(p.storeName ?? ""),
-            email: String(p.email ?? ""),
-            deletedAt: String(p.deletedAt),
-            clientId: p.clientId ? String(p.clientId) : null,
-            remainingTryOns:
-              typeof p.remainingTryOns === "number" && Number.isFinite(p.remainingTryOns) ? p.remainingTryOns : null,
-          });
-        } catch {
-          // ignore invalid recovery payloads
-        }
-        if (rows.length >= limit) break;
-      }
+  if (keys.length === 0) {
+    return rows;
+  }
+
+  const vals = (await redis.mget(...keys)) as Array<string | null>;
+  for (const raw of vals) {
+    if (!raw) continue;
+    try {
+      const p = JSON.parse(raw) as RetailerRecoveryRecord;
+      if (!p?.userId || !p?.deletedAt) continue;
+      rows.push({
+        userId: String(p.userId),
+        storeName: String(p.storeName ?? ""),
+        email: String(p.email ?? ""),
+        deletedAt: String(p.deletedAt),
+        clientId: p.clientId ? String(p.clientId) : null,
+        remainingTryOns:
+          typeof p.remainingTryOns === "number" && Number.isFinite(p.remainingTryOns) ? p.remainingTryOns : null,
+      });
+    } catch {
+      // ignore invalid recovery payloads
     }
-    if (cursor === 0) break;
   }
 
   rows.sort((a, b) => (a.deletedAt < b.deletedAt ? 1 : a.deletedAt > b.deletedAt ? -1 : 0));
