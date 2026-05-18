@@ -244,7 +244,8 @@ export function ProfileForm({ initial }: { initial: ProfileInitialUser }) {
       <section className="rounded-2xl border border-red-900/60 bg-red-950/30 p-6 shadow-xl shadow-black/30 md:p-8">
         <h2 className="text-base font-semibold text-red-100">Danger zone</h2>
         <p className="mt-2 text-sm leading-relaxed text-red-200/80">
-          Deleting your account removes your dashboard login and profile details. This cannot be undone.
+          Permanently delete your account and all associated data. This action cannot be undone. All your remaining
+          try-ons will be lost and cannot be recovered.
         </p>
 
         {!deleteOpen ? (
