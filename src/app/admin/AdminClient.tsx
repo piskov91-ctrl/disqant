@@ -50,6 +50,13 @@ type AnalyticsSummary = {
 };
 
 type AdminTab = "clients" | "analytics" | "wearMe" | "recovery";
+
+type AdminFashnCredits = {
+  total: number | null;
+  subscription: number | null;
+  onDemand: number | null;
+};
+
 type RecoveryAccountRow = {
   userId: string;
   email: string;
@@ -184,6 +191,9 @@ export default function AdminClient() {
   const [recoveryLoading, setRecoveryLoading] = useState(false);
   const [recoveryError, setRecoveryError] = useState<string | null>(null);
   const [recoveryDeletingUserId, setRecoveryDeletingUserId] = useState<string | null>(null);
+  const [fashnCredits, setFashnCredits] = useState<AdminFashnCredits | null>(null);
+  const [fashnCreditsLoading, setFashnCreditsLoading] = useState(false);
+  const [fashnCreditsError, setFashnCreditsError] = useState<string | null>(null);
 
   type QuotaEmailPreviewPayload = {
     subject: string;
@@ -273,6 +283,32 @@ export default function AdminClient() {
     }
   }
 
+  async function loadFashnCredits() {
+    setFashnCreditsLoading(true);
+    setFashnCreditsError(null);
+    try {
+      const res = await fetch("/api/admin/fashn-credits");
+      const data = (await res.json()) as { credits?: AdminFashnCredits; error?: string };
+      if (!res.ok) {
+        if (data.error === "Unauthorized.") window.location.reload();
+        setFashnCredits(null);
+        setFashnCreditsError(data.error || "Failed to load Fashn credit balance.");
+        return;
+      }
+      if (data.credits) {
+        setFashnCredits(data.credits);
+      } else {
+        setFashnCredits(null);
+        setFashnCreditsError("Unexpected response from credits API.");
+      }
+    } catch (e) {
+      setFashnCredits(null);
+      setFashnCreditsError(e instanceof Error ? e.message : "Failed to load Fashn credit balance.");
+    } finally {
+      setFashnCreditsLoading(false);
+    }
+  }
+
   async function loadRecovery() {
     setRecoveryLoading(true);
     setRecoveryError(null);
@@ -351,6 +387,7 @@ export default function AdminClient() {
 
   useEffect(() => {
     void load();
+    void loadFashnCredits();
   }, []);
 
   useEffect(() => {
@@ -559,6 +596,7 @@ export default function AdminClient() {
   }
 
   function refreshCurrentTab() {
+    void loadFashnCredits();
     if (activeTab === "clients" || activeTab === "wearMe") void load();
     else if (activeTab === "analytics") void loadAnalytics();
     else void loadRecovery();
@@ -937,8 +975,8 @@ export default function AdminClient() {
 
       <main className="w-full py-8">
         <div className="w-full">
-          <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
-            <div>
+          <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+            <div className="min-w-0">
               <h1 className="text-balance text-3xl font-semibold tracking-tight text-zinc-100 md:text-4xl">
                 Admin
               </h1>
@@ -946,7 +984,57 @@ export default function AdminClient() {
                 Manage client keys and view platform analytics.
               </p>
             </div>
-            <div className="flex flex-wrap items-center gap-3">
+            <div className="flex w-full flex-col gap-3 sm:w-auto sm:flex-row sm:flex-wrap sm:items-stretch sm:justify-end">
+              <div className="rounded-xl border border-cyan-500/35 bg-cyan-950/20 px-4 py-3 shadow-sm sm:min-w-[220px]">
+                <p className="text-[10px] font-semibold uppercase tracking-wider text-cyan-200/75">
+                  Fashn.ai API credits
+                </p>
+                {fashnCreditsLoading ? (
+                  <p className="mt-2 text-sm text-zinc-500">Loading balance…</p>
+                ) : fashnCreditsError ? (
+                  <p
+                    className="mt-2 text-sm leading-snug text-amber-200/95"
+                    title={fashnCreditsError}
+                  >
+                    {fashnCreditsError}
+                  </p>
+                ) : fashnCredits ? (
+                  <>
+                    <p className="mt-1 text-2xl font-semibold tabular-nums text-cyan-100">
+                      {fashnCredits.total != null
+                        ? fashnCredits.total.toLocaleString()
+                        : "—"}
+                      <span className="ml-1.5 text-sm font-medium text-cyan-200/70">total</span>
+                    </p>
+                    {(fashnCredits.subscription != null || fashnCredits.onDemand != null) && (
+                      <p className="mt-2 text-xs leading-relaxed text-zinc-400">
+                        {fashnCredits.subscription != null ? (
+                          <>
+                            Subscription:{" "}
+                            <span className="tabular-nums text-zinc-300">
+                              {fashnCredits.subscription.toLocaleString()}
+                            </span>
+                          </>
+                        ) : null}
+                        {fashnCredits.subscription != null && fashnCredits.onDemand != null ? (
+                          <span className="text-zinc-600"> · </span>
+                        ) : null}
+                        {fashnCredits.onDemand != null ? (
+                          <>
+                            On-demand:{" "}
+                            <span className="tabular-nums text-zinc-300">
+                              {fashnCredits.onDemand.toLocaleString()}
+                            </span>
+                          </>
+                        ) : null}
+                      </p>
+                    )}
+                  </>
+                ) : (
+                  <p className="mt-2 text-sm text-zinc-500">No balance data.</p>
+                )}
+              </div>
+              <div className="flex flex-wrap items-center gap-3">
               <button
                 type="button"
                 onClick={() => setAnalyticsInsightsOpen(true)}
@@ -976,6 +1064,7 @@ export default function AdminClient() {
               >
                 Refresh
               </button>
+            </div>
             </div>
           </div>
 
