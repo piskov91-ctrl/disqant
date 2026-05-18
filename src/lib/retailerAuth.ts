@@ -338,12 +338,24 @@ export async function listRetailerRecoveryRecords(limit = 250): Promise<Retailer
   const redis = getRedis();
 
   const keys = (await redis.keys("fit-room:recovery:*")) as string[];
+  console.log(
+    "[listRetailerRecoveryRecords] redis.keys('fit-room:recovery:*') count=%s keys=%o",
+    keys.length,
+    keys,
+  );
+
   const rows: RetailerRecoveryRecord[] = [];
   if (keys.length === 0) {
+    console.log("[listRetailerRecoveryRecords] no keys matched; returning []");
     return rows;
   }
 
   const vals = (await redis.mget(...keys)) as Array<string | null>;
+  console.log(
+    "[listRetailerRecoveryRecords] mget payloads by key: %o",
+    keys.map((k, i) => ({ key: k, raw: vals[i] })),
+  );
+
   for (const raw of vals) {
     if (!raw) continue;
     try {
@@ -364,7 +376,9 @@ export async function listRetailerRecoveryRecords(limit = 250): Promise<Retailer
   }
 
   rows.sort((a, b) => (a.deletedAt < b.deletedAt ? 1 : a.deletedAt > b.deletedAt ? -1 : 0));
-  return rows.slice(0, limit);
+  const result = rows.slice(0, limit);
+  console.log("[listRetailerRecoveryRecords] returning %s row(s): %o", result.length, result);
+  return result;
 }
 
 export async function listDeletedRetailerAccounts(limit = 200): Promise<DeletedRetailerAccountRow[]> {
