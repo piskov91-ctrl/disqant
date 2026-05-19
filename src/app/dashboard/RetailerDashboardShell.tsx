@@ -11,6 +11,7 @@ import { retailerDashboardPlanFromBaseLimit } from "@/lib/subscriptionPlans";
 import { DashboardEmailDeveloperPanel } from "./DashboardEmailDeveloperPanel";
 import { DashboardInstallPlatformGuide } from "./DashboardInstallPlatformGuide";
 import { DashboardInstallPreviewAnimation } from "./DashboardInstallPreviewAnimation";
+import { DashboardCancelSubscriptionPanel, type DashboardSubscriptionBillingProps } from "./DashboardCancelSubscriptionPanel";
 import { DashboardTopUpPanel } from "./DashboardTopUpPanel";
 
 type DashboardTab = "overview" | "getCode" | "analytics";
@@ -99,6 +100,7 @@ export type RetailerDashboardShellProps = {
   accountSubtitle: string;
   websiteUrl: string | null;
   planSummary: RetailerPlanSummary;
+  subscriptionBilling: DashboardSubscriptionBillingProps;
   apiKey: string;
   /** Subscription bucket usage (`usageCount`). */
   initialPlanUsed: number;
@@ -136,6 +138,7 @@ function RetailerDashboardShellInner({
   accountSubtitle,
   websiteUrl,
   planSummary,
+  subscriptionBilling,
   apiKey,
   initialPlanUsed,
   initialBasePlanLimit,
@@ -500,6 +503,8 @@ function RetailerDashboardShellInner({
                   >
                     View plans
                   </Link>
+
+                  <DashboardCancelSubscriptionPanel {...subscriptionBilling} />
                 </div>
               </aside>
 

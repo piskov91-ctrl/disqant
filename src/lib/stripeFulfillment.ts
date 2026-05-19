@@ -4,7 +4,7 @@ import {
   getRedis,
   incrementClientTryOnLimit,
 } from "@/lib/apiKeyStore";
-import { getRetailerById, linkRetailerToClientId, type RetailerUser } from "@/lib/retailerAuth";
+import { attachStripeBillingIds, getRetailerById, linkRetailerToClientId, type RetailerUser } from "@/lib/retailerAuth";
 import { getSubscriptionPlanDefinition, parseSubscriptionPlanKey } from "@/lib/subscriptionPlans";
 import {
   STRIPE_TOP_UP_CHECKOUT_KIND,
@@ -14,6 +14,14 @@ import {
   getTopUpPackById,
   parseTopUpPackId,
 } from "@/lib/topUpPacks";
+
+function stripeExpandableId(ref: unknown): string | null {
+  if (typeof ref === "string" && ref.length > 0) return ref;
+  if (ref && typeof ref === "object" && "id" in ref && typeof (ref as { id: unknown }).id === "string") {
+    return (ref as { id: string }).id;
+  }
+  return null;
+}
 
 function idempotencyRedisKey(checkoutSessionId: string): string {
   return `fit-room:stripe:checkout-done:${checkoutSessionId}`;
@@ -181,6 +189,15 @@ async function fulfillPaidSubscriptionCheckoutSession(session: Stripe.Checkout.S
   });
 
   await linkRetailerToClientId(user.id, rec.id);
+
+  const stripeSubscriptionId = stripeExpandableId(session.subscription);
+  const stripeCustomerId = stripeExpandableId(session.customer);
+  if (stripeSubscriptionId ?? stripeCustomerId) {
+    await attachStripeBillingIds(user.id, {
+      ...(stripeSubscriptionId ? { stripeSubscriptionId } : {}),
+      ...(stripeCustomerId ? { stripeCustomerId } : {}),
+    });
+  }
 }
 
 async function findRetailerIdentityForStripeSession(retailerUserId: string): Promise<RetailerUser | null> {

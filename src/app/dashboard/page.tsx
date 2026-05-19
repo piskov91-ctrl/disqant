@@ -9,6 +9,11 @@ import { getRetailerSessionUser } from "@/lib/retailerAuth";
 import { storedOrDerivedBasePlanLimit } from "@/lib/clientTryOnBuckets";
 import { getNextMonthlyResetUtcDateForDisplay, resolveBillingAnchorDay } from "@/lib/billingCycle";
 import { retailerDashboardPlanFromBaseLimit } from "@/lib/subscriptionPlans";
+import {
+  SUBSCRIPTION_CANCELLATION_REASON_LABELS,
+  SUBSCRIPTION_CANCELLATION_REASONS,
+  type SubscriptionCancellationReasonCode,
+} from "@/lib/subscriptionCancellation";
 import { RetailerDashboardShell } from "./RetailerDashboardShell";
 
 export const metadata: Metadata = {
@@ -17,6 +22,15 @@ export const metadata: Metadata = {
 };
 
 export const runtime = "nodejs";
+
+function cancellationReasonLabelFromStored(raw: string | null | undefined): string | null {
+  if (!raw?.trim()) return null;
+  const t = raw.trim() as SubscriptionCancellationReasonCode;
+  if ((SUBSCRIPTION_CANCELLATION_REASONS as readonly string[]).includes(t)) {
+    return SUBSCRIPTION_CANCELLATION_REASON_LABELS[t];
+  }
+  return raw.trim();
+}
 
 function welcomeStrip(greeting: string) {
   return (
@@ -145,6 +159,15 @@ export default async function DashboardPage() {
       .filter(Boolean)
       .join(" · ") || "Your retailer account";
 
+  const canceledAtStored = user.subscriptionCanceledAt?.trim() || null;
+  const subscriptionBilling = {
+    canRequestCancellation: !canceledAtStored,
+    cancellationScheduled: Boolean(canceledAtStored),
+    accessUntilIso: user.subscriptionAccessUntil?.trim() || null,
+    canceledAtIso: canceledAtStored,
+    cancellationReasonLabel: cancellationReasonLabelFromStored(user.cancellationReason),
+  };
+
   return (
     <>
       <Header />
@@ -154,6 +177,7 @@ export default async function DashboardPage() {
           accountSubtitle={accountSubtitle}
           websiteUrl={user.websiteUrl?.trim() ? user.websiteUrl.trim() : null}
           planSummary={planSummary}
+          subscriptionBilling={subscriptionBilling}
           apiKey={client.key}
           initialPlanUsed={client.usageCount}
           initialBasePlanLimit={planCap}

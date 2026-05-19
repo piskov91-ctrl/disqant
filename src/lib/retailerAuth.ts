@@ -176,12 +176,27 @@ export type RetailerUser = {
   createdAt: string;
   /** Soft-delete timestamp; deleted accounts are hidden from login/session and shown in admin recovery. */
   deletedAt?: string | null;
+  /** Stripe subscription id after subscription checkout fulfillment (used for self-serve cancel). */
+  stripeSubscriptionId?: string | null;
+  stripeCustomerId?: string | null;
+  /** ISO instant when the retailer confirmed cancellation (subscription remains active until {@link subscriptionAccessUntil}). */
+  subscriptionCanceledAt?: string | null;
+  /** ISO instant (UTC) when plan access ends after a scheduled Stripe cancellation. */
+  subscriptionAccessUntil?: string | null;
+  cancellationReason?: string | null;
+  cancellationComments?: string | null;
 };
 
-export type RetailerPublic = Omit<RetailerUser, "passwordSalt" | "passwordHash">;
+export type RetailerPublic = Omit<RetailerUser, "passwordSalt" | "passwordHash" | "stripeSubscriptionId" | "stripeCustomerId">;
 
 export function toPublicRetailer(u: RetailerUser): RetailerPublic {
-  const { passwordSalt: _s, passwordHash: _h, ...rest } = u;
+  const {
+    passwordSalt: _s,
+    passwordHash: _h,
+    stripeSubscriptionId: _sid,
+    stripeCustomerId: _cid,
+    ...rest
+  } = u;
   return rest;
 }
 
@@ -245,6 +260,53 @@ export async function linkRetailerToClientId(retailerUserId: string, clientApiKe
   if (!cid) throw new Error("Client id is required.");
 
   const next: RetailerUser = { ...row.user, clientId: cid };
+  await getRedis().set(row.userRedisKey, JSON.stringify(next));
+}
+
+/** Persist Stripe ids after subscription checkout (webhook fulfillment). */
+export async function attachStripeBillingIds(
+  retailerUserId: string,
+  ids: { stripeSubscriptionId?: string | null; stripeCustomerId?: string | null },
+): Promise<void> {
+  const row = await loadRetailerRecord(retailerUserId.trim());
+  if (!row) throw new Error("Retailer account not found.");
+
+  const next: RetailerUser = {
+    ...row.user,
+    ...(ids.stripeSubscriptionId !== undefined
+      ? { stripeSubscriptionId: ids.stripeSubscriptionId?.trim() || null }
+      : {}),
+    ...(ids.stripeCustomerId !== undefined ? { stripeCustomerId: ids.stripeCustomerId?.trim() || null } : {}),
+  };
+  await getRedis().set(row.userRedisKey, JSON.stringify(next));
+}
+
+/** After Stripe `cancel_at_period_end`, store cancellation metadata for dashboard + emails. */
+export async function persistSubscriptionCancellationSchedule(params: {
+  retailerUserId: string;
+  subscriptionAccessUntil: string;
+  subscriptionCanceledAt: string;
+  stripeSubscriptionId?: string | null;
+  stripeCustomerId?: string | null;
+  cancellationReason: string;
+  cancellationComments: string;
+}): Promise<void> {
+  const row = await loadRetailerRecord(params.retailerUserId.trim());
+  if (!row) throw new Error("Retailer account not found.");
+
+  const next: RetailerUser = {
+    ...row.user,
+    subscriptionAccessUntil: params.subscriptionAccessUntil,
+    subscriptionCanceledAt: params.subscriptionCanceledAt,
+    cancellationReason: params.cancellationReason,
+    cancellationComments: params.cancellationComments.slice(0, 2000),
+    ...(params.stripeSubscriptionId !== undefined
+      ? { stripeSubscriptionId: params.stripeSubscriptionId?.trim() || null }
+      : {}),
+    ...(params.stripeCustomerId !== undefined
+      ? { stripeCustomerId: params.stripeCustomerId?.trim() || null }
+      : {}),
+  };
   await getRedis().set(row.userRedisKey, JSON.stringify(next));
 }
 
