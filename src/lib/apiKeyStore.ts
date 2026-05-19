@@ -7,9 +7,9 @@ import {
   usageIncrementShouldPersistSeventyFivePctEmailFlag,
 } from "@/lib/usageTryOnQuotaEmailPolicy";
 import {
-  applyAllDueMonthlyUsageResets,
+  applyAllDueMonthlyUsageResetsWithEvents,
   billingAnchorDayFromUtcDate,
-  monthlyBillingCycleChanged,
+  type MonthlyBillingResetAppliedEvent,
 } from "@/lib/billingCycle";
 
 export type ClientApiKeyRecord = {
@@ -92,6 +92,85 @@ export function getRedis() {
   // Prefer write token since admin needs writes. (Read-only token is optional and unused here.)
   redisSingleton = new Redis({ url, token });
   return redisSingleton;
+}
+
+const CLIENT_BILLING_TOPUP_LIST = (id: string) => `fit-room:clientKeys:billingHistory:topups:${id}`;
+const CLIENT_BILLING_RESET_LIST = (id: string) => `fit-room:clientKeys:billingHistory:resets:${id}`;
+const MAX_CLIENT_BILLING_HISTORY_ITEMS = 200;
+
+export type ClientTopUpHistoryRow = { at: string; tryOnsAdded: number };
+
+export type ClientBillingResetHistoryRow = {
+  at: string;
+  previousTryOns: number;
+  reason: "monthly_billing" | "admin_manual";
+};
+
+async function persistMonthlyBillingResetHistory(clientId: string, events: MonthlyBillingResetAppliedEvent[]) {
+  if (events.length === 0) return;
+  const redis = getRedis();
+  const key = CLIENT_BILLING_RESET_LIST(clientId);
+  for (const ev of events) {
+    const row: ClientBillingResetHistoryRow = {
+      at: new Date(ev.resetDayUtcMs).toISOString(),
+      previousTryOns: ev.previousTryOns,
+      reason: "monthly_billing",
+    };
+    await redis.lpush(key, JSON.stringify(row));
+  }
+  await redis.ltrim(key, 0, MAX_CLIENT_BILLING_HISTORY_ITEMS - 1);
+}
+
+async function appendClientTopUpHistoryInternal(clientId: string, tryOnsAdded: number, at?: string) {
+  const redis = getRedis();
+  const key = CLIENT_BILLING_TOPUP_LIST(clientId);
+  const row: ClientTopUpHistoryRow = { at: at ?? new Date().toISOString(), tryOnsAdded };
+  await redis.lpush(key, JSON.stringify(row));
+  await redis.ltrim(key, 0, MAX_CLIENT_BILLING_HISTORY_ITEMS - 1);
+}
+
+async function appendClientManualResetHistoryInternal(clientId: string, previousTryOns: number) {
+  const redis = getRedis();
+  const key = CLIENT_BILLING_RESET_LIST(clientId);
+  const row: ClientBillingResetHistoryRow = {
+    at: new Date().toISOString(),
+    previousTryOns,
+    reason: "admin_manual",
+  };
+  await redis.lpush(key, JSON.stringify(row));
+  await redis.ltrim(key, 0, MAX_CLIENT_BILLING_HISTORY_ITEMS - 1);
+}
+
+function parseHistoryJsonList<T>(raw: string[] | null): T[] {
+  if (!raw?.length) return [];
+  const out: T[] = [];
+  for (const s of raw) {
+    try {
+      out.push(JSON.parse(s) as T);
+    } catch {
+      /* skip corrupt */
+    }
+  }
+  return out;
+}
+
+/** Billing history for admin (top-ups and usage resets). Newest-first lists. */
+export async function getClientBillingHistory(clientId: string): Promise<{
+  topUps: ClientTopUpHistoryRow[];
+  resets: ClientBillingResetHistoryRow[];
+}> {
+  if (!clientId) return { topUps: [], resets: [] };
+  const redis = getRedis();
+  const topRaw = (await redis.lrange(CLIENT_BILLING_TOPUP_LIST(clientId), 0, MAX_CLIENT_BILLING_HISTORY_ITEMS - 1)) as
+    | string[]
+    | null;
+  const resetRaw = (await redis.lrange(CLIENT_BILLING_RESET_LIST(clientId), 0, MAX_CLIENT_BILLING_HISTORY_ITEMS - 1)) as
+    | string[]
+    | null;
+  return {
+    topUps: parseHistoryJsonList<ClientTopUpHistoryRow>(topRaw),
+    resets: parseHistoryJsonList<ClientBillingResetHistoryRow>(resetRaw),
+  };
 }
 
 export async function listClientKeys() {
@@ -218,6 +297,8 @@ export async function deleteClientKey(id: string) {
   await redis.lrem(indexKey, 0, id);
   await redis.del(recordRedisKey);
   if (lookupDel) await redis.del(lookupDel);
+  await redis.del(CLIENT_BILLING_TOPUP_LIST(id));
+  await redis.del(CLIENT_BILLING_RESET_LIST(id));
   await redis.del(`fit-room:tryon:products:${id}`);
   await redis.del(`fit-room:tryon:events:${id}`);
   await redis.del(`disquant:tryon:products:${id}`);
@@ -242,9 +323,10 @@ export async function getClientByApiKey(apiKey: string) {
   const rec = (await redis.get(recKey)) as ClientApiKeyRecord | null;
   if (!rec || rec.deletedAt) return null;
   const now = new Date();
-  const after = applyAllDueMonthlyUsageResets(rec, now);
-  if (monthlyBillingCycleChanged(rec, after)) {
+  const { rec: after, events } = applyAllDueMonthlyUsageResetsWithEvents(rec, now);
+  if (events.length > 0) {
     await redis.set(recKey, after);
+    await persistMonthlyBillingResetHistory(id, events);
   }
   return after;
 }
@@ -280,9 +362,10 @@ export async function getClientKeyRecordById(id: string): Promise<ClientApiKeyRe
   const { rec, redisKey } = bundle;
   if (rec.deletedAt) return rec;
   const now = new Date();
-  const after = applyAllDueMonthlyUsageResets(rec, now);
-  if (monthlyBillingCycleChanged(rec, after)) {
+  const { rec: after, events } = applyAllDueMonthlyUsageResetsWithEvents(rec, now);
+  if (events.length > 0) {
     await getRedis().set(redisKey, after);
+    await persistMonthlyBillingResetHistory(rec.id, events);
   }
   return after;
 }
@@ -299,10 +382,12 @@ export async function incrementUsageOrThrow(id: string) {
   const bundle = await getRecordForMutation(id);
   if (!bundle) throw new Error("Client key not found.");
   const { redisKey } = bundle;
-  const rec = applyAllDueMonthlyUsageResets(bundle.rec, new Date());
-  if (monthlyBillingCycleChanged(bundle.rec, rec)) {
-    await redis.set(redisKey, rec);
+  const { rec: afterApply, events } = applyAllDueMonthlyUsageResetsWithEvents(bundle.rec, new Date());
+  if (events.length > 0) {
+    await redis.set(redisKey, afterApply);
+    await persistMonthlyBillingResetHistory(bundle.rec.id, events);
   }
+  const rec = afterApply;
   if (rec.usageCount >= rec.usageLimit) throw new Error("Try-on limit exceeded.");
   const nextBase: ClientApiKeyRecord = { ...rec, usageCount: rec.usageCount + 1 };
   const resendConfigured = isFitRoomEmailConfigured();
@@ -354,6 +439,8 @@ export async function resetUsage(id: string) {
   const bundle = await getRecordForMutation(id);
   if (!bundle) throw new Error("Client key not found.");
   const { rec, redisKey } = bundle;
+  const prevTryOns = rec.usageCount;
+  await appendClientManualResetHistoryInternal(rec.id, prevTryOns);
   const next: ClientApiKeyRecord = { ...rec, usageCount: 0 };
   delete next.usageSeventyFivePctEmailSentForLimit;
   delete next.usageNinetyNinePctEmailSentForLimit;
@@ -374,16 +461,18 @@ export async function incrementClientTryOnLimit(id: string, delta: number) {
   const { rec, redisKey } = bundle;
   if (rec.deletedAt) throw new Error("This API key is no longer active.");
 
-  const cur = applyAllDueMonthlyUsageResets(rec, new Date());
-  if (monthlyBillingCycleChanged(rec, cur)) {
-    await redis.set(redisKey, cur);
+  const { rec: afterResets, events } = applyAllDueMonthlyUsageResetsWithEvents(rec, new Date());
+  if (events.length > 0) {
+    await redis.set(redisKey, afterResets);
+    await persistMonthlyBillingResetHistory(rec.id, events);
   }
 
   const next: ClientApiKeyRecord = {
-    ...cur,
-    usageLimit: cur.usageLimit + delta,
+    ...afterResets,
+    usageLimit: afterResets.usageLimit + delta,
   };
   await redis.set(redisKey, next);
+  await appendClientTopUpHistoryInternal(rec.id, delta);
   return next;
 }
 
@@ -444,9 +533,10 @@ export async function applyDueMonthlyUsageResetsForAllClients(now = new Date()):
     examined += 1;
     const bundle = await getRecordForMutation(summary.id);
     if (!bundle || bundle.rec.deletedAt) continue;
-    const after = applyAllDueMonthlyUsageResets(bundle.rec, now);
-    if (monthlyBillingCycleChanged(bundle.rec, after)) {
+    const { rec: after, events } = applyAllDueMonthlyUsageResetsWithEvents(bundle.rec, now);
+    if (events.length > 0) {
       await redis.set(bundle.redisKey, after);
+      await persistMonthlyBillingResetHistory(bundle.rec.id, events);
       updated += 1;
     }
   }

@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
+import { ChevronDown } from "lucide-react";
 import { Footer } from "@/components/Footer";
 import { AnalyticsInsightsModal } from "@/components/AnalyticsInsightsModal";
 import { AdminWearMeClient } from "@/app/admin/AdminWearMeClient";
@@ -47,6 +48,21 @@ function formatNextResetUtc(k: KeyRecord): string {
   } catch {
     return "—";
   }
+}
+
+function formatIsoDateUtc(iso: string): string {
+  const d = new Date(iso);
+  if (!Number.isFinite(d.getTime())) return "—";
+  return d.toLocaleDateString("en-GB", {
+    timeZone: "UTC",
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+  });
+}
+
+function billingResetReasonLabel(reason: "monthly_billing" | "admin_manual"): string {
+  return reason === "monthly_billing" ? "Monthly billing" : "Admin manual";
 }
 
 type ClientAnalyticsRow = {
@@ -224,6 +240,19 @@ export default function AdminClient() {
   const [fashnCreditsLoading, setFashnCreditsLoading] = useState(false);
   const [fashnCreditsError, setFashnCreditsError] = useState<string | null>(null);
 
+  type ClientBillingHistoryPayload = {
+    subscriptionStartedAt: string;
+    nextResetAt: string;
+    billingAnchorDay: number | null;
+    topUps: { at: string; tryOnsAdded: number }[];
+    resets: { at: string; previousTryOns: number; reason: "monthly_billing" | "admin_manual" }[];
+  };
+
+  const [expandedHistoryClientId, setExpandedHistoryClientId] = useState<string | null>(null);
+  const [billingHistoryByClient, setBillingHistoryByClient] = useState<Record<string, ClientBillingHistoryPayload>>({});
+  const [billingHistoryLoadingId, setBillingHistoryLoadingId] = useState<string | null>(null);
+  const [billingHistoryErrorId, setBillingHistoryErrorId] = useState<string | null>(null);
+
   type QuotaEmailPreviewPayload = {
     subject: string;
     body: string;
@@ -282,6 +311,36 @@ export default function AdminClient() {
       setError(e instanceof Error ? e.message : "Failed to load keys.");
     } finally {
       setLoading(false);
+    }
+  }
+
+  async function loadBillingHistory(clientId: string) {
+    setBillingHistoryLoadingId(clientId);
+    setBillingHistoryErrorId(null);
+    try {
+      const res = await fetch(`/api/admin/keys/${encodeURIComponent(clientId)}/billing-history`);
+      const data = (await res.json()) as ClientBillingHistoryPayload & { error?: string };
+      if (!res.ok) {
+        if (data.error === "Unauthorized.") window.location.reload();
+        setBillingHistoryErrorId(clientId);
+        return;
+      }
+      setBillingHistoryByClient((prev) => ({ ...prev, [clientId]: data }));
+    } catch {
+      setBillingHistoryErrorId(clientId);
+    } finally {
+      setBillingHistoryLoadingId(null);
+    }
+  }
+
+  function toggleBillingHistory(clientId: string) {
+    if (expandedHistoryClientId === clientId) {
+      setExpandedHistoryClientId(null);
+      return;
+    }
+    setExpandedHistoryClientId(clientId);
+    if (!billingHistoryByClient[clientId]) {
+      void loadBillingHistory(clientId);
     }
   }
 
@@ -535,6 +594,11 @@ export default function AdminClient() {
           }),
         );
       }
+      setBillingHistoryByClient((prev) => {
+        const next = { ...prev };
+        delete next[id];
+        return next;
+      });
     } catch (e) {
       setError(e instanceof Error ? e.message : "Failed to reset try-ons used.");
     }
@@ -1273,115 +1337,222 @@ export default function AdminClient() {
                           ? Math.min(100, Math.round((k.usageCount / k.usageLimit) * 100))
                           : 0;
                       const blocked = k.usageLimit > 0 && k.usageCount >= k.usageLimit;
+                      const historyOpen = expandedHistoryClientId === k.id;
+                      const bh = billingHistoryByClient[k.id];
 
                       return (
-                        <div
-                          key={k.id}
-                          className="grid min-w-[72rem] w-full grid-cols-[minmax(0,1.2fr)_minmax(0,0.62fr)_minmax(0,0.72fr)_minmax(0,0.72fr)_minmax(0,1.35fr)_minmax(0,0.58fr)_minmax(0,0.52fr)_minmax(0,0.62fr)_minmax(0,0.5fr)_minmax(0,0.52fr)_minmax(0,0.62fr)] items-center gap-2 border-b border-zinc-800 px-4 py-4 text-base md:px-6"
-                        >
-                          <div className="min-w-0">
-                            <div className="flex min-w-0 items-start justify-between gap-2">
-                              <div className="min-w-0 flex-1">
-                                <div className="truncate font-semibold text-zinc-100">{k.clientName}</div>
-                                {k.contactEmail ? (
-                                  <div
-                                    className="mt-0.5 truncate text-sm text-sky-400/90"
-                                    title={k.contactEmail}
-                                  >
-                                    {k.contactEmail}
-                                  </div>
-                                ) : null}
+                        <div key={k.id}>
+                          <div className="grid min-w-[72rem] w-full grid-cols-[minmax(0,1.2fr)_minmax(0,0.62fr)_minmax(0,0.72fr)_minmax(0,0.72fr)_minmax(0,1.35fr)_minmax(0,0.58fr)_minmax(0,0.52fr)_minmax(0,0.62fr)_minmax(0,0.5fr)_minmax(0,0.52fr)_minmax(0,0.62fr)] items-center gap-2 border-b border-zinc-800 px-4 py-4 text-base md:px-6">
+                            <div className="min-w-0">
+                              <div className="flex min-w-0 items-start justify-between gap-2">
+                                <div className="min-w-0 flex-1">
+                                  <div className="truncate font-semibold text-zinc-100">{k.clientName}</div>
+                                  {k.contactEmail ? (
+                                    <div
+                                      className="mt-0.5 truncate text-sm text-sky-400/90"
+                                      title={k.contactEmail}
+                                    >
+                                      {k.contactEmail}
+                                    </div>
+                                  ) : null}
+                                </div>
+                                <QuotaEmailNoticeBadges k={k} />
                               </div>
-                              <QuotaEmailNoticeBadges k={k} />
+                              <button
+                                type="button"
+                                onClick={() => toggleBillingHistory(k.id)}
+                                className="mt-2 inline-flex items-center gap-1.5 rounded-lg border border-zinc-700/90 bg-zinc-950/60 px-2.5 py-1 text-xs font-semibold text-[#d4bc94] transition hover:border-[#c6a77d]/50 hover:bg-zinc-900 hover:text-[#e8dcc8]"
+                                aria-expanded={historyOpen}
+                              >
+                                <ChevronDown
+                                  className={`h-3.5 w-3.5 shrink-0 transition ${historyOpen ? "rotate-180" : ""}`}
+                                  aria-hidden
+                                />
+                                Billing history
+                              </button>
+                            </div>
+                            <div>
+                              <span className="rounded-md border border-zinc-700 bg-zinc-950 px-2 py-1 font-mono text-sm text-zinc-300">
+                                {(k.key || "").slice(0, 8)}…
+                              </span>
+                            </div>
+                            <div
+                              className="text-sm tabular-nums text-zinc-300"
+                              title={
+                                Number.isFinite(Date.parse(k.createdAt)) ? `${k.createdAt} (UTC date shown)` : undefined
+                              }
+                            >
+                              {formatKeyCreatedUtc(k.createdAt)}
+                            </div>
+                            <div className="text-sm tabular-nums text-zinc-300" title="Monthly auto reset schedule (UTC)">
+                              {formatNextResetUtc(k)}
+                            </div>
+                            <div className="flex items-center gap-3">
+                              <div className="h-2 w-24 overflow-hidden rounded-full border border-zinc-700 bg-zinc-800">
+                                <div
+                                  className="h-full rounded-full bg-gradient-to-r from-[#7c3aed] to-[#ec4899]"
+                                  style={{ width: `${pct}%` }}
+                                />
+                              </div>
+                              <span className="text-sm font-semibold text-zinc-300">
+                                {k.usageCount}/{k.usageLimit}
+                              </span>
+                              <span className="text-sm font-semibold text-zinc-500">{pct}%</span>
+                            </div>
+                            <div>
+                              <span
+                                className={`inline-flex items-center rounded-full border px-2.5 py-1 text-sm font-semibold ${
+                                  blocked
+                                    ? "border-amber-800/80 bg-amber-950/50 text-amber-200"
+                                    : "border-emerald-800/80 bg-emerald-950/50 text-emerald-200"
+                                }`}
+                              >
+                                {blocked ? "Blocked" : "Active"}
+                              </span>
+                            </div>
+                            <div className="text-center">
+                              <button
+                                type="button"
+                                onClick={() => openEditModal(k)}
+                                className="inline-flex h-9 items-center justify-center rounded-full border border-zinc-600 bg-zinc-800 px-3 text-sm font-semibold text-zinc-100 transition hover:border-zinc-500 hover:bg-zinc-700"
+                                aria-label="Edit"
+                              >
+                                Edit
+                              </button>
+                            </div>
+                            <div className="text-center">
+                              <button
+                                type="button"
+                                onClick={() => void copyWidgetCode(k.key)}
+                                className="inline-flex h-9 items-center justify-center rounded-full border border-zinc-600 bg-zinc-800 px-3 text-sm font-semibold text-zinc-100 transition hover:border-zinc-500 hover:bg-zinc-700"
+                                aria-label="Copy code"
+                              >
+                                Copy
+                              </button>
+                            </div>
+                            <div className="text-center">
+                              <button
+                                type="button"
+                                onClick={() => void copyRawKey(k.key)}
+                                className="inline-flex h-9 items-center justify-center rounded-full border border-zinc-600 bg-zinc-800 px-3 text-sm font-semibold text-zinc-100 transition hover:border-zinc-500 hover:bg-zinc-700"
+                                aria-label="Copy key"
+                              >
+                                Copy Key
+                              </button>
+                            </div>
+                            <div className="text-center">
+                              <button
+                                type="button"
+                                onClick={() => void resetKeyUsage(k.id)}
+                                className="inline-flex h-9 items-center justify-center rounded-full border border-zinc-600 bg-zinc-800 px-3 text-sm font-semibold text-zinc-100 transition hover:border-zinc-500 hover:bg-zinc-700"
+                                aria-label="Reset try-ons used"
+                              >
+                                Reset
+                              </button>
+                            </div>
+                            <div className="text-center">
+                              <button
+                                type="button"
+                                onClick={() => void deleteKey(k.id)}
+                                className="inline-flex h-9 items-center justify-center rounded-full border border-red-900/60 bg-red-950/40 px-3 text-sm font-semibold text-red-200 transition hover:border-red-800 hover:bg-red-950/70"
+                                aria-label="Delete"
+                              >
+                                Delete
+                              </button>
                             </div>
                           </div>
-                          <div>
-                            <span className="rounded-md border border-zinc-700 bg-zinc-950 px-2 py-1 font-mono text-sm text-zinc-300">
-                              {(k.key || "").slice(0, 8)}…
-                            </span>
-                          </div>
-                          <div
-                            className="text-sm tabular-nums text-zinc-300"
-                            title={Number.isFinite(Date.parse(k.createdAt)) ? `${k.createdAt} (UTC date shown)` : undefined}
-                          >
-                            {formatKeyCreatedUtc(k.createdAt)}
-                          </div>
-                          <div className="text-sm tabular-nums text-zinc-300" title="Monthly auto reset schedule (UTC)">
-                            {formatNextResetUtc(k)}
-                          </div>
-                          <div className="flex items-center gap-3">
-                            <div className="h-2 w-24 overflow-hidden rounded-full border border-zinc-700 bg-zinc-800">
-                              <div
-                                className="h-full rounded-full bg-gradient-to-r from-[#7c3aed] to-[#ec4899]"
-                                style={{ width: `${pct}%` }}
-                              />
+
+                          {historyOpen ? (
+                            <div className="min-w-[72rem] w-full border-b border-zinc-800 bg-zinc-950/55 px-4 py-5 md:px-6">
+                              {billingHistoryLoadingId === k.id ? (
+                                <p className="text-sm text-zinc-400">Loading billing history…</p>
+                              ) : billingHistoryErrorId === k.id ? (
+                                <p className="text-sm text-red-300">Could not load billing history.</p>
+                              ) : bh ? (
+                                <div className="grid gap-8 lg:grid-cols-3">
+                                  <div>
+                                    <h4 className="text-xs font-semibold uppercase tracking-wider text-zinc-500">
+                                      Subscription &amp; billing cycle
+                                    </h4>
+                                    <dl className="mt-3 space-y-2 text-sm text-zinc-200">
+                                      <div>
+                                        <dt className="text-zinc-500">Subscription started (UTC)</dt>
+                                        <dd className="mt-0.5 tabular-nums">{formatIsoDateUtc(bh.subscriptionStartedAt)}</dd>
+                                      </div>
+                                      <div>
+                                        <dt className="text-zinc-500">Next usage reset (UTC)</dt>
+                                        <dd className="mt-0.5 tabular-nums">{formatIsoDateUtc(bh.nextResetAt)}</dd>
+                                      </div>
+                                      {typeof bh.billingAnchorDay === "number" ? (
+                                        <div>
+                                          <dt className="text-zinc-500">Billing anchor day</dt>
+                                          <dd className="mt-0.5 tabular-nums">{bh.billingAnchorDay}</dd>
+                                        </div>
+                                      ) : null}
+                                    </dl>
+                                  </div>
+                                  <div className="lg:col-span-1">
+                                    <h4 className="text-xs font-semibold uppercase tracking-wider text-zinc-500">
+                                      Top-up purchases
+                                    </h4>
+                                    {bh.topUps.length === 0 ? (
+                                      <p className="mt-3 text-sm text-zinc-500">No top-ups recorded yet.</p>
+                                    ) : (
+                                      <ul className="mt-3 max-h-52 list-none space-y-2 overflow-y-auto text-sm">
+                                        {bh.topUps.map((row, idx) => (
+                                          <li
+                                            key={`${row.at}-${idx}`}
+                                            className="flex justify-between gap-3 rounded-lg border border-zinc-800/80 bg-zinc-900/40 px-3 py-2"
+                                          >
+                                            <span className="tabular-nums text-zinc-400">{formatIsoDateUtc(row.at)}</span>
+                                            <span className="font-semibold tabular-nums text-emerald-200/95">
+                                              +{row.tryOnsAdded} try-ons
+                                            </span>
+                                          </li>
+                                        ))}
+                                      </ul>
+                                    )}
+                                  </div>
+                                  <div className="lg:col-span-1">
+                                    <h4 className="text-xs font-semibold uppercase tracking-wider text-zinc-500">
+                                      Past usage resets
+                                    </h4>
+                                    <p className="mt-1 text-xs text-zinc-600">
+                                      Monthly resets zero try-ons used; admin resets clear usage without changing the
+                                      limit.
+                                    </p>
+                                    {bh.resets.length === 0 ? (
+                                      <p className="mt-3 text-sm text-zinc-500">No resets recorded yet.</p>
+                                    ) : (
+                                      <ul className="mt-3 max-h-52 list-none space-y-2 overflow-y-auto text-sm">
+                                        {bh.resets.map((row, idx) => (
+                                          <li
+                                            key={`${row.at}-${row.reason}-${idx}`}
+                                            className="flex flex-col gap-0.5 rounded-lg border border-zinc-800/80 bg-zinc-900/40 px-3 py-2"
+                                          >
+                                            <div className="flex justify-between gap-2">
+                                              <span className="tabular-nums text-zinc-400">{formatIsoDateUtc(row.at)}</span>
+                                              <span className="shrink-0 text-xs font-medium text-zinc-500">
+                                                {billingResetReasonLabel(row.reason)}
+                                              </span>
+                                            </div>
+                                            <span className="text-xs text-zinc-300">
+                                              Try-ons cleared:{" "}
+                                              <strong className="font-semibold tabular-nums text-zinc-100">
+                                                {row.previousTryOns}
+                                              </strong>
+                                            </span>
+                                          </li>
+                                        ))}
+                                      </ul>
+                                    )}
+                                  </div>
+                                </div>
+                              ) : (
+                                <p className="text-sm text-zinc-500">Loading…</p>
+                              )}
                             </div>
-                            <span className="text-sm font-semibold text-zinc-300">
-                              {k.usageCount}/{k.usageLimit}
-                            </span>
-                            <span className="text-sm font-semibold text-zinc-500">{pct}%</span>
-                          </div>
-                          <div>
-                            <span
-                              className={`inline-flex items-center rounded-full border px-2.5 py-1 text-sm font-semibold ${
-                                blocked
-                                  ? "border-amber-800/80 bg-amber-950/50 text-amber-200"
-                                  : "border-emerald-800/80 bg-emerald-950/50 text-emerald-200"
-                              }`}
-                            >
-                              {blocked ? "Blocked" : "Active"}
-                            </span>
-                          </div>
-                          <div className="text-center">
-                            <button
-                              type="button"
-                              onClick={() => openEditModal(k)}
-                              className="inline-flex h-9 items-center justify-center rounded-full border border-zinc-600 bg-zinc-800 px-3 text-sm font-semibold text-zinc-100 transition hover:border-zinc-500 hover:bg-zinc-700"
-                              aria-label="Edit"
-                            >
-                              Edit
-                            </button>
-                          </div>
-                          <div className="text-center">
-                            <button
-                              type="button"
-                              onClick={() => void copyWidgetCode(k.key)}
-                              className="inline-flex h-9 items-center justify-center rounded-full border border-zinc-600 bg-zinc-800 px-3 text-sm font-semibold text-zinc-100 transition hover:border-zinc-500 hover:bg-zinc-700"
-                              aria-label="Copy code"
-                            >
-                              Copy
-                            </button>
-                          </div>
-                          <div className="text-center">
-                            <button
-                              type="button"
-                              onClick={() => void copyRawKey(k.key)}
-                              className="inline-flex h-9 items-center justify-center rounded-full border border-zinc-600 bg-zinc-800 px-3 text-sm font-semibold text-zinc-100 transition hover:border-zinc-500 hover:bg-zinc-700"
-                              aria-label="Copy key"
-                            >
-                              Copy Key
-                            </button>
-                          </div>
-                          <div className="text-center">
-                            <button
-                              type="button"
-                            onClick={() => void resetKeyUsage(k.id)}
-                            className="inline-flex h-9 items-center justify-center rounded-full border border-zinc-600 bg-zinc-800 px-3 text-sm font-semibold text-zinc-100 transition hover:border-zinc-500 hover:bg-zinc-700"
-                            aria-label="Reset try-ons used"
-                          >
-                            Reset
-                            </button>
-                          </div>
-                          <div className="text-center">
-                            <button
-                              type="button"
-                              onClick={() => void deleteKey(k.id)}
-                              className="inline-flex h-9 items-center justify-center rounded-full border border-red-900/60 bg-red-950/40 px-3 text-sm font-semibold text-red-200 transition hover:border-red-800 hover:bg-red-950/70"
-                              aria-label="Delete"
-                            >
-                              Delete
-                            </button>
-                          </div>
+                          ) : null}
                         </div>
                       );
                     })}

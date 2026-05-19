@@ -99,17 +99,31 @@ function peekNextDueAutoBillingResetUtc<T extends MonthlyBillingCycleFields>(rec
   return null;
 }
 
+/** One applied monthly billing reset (usage zeroed for a scheduled UTC calendar day). */
+export type MonthlyBillingResetAppliedEvent = {
+  /** UTC midnight (or scheduled day) instant for this billing reset. */
+  resetDayUtcMs: number;
+  /** Try-ons used immediately before this reset. */
+  previousTryOns: number;
+};
+
 /**
  * Zero `usageCount` for each missed monthly boundary up to "today" (UTC), updating
  * `lastAutoBillingResetYyyymmdd` each time. Does not change `usageLimit`.
+ * Also returns one event per reset applied (for admin billing history).
  */
-export function applyAllDueMonthlyUsageResets<T extends MonthlyBillingCycleFields>(rec: T, now: Date): T {
+export function applyAllDueMonthlyUsageResetsWithEvents<T extends MonthlyBillingCycleFields>(
+  rec: T,
+  now: Date,
+): { rec: T; events: MonthlyBillingResetAppliedEvent[] } {
+  const events: MonthlyBillingResetAppliedEvent[] = [];
   let cur: T = { ...rec };
   let guard = 0;
   while (guard < 48) {
     guard += 1;
     const due = peekNextDueAutoBillingResetUtc(cur, now);
     if (!due) break;
+    const previousTryOns = cur.usageCount;
     const next: T = {
       ...cur,
       usageCount: 0,
@@ -122,8 +136,17 @@ export function applyAllDueMonthlyUsageResets<T extends MonthlyBillingCycleField
     delete w.usageSeventyFivePctEmailSentForLimit;
     delete w.usageNinetyNinePctEmailSentForLimit;
     cur = w as T;
+    events.push({ resetDayUtcMs: due.getTime(), previousTryOns });
   }
-  return cur;
+  return { rec: cur, events };
+}
+
+/**
+ * Zero `usageCount` for each missed monthly boundary up to "today" (UTC), updating
+ * `lastAutoBillingResetYyyymmdd` each time. Does not change `usageLimit`.
+ */
+export function applyAllDueMonthlyUsageResets<T extends MonthlyBillingCycleFields>(rec: T, now: Date): T {
+  return applyAllDueMonthlyUsageResetsWithEvents(rec, now).rec;
 }
 
 export function monthlyBillingCycleChanged(prev: MonthlyBillingCycleFields, next: MonthlyBillingCycleFields): boolean {
