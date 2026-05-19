@@ -2,7 +2,7 @@
 
 import { ImageOff } from "lucide-react";
 import Link from "next/link";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useSearchParams } from "next/navigation";
 import { Suspense, useCallback, useEffect, useMemo, useState } from "react";
 import { TryOnTimingCharts } from "@/components/TryOnTimingCharts";
 import { LOCAL_OR_UNKNOWN_PRODUCT } from "@/lib/tryOnConstants";
@@ -108,16 +108,28 @@ function RetailerDashboardShellInner({
   initialUsed,
   initialLimit,
 }: RetailerDashboardShellProps) {
-  const router = useRouter();
   const searchParams = useSearchParams();
-  const tab = useMemo(() => parseDashboardTab(searchParams), [searchParams]);
+  const [tab, setTab] = useState<DashboardTab>(() => parseDashboardTab(searchParams));
 
-  const selectTab = useCallback(
-    (next: DashboardTab) => {
-      router.replace(pathForDashboardTab(next), { scroll: false });
-    },
-    [router],
-  );
+  /** Next.js links / full navigations update search params; keep tab in sync. */
+  useEffect(() => {
+    setTab(parseDashboardTab(searchParams));
+  }, [searchParams]);
+
+  /** Browser back/forward after in-place URL updates. */
+  useEffect(() => {
+    function onPopState() {
+      setTab(parseDashboardTab(new URLSearchParams(window.location.search)));
+    }
+    window.addEventListener("popstate", onPopState);
+    return () => window.removeEventListener("popstate", onPopState);
+  }, []);
+
+  const selectTab = useCallback((next: DashboardTab) => {
+    setTab(next);
+    const href = pathForDashboardTab(next);
+    window.history.replaceState(window.history.state, "", href);
+  }, []);
 
   const [used, setUsed] = useState(initialUsed);
   const [limit, setLimit] = useState(initialLimit);
