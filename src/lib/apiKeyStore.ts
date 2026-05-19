@@ -484,7 +484,7 @@ export async function incrementUsageOrThrow(id: string) {
   if (events.length > 0) {
     await persistMonthlyBillingResetHistory(bundle.rec.id, events);
   }
-  let rec = normalizeClientTryOnBuckets(afterApply);
+  const rec = normalizeClientTryOnBuckets(afterApply);
   if (!sameBucketSnapshot(stored, rec)) {
     await redis.set(redisKey, rec);
   }
@@ -563,7 +563,7 @@ export async function resetUsage(id: string) {
   if (events.length > 0) {
     await persistMonthlyBillingResetHistory(stored.id, events);
   }
-  let cur = normalizeClientTryOnBuckets(afterApply);
+  const cur = normalizeClientTryOnBuckets(afterApply);
   if (!sameBucketSnapshot(stored, cur)) {
     await redis.set(redisKey, cur);
   }
@@ -594,7 +594,7 @@ export async function incrementClientTryOnLimit(id: string, delta: number, meta?
     await persistMonthlyBillingResetHistory(stored.id, events);
   }
 
-  let cur = normalizeClientTryOnBuckets(afterResets);
+  const cur = normalizeClientTryOnBuckets(afterResets);
   if (!sameBucketSnapshot(stored, cur)) {
     await redis.set(redisKey, cur);
   }
