@@ -7,8 +7,6 @@ import { Menu, X } from "lucide-react";
 import { RetailerAccountMenu } from "@/components/RetailerAccountMenu";
 import { retailerSessionLabel, type RetailerDisplayUser } from "@/lib/retailerDisplayName";
 
-const navTextClass = "text-sm text-zinc-600 transition hover:text-zinc-900";
-const navStackClass = "block rounded-xl px-3 py-2 text-base text-zinc-800 transition hover:bg-surface-raised";
 const navAuthBtnClass = "btn-accent-gradient hidden sm:inline-flex";
 
 export function HeaderNav() {
@@ -41,8 +39,19 @@ export function HeaderNav() {
 
   const loggedIn = Boolean(retailerUser);
 
-  function linkClass(href: string) {
-    return `${navTextClass}${pathname === href ? " font-medium text-zinc-900" : ""}`;
+  function desktopNavLinkClass(href: string) {
+    const active = pathname === href;
+    return `header-nav-link${active ? " header-nav-link--active" : ""}`;
+  }
+
+  function mobileNavLinkClass(href: string) {
+    const active = pathname === href;
+    const base =
+      "relative block overflow-hidden rounded-xl border-l-[3px] py-3 pr-3 text-[15px] tracking-[0.12em] transition-[color,letter-spacing,background-color,padding-left,border-color,font-weight] duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] motion-reduce:transition-none after:pointer-events-none after:absolute after:bottom-2 after:left-4 after:right-5 after:h-px after:bg-gradient-to-r after:from-transparent after:via-[#c6a77d]/85 after:to-transparent after:transition-transform after:duration-300 after:ease-[cubic-bezier(0.22,1,0.36,1)] motion-reduce:after:transition-none";
+    if (active) {
+      return `${base} border-[#c6a77d] bg-[#c6a77d]/[0.11] pl-[1.125rem] font-normal text-zinc-950 after:scale-x-100`;
+    }
+    return `${base} border-transparent bg-transparent pl-4 font-light text-zinc-800 after:origin-center after:scale-x-0 hover:border-[#c6a77d]/85 hover:bg-[#c6a77d]/[0.07] hover:pl-5 hover:font-normal hover:text-zinc-950 hover:tracking-[0.16em] hover:after:scale-x-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#c6a77d]/40 focus-visible:ring-offset-2 focus-visible:ring-offset-white`;
   }
 
   useEffect(() => {
@@ -81,21 +90,21 @@ export function HeaderNav() {
 
   return (
     <div className="flex min-w-0 items-center justify-end gap-2 sm:gap-3">
-      <nav className="hidden items-center gap-7 lg:gap-8 md:flex" aria-label="Primary">
-        <Link href="/how-it-works" className={linkClass("/how-it-works")}>
+      <nav className="hidden items-center gap-8 lg:gap-10 md:flex" aria-label="Primary">
+        <Link href="/how-it-works" className={desktopNavLinkClass("/how-it-works")}>
           How it works
         </Link>
-        <Link href="/pricing" className={linkClass("/pricing")}>
+        <Link href="/pricing" className={desktopNavLinkClass("/pricing")}>
           Subscriptions
         </Link>
-        <Link href="/demo" className={linkClass("/demo")}>
+        <Link href="/demo" className={desktopNavLinkClass("/demo")}>
           Demo
         </Link>
-        <Link href="/contact" className={linkClass("/contact")}>
+        <Link href="/contact" className={desktopNavLinkClass("/contact")}>
           Contact
         </Link>
         {loggedIn ? (
-          <Link href="/dashboard" className={linkClass("/dashboard")}>
+          <Link href="/dashboard" className={desktopNavLinkClass("/dashboard")}>
             Overview
           </Link>
         ) : null}
@@ -159,27 +168,27 @@ export function HeaderNav() {
             </div>
 
             <nav className="flex flex-col gap-1" aria-label="Mobile">
-              <Link href="/how-it-works" className={navStackClass} onClick={() => setOpen(false)}>
+              <Link href="/how-it-works" className={mobileNavLinkClass("/how-it-works")} onClick={() => setOpen(false)}>
                 How it works
               </Link>
-              <Link href="/pricing" className={navStackClass} onClick={() => setOpen(false)}>
+              <Link href="/pricing" className={mobileNavLinkClass("/pricing")} onClick={() => setOpen(false)}>
                 Subscriptions
               </Link>
-              <Link href="/demo" className={navStackClass} onClick={() => setOpen(false)}>
+              <Link href="/demo" className={mobileNavLinkClass("/demo")} onClick={() => setOpen(false)}>
                 Demo
               </Link>
-              <Link href="/contact" className={navStackClass} onClick={() => setOpen(false)}>
+              <Link href="/contact" className={mobileNavLinkClass("/contact")} onClick={() => setOpen(false)}>
                 Contact
               </Link>
               {loggedIn && retailerUser ? (
                 <>
-                  <Link href="/dashboard" className={navStackClass} onClick={() => setOpen(false)}>
+                  <Link href="/dashboard" className={mobileNavLinkClass("/dashboard")} onClick={() => setOpen(false)}>
                     Overview
                   </Link>
-                  <Link href="/profile" className={navStackClass} onClick={() => setOpen(false)}>
+                  <Link href="/profile" className={mobileNavLinkClass("/profile")} onClick={() => setOpen(false)}>
                     Profile Settings
                   </Link>
-                  <Link href="/plan" className={navStackClass} onClick={() => setOpen(false)}>
+                  <Link href="/plan" className={mobileNavLinkClass("/plan")} onClick={() => setOpen(false)}>
                     My Plan
                   </Link>
                   <p className="mt-2 rounded-xl bg-zinc-100 px-3 py-2 text-xs font-medium text-zinc-600">

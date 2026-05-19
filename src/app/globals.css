@@ -203,6 +203,95 @@ body header.site-header a {
   color: inherit;
 }
 
+/* Primary marketing nav links: luxury hover underline + typography (beats `color: inherit` on generic header anchors). */
+body header.site-header nav[aria-label="Primary"] a.header-nav-link {
+  position: relative;
+  display: inline-block;
+  padding: 0.35rem 0.45rem;
+  margin: -0.35rem -0.45rem;
+  font-size: 0.8125rem;
+  font-weight: 300;
+  letter-spacing: 0.14em;
+  color: rgb(244 244 245 / 0.88);
+  text-decoration: none;
+  transition:
+    color 0.4s cubic-bezier(0.22, 1, 0.36, 1),
+    letter-spacing 0.4s cubic-bezier(0.22, 1, 0.36, 1),
+    font-size 0.4s cubic-bezier(0.22, 1, 0.36, 1),
+    font-weight 0.35s ease;
+}
+
+@media (min-width: 768px) {
+  body header.site-header nav[aria-label="Primary"] a.header-nav-link {
+    font-size: 0.84375rem;
+    letter-spacing: 0.13em;
+  }
+}
+
+body header.site-header nav[aria-label="Primary"] a.header-nav-link::after {
+  content: "";
+  position: absolute;
+  left: 0.35rem;
+  right: 0.35rem;
+  bottom: 0.15rem;
+  height: 1px;
+  background: linear-gradient(
+    90deg,
+    rgb(198 167 125 / 0),
+    rgb(198 167 125 / 0.92),
+    rgb(212 188 148 / 0.65),
+    rgb(198 167 125 / 0)
+  );
+  transform: scaleX(0);
+  transform-origin: center;
+  transition: transform 0.42s cubic-bezier(0.22, 1, 0.36, 1);
+  pointer-events: none;
+}
+
+body header.site-header nav[aria-label="Primary"] a.header-nav-link:hover::after,
+body header.site-header nav[aria-label="Primary"] a.header-nav-link:focus-visible::after {
+  transform: scaleX(1);
+}
+
+body header.site-header nav[aria-label="Primary"] a.header-nav-link:hover,
+body header.site-header nav[aria-label="Primary"] a.header-nav-link:focus-visible {
+  color: rgb(253 250 245);
+  font-size: 0.9375rem;
+  letter-spacing: 0.17em;
+  font-weight: 400;
+}
+
+body header.site-header nav[aria-label="Primary"] a.header-nav-link:focus-visible {
+  outline: 2px solid rgb(198 167 125 / 0.55);
+  outline-offset: 4px;
+}
+
+@media (min-width: 768px) {
+  body header.site-header nav[aria-label="Primary"] a.header-nav-link:hover,
+  body header.site-header nav[aria-label="Primary"] a.header-nav-link:focus-visible {
+    font-size: 0.96875rem;
+    letter-spacing: 0.155em;
+  }
+}
+
+body header.site-header nav[aria-label="Primary"] a.header-nav-link.header-nav-link--active {
+  color: rgb(253 250 245);
+  font-weight: 500;
+  letter-spacing: 0.15em;
+}
+
+body header.site-header nav[aria-label="Primary"] a.header-nav-link.header-nav-link--active::after {
+  transform: scaleX(1);
+  opacity: 0.92;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  body header.site-header nav[aria-label="Primary"] a.header-nav-link,
+  body header.site-header nav[aria-label="Primary"] a.header-nav-link::after {
+    transition-duration: 0.01ms;
+  }
+}
+
 /**
  * Logo in main site header (`Header.tsx`): oversized vs slim bar; cropped tagline; contrast on dark BG.
  */
