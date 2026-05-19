@@ -65,6 +65,26 @@ function billingResetReasonLabel(reason: "monthly_billing" | "admin_manual"): st
   return reason === "monthly_billing" ? "Monthly billing" : "Admin manual";
 }
 
+type AdminTopUpPurchaseRow = {
+  clientId: string;
+  clientName: string;
+  storeName: string;
+  purchasedAt: string;
+  tryOnsAdded: number;
+  amountPaidPence: number | null;
+  currency: string;
+  stripeCheckoutSessionId?: string;
+  packId?: string;
+};
+
+function formatMinorCurrency(amountPence: number | null, currency: string): string {
+  if (amountPence == null || !Number.isFinite(amountPence)) return "—";
+  const major = amountPence / 100;
+  const c = currency.toLowerCase();
+  if (c === "gbp") return `£${major.toFixed(2)}`;
+  return `${major.toFixed(2)} ${c.toUpperCase()}`;
+}
+
 type ClientAnalyticsRow = {
   kind: "client";
   clientId: string;
@@ -94,7 +114,7 @@ type AnalyticsSummary = {
   demoVisitors: DemoVisitorAnalyticsRow[];
 };
 
-type AdminTab = "clients" | "analytics" | "wearMe" | "recovery";
+type AdminTab = "clients" | "topUps" | "analytics" | "wearMe" | "recovery";
 
 type AdminFashnCredits = {
   total: number | null;
@@ -244,7 +264,12 @@ export default function AdminClient() {
     subscriptionStartedAt: string;
     nextResetAt: string;
     billingAnchorDay: number | null;
-    topUps: { at: string; tryOnsAdded: number }[];
+    topUps: {
+      at: string;
+      tryOnsAdded: number;
+      amountPaidPence?: number;
+      currency?: string;
+    }[];
     resets: { at: string; previousTryOns: number; reason: "monthly_billing" | "admin_manual" }[];
   };
 
@@ -252,6 +277,10 @@ export default function AdminClient() {
   const [billingHistoryByClient, setBillingHistoryByClient] = useState<Record<string, ClientBillingHistoryPayload>>({});
   const [billingHistoryLoadingId, setBillingHistoryLoadingId] = useState<string | null>(null);
   const [billingHistoryErrorId, setBillingHistoryErrorId] = useState<string | null>(null);
+
+  const [topUpsPurchases, setTopUpsPurchases] = useState<AdminTopUpPurchaseRow[]>([]);
+  const [topUpsLoading, setTopUpsLoading] = useState(false);
+  const [topUpsError, setTopUpsError] = useState<string | null>(null);
 
   type QuotaEmailPreviewPayload = {
     subject: string;
@@ -341,6 +370,27 @@ export default function AdminClient() {
     setExpandedHistoryClientId(clientId);
     if (!billingHistoryByClient[clientId]) {
       void loadBillingHistory(clientId);
+    }
+  }
+
+  async function loadTopUps() {
+    setTopUpsLoading(true);
+    setTopUpsError(null);
+    try {
+      const res = await fetch("/api/admin/top-ups");
+      const data = (await res.json()) as { purchases?: AdminTopUpPurchaseRow[]; error?: string };
+      if (!res.ok) {
+        if (data.error === "Unauthorized.") window.location.reload();
+        setTopUpsError(data.error || "Failed to load top-ups.");
+        setTopUpsPurchases([]);
+        return;
+      }
+      setTopUpsPurchases(Array.isArray(data.purchases) ? data.purchases : []);
+    } catch (e) {
+      setTopUpsError(e instanceof Error ? e.message : "Failed to load top-ups.");
+      setTopUpsPurchases([]);
+    } finally {
+      setTopUpsLoading(false);
     }
   }
 
@@ -489,6 +539,7 @@ export default function AdminClient() {
   useEffect(() => {
     if (activeTab === "analytics") void loadAnalytics();
     if (activeTab === "recovery") void loadRecovery();
+    if (activeTab === "topUps") void loadTopUps();
   }, [activeTab]);
 
   useEffect(() => {
@@ -692,6 +743,7 @@ export default function AdminClient() {
     void loadFashnCredits();
     if (activeTab === "clients" || activeTab === "wearMe") void load();
     else if (activeTab === "analytics") void loadAnalytics();
+    else if (activeTab === "topUps") void loadTopUps();
     else void loadRecovery();
   }
 
@@ -700,7 +752,11 @@ export default function AdminClient() {
       ? loading
       : activeTab === "analytics"
         ? analyticsLoading
-        : recoveryLoading;
+        : activeTab === "recovery"
+          ? recoveryLoading
+          : activeTab === "topUps"
+            ? topUpsLoading
+            : false;
 
   const wearMeKeyRecord = useMemo(
     () => keys.find((k) => k.id === wearMeKeyId) ?? null,
@@ -1190,6 +1246,19 @@ export default function AdminClient() {
             <button
               type="button"
               role="tab"
+              aria-selected={activeTab === "topUps"}
+              onClick={() => setActiveTab("topUps")}
+              className={`rounded-full px-5 py-2 text-sm font-semibold transition ${
+                activeTab === "topUps"
+                  ? "bg-zinc-800 text-zinc-100 shadow-sm"
+                  : "text-zinc-500 hover:text-zinc-300"
+              }`}
+            >
+              Top Ups
+            </button>
+            <button
+              type="button"
+              role="tab"
               aria-selected={activeTab === "analytics"}
               onClick={() => setActiveTab("analytics")}
               className={`rounded-full px-5 py-2 text-sm font-semibold transition ${
@@ -1502,11 +1571,17 @@ export default function AdminClient() {
                                         {bh.topUps.map((row, idx) => (
                                           <li
                                             key={`${row.at}-${idx}`}
-                                            className="flex justify-between gap-3 rounded-lg border border-zinc-800/80 bg-zinc-900/40 px-3 py-2"
+                                            className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-zinc-800/80 bg-zinc-900/40 px-3 py-2"
                                           >
                                             <span className="tabular-nums text-zinc-400">{formatIsoDateUtc(row.at)}</span>
                                             <span className="font-semibold tabular-nums text-emerald-200/95">
                                               +{row.tryOnsAdded} try-ons
+                                            </span>
+                                            <span className="w-full text-xs text-zinc-500 sm:w-auto sm:text-right">
+                                              {formatMinorCurrency(
+                                                typeof row.amountPaidPence === "number" ? row.amountPaidPence : null,
+                                                row.currency ?? "gbp",
+                                              )}
                                             </span>
                                           </li>
                                         ))}
@@ -1617,6 +1692,65 @@ export default function AdminClient() {
                 </div>
               </section>
             </>
+          ) : activeTab === "topUps" ? (
+            <section className="mt-8 w-full overflow-hidden rounded-2xl border border-zinc-800 bg-zinc-900/60 p-6 shadow-sm md:p-8">
+              <h2 className="text-base font-semibold text-zinc-100">Top-up purchases</h2>
+              <p className="mt-1 text-sm text-zinc-400">
+                Stripe checkouts that added try-ons. Monthly billing reset clears purchased add-ons for clients with a
+                stored plan baseline; combined usage (
+                <span className="font-medium text-zinc-300">usageCount</span> vs{" "}
+                <span className="font-medium text-zinc-300">usageLimit</span>) blocks try-ons at the cap.
+              </p>
+              {topUpsError ? (
+                <div className="mt-6 rounded-xl border border-red-900/60 bg-red-950/40 px-4 py-3 text-sm text-red-200">
+                  {topUpsError}
+                </div>
+              ) : null}
+              {topUpsLoading ? (
+                <div className="mt-8 text-sm text-zinc-500">Loading top-ups…</div>
+              ) : topUpsPurchases.length === 0 ? (
+                <div className="mt-8 text-sm text-zinc-500">No top-up purchases recorded yet.</div>
+              ) : (
+                <div className="mt-6 w-full overflow-x-auto">
+                  <div className="min-w-[56rem]">
+                    <div className="grid grid-cols-[minmax(0,1.15fr)_minmax(0,1fr)_minmax(0,0.75fr)_minmax(0,0.55fr)_minmax(0,0.65fr)] gap-3 border-b border-zinc-800 px-3 py-2 text-xs font-semibold uppercase tracking-wider text-zinc-500">
+                      <div>Store</div>
+                      <div>Client name</div>
+                      <div>Purchased (UTC)</div>
+                      <div className="tabular-nums">Try-ons</div>
+                      <div className="tabular-nums">Paid</div>
+                    </div>
+                    {topUpsPurchases.map((row, idx) => (
+                      <div
+                        key={`${row.clientId}-${row.stripeCheckoutSessionId ?? row.purchasedAt}-${idx}`}
+                        className="grid grid-cols-[minmax(0,1.15fr)_minmax(0,1fr)_minmax(0,0.75fr)_minmax(0,0.55fr)_minmax(0,0.65fr)] items-center gap-3 border-b border-zinc-800 px-3 py-3 text-sm text-zinc-200"
+                      >
+                        <div className="min-w-0 font-medium text-zinc-100">{row.storeName}</div>
+                        <div className="min-w-0 truncate text-zinc-400" title={row.clientName}>
+                          {row.clientName}
+                        </div>
+                        <div className="tabular-nums text-zinc-400">
+                          {Number.isFinite(Date.parse(row.purchasedAt))
+                            ? new Date(row.purchasedAt).toLocaleString("en-GB", {
+                                timeZone: "UTC",
+                                day: "numeric",
+                                month: "short",
+                                year: "numeric",
+                                hour: "2-digit",
+                                minute: "2-digit",
+                              })
+                            : "—"}
+                        </div>
+                        <div className="font-semibold tabular-nums text-emerald-200/90">+{row.tryOnsAdded}</div>
+                        <div className="tabular-nums text-zinc-300">
+                          {formatMinorCurrency(row.amountPaidPence, row.currency)}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </section>
           ) : activeTab === "wearMe" ? (
             <section className="mt-8 w-full overflow-visible rounded-2xl border border-zinc-800 bg-zinc-900/60 p-6 shadow-sm md:p-8">
               <h2 className="text-base font-semibold text-zinc-100">Wear Me</h2>

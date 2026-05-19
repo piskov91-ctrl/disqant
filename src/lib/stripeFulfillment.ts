@@ -66,7 +66,19 @@ async function fulfillPaidTopUpCheckoutSession(session: Stripe.Checkout.Session)
     throw new Error("Top-up client does not match this account.");
   }
 
-  await incrementClientTryOnLimit(clientId, pack.tryOns);
+  await incrementClientTryOnLimit(clientId, pack.tryOns, {
+    amountPaidPence:
+      typeof session.amount_total === "number" && Number.isFinite(session.amount_total)
+        ? session.amount_total
+        : pack.amountGbpPence,
+    currency: typeof session.currency === "string" && session.currency.trim() ? session.currency : "gbp",
+    stripeCheckoutSessionId: session.id,
+    storeName:
+      user.storeName?.trim() ||
+      user.companyName?.trim() ||
+      undefined,
+    packId: pack.id,
+  });
 }
 
 /**

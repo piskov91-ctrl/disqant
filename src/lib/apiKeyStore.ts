@@ -40,6 +40,11 @@ export type ClientApiKeyRecord = {
   createdAt: string; // ISO
   /** Soft-delete timestamp (e.g. retailer deleted account). Deleted keys are removed from active admin lists and rejected for usage. */
   deletedAt?: string | null;
+  /**
+   * Try-on allowance purchased via top-ups this billing cycle. Only used when `basePlanLimit` is set;
+   * `usageLimit` should equal `basePlanLimit + topUpAllowanceTryOns`.
+   */
+  topUpAllowanceTryOns?: number;
 };
 
 const KEY_INDEX = "fit-room:clientKeys:index"; // list of ids (newest first)
@@ -103,7 +108,37 @@ const CLIENT_BILLING_TOPUP_LIST = (id: string) => `fit-room:clientKeys:billingHi
 const CLIENT_BILLING_RESET_LIST = (id: string) => `fit-room:clientKeys:billingHistory:resets:${id}`;
 const MAX_CLIENT_BILLING_HISTORY_ITEMS = 200;
 
-export type ClientTopUpHistoryRow = { at: string; tryOnsAdded: number };
+export type ClientTopUpHistoryRow = {
+  at: string;
+  tryOnsAdded: number;
+  /** Stripe `amount_total` (minor units, e.g. pence for GBP). */
+  amountPaidPence?: number;
+  currency?: string;
+  stripeCheckoutSessionId?: string;
+  /** Retailer store name captured at checkout. */
+  storeName?: string;
+  packId?: string;
+};
+
+export type TopUpPurchaseMeta = {
+  amountPaidPence?: number;
+  currency?: string;
+  stripeCheckoutSessionId?: string;
+  storeName?: string;
+  packId?: string;
+};
+
+export type AdminTopUpPurchaseRow = {
+  clientId: string;
+  clientName: string;
+  storeName: string;
+  purchasedAt: string;
+  tryOnsAdded: number;
+  amountPaidPence: number | null;
+  currency: string;
+  stripeCheckoutSessionId?: string;
+  packId?: string;
+};
 
 export type ClientBillingResetHistoryRow = {
   at: string;
@@ -126,10 +161,9 @@ async function persistMonthlyBillingResetHistory(clientId: string, events: Month
   await redis.ltrim(key, 0, MAX_CLIENT_BILLING_HISTORY_ITEMS - 1);
 }
 
-async function appendClientTopUpHistoryInternal(clientId: string, tryOnsAdded: number, at?: string) {
+async function appendClientTopUpHistoryRow(clientId: string, row: ClientTopUpHistoryRow) {
   const redis = getRedis();
   const key = CLIENT_BILLING_TOPUP_LIST(clientId);
-  const row: ClientTopUpHistoryRow = { at: at ?? new Date().toISOString(), tryOnsAdded };
   await redis.lpush(key, JSON.stringify(row));
   await redis.ltrim(key, 0, MAX_CLIENT_BILLING_HISTORY_ITEMS - 1);
 }
@@ -195,6 +229,47 @@ export async function listClientKeys() {
     ClientApiKeyRecord | null
   >;
   return (keys ?? []).filter(Boolean) as ClientApiKeyRecord[];
+}
+
+/** All top-up purchases across active clients, newest first (admin). */
+export async function listAllTopUpPurchasesForAdmin(): Promise<AdminTopUpPurchaseRow[]> {
+  const clients = await listClientKeys();
+  const redis = getRedis();
+  const out: AdminTopUpPurchaseRow[] = [];
+
+  for (const c of clients) {
+    if (c.deletedAt) continue;
+    const raw = (await redis.lrange(CLIENT_BILLING_TOPUP_LIST(c.id), 0, MAX_CLIENT_BILLING_HISTORY_ITEMS - 1)) as
+      | string[]
+      | null;
+    for (const s of raw ?? []) {
+      try {
+        const row = JSON.parse(s) as ClientTopUpHistoryRow;
+        if (typeof row.tryOnsAdded !== "number" || !Number.isFinite(row.tryOnsAdded)) continue;
+        out.push({
+          clientId: c.id,
+          clientName: c.clientName,
+          storeName: (row.storeName ?? c.clientName).trim() || c.clientName,
+          purchasedAt: row.at,
+          tryOnsAdded: row.tryOnsAdded,
+          amountPaidPence:
+            typeof row.amountPaidPence === "number" && Number.isFinite(row.amountPaidPence)
+              ? row.amountPaidPence
+              : null,
+          currency:
+            typeof row.currency === "string" && row.currency.trim() ? row.currency.trim().toLowerCase() : "gbp",
+          stripeCheckoutSessionId:
+            typeof row.stripeCheckoutSessionId === "string" ? row.stripeCheckoutSessionId : undefined,
+          packId: typeof row.packId === "string" ? row.packId : undefined,
+        });
+      } catch {
+        /* skip */
+      }
+    }
+  }
+
+  out.sort((a, b) => Date.parse(b.purchasedAt) - Date.parse(a.purchasedAt));
+  return out;
 }
 
 function generateKey() {
@@ -268,6 +343,7 @@ export async function createClientKey(params: {
     fashnApiKey,
     usageLimit: Math.floor(params.usageLimit),
     basePlanLimit: Math.floor(params.usageLimit),
+    topUpAllowanceTryOns: 0,
     usageCount: 0,
     billingAnchorDay: billingAnchor,
     createdAt: now,
@@ -455,7 +531,7 @@ export async function resetUsage(id: string) {
 }
 
 /** Add try-on quota to an existing client (e.g. after a one-time top-up payment). */
-export async function incrementClientTryOnLimit(id: string, delta: number) {
+export async function incrementClientTryOnLimit(id: string, delta: number, meta?: TopUpPurchaseMeta) {
   const redis = getRedis();
   if (!id) throw new Error("Key id is required.");
   if (!Number.isFinite(delta) || delta <= 0 || !Number.isInteger(delta)) {
@@ -473,12 +549,41 @@ export async function incrementClientTryOnLimit(id: string, delta: number) {
     await persistMonthlyBillingResetHistory(rec.id, events);
   }
 
-  const next: ClientApiKeyRecord = {
-    ...afterResets,
-    usageLimit: afterResets.usageLimit + delta,
-  };
+  const r = afterResets;
+  let next: ClientApiKeyRecord;
+
+  if (typeof r.basePlanLimit === "number" && Number.isFinite(r.basePlanLimit) && r.basePlanLimit > 0) {
+    let topUpAllow = r.topUpAllowanceTryOns;
+    if (typeof topUpAllow !== "number" || !Number.isFinite(topUpAllow)) {
+      topUpAllow = Math.max(0, r.usageLimit - r.basePlanLimit);
+    }
+    topUpAllow += delta;
+    next = {
+      ...r,
+      topUpAllowanceTryOns: topUpAllow,
+      usageLimit: r.basePlanLimit + topUpAllow,
+    };
+  } else {
+    next = {
+      ...r,
+      usageLimit: r.usageLimit + delta,
+    };
+  }
+
   await redis.set(redisKey, next);
-  await appendClientTopUpHistoryInternal(rec.id, delta);
+
+  const row: ClientTopUpHistoryRow = {
+    at: new Date().toISOString(),
+    tryOnsAdded: delta,
+    ...(typeof meta?.amountPaidPence === "number" && Number.isFinite(meta.amountPaidPence)
+      ? { amountPaidPence: Math.round(meta.amountPaidPence) }
+      : null),
+    ...(meta?.currency ? { currency: meta.currency.trim().toLowerCase() } : null),
+    ...(meta?.stripeCheckoutSessionId ? { stripeCheckoutSessionId: meta.stripeCheckoutSessionId } : null),
+    ...(meta?.storeName?.trim() ? { storeName: meta.storeName.trim() } : null),
+    ...(meta?.packId ? { packId: meta.packId } : null),
+  };
+  await appendClientTopUpHistoryRow(rec.id, row);
   return next;
 }
 
@@ -509,6 +614,7 @@ export async function updateClientKey(params: {
     clientName,
     usageLimit: limit,
     basePlanLimit: limit,
+    topUpAllowanceTryOns: 0,
     ...(params.fashnApiKey && params.fashnApiKey.trim()
       ? { fashnApiKey: params.fashnApiKey.trim() }
       : null),

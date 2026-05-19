@@ -14,6 +14,8 @@ export type MonthlyBillingCycleFields = {
   usageLimit?: number;
   /** Baseline cap restored on monthly billing reset (client keys). */
   basePlanLimit?: number;
+  /** Purchased top-up try-ons this cycle (client keys with `basePlanLimit`). Cleared on monthly reset. */
+  topUpAllowanceTryOns?: number;
 };
 
 /** Valid billing anchor day in 1..31 derived from a UTC instant (day-of-month of subscription). */
@@ -125,9 +127,9 @@ export type MonthlyBillingResetAppliedEvent = {
 
 /**
  * Zero `usageCount` for each missed monthly boundary up to "today" (UTC), updating
- * `lastAutoBillingResetYyyymmdd` each time. When `basePlanLimit` is set, sets `usageLimit` to that value so top-ups
- * do not carry into the next cycle; otherwise `usageLimit` is unchanged. Does not change `basePlanLimit`.
- * Also returns one event per reset applied (for admin billing history).
+ * `lastAutoBillingResetYyyymmdd` each time. When `basePlanLimit` is set, sets `usageLimit` to that value and clears
+ * `topUpAllowanceTryOns` so top-ups do not carry into the next cycle; otherwise `usageLimit` is unchanged.
+ * Does not change `basePlanLimit`. Also returns one event per reset applied (for admin billing history).
  */
 export function applyAllDueMonthlyUsageResetsWithEvents<T extends MonthlyBillingCycleFields>(
   rec: T,
@@ -146,7 +148,7 @@ export function applyAllDueMonthlyUsageResetsWithEvents<T extends MonthlyBilling
       ...cur,
       usageCount: 0,
       lastAutoBillingResetYyyymmdd: yyyymmddUtc(due),
-      ...(restored !== undefined ? { usageLimit: restored } : null),
+      ...(restored !== undefined ? { usageLimit: restored, topUpAllowanceTryOns: 0 } : null),
     } as T;
     const w = next as T & {
       usageSeventyFivePctEmailSentForLimit?: number;
@@ -172,6 +174,7 @@ export function monthlyBillingCycleChanged(prev: MonthlyBillingCycleFields, next
   return (
     prev.usageCount !== next.usageCount ||
     prev.usageLimit !== next.usageLimit ||
+    prev.topUpAllowanceTryOns !== next.topUpAllowanceTryOns ||
     prev.lastAutoBillingResetYyyymmdd !== next.lastAutoBillingResetYyyymmdd ||
     prev.usageSeventyFivePctEmailSentForLimit !== next.usageSeventyFivePctEmailSentForLimit ||
     prev.usageNinetyNinePctEmailSentForLimit !== next.usageNinetyNinePctEmailSentForLimit
