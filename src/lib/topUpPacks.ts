@@ -1,6 +1,36 @@
 /** Value for Stripe Checkout Session `metadata.checkout_kind` (webhook routing). */
 export const STRIPE_TOP_UP_CHECKOUT_KIND = "top_up" as const;
 
+/** £0.55 per try-on — same unit rate as the smallest fixed pack (100 × £0.55 = £55). */
+export const TOP_UP_CUSTOM_PENCE_PER_TRY_ON = 55 as const;
+
+export const TOP_UP_CUSTOM_MIN_TRY_ONS = 50 as const;
+
+/** Upper bound for self-serve custom checkout (prevents absurd line items). */
+export const TOP_UP_CUSTOM_MAX_TRY_ONS = 50_000 as const;
+
+export function customTopUpAmountGbpPence(tryOns: number): number {
+  return tryOns * TOP_UP_CUSTOM_PENCE_PER_TRY_ON;
+}
+
+/** Validates integer try-on count for custom top-up checkout. */
+export function parseCustomTopUpTryOns(raw: unknown): number | null {
+  let n: number;
+  if (typeof raw === "number") {
+    if (!Number.isFinite(raw)) return null;
+    n = Math.floor(raw);
+  } else if (typeof raw === "string") {
+    const t = raw.trim();
+    if (!t) return null;
+    n = Number.parseInt(t, 10);
+  } else {
+    return null;
+  }
+  if (!Number.isInteger(n)) return null;
+  if (n < TOP_UP_CUSTOM_MIN_TRY_ONS || n > TOP_UP_CUSTOM_MAX_TRY_ONS) return null;
+  return n;
+}
+
 export type TopUpPackId = "100" | "300" | "500";
 
 export type TopUpPack = {

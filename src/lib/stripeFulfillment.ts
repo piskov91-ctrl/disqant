@@ -6,7 +6,14 @@ import {
 } from "@/lib/apiKeyStore";
 import { getRetailerById, linkRetailerToClientId, type RetailerUser } from "@/lib/retailerAuth";
 import { getSubscriptionPlanDefinition, parseSubscriptionPlanKey } from "@/lib/subscriptionPlans";
-import { STRIPE_TOP_UP_CHECKOUT_KIND, getTopUpPackById, parseTopUpPackId } from "@/lib/topUpPacks";
+import {
+  STRIPE_TOP_UP_CHECKOUT_KIND,
+  TOP_UP_CUSTOM_MAX_TRY_ONS,
+  TOP_UP_CUSTOM_MIN_TRY_ONS,
+  customTopUpAmountGbpPence,
+  getTopUpPackById,
+  parseTopUpPackId,
+} from "@/lib/topUpPacks";
 
 function idempotencyRedisKey(checkoutSessionId: string): string {
   return `fit-room:stripe:checkout-done:${checkoutSessionId}`;
@@ -22,11 +29,10 @@ function parsePositiveInt(raw: string | undefined): number | null {
 async function fulfillPaidTopUpCheckoutSession(session: Stripe.Checkout.Session): Promise<void> {
   const retailerUserId = (session.metadata?.retailer_user_id ?? session.client_reference_id ?? "").trim();
   const clientId = (session.metadata?.client_id ?? "").trim();
-  const packIdRaw = session.metadata?.top_up_pack ?? "";
-  const packId = parseTopUpPackId(packIdRaw);
+  const packIdRaw = (session.metadata?.top_up_pack ?? "").trim();
   const metaTryOns = parsePositiveInt(session.metadata?.try_on_add ?? undefined);
 
-  if (!retailerUserId || !clientId || !packId) {
+  if (!retailerUserId || !clientId) {
     console.error("[stripe] top-up checkout session missing fulfillment metadata", {
       sessionId: session.id,
       retailerUserId: retailerUserId || null,
@@ -34,16 +40,6 @@ async function fulfillPaidTopUpCheckoutSession(session: Stripe.Checkout.Session)
       top_up_pack: packIdRaw || null,
     });
     throw new Error("Invalid Stripe top-up metadata for fulfillment.");
-  }
-
-  const pack = getTopUpPackById(packId);
-  if (metaTryOns != null && metaTryOns !== pack.tryOns) {
-    console.error("[stripe] top-up try_on_add mismatch", {
-      sessionId: session.id,
-      metaTryOns,
-      packTryOns: pack.tryOns,
-    });
-    throw new Error("Top-up pack mismatch.");
   }
 
   const user = await findRetailerIdentityForStripeSession(retailerUserId);
@@ -66,17 +62,68 @@ async function fulfillPaidTopUpCheckoutSession(session: Stripe.Checkout.Session)
     throw new Error("Top-up client does not match this account.");
   }
 
+  const storeName = user.storeName?.trim() || user.companyName?.trim() || undefined;
+  const currency =
+    typeof session.currency === "string" && session.currency.trim() ? session.currency : "gbp";
+
+  if (packIdRaw === "custom") {
+    if (metaTryOns == null) {
+      console.error("[stripe] custom top-up missing try_on_add", { sessionId: session.id });
+      throw new Error("Invalid custom top-up metadata.");
+    }
+    if (
+      metaTryOns < TOP_UP_CUSTOM_MIN_TRY_ONS ||
+      metaTryOns > TOP_UP_CUSTOM_MAX_TRY_ONS
+    ) {
+      console.error("[stripe] custom top-up try_on_add out of range", {
+        sessionId: session.id,
+        metaTryOns,
+      });
+      throw new Error("Invalid custom top-up size.");
+    }
+
+    await incrementClientTryOnLimit(clientId, metaTryOns, {
+      amountPaidPence:
+        typeof session.amount_total === "number" && Number.isFinite(session.amount_total)
+          ? session.amount_total
+          : customTopUpAmountGbpPence(metaTryOns),
+      currency,
+      stripeCheckoutSessionId: session.id,
+      storeName,
+      packId: "custom",
+    });
+    return;
+  }
+
+  const packId = parseTopUpPackId(packIdRaw);
+  if (!packId) {
+    console.error("[stripe] top-up checkout session missing fulfillment metadata", {
+      sessionId: session.id,
+      retailerUserId: retailerUserId || null,
+      clientId: clientId || null,
+      top_up_pack: packIdRaw || null,
+    });
+    throw new Error("Invalid Stripe top-up metadata for fulfillment.");
+  }
+
+  const pack = getTopUpPackById(packId);
+  if (metaTryOns != null && metaTryOns !== pack.tryOns) {
+    console.error("[stripe] top-up try_on_add mismatch", {
+      sessionId: session.id,
+      metaTryOns,
+      packTryOns: pack.tryOns,
+    });
+    throw new Error("Top-up pack mismatch.");
+  }
+
   await incrementClientTryOnLimit(clientId, pack.tryOns, {
     amountPaidPence:
       typeof session.amount_total === "number" && Number.isFinite(session.amount_total)
         ? session.amount_total
         : pack.amountGbpPence,
-    currency: typeof session.currency === "string" && session.currency.trim() ? session.currency : "gbp",
+    currency,
     stripeCheckoutSessionId: session.id,
-    storeName:
-      user.storeName?.trim() ||
-      user.companyName?.trim() ||
-      undefined,
+    storeName,
     packId: pack.id,
   });
 }

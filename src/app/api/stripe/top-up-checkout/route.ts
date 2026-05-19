@@ -1,6 +1,14 @@
 import { getStripe, checkoutSiteOrigin } from "@/lib/stripeServer";
 import { getRetailerSessionUser } from "@/lib/retailerAuth";
-import { STRIPE_TOP_UP_CHECKOUT_KIND, getTopUpPackById, parseTopUpPackId } from "@/lib/topUpPacks";
+import {
+  STRIPE_TOP_UP_CHECKOUT_KIND,
+  TOP_UP_CUSTOM_MAX_TRY_ONS,
+  TOP_UP_CUSTOM_MIN_TRY_ONS,
+  customTopUpAmountGbpPence,
+  getTopUpPackById,
+  parseCustomTopUpTryOns,
+  parseTopUpPackId,
+} from "@/lib/topUpPacks";
 
 export const runtime = "nodejs";
 
@@ -16,9 +24,19 @@ export async function POST(req: Request) {
     typeof body === "object" && body !== null && "pack" in body
       ? (body as { pack: unknown }).pack
       : null;
-  const packId = parseTopUpPackId(rawPack);
-  if (!packId) {
-    return Response.json({ error: "Invalid top-up pack." }, { status: 400 });
+  const rawCustom =
+    typeof body === "object" && body !== null && "customTryOns" in body
+      ? (body as { customTryOns: unknown }).customTryOns
+      : undefined;
+
+  const customTryOns = parseCustomTopUpTryOns(rawCustom);
+  if (rawCustom !== undefined && customTryOns == null) {
+    return Response.json(
+      {
+        error: `Enter a whole number of try-ons between ${TOP_UP_CUSTOM_MIN_TRY_ONS.toLocaleString()} and ${TOP_UP_CUSTOM_MAX_TRY_ONS.toLocaleString()}.`,
+      },
+      { status: 400 },
+    );
   }
 
   const user = await getRetailerSessionUser();
@@ -31,11 +49,55 @@ export async function POST(req: Request) {
     return Response.json({ error: "No API key is linked to this account yet." }, { status: 400 });
   }
 
-  const pack = getTopUpPackById(packId);
   const origin = checkoutSiteOrigin(req);
   const stripe = getStripe();
 
   try {
+    if (customTryOns != null) {
+      const amountPence = customTopUpAmountGbpPence(customTryOns);
+      const session = await stripe.checkout.sessions.create({
+        mode: "payment",
+        customer_email: user.email,
+        client_reference_id: user.id,
+        line_items: [
+          {
+            quantity: 1,
+            price_data: {
+              currency: "gbp",
+              unit_amount: amountPence,
+              product_data: {
+                name: `Try-on top-up: ${customTryOns.toLocaleString()} try-ons`,
+                description:
+                  "One-time purchase at £0.55 per try-on. Try-ons are added to your current monthly allowance.",
+              },
+            },
+          },
+        ],
+        success_url: `${origin}/dashboard?topup=success`,
+        cancel_url: `${origin}/dashboard?topup=cancelled`,
+        metadata: {
+          checkout_kind: STRIPE_TOP_UP_CHECKOUT_KIND,
+          retailer_user_id: user.id,
+          client_id: clientId,
+          top_up_pack: "custom",
+          try_on_add: String(customTryOns),
+        },
+        allow_promotion_codes: true,
+      });
+
+      if (!session.url || typeof session.url !== "string") {
+        throw new Error("Stripe did not return a checkout URL.");
+      }
+
+      return Response.json({ url: session.url });
+    }
+
+    const packId = parseTopUpPackId(rawPack);
+    if (!packId) {
+      return Response.json({ error: "Invalid top-up pack." }, { status: 400 });
+    }
+
+    const pack = getTopUpPackById(packId);
     const session = await stripe.checkout.sessions.create({
       mode: "payment",
       customer_email: user.email,
