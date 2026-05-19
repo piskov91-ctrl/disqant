@@ -126,6 +126,13 @@ type AdminFashnCredits = {
   onDemand: number | null;
 };
 
+type AdminResendUsage = {
+  dailyUsed: number | null;
+  monthlyUsed: number | null;
+  dailyLimit: number;
+  monthlyLimit: number;
+};
+
 type RecoveryAccountRow = {
   userId: string;
   email: string;
@@ -273,6 +280,10 @@ export default function AdminClient() {
   const [fashnCredits, setFashnCredits] = useState<AdminFashnCredits | null>(null);
   const [fashnCreditsLoading, setFashnCreditsLoading] = useState(false);
   const [fashnCreditsError, setFashnCreditsError] = useState<string | null>(null);
+
+  const [resendUsage, setResendUsage] = useState<AdminResendUsage | null>(null);
+  const [resendUsageLoading, setResendUsageLoading] = useState(false);
+  const [resendUsageError, setResendUsageError] = useState<string | null>(null);
 
   type ClientBillingHistoryPayload = {
     subscriptionStartedAt: string;
@@ -461,6 +472,58 @@ export default function AdminClient() {
     }
   }
 
+  async function loadResendUsage() {
+    setResendUsageLoading(true);
+    setResendUsageError(null);
+    try {
+      const res = await fetch("/api/admin/resend-usage");
+      const data = (await res.json()) as Partial<AdminResendUsage> & { error?: string };
+      if (!res.ok) {
+        if (data.error === "Unauthorized.") window.location.reload();
+        setResendUsageError(data.error || "Failed to load Resend email usage.");
+        if (
+          typeof data.dailyLimit === "number" &&
+          typeof data.monthlyLimit === "number" &&
+          Number.isFinite(data.dailyLimit) &&
+          Number.isFinite(data.monthlyLimit)
+        ) {
+          setResendUsage({
+            dailyUsed: typeof data.dailyUsed === "number" && Number.isFinite(data.dailyUsed) ? data.dailyUsed : null,
+            monthlyUsed:
+              typeof data.monthlyUsed === "number" && Number.isFinite(data.monthlyUsed) ? data.monthlyUsed : null,
+            dailyLimit: data.dailyLimit,
+            monthlyLimit: data.monthlyLimit,
+          });
+        } else {
+          setResendUsage(null);
+        }
+        return;
+      }
+      if (
+        typeof data.dailyLimit === "number" &&
+        typeof data.monthlyLimit === "number" &&
+        Number.isFinite(data.dailyLimit) &&
+        Number.isFinite(data.monthlyLimit)
+      ) {
+        setResendUsage({
+          dailyUsed: typeof data.dailyUsed === "number" && Number.isFinite(data.dailyUsed) ? data.dailyUsed : null,
+          monthlyUsed:
+            typeof data.monthlyUsed === "number" && Number.isFinite(data.monthlyUsed) ? data.monthlyUsed : null,
+          dailyLimit: data.dailyLimit,
+          monthlyLimit: data.monthlyLimit,
+        });
+      } else {
+        setResendUsage(null);
+        setResendUsageError("Unexpected response from Resend usage API.");
+      }
+    } catch (e) {
+      setResendUsage(null);
+      setResendUsageError(e instanceof Error ? e.message : "Failed to load Resend email usage.");
+    } finally {
+      setResendUsageLoading(false);
+    }
+  }
+
   async function loadRecovery() {
     setRecoveryLoading(true);
     setRecoveryError(null);
@@ -540,6 +603,7 @@ export default function AdminClient() {
   useEffect(() => {
     void load();
     void loadFashnCredits();
+    void loadResendUsage();
   }, []);
 
   useEffect(() => {
@@ -758,6 +822,7 @@ export default function AdminClient() {
 
   function refreshCurrentTab() {
     void loadFashnCredits();
+    void loadResendUsage();
     if (activeTab === "clients" || activeTab === "wearMe") void load();
     else if (activeTab === "analytics") void loadAnalytics();
     else if (activeTab === "topUps") void loadTopUps();
@@ -1223,6 +1288,43 @@ export default function AdminClient() {
                   </>
                 ) : (
                   <p className="mt-2 text-sm text-zinc-500">No balance data.</p>
+                )}
+              </div>
+              <div className="rounded-xl border border-rose-500/35 bg-rose-950/20 px-4 py-3 shadow-sm sm:min-w-[240px]">
+                <p className="text-[10px] font-semibold uppercase tracking-wider text-rose-200/75">
+                  Resend email usage
+                </p>
+                {resendUsageLoading ? (
+                  <p className="mt-2 text-sm text-zinc-500">Loading usage…</p>
+                ) : resendUsageError && !resendUsage ? (
+                  <p
+                    className="mt-2 text-sm leading-snug text-amber-200/95"
+                    title={resendUsageError}
+                  >
+                    {resendUsageError}
+                  </p>
+                ) : resendUsage ? (
+                  <>
+                    <p className="mt-2 text-sm leading-snug tabular-nums text-rose-50">
+                      Emails sent today:{" "}
+                      {resendUsage.dailyUsed != null
+                        ? `${resendUsage.dailyUsed}/${resendUsage.dailyLimit}`
+                        : `—/${resendUsage.dailyLimit}`}
+                    </p>
+                    <p className="mt-2 text-sm leading-snug tabular-nums text-rose-50">
+                      Emails sent this month:{" "}
+                      {resendUsage.monthlyUsed != null
+                        ? `${resendUsage.monthlyUsed}/${resendUsage.monthlyLimit}`
+                        : `—/${resendUsage.monthlyLimit}`}
+                    </p>
+                    {resendUsageError ? (
+                      <p className="mt-2 text-xs leading-snug text-amber-200/90" title={resendUsageError}>
+                        {resendUsageError}
+                      </p>
+                    ) : null}
+                  </>
+                ) : (
+                  <p className="mt-2 text-sm text-zinc-500">No usage data.</p>
                 )}
               </div>
               <div className="flex flex-wrap items-center gap-3">
