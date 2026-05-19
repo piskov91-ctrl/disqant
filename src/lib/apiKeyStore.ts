@@ -20,6 +20,11 @@ export type ClientApiKeyRecord = {
   key: string;
   fashnApiKey: string;
   usageLimit: number;
+  /**
+   * Subscription or admin baseline try-on cap. Monthly billing reset sets `usageLimit` to this value
+   * so purchased top-ups do not roll into the next cycle. Omitted on older records → reset keeps current `usageLimit`.
+   */
+  basePlanLimit?: number;
   usageCount: number;
   /**
    * UTC calendar day-of-month (1–31) for automatic monthly `usageCount` reset.
@@ -262,6 +267,7 @@ export async function createClientKey(params: {
     key: apiKey,
     fashnApiKey,
     usageLimit: Math.floor(params.usageLimit),
+    basePlanLimit: Math.floor(params.usageLimit),
     usageCount: 0,
     billingAnchorDay: billingAnchor,
     createdAt: now,
@@ -497,10 +503,12 @@ export async function updateClientKey(params: {
   if (!bundle) throw new Error("Client key not found.");
   const { rec, redisKey } = bundle;
 
+  const limit = Math.floor(params.usageLimit);
   const next: ClientApiKeyRecord = {
     ...rec,
     clientName,
-    usageLimit: Math.floor(params.usageLimit),
+    usageLimit: limit,
+    basePlanLimit: limit,
     ...(params.fashnApiKey && params.fashnApiKey.trim()
       ? { fashnApiKey: params.fashnApiKey.trim() }
       : null),

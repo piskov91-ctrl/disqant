@@ -10,6 +10,10 @@ export type MonthlyBillingCycleFields = {
   usageCount: number;
   usageSeventyFivePctEmailSentForLimit?: number;
   usageNinetyNinePctEmailSentForLimit?: number;
+  /** Try-on cap (client keys). Used when restoring limit if `basePlanLimit` is absent. */
+  usageLimit?: number;
+  /** Baseline cap restored on monthly billing reset (client keys). */
+  basePlanLimit?: number;
 };
 
 /** Valid billing anchor day in 1..31 derived from a UTC instant (day-of-month of subscription). */
@@ -99,7 +103,19 @@ function peekNextDueAutoBillingResetUtc<T extends MonthlyBillingCycleFields>(rec
   return null;
 }
 
-/** One applied monthly billing reset (usage zeroed for a scheduled UTC calendar day). */
+/** Try-on limit after a monthly billing reset: baseline if stored, else current cap (legacy). */
+export function billingRestoredUsageLimit<T extends MonthlyBillingCycleFields>(cur: T): number | undefined {
+  const base = cur.basePlanLimit;
+  if (typeof base === "number" && Number.isFinite(base) && base > 0) {
+    return Math.floor(base);
+  }
+  if (typeof cur.usageLimit === "number" && Number.isFinite(cur.usageLimit) && cur.usageLimit > 0) {
+    return Math.floor(cur.usageLimit);
+  }
+  return undefined;
+}
+
+/** Logged when a scheduled monthly billing reset is applied to a record. */
 export type MonthlyBillingResetAppliedEvent = {
   /** UTC midnight (or scheduled day) instant for this billing reset. */
   resetDayUtcMs: number;
@@ -109,7 +125,8 @@ export type MonthlyBillingResetAppliedEvent = {
 
 /**
  * Zero `usageCount` for each missed monthly boundary up to "today" (UTC), updating
- * `lastAutoBillingResetYyyymmdd` each time. Does not change `usageLimit`.
+ * `lastAutoBillingResetYyyymmdd` each time. Restores `usageLimit` from `basePlanLimit` when set;
+ * otherwise leaves `usageLimit` unchanged (legacy records). Does not change `basePlanLimit`.
  * Also returns one event per reset applied (for admin billing history).
  */
 export function applyAllDueMonthlyUsageResetsWithEvents<T extends MonthlyBillingCycleFields>(
@@ -124,11 +141,13 @@ export function applyAllDueMonthlyUsageResetsWithEvents<T extends MonthlyBilling
     const due = peekNextDueAutoBillingResetUtc(cur, now);
     if (!due) break;
     const previousTryOns = cur.usageCount;
+    const restored = billingRestoredUsageLimit(cur);
     const next: T = {
       ...cur,
       usageCount: 0,
       lastAutoBillingResetYyyymmdd: yyyymmddUtc(due),
-    };
+      ...(restored !== undefined ? { usageLimit: restored } : null),
+    } as T;
     const w = next as T & {
       usageSeventyFivePctEmailSentForLimit?: number;
       usageNinetyNinePctEmailSentForLimit?: number;
@@ -143,7 +162,7 @@ export function applyAllDueMonthlyUsageResetsWithEvents<T extends MonthlyBilling
 
 /**
  * Zero `usageCount` for each missed monthly boundary up to "today" (UTC), updating
- * `lastAutoBillingResetYyyymmdd` each time. Does not change `usageLimit`.
+ * `lastAutoBillingResetYyyymmdd` each time. Restores `usageLimit` from `basePlanLimit` when set.
  */
 export function applyAllDueMonthlyUsageResets<T extends MonthlyBillingCycleFields>(rec: T, now: Date): T {
   return applyAllDueMonthlyUsageResetsWithEvents(rec, now).rec;
@@ -152,6 +171,7 @@ export function applyAllDueMonthlyUsageResets<T extends MonthlyBillingCycleField
 export function monthlyBillingCycleChanged(prev: MonthlyBillingCycleFields, next: MonthlyBillingCycleFields): boolean {
   return (
     prev.usageCount !== next.usageCount ||
+    prev.usageLimit !== next.usageLimit ||
     prev.lastAutoBillingResetYyyymmdd !== next.lastAutoBillingResetYyyymmdd ||
     prev.usageSeventyFivePctEmailSentForLimit !== next.usageSeventyFivePctEmailSentForLimit ||
     prev.usageNinetyNinePctEmailSentForLimit !== next.usageNinetyNinePctEmailSentForLimit
