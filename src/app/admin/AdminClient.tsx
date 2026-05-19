@@ -229,6 +229,15 @@ function QuotaEmailNoticeBadges({ k }: { k: KeyRecord }) {
   );
 }
 
+const ADMIN_QUICK_LINKS = [
+  { label: "Vercel Dashboard", href: "https://vercel.com/dashboard" },
+  { label: "Stripe Dashboard", href: "https://dashboard.stripe.com" },
+  { label: "Hostinger Email", href: "https://hpanel.hostinger.com/emails" },
+  { label: "Fashn.ai", href: "https://app.fashn.ai" },
+  { label: "Upstash", href: "https://console.upstash.com" },
+  { label: "Resend", href: "https://resend.com/emails" },
+] as const;
+
 export default function AdminClient() {
   const [activeTab, setActiveTab] = useState<AdminTab>("clients");
   const [keys, setKeys] = useState<KeyRecord[]>([]);
@@ -1249,6 +1258,26 @@ export default function AdminClient() {
             </div>
             </div>
           </div>
+
+          <section
+            className="mt-6 rounded-xl border border-zinc-800 bg-zinc-900/60 px-4 py-4 md:px-6"
+            aria-label="Quick links to external services"
+          >
+            <p className="text-[10px] font-semibold uppercase tracking-wider text-zinc-500">Quick links</p>
+            <div className="mt-3 flex flex-wrap gap-2">
+              {ADMIN_QUICK_LINKS.map((link) => (
+                <a
+                  key={link.href}
+                  href={link.href}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex h-9 items-center justify-center rounded-full border border-zinc-600 bg-zinc-950/80 px-4 text-xs font-semibold text-zinc-200 transition hover:border-zinc-500 hover:bg-zinc-800 hover:text-zinc-50"
+                >
+                  {link.label}
+                </a>
+              ))}
+            </div>
+          </section>
 
           <div
             className="mt-6 inline-flex rounded-full border border-zinc-800 bg-zinc-900/80 p-1"
