@@ -134,3 +134,36 @@ export function monthlyBillingCycleChanged(prev: MonthlyBillingCycleFields, next
     prev.usageNinetyNinePctEmailSentForLimit !== next.usageNinetyNinePctEmailSentForLimit
   );
 }
+
+/**
+ * Next scheduled monthly reset (UTC calendar) on or after today, from billing fields only.
+ * Advances past missed schedule slots so it matches post-catch-up state.
+ */
+export function getNextMonthlyResetUtcDateForDisplay(
+  rec: Pick<MonthlyBillingCycleFields, "createdAt" | "billingAnchorDay" | "lastAutoBillingResetYyyymmdd">,
+  now = new Date(),
+): Date {
+  const anchor = resolveBillingAnchorDay(rec);
+  const todayStart = utcCalendarDayStart(now);
+
+  let candidate: Date;
+  if (rec.lastAutoBillingResetYyyymmdd?.trim()) {
+    const n = nextAutoBillingResetUtcAfterLast(rec.lastAutoBillingResetYyyymmdd, anchor);
+    candidate = n ?? firstAutoBillingResetUtcAfterSubscribe(rec.createdAt, anchor);
+  } else {
+    candidate = firstAutoBillingResetUtcAfterSubscribe(rec.createdAt, anchor);
+  }
+
+  let guard = 0;
+  while (guard < 48) {
+    guard += 1;
+    if (utcCalendarDayStart(candidate).getTime() >= todayStart.getTime()) {
+      return candidate;
+    }
+    const ymd = yyyymmddUtc(candidate);
+    const n = nextAutoBillingResetUtcAfterLast(ymd, anchor);
+    if (!n) break;
+    candidate = n;
+  }
+  return candidate;
+}

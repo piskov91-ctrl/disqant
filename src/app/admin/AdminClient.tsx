@@ -5,6 +5,7 @@ import Link from "next/link";
 import { Footer } from "@/components/Footer";
 import { AnalyticsInsightsModal } from "@/components/AnalyticsInsightsModal";
 import { AdminWearMeClient } from "@/app/admin/AdminWearMeClient";
+import { getNextMonthlyResetUtcDateForDisplay } from "@/lib/billingCycle";
 
 type KeyRecord = {
   id: string;
@@ -21,6 +22,32 @@ type KeyRecord = {
   usageNinetyNinePctEmailSentForLimit?: number;
   createdAt: string;
 };
+
+function formatKeyCreatedUtc(iso: string): string {
+  const d = new Date(iso);
+  if (!Number.isFinite(d.getTime())) return "—";
+  return d.toLocaleDateString("en-GB", {
+    timeZone: "UTC",
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+  });
+}
+
+function formatNextResetUtc(k: KeyRecord): string {
+  try {
+    const next = getNextMonthlyResetUtcDateForDisplay(k, new Date());
+    if (!Number.isFinite(next.getTime())) return "—";
+    return next.toLocaleDateString("en-GB", {
+      timeZone: "UTC",
+      day: "numeric",
+      month: "short",
+      year: "numeric",
+    });
+  } catch {
+    return "—";
+  }
+}
 
 type ClientAnalyticsRow = {
   kind: "client";
@@ -1225,10 +1252,12 @@ export default function AdminClient() {
                 ) : keys.length === 0 ? (
                   <div className="px-6 py-10 text-sm text-zinc-500 md:px-8">No clients yet.</div>
                 ) : (
-                  <div className="w-full">
-                    <div className="grid w-full grid-cols-[minmax(0,1.35fr)_minmax(0,0.7fr)_minmax(0,1.6fr)_minmax(0,0.7fr)_minmax(0,0.55fr)_minmax(0,0.7fr)_minmax(0,0.55fr)_minmax(0,0.6fr)_minmax(0,0.7fr)] gap-2 border-b border-zinc-800 px-4 py-3 text-xs font-semibold uppercase tracking-wider text-zinc-500 md:px-6">
+                  <div className="w-full overflow-x-auto">
+                    <div className="grid min-w-[72rem] w-full grid-cols-[minmax(0,1.2fr)_minmax(0,0.62fr)_minmax(0,0.72fr)_minmax(0,0.72fr)_minmax(0,1.35fr)_minmax(0,0.58fr)_minmax(0,0.52fr)_minmax(0,0.62fr)_minmax(0,0.5fr)_minmax(0,0.52fr)_minmax(0,0.62fr)] gap-2 border-b border-zinc-800 px-4 py-3 text-xs font-semibold uppercase tracking-wider text-zinc-500 md:px-6">
                       <div>Client Name</div>
                       <div>API Key</div>
+                      <div title="Key record created (UTC)">Created</div>
+                      <div title="Next scheduled monthly usage reset (UTC)">Next Reset</div>
                       <div>Try-ons used / Try-on limit</div>
                       <div>Status</div>
                       <div className="text-center">EDIT</div>
@@ -1248,7 +1277,7 @@ export default function AdminClient() {
                       return (
                         <div
                           key={k.id}
-                          className="grid w-full grid-cols-[minmax(0,1.35fr)_minmax(0,0.7fr)_minmax(0,1.6fr)_minmax(0,0.7fr)_minmax(0,0.55fr)_minmax(0,0.7fr)_minmax(0,0.55fr)_minmax(0,0.6fr)_minmax(0,0.7fr)] items-center gap-2 border-b border-zinc-800 px-4 py-4 text-base md:px-6"
+                          className="grid min-w-[72rem] w-full grid-cols-[minmax(0,1.2fr)_minmax(0,0.62fr)_minmax(0,0.72fr)_minmax(0,0.72fr)_minmax(0,1.35fr)_minmax(0,0.58fr)_minmax(0,0.52fr)_minmax(0,0.62fr)_minmax(0,0.5fr)_minmax(0,0.52fr)_minmax(0,0.62fr)] items-center gap-2 border-b border-zinc-800 px-4 py-4 text-base md:px-6"
                         >
                           <div className="min-w-0">
                             <div className="flex min-w-0 items-start justify-between gap-2">
@@ -1270,6 +1299,15 @@ export default function AdminClient() {
                             <span className="rounded-md border border-zinc-700 bg-zinc-950 px-2 py-1 font-mono text-sm text-zinc-300">
                               {(k.key || "").slice(0, 8)}…
                             </span>
+                          </div>
+                          <div
+                            className="text-sm tabular-nums text-zinc-300"
+                            title={Number.isFinite(Date.parse(k.createdAt)) ? `${k.createdAt} (UTC date shown)` : undefined}
+                          >
+                            {formatKeyCreatedUtc(k.createdAt)}
+                          </div>
+                          <div className="text-sm tabular-nums text-zinc-300" title="Monthly auto reset schedule (UTC)">
+                            {formatNextResetUtc(k)}
                           </div>
                           <div className="flex items-center gap-3">
                             <div className="h-2 w-24 overflow-hidden rounded-full border border-zinc-700 bg-zinc-800">
