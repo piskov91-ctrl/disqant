@@ -103,16 +103,16 @@ function peekNextDueAutoBillingResetUtc<T extends MonthlyBillingCycleFields>(rec
   return null;
 }
 
-/** Try-on limit after a monthly billing reset: baseline if stored, else current cap (legacy). */
+/**
+ * Limit to apply on monthly billing reset: `basePlanLimit` when that baseline is stored (drops top-ups).
+ * Returns `undefined` when `basePlanLimit` is absent or invalid → caller keeps existing `usageLimit`.
+ */
 export function billingRestoredUsageLimit<T extends MonthlyBillingCycleFields>(cur: T): number | undefined {
   const base = cur.basePlanLimit;
-  if (typeof base === "number" && Number.isFinite(base) && base > 0) {
-    return Math.floor(base);
+  if (typeof base !== "number" || !Number.isFinite(base) || base <= 0) {
+    return undefined;
   }
-  if (typeof cur.usageLimit === "number" && Number.isFinite(cur.usageLimit) && cur.usageLimit > 0) {
-    return Math.floor(cur.usageLimit);
-  }
-  return undefined;
+  return Math.floor(base);
 }
 
 /** Logged when a scheduled monthly billing reset is applied to a record. */
@@ -125,8 +125,8 @@ export type MonthlyBillingResetAppliedEvent = {
 
 /**
  * Zero `usageCount` for each missed monthly boundary up to "today" (UTC), updating
- * `lastAutoBillingResetYyyymmdd` each time. Restores `usageLimit` from `basePlanLimit` when set;
- * otherwise leaves `usageLimit` unchanged (legacy records). Does not change `basePlanLimit`.
+ * `lastAutoBillingResetYyyymmdd` each time. When `basePlanLimit` is set, sets `usageLimit` to that value so top-ups
+ * do not carry into the next cycle; otherwise `usageLimit` is unchanged. Does not change `basePlanLimit`.
  * Also returns one event per reset applied (for admin billing history).
  */
 export function applyAllDueMonthlyUsageResetsWithEvents<T extends MonthlyBillingCycleFields>(
@@ -162,7 +162,7 @@ export function applyAllDueMonthlyUsageResetsWithEvents<T extends MonthlyBilling
 
 /**
  * Zero `usageCount` for each missed monthly boundary up to "today" (UTC), updating
- * `lastAutoBillingResetYyyymmdd` each time. Restores `usageLimit` from `basePlanLimit` when set.
+ * `lastAutoBillingResetYyyymmdd` each time. When `basePlanLimit` is set, restores `usageLimit` from it.
  */
 export function applyAllDueMonthlyUsageResets<T extends MonthlyBillingCycleFields>(rec: T, now: Date): T {
   return applyAllDueMonthlyUsageResetsWithEvents(rec, now).rec;
