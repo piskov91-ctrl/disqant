@@ -1,6 +1,7 @@
 import { cookies } from "next/headers";
 import { ADMIN_AUTH_COOKIE, isAdminAuthorizedCookieValue } from "@/lib/adminAuth";
 import { createClientKey, listClientKeys } from "@/lib/apiKeyStore";
+import { normalizeClientTryOnBuckets } from "@/lib/clientTryOnBuckets";
 
 export const runtime = "nodejs";
 
@@ -14,8 +15,10 @@ async function requireAdmin() {
 export async function GET() {
   if (!(await requireAdmin())) return Response.json({ error: "Unauthorized." }, { status: 401 });
   const keys = await listClientKeys();
+  // Normalize subscription vs top-up buckets for display (no writes — persisted on next usage).
+  const normalized = keys.map((k) => normalizeClientTryOnBuckets(k));
   // Do not send raw Fashn keys to the browser.
-  const redacted = keys.map((k) => {
+  const redacted = normalized.map((k) => {
     const { fashnApiKey, ...rest } = k;
     void fashnApiKey;
     return rest;

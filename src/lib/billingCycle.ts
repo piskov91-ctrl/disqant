@@ -14,8 +14,10 @@ export type MonthlyBillingCycleFields = {
   usageLimit?: number;
   /** Baseline cap restored on monthly billing reset (client keys). */
   basePlanLimit?: number;
-  /** Purchased top-up try-ons this cycle (client keys with `basePlanLimit`). Cleared on monthly reset. */
-  topUpAllowanceTryOns?: number;
+  /** Purchased top-up capacity this cycle. Cleared on monthly reset with `topUpUsageCount`. */
+  topUpLimit?: number;
+  /** Try-ons consumed from top-up capacity this cycle. Cleared on monthly reset. */
+  topUpUsageCount?: number;
 };
 
 /** Valid billing anchor day in 1..31 derived from a UTC instant (day-of-month of subscription). */
@@ -126,10 +128,10 @@ export type MonthlyBillingResetAppliedEvent = {
 };
 
 /**
- * Zero `usageCount` for each missed monthly boundary up to "today" (UTC), updating
- * `lastAutoBillingResetYyyymmdd` each time. When `basePlanLimit` is set, sets `usageLimit` to that value and clears
- * `topUpAllowanceTryOns` so top-ups do not carry into the next cycle; otherwise `usageLimit` is unchanged.
- * Does not change `basePlanLimit`. Also returns one event per reset applied (for admin billing history).
+ * Zero `usageCount`, `topUpUsageCount`, and `topUpLimit` for each missed monthly boundary up to "today" (UTC),
+ * updating `lastAutoBillingResetYyyymmdd` each time. When `basePlanLimit` is set, sets `usageLimit` to that baseline;
+ * otherwise `usageLimit` is unchanged (legacy keys). Does not change `basePlanLimit`.
+ * Returns one event per reset applied (for admin billing history).
  */
 export function applyAllDueMonthlyUsageResetsWithEvents<T extends MonthlyBillingCycleFields>(
   rec: T,
@@ -142,18 +144,24 @@ export function applyAllDueMonthlyUsageResetsWithEvents<T extends MonthlyBilling
     guard += 1;
     const due = peekNextDueAutoBillingResetUtc(cur, now);
     if (!due) break;
-    const previousTryOns = cur.usageCount;
+    const prevSub = Math.floor(cur.usageCount);
+    const prevTop = Math.floor((cur as { topUpUsageCount?: number }).topUpUsageCount ?? 0);
+    const previousTryOns = prevSub + prevTop;
     const restored = billingRestoredUsageLimit(cur);
     const next: T = {
       ...cur,
       usageCount: 0,
+      topUpUsageCount: 0,
+      topUpLimit: 0,
       lastAutoBillingResetYyyymmdd: yyyymmddUtc(due),
-      ...(restored !== undefined ? { usageLimit: restored, topUpAllowanceTryOns: 0 } : null),
+      ...(restored !== undefined ? { usageLimit: restored } : null),
     } as T;
     const w = next as T & {
       usageSeventyFivePctEmailSentForLimit?: number;
       usageNinetyNinePctEmailSentForLimit?: number;
+      topUpAllowanceTryOns?: unknown;
     };
+    delete w.topUpAllowanceTryOns;
     delete w.usageSeventyFivePctEmailSentForLimit;
     delete w.usageNinetyNinePctEmailSentForLimit;
     cur = w as T;
@@ -174,7 +182,8 @@ export function monthlyBillingCycleChanged(prev: MonthlyBillingCycleFields, next
   return (
     prev.usageCount !== next.usageCount ||
     prev.usageLimit !== next.usageLimit ||
-    prev.topUpAllowanceTryOns !== next.topUpAllowanceTryOns ||
+    (prev.topUpLimit ?? 0) !== (next.topUpLimit ?? 0) ||
+    (prev.topUpUsageCount ?? 0) !== (next.topUpUsageCount ?? 0) ||
     prev.lastAutoBillingResetYyyymmdd !== next.lastAutoBillingResetYyyymmdd ||
     prev.usageSeventyFivePctEmailSentForLimit !== next.usageSeventyFivePctEmailSentForLimit ||
     prev.usageNinetyNinePctEmailSentForLimit !== next.usageNinetyNinePctEmailSentForLimit

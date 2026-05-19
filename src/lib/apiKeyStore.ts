@@ -11,6 +11,12 @@ import {
   billingAnchorDayFromUtcDate,
   type MonthlyBillingResetAppliedEvent,
 } from "@/lib/billingCycle";
+import {
+  normalizeClientTryOnBuckets,
+  sameBucketSnapshot,
+  subscriptionPlanCap,
+  totalTryOnsUsed,
+} from "@/lib/clientTryOnBuckets";
 
 export type ClientApiKeyRecord = {
   id: string;
@@ -21,11 +27,16 @@ export type ClientApiKeyRecord = {
   fashnApiKey: string;
   usageLimit: number;
   /**
-   * Subscription or admin baseline try-on cap. Monthly billing reset sets `usageLimit` to this value
-   * so purchased top-ups do not roll into the next cycle. Omitted on older records → reset keeps current `usageLimit`.
+   * Subscription or admin baseline try-on cap (subscription bucket). Monthly billing reset sets `usageLimit` to this and clears top-ups.
+   * Omitted on older records → reset keeps current `usageLimit`.
    */
   basePlanLimit?: number;
+  /** Try-ons consumed from the subscription bucket this cycle (`usageCount` ≤ plan cap). */
   usageCount: number;
+  /** Purchased top-up capacity this billing cycle. Cleared on monthly reset. */
+  topUpLimit?: number;
+  /** Try-ons consumed from the top-up bucket this cycle. Cleared on monthly reset. */
+  topUpUsageCount?: number;
   /**
    * UTC calendar day-of-month (1–31) for automatic monthly `usageCount` reset.
    * Usually the subscription signup day; shorter months use the last day when anchor > length.
@@ -40,11 +51,6 @@ export type ClientApiKeyRecord = {
   createdAt: string; // ISO
   /** Soft-delete timestamp (e.g. retailer deleted account). Deleted keys are removed from active admin lists and rejected for usage. */
   deletedAt?: string | null;
-  /**
-   * Try-on allowance purchased via top-ups this billing cycle. Only used when `basePlanLimit` is set;
-   * `usageLimit` should equal `basePlanLimit + topUpAllowanceTryOns`.
-   */
-  topUpAllowanceTryOns?: number;
 };
 
 const KEY_INDEX = "fit-room:clientKeys:index"; // list of ids (newest first)
@@ -343,7 +349,8 @@ export async function createClientKey(params: {
     fashnApiKey,
     usageLimit: Math.floor(params.usageLimit),
     basePlanLimit: Math.floor(params.usageLimit),
-    topUpAllowanceTryOns: 0,
+    topUpLimit: 0,
+    topUpUsageCount: 0,
     usageCount: 0,
     billingAnchorDay: billingAnchor,
     createdAt: now,
@@ -402,15 +409,18 @@ export async function getClientByApiKey(apiKey: string) {
   }
   if (!id) return null;
   const recKey = legacy ? recordKeyLegacy(id) : recordKey(id);
-  const rec = (await redis.get(recKey)) as ClientApiKeyRecord | null;
-  if (!rec || rec.deletedAt) return null;
+  const stored = (await redis.get(recKey)) as ClientApiKeyRecord | null;
+  if (!stored || stored.deletedAt) return null;
   const now = new Date();
-  const { rec: after, events } = applyAllDueMonthlyUsageResetsWithEvents(rec, now);
+  const { rec: after, events } = applyAllDueMonthlyUsageResetsWithEvents(stored, now);
   if (events.length > 0) {
-    await redis.set(recKey, after);
     await persistMonthlyBillingResetHistory(id, events);
   }
-  return after;
+  const norm = normalizeClientTryOnBuckets(after);
+  if (!sameBucketSnapshot(stored, norm)) {
+    await redis.set(recKey, norm);
+  }
+  return norm;
 }
 
 export async function markClientKeyDeleted(params: { id: string; deletedAt?: string }): Promise<ClientApiKeyRecord> {
@@ -441,21 +451,26 @@ export async function getClientKeyRecordById(id: string): Promise<ClientApiKeyRe
   if (!id) return null;
   const bundle = await getRecordForMutation(id);
   if (!bundle) return null;
-  const { rec, redisKey } = bundle;
-  if (rec.deletedAt) return rec;
+  const { rec: stored, redisKey } = bundle;
+  if (stored.deletedAt) return stored;
   const now = new Date();
-  const { rec: after, events } = applyAllDueMonthlyUsageResetsWithEvents(rec, now);
+  const { rec: after, events } = applyAllDueMonthlyUsageResetsWithEvents(stored, now);
   if (events.length > 0) {
-    await getRedis().set(redisKey, after);
-    await persistMonthlyBillingResetHistory(rec.id, events);
+    await persistMonthlyBillingResetHistory(stored.id, events);
   }
-  return after;
+  const norm = normalizeClientTryOnBuckets(after);
+  if (!sameBucketSnapshot(stored, norm)) {
+    await getRedis().set(redisKey, norm);
+  }
+  return norm;
 }
 
 export async function assertClientCanUseByApiKey(apiKey: string) {
   const client = await getClientByApiKey(apiKey);
   if (!client) throw new Error("Invalid API key.");
-  if (client.usageCount >= client.usageLimit) throw new Error("Try-on limit exceeded.");
+  if (client.usageLimit > 0 && totalTryOnsUsed(client) >= client.usageLimit) {
+    throw new Error("Try-on limit exceeded.");
+  }
   return client;
 }
 
@@ -464,14 +479,36 @@ export async function incrementUsageOrThrow(id: string) {
   const bundle = await getRecordForMutation(id);
   if (!bundle) throw new Error("Client key not found.");
   const { redisKey } = bundle;
-  const { rec: afterApply, events } = applyAllDueMonthlyUsageResetsWithEvents(bundle.rec, new Date());
+  const stored = bundle.rec;
+  const { rec: afterApply, events } = applyAllDueMonthlyUsageResetsWithEvents(stored, new Date());
   if (events.length > 0) {
-    await redis.set(redisKey, afterApply);
     await persistMonthlyBillingResetHistory(bundle.rec.id, events);
   }
-  const rec = afterApply;
-  if (rec.usageCount >= rec.usageLimit) throw new Error("Try-on limit exceeded.");
-  const nextBase: ClientApiKeyRecord = { ...rec, usageCount: rec.usageCount + 1 };
+  let rec = normalizeClientTryOnBuckets(afterApply);
+  if (!sameBucketSnapshot(stored, rec)) {
+    await redis.set(redisKey, rec);
+  }
+
+  const planCap = subscriptionPlanCap(rec);
+  const topLim = Math.floor(rec.topUpLimit ?? 0);
+  let subUsed = Math.floor(rec.usageCount);
+  let topUsed = Math.floor(rec.topUpUsageCount ?? 0);
+
+  if (subUsed < planCap) {
+    subUsed += 1;
+  } else if (topUsed < topLim) {
+    topUsed += 1;
+  } else {
+    throw new Error("Try-on limit exceeded.");
+  }
+
+  const nextBase = normalizeClientTryOnBuckets({
+    ...rec,
+    usageCount: subUsed,
+    topUpUsageCount: topUsed,
+    topUpLimit: topLim,
+    basePlanLimit: rec.basePlanLimit ?? planCap,
+  });
   const resendConfigured = isFitRoomEmailConfigured();
   const reachedQuotaLimit = usageIncrementReachedQuotaLimit(rec, nextBase);
   const persistNinetyNine =
@@ -490,12 +527,13 @@ export async function incrementUsageOrThrow(id: string) {
     ...(persistNinetyNine ? { usageNinetyNinePctEmailSentForLimit: nextBase.usageLimit } : null),
   };
 
-  const atLimit = nextBase.usageCount >= nextBase.usageLimit && nextBase.usageLimit > 0;
+  const totalAfter = totalTryOnsUsed(nextBase);
+  const atLimit = nextBase.usageLimit > 0 && totalAfter >= nextBase.usageLimit;
   console.log("[fit-room][email-debug] incrementUsageOrThrow", {
     clientId: rec.id,
     resendConfigured,
-    usageBefore: rec.usageCount,
-    usageAfter: nextBase.usageCount,
+    usageBefore: totalTryOnsUsed(rec),
+    usageAfter: totalAfter,
     limit: nextBase.usageLimit,
     reachedFullLimit: atLimit,
     willQueue75PctEmail: persistSeventyFive,
@@ -520,10 +558,18 @@ export async function resetUsage(id: string) {
   const redis = getRedis();
   const bundle = await getRecordForMutation(id);
   if (!bundle) throw new Error("Client key not found.");
-  const { rec, redisKey } = bundle;
-  const prevTryOns = rec.usageCount;
-  await appendClientManualResetHistoryInternal(rec.id, prevTryOns);
-  const next: ClientApiKeyRecord = { ...rec, usageCount: 0 };
+  const { rec: stored, redisKey } = bundle;
+  const { rec: afterApply, events } = applyAllDueMonthlyUsageResetsWithEvents(stored, new Date());
+  if (events.length > 0) {
+    await persistMonthlyBillingResetHistory(stored.id, events);
+  }
+  let cur = normalizeClientTryOnBuckets(afterApply);
+  if (!sameBucketSnapshot(stored, cur)) {
+    await redis.set(redisKey, cur);
+  }
+  const prevTryOns = totalTryOnsUsed(cur);
+  await appendClientManualResetHistoryInternal(cur.id, prevTryOns);
+  const next = normalizeClientTryOnBuckets({ ...cur, usageCount: 0, topUpUsageCount: 0 });
   delete next.usageSeventyFivePctEmailSentForLimit;
   delete next.usageNinetyNinePctEmailSentForLimit;
   await redis.set(redisKey, next);
@@ -540,35 +586,27 @@ export async function incrementClientTryOnLimit(id: string, delta: number, meta?
 
   const bundle = await getRecordForMutation(id);
   if (!bundle) throw new Error("Client key not found.");
-  const { rec, redisKey } = bundle;
-  if (rec.deletedAt) throw new Error("This API key is no longer active.");
+  const { rec: stored, redisKey } = bundle;
+  if (stored.deletedAt) throw new Error("This API key is no longer active.");
 
-  const { rec: afterResets, events } = applyAllDueMonthlyUsageResetsWithEvents(rec, new Date());
+  const { rec: afterResets, events } = applyAllDueMonthlyUsageResetsWithEvents(stored, new Date());
   if (events.length > 0) {
-    await redis.set(redisKey, afterResets);
-    await persistMonthlyBillingResetHistory(rec.id, events);
+    await persistMonthlyBillingResetHistory(stored.id, events);
   }
 
-  const r = afterResets;
-  let next: ClientApiKeyRecord;
-
-  if (typeof r.basePlanLimit === "number" && Number.isFinite(r.basePlanLimit) && r.basePlanLimit > 0) {
-    let topUpAllow = r.topUpAllowanceTryOns;
-    if (typeof topUpAllow !== "number" || !Number.isFinite(topUpAllow)) {
-      topUpAllow = Math.max(0, r.usageLimit - r.basePlanLimit);
-    }
-    topUpAllow += delta;
-    next = {
-      ...r,
-      topUpAllowanceTryOns: topUpAllow,
-      usageLimit: r.basePlanLimit + topUpAllow,
-    };
-  } else {
-    next = {
-      ...r,
-      usageLimit: r.usageLimit + delta,
-    };
+  let cur = normalizeClientTryOnBuckets(afterResets);
+  if (!sameBucketSnapshot(stored, cur)) {
+    await redis.set(redisKey, cur);
   }
+
+  const planCap = subscriptionPlanCap(cur);
+  let topLim = Math.floor(cur.topUpLimit ?? 0);
+  topLim += delta;
+  const next = normalizeClientTryOnBuckets({
+    ...cur,
+    topUpLimit: topLim,
+    basePlanLimit: cur.basePlanLimit ?? planCap,
+  });
 
   await redis.set(redisKey, next);
 
@@ -583,7 +621,7 @@ export async function incrementClientTryOnLimit(id: string, delta: number, meta?
     ...(meta?.storeName?.trim() ? { storeName: meta.storeName.trim() } : null),
     ...(meta?.packId ? { packId: meta.packId } : null),
   };
-  await appendClientTopUpHistoryRow(rec.id, row);
+  await appendClientTopUpHistoryRow(stored.id, row);
   return next;
 }
 
@@ -614,7 +652,8 @@ export async function updateClientKey(params: {
     clientName,
     usageLimit: limit,
     basePlanLimit: limit,
-    topUpAllowanceTryOns: 0,
+    topUpLimit: 0,
+    topUpUsageCount: 0,
     ...(params.fashnApiKey && params.fashnApiKey.trim()
       ? { fashnApiKey: params.fashnApiKey.trim() }
       : null),
@@ -647,10 +686,14 @@ export async function applyDueMonthlyUsageResetsForAllClients(now = new Date()):
     examined += 1;
     const bundle = await getRecordForMutation(summary.id);
     if (!bundle || bundle.rec.deletedAt) continue;
-    const { rec: after, events } = applyAllDueMonthlyUsageResetsWithEvents(bundle.rec, now);
+    const stored = bundle.rec;
+    const { rec: after, events } = applyAllDueMonthlyUsageResetsWithEvents(stored, now);
     if (events.length > 0) {
-      await redis.set(bundle.redisKey, after);
       await persistMonthlyBillingResetHistory(bundle.rec.id, events);
+    }
+    const norm = normalizeClientTryOnBuckets(after);
+    if (!sameBucketSnapshot(stored, norm)) {
+      await redis.set(bundle.redisKey, norm);
       updated += 1;
     }
   }

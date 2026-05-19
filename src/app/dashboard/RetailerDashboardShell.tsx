@@ -39,6 +39,10 @@ type ClientUsagePayload = {
   error?: string;
   usageCount?: number;
   usageLimit?: number;
+  planUsageCount?: number;
+  planLimit?: number;
+  topUpUsageCount?: number;
+  topUpLimit?: number;
 };
 
 type AnalyticsPayload = {
@@ -82,8 +86,10 @@ export type RetailerDashboardShellProps = {
   websiteUrl: string | null;
   planLabel: string;
   apiKey: string;
-  initialUsed: number;
-  initialLimit: number;
+  initialPlanUsed: number;
+  initialPlanLimit: number;
+  initialTopUpUsed: number;
+  initialTopUpLimit: number;
 };
 
 const tabBase =
@@ -105,8 +111,10 @@ function RetailerDashboardShellInner({
   websiteUrl,
   planLabel,
   apiKey,
-  initialUsed,
-  initialLimit,
+  initialPlanUsed,
+  initialPlanLimit,
+  initialTopUpUsed,
+  initialTopUpLimit,
 }: RetailerDashboardShellProps) {
   const searchParams = useSearchParams();
   const [tab, setTab] = useState<DashboardTab>(() => parseDashboardTab(searchParams));
@@ -131,8 +139,10 @@ function RetailerDashboardShellInner({
     window.history.replaceState(window.history.state, "", href);
   }, []);
 
-  const [used, setUsed] = useState(initialUsed);
-  const [limit, setLimit] = useState(initialLimit);
+  const [planUsed, setPlanUsed] = useState(initialPlanUsed);
+  const [planLimit, setPlanLimit] = useState(initialPlanLimit);
+  const [topUpUsed, setTopUpUsed] = useState(initialTopUpUsed);
+  const [topUpLimit, setTopUpLimit] = useState(initialTopUpLimit);
   const [usageLoading, setUsageLoading] = useState(false);
   const [usageError, setUsageError] = useState<string | null>(null);
 
@@ -177,9 +187,16 @@ function RetailerDashboardShellInner({
         setUsageError(data.error || "Could not load try-on usage.");
         return;
       }
-      if (typeof data.usageCount === "number" && typeof data.usageLimit === "number") {
-        setUsed(data.usageCount);
-        setLimit(data.usageLimit);
+      if (
+        typeof data.planUsageCount === "number" &&
+        typeof data.planLimit === "number" &&
+        typeof data.topUpUsageCount === "number" &&
+        typeof data.topUpLimit === "number"
+      ) {
+        setPlanUsed(data.planUsageCount);
+        setPlanLimit(data.planLimit);
+        setTopUpUsed(data.topUpUsageCount);
+        setTopUpLimit(data.topUpLimit);
       }
     } catch {
       setUsageError("Something went wrong. Please try again.");
@@ -203,12 +220,15 @@ function RetailerDashboardShellInner({
     void refreshUsage();
   }, [refreshUsage]);
 
-  const remaining = useMemo(() => Math.max(0, limit - used), [limit, used]);
+  const totalUsed = useMemo(() => planUsed + topUpUsed, [planUsed, topUpUsed]);
+  const totalLimit = useMemo(() => planLimit + topUpLimit, [planLimit, topUpLimit]);
+
+  const remaining = useMemo(() => Math.max(0, totalLimit - totalUsed), [totalLimit, totalUsed]);
   const pct = useMemo(
-    () => (limit > 0 ? Math.min(100, Math.round((used / limit) * 100)) : 0),
-    [used, limit],
+    () => (totalLimit > 0 ? Math.min(100, Math.round((totalUsed / totalLimit) * 100)) : 0),
+    [totalUsed, totalLimit],
   );
-  const blocked = limit > 0 && used >= limit;
+  const blocked = totalLimit > 0 && totalUsed >= totalLimit;
 
   const [analytics, setAnalytics] = useState<AnalyticsPayload | null>(null);
   const [analyticsLoading, setAnalyticsLoading] = useState(false);
@@ -385,9 +405,9 @@ function RetailerDashboardShellInner({
 
                 <div className="grid gap-4 sm:grid-cols-3">
                   {[
-                    { label: "Try-ons used", value: used },
+                    { label: "Try-ons used", value: totalUsed },
                     { label: "Remaining", value: remaining },
-                    { label: "Monthly limit", value: limit },
+                    { label: "Total limit", value: totalLimit },
                   ].map((cell) => (
                     <div
                       key={cell.label}
@@ -403,10 +423,17 @@ function RetailerDashboardShellInner({
 
                 <div>
                   <div className="flex flex-wrap items-center justify-between gap-2 text-sm font-medium text-zinc-300">
-                    <span>
-                      {used.toLocaleString()} / {limit.toLocaleString()} try-ons
-                    </span>
-                    <span className="tabular-nums text-zinc-500">{pct}% of limit</span>
+                    <div className="flex flex-col gap-1">
+                      <span className="tabular-nums">
+                        Plan: {planUsed.toLocaleString()} / {planLimit.toLocaleString()}
+                      </span>
+                      {topUpLimit > 0 ? (
+                        <span className="tabular-nums text-zinc-400">
+                          Top up: {topUpUsed.toLocaleString()} / {topUpLimit.toLocaleString()}
+                        </span>
+                      ) : null}
+                    </div>
+                    <span className="tabular-nums text-zinc-500">{pct}% of total limit</span>
                   </div>
                   <div className="mt-3 h-3 w-full overflow-hidden rounded-full border border-white/10 bg-zinc-950/60">
                     <div

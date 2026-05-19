@@ -7,6 +7,7 @@ import { Footer } from "@/components/Footer";
 import { AnalyticsInsightsModal } from "@/components/AnalyticsInsightsModal";
 import { AdminWearMeClient } from "@/app/admin/AdminWearMeClient";
 import { getNextMonthlyResetUtcDateForDisplay } from "@/lib/billingCycle";
+import { subscriptionPlanCap, totalTryOnsUsed } from "@/lib/clientTryOnBuckets";
 
 type KeyRecord = {
   id: string;
@@ -15,6 +16,9 @@ type KeyRecord = {
   key: string;
   usageLimit: number;
   usageCount: number;
+  basePlanLimit?: number;
+  topUpLimit?: number;
+  topUpUsageCount?: number;
   billingAnchorDay?: number;
   lastAutoBillingResetYyyymmdd?: string;
   /** Equals `usageLimit` when the 75% quota warning was sent this cycle */
@@ -301,7 +305,7 @@ export default function AdminClient() {
   const [quotaPreviewData, setQuotaPreviewData] = useState<QuotaEmailPreviewPayload | null>(null);
 
   const remainingTotal = useMemo(() => {
-    const used = keys.reduce((s, k) => s + k.usageCount, 0);
+    const used = keys.reduce((s, k) => s + totalTryOnsUsed(k), 0);
     const limit = keys.reduce((s, k) => s + k.usageLimit, 0);
     return { used, limit };
   }, [keys]);
@@ -638,7 +642,7 @@ export default function AdminClient() {
         setKeys((prev) =>
           prev.map((k) => {
             if (k.id !== id) return k;
-            const next = { ...k, usageCount: 0 };
+            const next = { ...k, usageCount: 0, topUpUsageCount: 0 };
             delete next.usageSeventyFivePctEmailSentForLimit;
             delete next.usageNinetyNinePctEmailSentForLimit;
             return next;
@@ -1391,7 +1395,7 @@ export default function AdminClient() {
                       <div>API Key</div>
                       <div title="Key record created (UTC)">Created</div>
                       <div title="Next scheduled monthly usage reset (UTC)">Next Reset</div>
-                      <div>Try-ons used / Try-on limit</div>
+                      <div title="Subscription plan vs purchased top-up usage">Plan / top-up</div>
                       <div>Status</div>
                       <div className="text-center">EDIT</div>
                       <div className="text-center">COPY</div>
@@ -1401,11 +1405,14 @@ export default function AdminClient() {
                     </div>
 
                     {keys.map((k) => {
+                      const planCap = subscriptionPlanCap(k);
+                      const planUsed = k.usageCount;
+                      const topLim = k.topUpLimit ?? 0;
+                      const topUsed = k.topUpUsageCount ?? 0;
+                      const totalUsed = totalTryOnsUsed(k);
                       const pct =
-                        k.usageLimit > 0
-                          ? Math.min(100, Math.round((k.usageCount / k.usageLimit) * 100))
-                          : 0;
-                      const blocked = k.usageLimit > 0 && k.usageCount >= k.usageLimit;
+                        k.usageLimit > 0 ? Math.min(100, Math.round((totalUsed / k.usageLimit) * 100)) : 0;
+                      const blocked = k.usageLimit > 0 && totalUsed >= k.usageLimit;
                       const historyOpen = expandedHistoryClientId === k.id;
                       const bh = billingHistoryByClient[k.id];
 
@@ -1463,8 +1470,13 @@ export default function AdminClient() {
                                   style={{ width: `${pct}%` }}
                                 />
                               </div>
-                              <span className="text-sm font-semibold text-zinc-300">
-                                {k.usageCount}/{k.usageLimit}
+                              <span className="flex min-w-0 flex-col gap-0.5 text-sm font-semibold leading-snug text-zinc-300">
+                                <span className="tabular-nums">
+                                  Plan: {planUsed}/{planCap}
+                                </span>
+                                {topLim > 0 ? (
+                                  <span className="tabular-nums text-zinc-400">Top up: {topUsed}/{topLim}</span>
+                                ) : null}
                               </span>
                               <span className="text-sm font-semibold text-zinc-500">{pct}%</span>
                             </div>
@@ -1777,11 +1789,20 @@ export default function AdminClient() {
                       onChange={(e) => setWearMeKeyId(e.target.value || null)}
                       className="mt-2 block w-full rounded-xl border border-zinc-700 bg-zinc-950 px-4 py-3 text-sm text-zinc-100 outline-none transition focus:border-accent/60"
                     >
-                      {keys.map((k) => (
-                        <option key={k.id} value={k.id}>
-                          {k.clientName} · {k.usageCount}/{k.usageLimit} try-ons used
-                        </option>
-                      ))}
+                      {keys.map((k) => {
+                        const pc = subscriptionPlanCap(k);
+                        const tl = k.topUpLimit ?? 0;
+                        const tu = k.topUpUsageCount ?? 0;
+                        const label =
+                          tl > 0
+                            ? `${k.clientName} · Plan ${k.usageCount}/${pc}, Top up ${tu}/${tl}`
+                            : `${k.clientName} · Plan ${k.usageCount}/${pc}`;
+                        return (
+                          <option key={k.id} value={k.id}>
+                            {label}
+                          </option>
+                        );
+                      })}
                     </select>
                     {wearMeKeyRecord ? (
                       <p className="mt-2 text-xs text-zinc-500">

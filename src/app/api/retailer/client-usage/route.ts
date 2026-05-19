@@ -1,8 +1,25 @@
 import { NextResponse } from "next/server";
-import { getClientByApiKey, getClientKeyRecordById } from "@/lib/apiKeyStore";
+import {
+  type ClientApiKeyRecord,
+  getClientByApiKey,
+  getClientKeyRecordById,
+} from "@/lib/apiKeyStore";
+import { subscriptionPlanCap, totalTryOnsUsed } from "@/lib/clientTryOnBuckets";
 import { getRetailerSessionUser } from "@/lib/retailerAuth";
 
 export const runtime = "nodejs";
+
+function clientUsagePayload(client: ClientApiKeyRecord) {
+  return {
+    clientName: client.clientName,
+    usageCount: totalTryOnsUsed(client),
+    usageLimit: client.usageLimit,
+    planUsageCount: client.usageCount,
+    planLimit: subscriptionPlanCap(client),
+    topUpUsageCount: client.topUpUsageCount ?? 0,
+    topUpLimit: client.topUpLimit ?? 0,
+  };
+}
 
 /**
  * Returns try-on usage for the logged-in retailer's linked client (no API key in request).
@@ -23,11 +40,7 @@ export async function GET() {
     return NextResponse.json({ error: "Client not found." }, { status: 404 });
   }
 
-  return NextResponse.json({
-    clientName: client.clientName,
-    usageCount: client.usageCount,
-    usageLimit: client.usageLimit,
-  });
+  return NextResponse.json(clientUsagePayload(client));
 }
 
 /**
@@ -65,9 +78,5 @@ export async function POST(req: Request) {
     );
   }
 
-  return NextResponse.json({
-    clientName: client.clientName,
-    usageCount: client.usageCount,
-    usageLimit: client.usageLimit,
-  });
+  return NextResponse.json(clientUsagePayload(client));
 }

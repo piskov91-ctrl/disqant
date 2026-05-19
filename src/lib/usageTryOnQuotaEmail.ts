@@ -1,4 +1,5 @@
 import type { ClientApiKeyRecord } from "@/lib/apiKeyStore";
+import { totalTryOnsUsed } from "@/lib/clientTryOnBuckets";
 import { isFitRoomEmailConfigured, sendFitRoomMail } from "@/lib/fitRoomEmail";
 import { listRetailersLinkedToClientId } from "@/lib/retailerAuth";
 
@@ -156,7 +157,7 @@ export function sendTryOnUsageSeventyFivePctNoticeAsync(params: {
 
       const bodyParams = {
         storeName,
-        used: client.usageCount,
+        used: totalTryOnsUsed(client),
         limit: client.usageLimit,
       };
       const subject = buildUsageSubject(bodyParams.used, bodyParams.limit);
@@ -189,7 +190,7 @@ export function sendTryOnUsageNinetyNinePctNoticeAsync(params: { client: ClientA
   console.log("[fit-room][email-debug] sendTryOnUsageNinetyNinePctNoticeAsync", {
     clientId: params.client.id,
     resendConfigured,
-    usageAtSend: params.client.usageCount,
+    usageAtSend: totalTryOnsUsed(params.client),
     limit: params.client.usageLimit,
   });
 
@@ -207,7 +208,7 @@ export function sendTryOnUsageNinetyNinePctNoticeAsync(params: { client: ClientA
         return;
       }
 
-      const bodyParams = { storeName, used: client.usageCount, limit: client.usageLimit };
+      const bodyParams = { storeName, used: totalTryOnsUsed(client), limit: client.usageLimit };
       const subject = buildUsageSubject(bodyParams.used, bodyParams.limit);
       const text = buildTryOnQuotaUsageEmailBody(bodyParams);
       const html = buildTryOnQuotaUsageEmailHtml(bodyParams);

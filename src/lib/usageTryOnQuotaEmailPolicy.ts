@@ -1,4 +1,5 @@
 import type { ClientApiKeyRecord } from "@/lib/apiKeyStore";
+import { totalTryOnsUsed } from "@/lib/clientTryOnBuckets";
 
 function crossedTryOnUsageSeventyFivePct(
   prev: ClientApiKeyRecord,
@@ -6,7 +7,9 @@ function crossedTryOnUsageSeventyFivePct(
 ): boolean {
   const lim = next.usageLimit;
   if (!(lim > 0)) return false;
-  return prev.usageCount * 4 < lim * 3 && next.usageCount * 4 >= lim * 3;
+  return (
+    totalTryOnsUsed(prev) * 4 < lim * 3 && totalTryOnsUsed(next) * 4 >= lim * 3
+  );
 }
 
 export function alreadySentTryOnUsageSeventyFiveEmailForCycle(rec: ClientApiKeyRecord): boolean {
@@ -15,14 +18,14 @@ export function alreadySentTryOnUsageSeventyFiveEmailForCycle(rec: ClientApiKeyR
   return sentFor === rec.usageLimit;
 }
 
-/** True on the increment where usage reaches the plan limit (final allowed try-on). */
+/** True on the increment where total usage reaches the combined limit (final allowed try-on). */
 export function usageIncrementReachedQuotaLimit(
   prev: ClientApiKeyRecord,
   next: ClientApiKeyRecord,
 ): boolean {
   const lim = next.usageLimit;
   if (!(lim > 0)) return false;
-  return prev.usageCount < lim && next.usageCount >= lim;
+  return totalTryOnsUsed(prev) < lim && totalTryOnsUsed(next) >= lim;
 }
 
 function crossedTryOnUsageNinetyNinePct(
@@ -32,7 +35,9 @@ function crossedTryOnUsageNinetyNinePct(
   const lim = next.usageLimit;
   if (!(lim > 0)) return false;
   if (usageIncrementReachedQuotaLimit(prev, next)) return false;
-  return prev.usageCount * 100 < lim * 99 && next.usageCount * 100 >= lim * 99;
+  return (
+    totalTryOnsUsed(prev) * 100 < lim * 99 && totalTryOnsUsed(next) * 100 >= lim * 99
+  );
 }
 
 export function alreadySentTryOnUsageNinetyNineEmailForCycle(rec: ClientApiKeyRecord): boolean {
