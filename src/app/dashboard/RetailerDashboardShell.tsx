@@ -1,6 +1,6 @@
 "use client";
 
-import { ImageOff } from "lucide-react";
+import { Activity, Coins, Gauge, ImageOff } from "lucide-react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { Suspense, useCallback, useEffect, useMemo, useState } from "react";
@@ -234,6 +234,10 @@ function RetailerDashboardShellInner({
   const totalLimit = useMemo(() => basePlanLimit + topUpLimit, [basePlanLimit, topUpLimit]);
 
   const remaining = useMemo(() => Math.max(0, totalLimit - totalUsed), [totalLimit, totalUsed]);
+  const totalPct = useMemo(
+    () => (totalLimit > 0 ? Math.min(100, Math.round((totalUsed / totalLimit) * 100)) : 0),
+    [totalUsed, totalLimit],
+  );
   const planPct = useMemo(
     () =>
       basePlanLimit > 0 ? Math.min(100, Math.round((planUsed / basePlanLimit) * 100)) : 0,
@@ -302,13 +306,13 @@ function RetailerDashboardShellInner({
   return (
     <div className="relative">
       <div
-        className="pointer-events-none absolute inset-0 -z-10 min-h-full bg-[radial-gradient(ellipse_100%_55%_at_50%_-10%,rgba(198,167,125,0.09),transparent_52%),radial-gradient(ellipse_70%_45%_at_100%_30%,rgba(124,58,237,0.07),transparent_50%),radial-gradient(ellipse_50%_40%_at_0%_80%,rgba(236,72,153,0.05),transparent_45%)]"
+        className="pointer-events-none absolute inset-0 -z-10 min-h-full bg-[radial-gradient(ellipse_95%_45%_at_50%_0%,rgba(198,167,125,0.07),transparent_55%),radial-gradient(ellipse_70%_50%_at_100%_100%,rgba(0,0,0,0.35),transparent_50%),radial-gradient(ellipse_55%_45%_at_0%_85%,rgba(198,167,125,0.04),transparent_48%)]"
         aria-hidden
       />
 
       <div className="mx-auto max-w-6xl px-6 pb-20 pt-8 md:pt-10">
         <div
-          className="inline-flex flex-wrap gap-1 rounded-full border border-white/10 bg-zinc-950/60 p-1 shadow-inner shadow-black/40 backdrop-blur-md"
+          className="inline-flex flex-wrap gap-1 rounded-full border border-[#c6a77d]/22 bg-black/40 p-1 shadow-inner shadow-black/50 backdrop-blur-md"
           role="tablist"
           aria-label="Dashboard sections"
         >
@@ -342,70 +346,98 @@ function RetailerDashboardShellInner({
         </div>
 
         {tab === "overview" ? (
-          <div className="mt-10 space-y-8">
-            <header className="rounded-2xl border border-white/10 bg-zinc-900/45 p-8 shadow-xl shadow-black/20 backdrop-blur-sm md:p-10">
-              <p className="text-balance text-2xl font-semibold tracking-tight text-zinc-50 md:text-3xl">
-                {welcomeHeading}
-              </p>
-              <p className="mt-3 text-sm leading-relaxed text-zinc-400">{accountSubtitle}</p>
-              <p className="mt-2 text-sm text-zinc-500">
-                Website:{" "}
-                {websiteUrl ? (
-                  <a
-                    href={websiteUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-[#c6a77d] underline-offset-2 hover:underline"
+          <div className="mt-10 space-y-10 md:space-y-14">
+            <header className="relative overflow-hidden rounded-3xl border border-[#c6a77d]/35 bg-black/38 p-8 shadow-[0_28px_90px_-28px_rgba(0,0,0,0.82)] backdrop-blur-xl md:p-11">
+              <div
+                className="pointer-events-none absolute -right-24 -top-28 h-72 w-72 rounded-full bg-[#c6a77d]/14 blur-3xl"
+                aria-hidden
+              />
+              <div
+                className="pointer-events-none absolute -bottom-20 -left-16 h-56 w-56 rounded-full bg-[#c6a77d]/10 blur-3xl"
+                aria-hidden
+              />
+              <div className="relative">
+                <p className="text-[11px] font-semibold uppercase tracking-[0.28em] text-[#d4bc94]/85">
+                  Dashboard
+                </p>
+                <p className="mt-4 text-balance text-2xl font-semibold tracking-tight text-zinc-50 md:text-[2rem] md:leading-snug">
+                  {welcomeHeading}
+                </p>
+                <p className="mt-4 max-w-2xl text-sm leading-relaxed text-zinc-400">{accountSubtitle}</p>
+                <p className="mt-5 flex flex-wrap items-center gap-x-2 gap-y-1 text-sm text-zinc-500">
+                  <span className="text-zinc-600">Website</span>
+                  <span className="text-zinc-600">·</span>
+                  {websiteUrl ? (
+                    <a
+                      href={websiteUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="font-medium text-[#d4bc94] underline decoration-[#c6a77d]/35 underline-offset-[3px] transition hover:text-[#f0e6d8] hover:decoration-[#c6a77d]/70"
+                    >
+                      {websiteUrl}
+                    </a>
+                  ) : (
+                    <span className="text-zinc-600">Not provided</span>
+                  )}
+                  <span className="text-zinc-600">·</span>
+                  <Link
+                    href="/profile"
+                    className="font-medium text-zinc-400 underline-offset-[3px] transition hover:text-[#e8dcc8] hover:underline"
                   >
-                    {websiteUrl}
-                  </a>
-                ) : (
-                  <span className="text-zinc-600">Not provided</span>
-                )}
-                {" · "}
-                <Link href="/profile" className="text-zinc-400 underline-offset-2 hover:text-zinc-200 hover:underline">
-                  Edit profile
-                </Link>
-              </p>
+                    Edit profile
+                  </Link>
+                </p>
+              </div>
             </header>
 
-            <div className="grid gap-6 lg:grid-cols-3">
-              <div className="rounded-2xl border border-white/10 bg-gradient-to-br from-zinc-900/70 to-zinc-950/80 p-6 ring-1 ring-white/[0.04] backdrop-blur-sm lg:col-span-1">
-                <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[#c6a77d]/90">Your plan</p>
-                <p className="mt-3 text-lg font-semibold text-zinc-50">{planLabel}</p>
-                <p className="mt-2 text-sm leading-relaxed text-zinc-500">
-                  Try-on allowance and billing follow this plan. Upgrade anytime from subscriptions.
-                </p>
-                <Link
-                  href="/subscriptions"
-                  className="mt-5 inline-flex text-sm font-semibold text-[#c6a77d] underline-offset-2 hover:underline"
-                >
-                  View plans
-                </Link>
-              </div>
+            <div className="grid gap-8 lg:grid-cols-12 lg:gap-10 xl:gap-12">
+              <aside className="lg:col-span-4">
+                <div className="relative flex h-full flex-col overflow-hidden rounded-3xl border border-[#c6a77d]/28 bg-gradient-to-b from-black/45 via-black/35 to-black/25 p-7 shadow-[inset_0_1px_0_0_rgba(255,236,210,0.08)] backdrop-blur-xl md:p-8">
+                  <div
+                    className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-[#c6a77d]/65 to-transparent"
+                    aria-hidden
+                  />
+                  <p className="text-[11px] font-semibold uppercase tracking-[0.26em] text-[#d4bc94]/88">
+                    Your plan
+                  </p>
+                  <p className="mt-5 text-xl font-semibold tracking-tight text-zinc-50">{planLabel}</p>
+                  <p className="mt-4 flex-1 text-sm leading-relaxed text-zinc-500">
+                    Monthly allowance and billing follow this plan. Change tier anytime when your traffic grows.
+                  </p>
+                  <Link
+                    href="/subscriptions"
+                    className="mt-8 inline-flex w-fit items-center gap-2 rounded-full border border-[#c6a77d]/45 bg-[#c6a77d]/12 px-5 py-2.5 text-sm font-semibold text-[#f0e6d8] shadow-sm transition hover:border-[#d4bc94]/55 hover:bg-[#c6a77d]/22"
+                  >
+                    View plans
+                  </Link>
+                </div>
+              </aside>
 
-              <div className="space-y-6 lg:col-span-2">
-                <div className="flex flex-wrap items-start justify-between gap-4">
-                  <div>
-                    <h2 className="text-base font-semibold text-zinc-100">Try-on usage</h2>
-                    <p className="mt-1 text-sm text-zinc-500">
-                      Shoppers using Wear Me on your site count toward this total.
+              <div className="space-y-10 lg:col-span-8">
+                <div className="flex flex-wrap items-end justify-between gap-5 border-b border-[#c6a77d]/15 pb-8">
+                  <div className="space-y-2">
+                    <p className="text-[11px] font-semibold uppercase tracking-[0.26em] text-[#d4bc94]/85">
+                      Usage
+                    </p>
+                    <h2 className="text-xl font-semibold tracking-tight text-zinc-50 md:text-2xl">Try-on allowance</h2>
+                    <p className="max-w-xl text-sm leading-relaxed text-zinc-500">
+                      Every completed Wear Me session on your storefront draws from this pool—plan plus any top-ups.
                     </p>
                   </div>
-                  <div className="flex items-center gap-3">
+                  <div className="flex flex-wrap items-center gap-3">
                     <button
                       type="button"
                       disabled={usageLoading}
                       onClick={() => void refreshUsage()}
-                      className="inline-flex h-10 items-center justify-center rounded-full border border-white/15 bg-zinc-950/50 px-4 text-sm font-semibold text-zinc-200 transition hover:border-white/25 hover:bg-zinc-900/80 disabled:opacity-50"
+                      className="inline-flex h-11 items-center justify-center rounded-full border border-[#c6a77d]/35 bg-black/40 px-5 text-sm font-semibold tracking-wide text-[#e8dcc8] shadow-sm backdrop-blur-sm transition hover:border-[#c6a77d]/55 hover:bg-[#c6a77d]/12 disabled:opacity-45"
                     >
                       {usageLoading ? "Refreshing…" : "Refresh"}
                     </button>
                     <span
-                      className={`inline-flex items-center rounded-full border px-3 py-1 text-sm font-semibold ${
+                      className={`inline-flex items-center rounded-full border px-4 py-2 text-xs font-semibold uppercase tracking-[0.14em] ${
                         blocked
-                          ? "border-amber-500/35 bg-amber-500/10 text-amber-200"
-                          : "border-emerald-500/35 bg-emerald-500/10 text-emerald-200"
+                          ? "border-amber-400/40 bg-amber-500/15 text-amber-100"
+                          : "border-emerald-400/35 bg-emerald-500/12 text-emerald-100"
                       }`}
                     >
                       {blocked ? "Limit reached" : "Active"}
@@ -419,54 +451,115 @@ function RetailerDashboardShellInner({
                   </p>
                 ) : null}
 
-                <div className="grid gap-4 sm:grid-cols-3">
-                  {[
-                    { label: "Try-ons used", value: totalUsed },
-                    { label: "Remaining", value: remaining },
-                    { label: "Total limit", value: totalLimit },
-                  ].map((cell) => (
+                <div className="rounded-3xl border border-[#c6a77d]/22 bg-black/32 p-6 shadow-inner shadow-black/50 backdrop-blur-xl md:p-8">
+                  <div className="flex flex-wrap items-baseline justify-between gap-3">
+                    <p className="text-sm font-medium text-zinc-300">Overall consumption</p>
+                    <p className="tabular-nums text-sm font-semibold text-[#d4bc94]">
+                      {totalUsed.toLocaleString()} / {totalLimit.toLocaleString()}{" "}
+                      <span className="font-normal text-zinc-500">({totalPct}%)</span>
+                    </p>
+                  </div>
+                  <div className="relative mt-4 h-4 w-full overflow-hidden rounded-full border border-white/[0.14] bg-black/55 shadow-[inset_0_2px_8px_rgba(0,0,0,0.45)] ring-1 ring-[#c6a77d]/12">
                     <div
-                      key={cell.label}
-                      className="rounded-2xl border border-white/10 bg-zinc-950/50 p-5 backdrop-blur-sm"
+                      className="relative h-full min-w-0 rounded-full shadow-[inset_0_1px_0_rgba(255,255,255,0.22)] transition-[width] duration-700 ease-out motion-reduce:transition-none"
+                      style={tryOnUsageFillStyle(totalPct)}
+                    />
+                  </div>
+                  <p className="mt-3 text-xs leading-relaxed text-zinc-600">
+                    Bar tint moves from green toward amber and red as you approach your cap—same scale as the breakdown
+                    below.
+                  </p>
+                </div>
+
+                <div className="grid gap-5 sm:gap-6 md:grid-cols-3">
+                  {(
+                    [
+                      {
+                        label: "Try-ons used",
+                        value: totalUsed,
+                        hint: "Sessions completed",
+                        Icon: Activity,
+                      },
+                      {
+                        label: "Remaining",
+                        value: remaining,
+                        hint: "Still available",
+                        Icon: Coins,
+                      },
+                      {
+                        label: "Total limit",
+                        value: totalLimit,
+                        hint: "Plan + top-ups",
+                        Icon: Gauge,
+                      },
+                    ] as const
+                  ).map(({ label, value, hint, Icon }) => (
+                    <div
+                      key={label}
+                      className="group relative flex flex-col overflow-hidden rounded-3xl border border-[#c6a77d]/30 bg-gradient-to-b from-black/52 via-black/38 to-black/[0.28] p-7 shadow-[0_20px_50px_-28px_rgba(0,0,0,0.75)] backdrop-blur-xl transition hover:border-[#c6a77d]/42 md:p-8"
                     >
-                      <p className="text-xs font-medium uppercase tracking-wider text-zinc-500">{cell.label}</p>
-                      <p className="mt-2 text-3xl font-semibold tabular-nums tracking-tight text-zinc-50">
-                        {typeof cell.value === "number" ? cell.value.toLocaleString() : "—"}
+                      <div
+                        className="pointer-events-none absolute inset-x-6 top-0 h-px bg-gradient-to-r from-transparent via-[#c6a77d]/75 to-transparent opacity-90"
+                        aria-hidden
+                      />
+                      <div className="flex items-start justify-between gap-3">
+                        <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-[#d4bc94]/82">
+                          {label}
+                        </p>
+                        <Icon
+                          className="h-[22px] w-[22px] shrink-0 text-[#c6a77d]/50 transition group-hover:text-[#c6a77d]/85"
+                          strokeWidth={1.35}
+                          aria-hidden
+                        />
+                      </div>
+                      <p className="mt-6 text-4xl font-light tabular-nums tracking-tight text-zinc-50 md:text-[2.65rem] md:leading-none">
+                        {typeof value === "number" ? value.toLocaleString() : "—"}
                       </p>
+                      <p className="mt-3 text-xs font-medium uppercase tracking-[0.18em] text-zinc-600">{hint}</p>
                     </div>
                   ))}
                 </div>
 
-                <div className="space-y-4">
+                <div className="space-y-8 rounded-3xl border border-[#c6a77d]/20 bg-black/28 p-6 shadow-inner shadow-black/45 backdrop-blur-xl md:p-8">
                   <div>
-                    <div className="flex flex-wrap items-center justify-between gap-2 text-sm font-medium text-zinc-300">
-                      <span className="tabular-nums">
-                        Monthly plan: {planUsed.toLocaleString()} / {basePlanLimit.toLocaleString()}
+                    <div className="flex flex-wrap items-center justify-between gap-2">
+                      <span className="text-sm font-semibold text-zinc-200">Monthly plan bucket</span>
+                      <span className="tabular-nums text-sm text-zinc-500">
+                        {planUsed.toLocaleString()} / {basePlanLimit.toLocaleString()}{" "}
+                        <span className="font-semibold text-[#c6a77d]/90">({planPct}%)</span>
                       </span>
-                      <span className="tabular-nums text-zinc-500">{planPct}% of plan</span>
                     </div>
-                    <div className="mt-2 h-2 w-full overflow-hidden rounded-full border border-white/10 bg-zinc-950/60">
-                      <div className="h-full min-w-0 rounded-full" style={tryOnUsageFillStyle(planPct)} />
+                    <div className="relative mt-3 h-3.5 w-full overflow-hidden rounded-full border border-white/[0.12] bg-black/55 shadow-[inset_0_2px_8px_rgba(0,0,0,0.45)] ring-1 ring-[#c6a77d]/10">
+                      <div
+                        className="relative h-full min-w-0 rounded-full shadow-[inset_0_1px_0_rgba(255,255,255,0.2)] transition-[width] duration-700 ease-out motion-reduce:transition-none"
+                        style={tryOnUsageFillStyle(planPct)}
+                      />
                     </div>
                   </div>
                   {topUpLimit > 0 ? (
                     <div>
-                      <div className="flex flex-wrap items-center justify-between gap-2 text-sm font-medium text-zinc-300">
-                        <span className="tabular-nums text-zinc-400">
-                          Top Up: {topUpUsed.toLocaleString()} / {topUpLimit.toLocaleString()}
+                      <div className="flex flex-wrap items-center justify-between gap-2">
+                        <span className="text-sm font-semibold text-zinc-200">Top-up bucket</span>
+                        <span className="tabular-nums text-sm text-zinc-500">
+                          {topUpUsed.toLocaleString()} / {topUpLimit.toLocaleString()}{" "}
+                          <span className="font-semibold text-[#c6a77d]/90">({topUpPct}%)</span>
                         </span>
-                        <span className="tabular-nums text-zinc-500">{topUpPct}% of top-up</span>
                       </div>
-                      <div className="mt-2 h-2 w-full overflow-hidden rounded-full border border-white/10 bg-zinc-950/60">
-                        <div className="h-full min-w-0 rounded-full" style={tryOnUsageFillStyle(topUpPct)} />
+                      <div className="relative mt-3 h-3.5 w-full overflow-hidden rounded-full border border-white/[0.12] bg-black/55 shadow-[inset_0_2px_8px_rgba(0,0,0,0.45)] ring-1 ring-[#c6a77d]/10">
+                        <div
+                          className="relative h-full min-w-0 rounded-full shadow-[inset_0_1px_0_rgba(255,255,255,0.2)] transition-[width] duration-700 ease-out motion-reduce:transition-none"
+                          style={tryOnUsageFillStyle(topUpPct)}
+                        />
                       </div>
                     </div>
-                  ) : null}
+                  ) : (
+                    <p className="text-sm text-zinc-600">
+                      No top-up bucket yet—add try-ons below whenever you need extra capacity beyond your plan.
+                    </p>
+                  )}
                 </div>
 
-                <div className="pt-4">
-                  <DashboardTopUpPanel />
-                </div>
+                <DashboardTopUpPanel />
               </div>
             </div>
           </div>

@@ -1,11 +1,12 @@
 import type { CSSProperties } from "react";
 
 /**
- * Horizontal gradient for try-on usage fills: green (0–50%) → yellow (75%) → orange (99%) → red (100%).
+ * Horizontal gradient for try-on usage fills: green → yellow → red across the bar (usage % maps to visible slice).
  * Paired with {@link tryOnUsageFillStyle} so the visible slice matches usage % along the full bar semantics.
  */
+/** Green → yellow → red along usage intensity (smooth stops for dashboard bars). */
 export const TRY_ON_USAGE_BAR_GRADIENT =
-  "linear-gradient(to right, rgb(34, 197, 94) 0%, rgb(34, 197, 94) 50%, rgb(234, 179, 8) 75%, rgb(249, 115, 22) 99%, rgb(220, 38, 38) 100%)";
+  "linear-gradient(to right, rgb(34, 197, 94) 0%, rgb(74, 222, 128) 38%, rgb(234, 179, 8) 62%, rgb(251, 191, 36) 78%, rgb(239, 68, 68) 92%, rgb(185, 28, 28) 100%)";
 
 /**
  * Styles for the inner “fill” div inside a fixed track: `width` = usage %, background scaled so
