@@ -37,12 +37,15 @@ export function ForgotPasswordForm() {
   if (done) {
     return (
       <div className="mt-8 space-y-4">
-        <div className="rounded-xl border border-emerald-900/50 bg-emerald-950/35 px-4 py-3 text-sm text-emerald-100">
+        <div className="rounded-xl border border-emerald-900/40 bg-emerald-950/25 px-4 py-4 text-sm leading-relaxed text-emerald-100/95">
           If an account exists for that email, we&apos;ve sent a link to reset your password. The link works for 1 hour.
           Check your inbox and spam folder.
         </div>
         <p className="text-center text-sm text-zinc-500">
-          <Link href="/login" className="font-medium text-zinc-200 underline-offset-2 hover:underline">
+          <Link
+            href="/login"
+            className="font-medium text-[#d4bc94] underline-offset-2 transition hover:text-[#e8dcc8] hover:underline"
+          >
             Back to log in
           </Link>
         </p>
@@ -64,7 +67,7 @@ export function ForgotPasswordForm() {
           value={email}
           onChange={(e) => setEmail(e.target.value)}
           required
-          className="mt-2 block w-full rounded-xl border border-zinc-700 bg-zinc-950 px-4 py-3 text-sm text-zinc-100 outline-none transition focus:border-accent/60"
+          className="mt-2 block w-full rounded-xl border border-zinc-700/90 bg-zinc-950/80 px-4 py-3 text-sm text-zinc-100 shadow-inner shadow-black/20 outline-none transition placeholder:text-zinc-600 focus:border-[#c6a77d]/50 focus:ring-2 focus:ring-[#c6a77d]/20"
         />
       </div>
 
@@ -72,12 +75,8 @@ export function ForgotPasswordForm() {
         <div className="rounded-xl border border-red-900/60 bg-red-950/40 px-4 py-3 text-sm text-red-200">{error}</div>
       ) : null}
 
-      <button
-        type="submit"
-        disabled={loading}
-        className="btn-accent-gradient w-full disabled:cursor-not-allowed disabled:opacity-60"
-      >
-        {loading ? "Sending…" : "Send reset link"}
+      <button type="submit" disabled={loading} className="wear-me-btn w-full disabled:cursor-not-allowed">
+        {loading ? "Sending…" : "Send Reset Link"}
       </button>
     </form>
   );

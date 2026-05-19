@@ -96,7 +96,7 @@ export function HeaderNav() {
         </Link>
         {loggedIn ? (
           <Link href="/dashboard" className={linkClass("/dashboard")}>
-            Dashboard
+            Overview
           </Link>
         ) : null}
       </nav>
@@ -174,7 +174,7 @@ export function HeaderNav() {
               {loggedIn && retailerUser ? (
                 <>
                   <Link href="/dashboard" className={navStackClass} onClick={() => setOpen(false)}>
-                    Dashboard
+                    Overview
                   </Link>
                   <Link href="/profile" className={navStackClass} onClick={() => setOpen(false)}>
                     Profile Settings
