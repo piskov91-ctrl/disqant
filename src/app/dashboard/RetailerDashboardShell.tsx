@@ -122,9 +122,11 @@ function utcCalendarDayOrdinal(day: number): string {
 }
 
 const tabBase =
-  "rounded-full px-5 py-2.5 text-sm font-semibold transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#c6a77d]/40 focus-visible:ring-offset-2 focus-visible:ring-offset-zinc-950";
-const tabInactive = "text-zinc-500 hover:text-zinc-300";
-const tabActive = "bg-white/[0.07] text-zinc-50 shadow-[inset_0_1px_0_0_rgba(255,255,255,0.06)]";
+  "rounded-full px-5 py-2.5 text-sm font-semibold tracking-[0.08em] transition-all duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#c6a77d]/45 focus-visible:ring-offset-2 focus-visible:ring-offset-zinc-950 motion-reduce:transition-none";
+const tabInactive =
+  "border border-transparent bg-transparent text-zinc-500 hover:border-[#c6a77d]/40 hover:bg-[#c6a77d]/[0.1] hover:text-[#e8dcc8] hover:shadow-[0_0_20px_-8px_rgba(198,167,125,0.35)]";
+const tabActive =
+  "border border-[#c6a77d]/55 bg-[#c6a77d]/[0.14] text-[#f5efe6] shadow-[inset_0_1px_0_0_rgba(255,236,210,0.22),0_8px_28px_-12px_rgba(198,167,125,0.25)] ring-1 ring-[#c6a77d]/30";
 
 export function RetailerDashboardShell(props: RetailerDashboardShellProps) {
   return (
@@ -360,7 +362,7 @@ function RetailerDashboardShellInner({
 
       <div className="mx-auto max-w-6xl px-6 pb-20 pt-8 md:pt-10">
         <div
-          className="inline-flex flex-wrap gap-1 rounded-full border border-[#c6a77d]/22 bg-black/40 p-1 shadow-inner shadow-black/50 backdrop-blur-md"
+          className="inline-flex flex-wrap gap-1.5 rounded-full border border-[#c6a77d]/38 bg-black/60 p-1.5 shadow-[inset_0_1px_0_0_rgba(255,236,210,0.08)] backdrop-blur-md"
           role="tablist"
           aria-label="Dashboard sections"
         >

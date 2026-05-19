@@ -90,6 +90,11 @@ const FAQ_CATEGORIES: readonly FaqCategory[] = [
         answer:
           "Great photos show the product on a model; Wear Me shows it on your customer. Many returns come from “looked different on me than on the site.” Letting people preview on themselves removes that surprise—they know what they’re ordering.",
       },
+      {
+        question: "Can I see which products my customers try on most?",
+        answer:
+          "Yes. Your dashboard includes a built-in analytics section where you can see exactly which products are being tried on and how many times. It updates in real time so you always know what your shoppers are most interested in.",
+      },
     ],
   },
   {
