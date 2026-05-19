@@ -7,7 +7,7 @@ import { Footer } from "@/components/Footer";
 import { AnalyticsInsightsModal } from "@/components/AnalyticsInsightsModal";
 import { AdminWearMeClient } from "@/app/admin/AdminWearMeClient";
 import { getNextMonthlyResetUtcDateForDisplay } from "@/lib/billingCycle";
-import { subscriptionPlanCap, totalTryOnsUsed } from "@/lib/clientTryOnBuckets";
+import { subscriptionPlanCap, totalTryOnsUsed, clientTryOnFullyBlocked } from "@/lib/clientTryOnBuckets";
 
 type KeyRecord = {
   id: string;
@@ -238,7 +238,8 @@ export default function AdminClient() {
   const [editClientName, setEditClientName] = useState("");
   const [editContactEmail, setEditContactEmail] = useState("");
   const [editFashnApiKey, setEditFashnApiKey] = useState("");
-  const [editUsageLimit, setEditUsageLimit] = useState("");
+  const [editMonthlyPlanLimit, setEditMonthlyPlanLimit] = useState("");
+  const [editTopUpLimit, setEditTopUpLimit] = useState("");
   const [savingEdit, setSavingEdit] = useState(false);
 
   const [clientName, setClientName] = useState("");
@@ -698,7 +699,8 @@ export default function AdminClient() {
     setEditing(rec);
     setEditClientName(rec.clientName);
     setEditContactEmail(rec.contactEmail?.trim() ?? "");
-    setEditUsageLimit(String(rec.usageLimit));
+    setEditMonthlyPlanLimit(String(subscriptionPlanCap(rec)));
+    setEditTopUpLimit(String(rec.topUpLimit ?? 0));
     setEditFashnApiKey("");
   }
 
@@ -707,7 +709,8 @@ export default function AdminClient() {
     setEditClientName("");
     setEditContactEmail("");
     setEditFashnApiKey("");
-    setEditUsageLimit("");
+    setEditMonthlyPlanLimit("");
+    setEditTopUpLimit("");
     setSavingEdit(false);
   }
 
@@ -723,7 +726,8 @@ export default function AdminClient() {
           clientName: editClientName,
           contactEmail: editContactEmail.trim(),
           ...(editFashnApiKey.trim() ? { fashnApiKey: editFashnApiKey.trim() } : null),
-          usageLimit: Number(editUsageLimit),
+          monthlyPlanLimit: Number(editMonthlyPlanLimit),
+          topUpLimit: Number(editTopUpLimit),
         }),
       });
       const data = (await res.json()) as { key?: KeyRecord; error?: string };
@@ -1017,7 +1021,8 @@ export default function AdminClient() {
                   Edit client
                 </p>
                 <p className="mt-1 text-sm text-zinc-400">
-                  Update client name, contact email, try-on limit, and (optionally) replace the Fashn.ai API key.
+                  Update client name, contact email, monthly plan and top-up caps (usage counters are unchanged),
+                  and optionally replace the Fashn.ai API key.
                 </p>
               </div>
               <button
@@ -1064,13 +1069,26 @@ export default function AdminClient() {
                 </p>
               </div>
               <div>
-                <label className="block text-sm font-medium text-zinc-200">Try-on limit</label>
+                <label className="block text-sm font-medium text-zinc-200">Monthly plan try-on limit</label>
                 <input
-                  value={editUsageLimit}
-                  onChange={(e) => setEditUsageLimit(e.target.value)}
+                  value={editMonthlyPlanLimit}
+                  onChange={(e) => setEditMonthlyPlanLimit(e.target.value)}
                   inputMode="numeric"
                   className="mt-3 block w-full rounded-xl border border-zinc-700 bg-zinc-950 px-4 py-3 text-sm text-zinc-100 outline-none transition focus:border-accent/60"
                 />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-zinc-200">Top-up try-on limit</label>
+                <input
+                  value={editTopUpLimit}
+                  onChange={(e) => setEditTopUpLimit(e.target.value)}
+                  inputMode="numeric"
+                  className="mt-3 block w-full rounded-xl border border-zinc-700 bg-zinc-950 px-4 py-3 text-sm text-zinc-100 outline-none transition focus:border-accent/60"
+                />
+                <p className="mt-2 text-xs text-zinc-500">
+                  Purchased add-on capacity this billing cycle. Total cap = monthly plan + top-up. Try-ons already
+                  used in each bucket stay as-is.
+                </p>
               </div>
             </div>
 
@@ -1090,7 +1108,10 @@ export default function AdminClient() {
                   savingEdit ||
                   editClientName.trim().length === 0 ||
                   !isValidContactEmail(editContactEmail) ||
-                  Number(editUsageLimit) <= 0
+                  Number(editMonthlyPlanLimit) < 1 ||
+                  Number(editTopUpLimit) < 0 ||
+                  !Number.isFinite(Number(editMonthlyPlanLimit)) ||
+                  !Number.isFinite(Number(editTopUpLimit))
                 }
                 className="btn-accent-gradient flex-1 disabled:cursor-not-allowed disabled:opacity-60"
               >
@@ -1395,7 +1416,7 @@ export default function AdminClient() {
                       <div>API Key</div>
                       <div title="Key record created (UTC)">Created</div>
                       <div title="Next scheduled monthly usage reset (UTC)">Next Reset</div>
-                      <div title="Subscription plan vs purchased top-up usage">Plan / top-up</div>
+                      <div title="Subscription plan vs purchased top-up usage">Plan / Top Up</div>
                       <div>Status</div>
                       <div className="text-center">EDIT</div>
                       <div className="text-center">COPY</div>
@@ -1412,7 +1433,7 @@ export default function AdminClient() {
                       const totalUsed = totalTryOnsUsed(k);
                       const pct =
                         k.usageLimit > 0 ? Math.min(100, Math.round((totalUsed / k.usageLimit) * 100)) : 0;
-                      const blocked = k.usageLimit > 0 && totalUsed >= k.usageLimit;
+                      const blocked = k.usageLimit > 0 && clientTryOnFullyBlocked(k);
                       const historyOpen = expandedHistoryClientId === k.id;
                       const bh = billingHistoryByClient[k.id];
 
@@ -1475,7 +1496,9 @@ export default function AdminClient() {
                                   Plan: {planUsed}/{planCap}
                                 </span>
                                 {topLim > 0 ? (
-                                  <span className="tabular-nums text-zinc-400">Top up: {topUsed}/{topLim}</span>
+                                  <span className="tabular-nums text-zinc-400">
+                                    Top Up: {topUsed}/{topLim}
+                                  </span>
                                 ) : null}
                               </span>
                               <span className="text-sm font-semibold text-zinc-500">{pct}%</span>

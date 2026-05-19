@@ -629,7 +629,10 @@ export async function updateClientKey(params: {
   id: string;
   clientName: string;
   contactEmail?: string;
-  usageLimit: number;
+  /** Subscription (monthly plan) try-on cap. */
+  monthlyPlanLimit: number;
+  /** Purchased top-up capacity this cycle; usage counts are unchanged. */
+  topUpLimit: number;
   fashnApiKey?: string;
 }) {
   const redis = getRedis();
@@ -638,28 +641,40 @@ export async function updateClientKey(params: {
 
   const clientName = params.clientName.trim();
   if (!clientName) throw new Error("Client name is required.");
-  if (!Number.isFinite(params.usageLimit) || params.usageLimit <= 0) {
-    throw new Error("Try-on limit must be a positive number.");
-  }
 
   const bundle = await getRecordForMutation(id);
   if (!bundle) throw new Error("Client key not found.");
   const { rec, redisKey } = bundle;
 
-  const limit = Math.floor(params.usageLimit);
-  const topLim = Math.floor(rec.topUpLimit ?? 0);
-  if (limit < topLim + 1) {
+  const planLim = Math.floor(params.monthlyPlanLimit);
+  const topLim = Math.floor(params.topUpLimit);
+
+  if (!Number.isFinite(planLim) || planLim < 1) {
+    throw new Error("Monthly plan try-on limit must be at least 1.");
+  }
+  if (!Number.isFinite(topLim) || topLim < 0 || !Number.isInteger(topLim)) {
+    throw new Error("Top-up limit must be zero or a positive whole number.");
+  }
+
+  const subUsed = Math.floor(rec.usageCount);
+  const topUsed = Math.floor(rec.topUpUsageCount ?? 0);
+  if (planLim < subUsed) {
     throw new Error(
-      `Try-on limit must be at least ${topLim + 1} (${topLim} purchased top-up try-ons plus at least one plan try-on).`,
+      `Monthly plan limit cannot be less than subscription try-ons already used (${subUsed}).`,
     );
   }
-  const basePlanLimit = limit - topLim;
+  if (topLim < topUsed) {
+    throw new Error(`Top-up limit cannot be less than top-ups already used (${topUsed}).`);
+  }
+
+  const usageLimit = planLim + topLim;
 
   const next: ClientApiKeyRecord = {
     ...rec,
     clientName,
-    usageLimit: limit,
-    basePlanLimit,
+    basePlanLimit: planLim,
+    topUpLimit: topLim,
+    usageLimit,
     ...(params.fashnApiKey && params.fashnApiKey.trim()
       ? { fashnApiKey: params.fashnApiKey.trim() }
       : null),

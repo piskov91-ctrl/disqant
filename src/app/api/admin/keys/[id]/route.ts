@@ -12,7 +12,8 @@ async function requireAdmin() {
 type PatchBody = {
   clientName?: unknown;
   contactEmail?: unknown;
-  usageLimit?: unknown;
+  monthlyPlanLimit?: unknown;
+  topUpLimit?: unknown;
   fashnApiKey?: unknown;
 };
 
@@ -28,17 +29,25 @@ export async function PATCH(req: Request, ctx: { params: Promise<{ id: string }>
   }
 
   const clientName = typeof body.clientName === "string" ? body.clientName : "";
-  const usageLimitNum =
-    typeof body.usageLimit === "number"
-      ? body.usageLimit
-      : typeof body.usageLimit === "string"
-        ? Number(body.usageLimit)
+
+  const monthlyPlanLimitNum =
+    typeof body.monthlyPlanLimit === "number"
+      ? body.monthlyPlanLimit
+      : typeof body.monthlyPlanLimit === "string"
+        ? Number(body.monthlyPlanLimit)
+        : NaN;
+  const topUpLimitNum =
+    typeof body.topUpLimit === "number"
+      ? body.topUpLimit
+      : typeof body.topUpLimit === "string"
+        ? Number(body.topUpLimit)
         : NaN;
 
   const patch: Parameters<typeof updateClientKey>[0] = {
     id,
     clientName,
-    usageLimit: usageLimitNum,
+    monthlyPlanLimit: monthlyPlanLimitNum,
+    topUpLimit: Number.isFinite(topUpLimitNum) ? Math.floor(topUpLimitNum) : NaN,
   };
   if (typeof body.fashnApiKey === "string" && body.fashnApiKey.trim()) {
     patch.fashnApiKey = body.fashnApiKey.trim();

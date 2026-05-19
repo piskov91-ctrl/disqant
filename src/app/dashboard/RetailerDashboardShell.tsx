@@ -425,11 +425,11 @@ function RetailerDashboardShellInner({
                   <div className="flex flex-wrap items-center justify-between gap-2 text-sm font-medium text-zinc-300">
                     <div className="flex flex-col gap-1">
                       <span className="tabular-nums">
-                        Plan: {planUsed.toLocaleString()} / {planLimit.toLocaleString()}
+                        Monthly plan: {planUsed.toLocaleString()} / {planLimit.toLocaleString()}
                       </span>
                       {topUpLimit > 0 ? (
                         <span className="tabular-nums text-zinc-400">
-                          Top up: {topUpUsed.toLocaleString()} / {topUpLimit.toLocaleString()}
+                          Top Up: {topUpUsed.toLocaleString()} / {topUpLimit.toLocaleString()}
                         </span>
                       ) : null}
                     </div>
