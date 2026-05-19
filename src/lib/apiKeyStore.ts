@@ -647,13 +647,19 @@ export async function updateClientKey(params: {
   const { rec, redisKey } = bundle;
 
   const limit = Math.floor(params.usageLimit);
+  const topLim = Math.floor(rec.topUpLimit ?? 0);
+  if (limit < topLim + 1) {
+    throw new Error(
+      `Try-on limit must be at least ${topLim + 1} (${topLim} purchased top-up try-ons plus at least one plan try-on).`,
+    );
+  }
+  const basePlanLimit = limit - topLim;
+
   const next: ClientApiKeyRecord = {
     ...rec,
     clientName,
     usageLimit: limit,
-    basePlanLimit: limit,
-    topUpLimit: 0,
-    topUpUsageCount: 0,
+    basePlanLimit,
     ...(params.fashnApiKey && params.fashnApiKey.trim()
       ? { fashnApiKey: params.fashnApiKey.trim() }
       : null),
