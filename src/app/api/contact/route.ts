@@ -1,5 +1,6 @@
 import { Resend } from "resend";
 import { incrementOutboundEmailSentCounters } from "@/lib/fitRoomEmailSentCounters";
+import { recordContactInquiry } from "@/lib/contactInquiriesStore";
 
 const TO_EMAIL = (process.env.CONTACT_TO ?? "support@fit-room.com").trim();
 
@@ -145,6 +146,20 @@ export async function POST(req: Request) {
   void incrementOutboundEmailSentCounters().catch((redisErr: unknown) => {
     console.error("[fit-room][contact-form] incrementOutboundEmailSentCounters failed after successful send", {
       message: redisErr instanceof Error ? redisErr.message : String(redisErr),
+    });
+  });
+
+  void recordContactInquiry({
+    name,
+    email,
+    company,
+    websiteDisplay: websiteLine,
+    monthlyVisitors,
+    monthlyVisitorsLabel: visitorsLabel,
+    message,
+  }).catch((storeErr: unknown) => {
+    console.error("[fit-room][contact-form] recordContactInquiry failed after successful send", {
+      message: storeErr instanceof Error ? storeErr.message : String(storeErr),
     });
   });
 

@@ -118,7 +118,7 @@ type AnalyticsSummary = {
   demoVisitors: DemoVisitorAnalyticsRow[];
 };
 
-type AdminTab = "clients" | "topUps" | "analytics" | "wearMe" | "recovery";
+type AdminTab = "clients" | "contact" | "topUps" | "analytics" | "wearMe" | "recovery";
 
 type AdminFashnCredits = {
   total: number | null;
@@ -141,6 +141,20 @@ type RecoveryAccountRow = {
   remainingTryOns: number | null;
   usageLimit: number | null;
   usageCount: number | null;
+};
+
+/** Mirrors `/api/admin/contact-inquiries` inquiry objects (no server-only imports). */
+type ContactInquiryRow = {
+  id: string;
+  createdAt: string;
+  read: boolean;
+  name: string;
+  email: string;
+  company: string;
+  websiteDisplay: string;
+  monthlyVisitors: string;
+  monthlyVisitorsLabel: string;
+  message: string;
 };
 
 const CREDIT_PLANS = [
@@ -304,6 +318,12 @@ export default function AdminClient() {
   const [topUpsPurchases, setTopUpsPurchases] = useState<AdminTopUpPurchaseRow[]>([]);
   const [topUpsLoading, setTopUpsLoading] = useState(false);
   const [topUpsError, setTopUpsError] = useState<string | null>(null);
+
+  const [contactInquiriesUnread, setContactInquiriesUnread] = useState(0);
+  const [contactInquiries, setContactInquiries] = useState<ContactInquiryRow[]>([]);
+  const [contactInquiriesLoading, setContactInquiriesLoading] = useState(false);
+  const [contactInquiriesError, setContactInquiriesError] = useState<string | null>(null);
+  const [contactMarkingReadId, setContactMarkingReadId] = useState<string | null>(null);
 
   type QuotaEmailPreviewPayload = {
     subject: string;
@@ -499,6 +519,81 @@ export default function AdminClient() {
     }
   }
 
+  async function loadContactInquiriesBadge() {
+    try {
+      const res = await fetch("/api/admin/contact-inquiries?badge=1");
+      const data = (await res.json()) as { unreadCount?: number; error?: string };
+      if (!res.ok) {
+        if (data.error === "Unauthorized.") window.location.reload();
+        setContactInquiriesUnread(0);
+        return;
+      }
+      const u =
+        typeof data.unreadCount === "number" && Number.isFinite(data.unreadCount)
+          ? Math.max(0, Math.floor(data.unreadCount))
+          : 0;
+      setContactInquiriesUnread(u);
+    } catch {
+      setContactInquiriesUnread(0);
+    }
+  }
+
+  async function loadContactInquiries() {
+    setContactInquiriesLoading(true);
+    setContactInquiriesError(null);
+    try {
+      const res = await fetch("/api/admin/contact-inquiries");
+      const data = (await res.json()) as {
+        unreadCount?: number;
+        inquiries?: ContactInquiryRow[];
+        error?: string;
+      };
+      if (!res.ok) {
+        if (data.error === "Unauthorized.") window.location.reload();
+        setContactInquiriesError(data.error || "Failed to load contact inquiries.");
+        setContactInquiries([]);
+        return;
+      }
+      const u =
+        typeof data.unreadCount === "number" && Number.isFinite(data.unreadCount)
+          ? Math.max(0, Math.floor(data.unreadCount))
+          : 0;
+      setContactInquiriesUnread(u);
+      setContactInquiries(Array.isArray(data.inquiries) ? data.inquiries : []);
+    } catch (e) {
+      setContactInquiriesError(e instanceof Error ? e.message : "Failed to load contact inquiries.");
+      setContactInquiries([]);
+    } finally {
+      setContactInquiriesLoading(false);
+    }
+  }
+
+  async function markContactInquiryReadAction(id: string) {
+    setContactMarkingReadId(id);
+    setContactInquiriesError(null);
+    try {
+      const res = await fetch("/api/admin/contact-inquiries", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id }),
+      });
+      const data = (await res.json()) as { ok?: boolean; unreadCount?: number; error?: string };
+      if (!res.ok) {
+        if (data.error === "Unauthorized.") window.location.reload();
+        setContactInquiriesError(data.error || "Could not mark as read.");
+        return;
+      }
+      if (typeof data.unreadCount === "number" && Number.isFinite(data.unreadCount)) {
+        setContactInquiriesUnread(Math.max(0, Math.floor(data.unreadCount)));
+      }
+      setContactInquiries((prev) => prev.map((row) => (row.id === id ? { ...row, read: true } : row)));
+    } catch (e) {
+      setContactInquiriesError(e instanceof Error ? e.message : "Could not mark as read.");
+    } finally {
+      setContactMarkingReadId(null);
+    }
+  }
+
   async function loadRecovery() {
     setRecoveryLoading(true);
     setRecoveryError(null);
@@ -579,6 +674,7 @@ export default function AdminClient() {
     void load();
     void loadFashnCredits();
     void loadEmailSentStats();
+    void loadContactInquiriesBadge();
   }, []);
 
   useEffect(() => {
@@ -593,6 +689,7 @@ export default function AdminClient() {
     if (activeTab === "analytics") void loadAnalytics();
     if (activeTab === "recovery") void loadRecovery();
     if (activeTab === "topUps") void loadTopUps();
+    if (activeTab === "contact") void loadContactInquiries();
   }, [activeTab]);
 
   useEffect(() => {
@@ -798,9 +895,11 @@ export default function AdminClient() {
   function refreshCurrentTab() {
     void loadFashnCredits();
     void loadEmailSentStats();
+    void loadContactInquiriesBadge();
     if (activeTab === "clients" || activeTab === "wearMe") void load();
     else if (activeTab === "analytics") void loadAnalytics();
     else if (activeTab === "topUps") void loadTopUps();
+    else if (activeTab === "contact") void loadContactInquiries();
     else void loadRecovery();
   }
 
@@ -813,7 +912,9 @@ export default function AdminClient() {
           ? recoveryLoading
           : activeTab === "topUps"
             ? topUpsLoading
-            : false;
+            : activeTab === "contact"
+              ? contactInquiriesLoading
+              : false;
 
   const wearMeKeyRecord = useMemo(
     () => keys.find((k) => k.id === wearMeKeyId) ?? null,
@@ -1384,6 +1485,34 @@ export default function AdminClient() {
             <button
               type="button"
               role="tab"
+              aria-selected={activeTab === "contact"}
+              aria-label={
+                contactInquiriesUnread > 0
+                  ? `Contact submissions, ${contactInquiriesUnread} unread`
+                  : "Contact submissions"
+              }
+              onClick={() => setActiveTab("contact")}
+              className={`rounded-full px-5 py-2 text-sm font-semibold transition ${
+                activeTab === "contact"
+                  ? "bg-zinc-800 text-zinc-100 shadow-sm"
+                  : "text-zinc-500 hover:text-zinc-300"
+              }`}
+            >
+              <span className="inline-flex items-center justify-center gap-2">
+                Contact
+                {contactInquiriesUnread > 0 ? (
+                  <span
+                    className="inline-flex min-h-[1.125rem] min-w-[1.125rem] items-center justify-center rounded-full bg-red-600 px-1.5 text-[10px] font-bold leading-none text-white tabular-nums"
+                    aria-hidden
+                  >
+                    {contactInquiriesUnread > 99 ? "99+" : contactInquiriesUnread}
+                  </span>
+                ) : null}
+              </span>
+            </button>
+            <button
+              type="button"
+              role="tab"
               aria-selected={activeTab === "topUps"}
               onClick={() => setActiveTab("topUps")}
               className={`rounded-full px-5 py-2 text-sm font-semibold transition ${
@@ -1850,6 +1979,116 @@ export default function AdminClient() {
                 </div>
               </section>
             </>
+          ) : activeTab === "contact" ? (
+            <section className="mt-8 w-full overflow-hidden rounded-2xl border border-zinc-800 bg-zinc-900/60 p-6 shadow-sm md:p-8">
+              <h2 className="text-base font-semibold text-zinc-100">Contact form submissions</h2>
+              <p className="mt-1 text-sm text-zinc-400">
+                Stored when each public contact form send succeeds (Redis). Mark entries read after you&apos;ve handled
+                them; the red badge shows unread count across all admin tabs.
+              </p>
+              {contactInquiriesError ? (
+                <div className="mt-6 rounded-xl border border-red-900/60 bg-red-950/40 px-4 py-3 text-sm text-red-200">
+                  {contactInquiriesError}
+                </div>
+              ) : null}
+              {contactInquiriesLoading ? (
+                <div className="mt-8 text-sm text-zinc-500">Loading submissions…</div>
+              ) : contactInquiries.length === 0 ? (
+                <div className="mt-8 text-sm text-zinc-500">No submissions yet.</div>
+              ) : (
+                <ul className="mt-6 space-y-4">
+                  {contactInquiries.map((inq) => {
+                    const when = Number.isFinite(Date.parse(inq.createdAt))
+                      ? new Date(inq.createdAt).toLocaleString("en-GB", {
+                          timeZone: "UTC",
+                          day: "numeric",
+                          month: "short",
+                          year: "numeric",
+                          hour: "2-digit",
+                          minute: "2-digit",
+                        })
+                      : "—";
+                    const busy = contactMarkingReadId === inq.id;
+                    return (
+                      <li
+                        key={inq.id}
+                        className={`rounded-xl border px-4 py-4 md:px-5 ${
+                          inq.read
+                            ? "border-zinc-800 bg-zinc-950/40"
+                            : "border-red-500/40 bg-red-950/20"
+                        }`}
+                      >
+                        <div className="flex flex-wrap items-start justify-between gap-3">
+                          <div className="min-w-0">
+                            <div className="flex flex-wrap items-center gap-2">
+                              <span className="font-semibold text-zinc-100">{inq.name}</span>
+                              {!inq.read ? (
+                                <span className="rounded-full bg-red-600 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-white">
+                                  Unread
+                                </span>
+                              ) : null}
+                            </div>
+                            <p className="mt-1 text-xs text-zinc-500">{when} UTC</p>
+                          </div>
+                          {!inq.read ? (
+                            <button
+                              type="button"
+                              disabled={busy}
+                              onClick={() => void markContactInquiryReadAction(inq.id)}
+                              className="inline-flex h-9 shrink-0 items-center justify-center rounded-full border border-zinc-600 bg-zinc-800 px-4 text-xs font-semibold text-zinc-100 transition hover:border-zinc-500 hover:bg-zinc-700 disabled:cursor-not-allowed disabled:opacity-50"
+                            >
+                              {busy ? "…" : "Mark as read"}
+                            </button>
+                          ) : (
+                            <span className="text-xs font-medium text-zinc-500">Read</span>
+                          )}
+                        </div>
+                        <div className="mt-3 grid gap-2 text-sm text-zinc-300 md:grid-cols-2">
+                          <div>
+                            <span className="text-zinc-500">Email </span>
+                            <a
+                              href={`mailto:${inq.email}`}
+                              className="text-sky-400 underline-offset-2 hover:underline"
+                            >
+                              {inq.email}
+                            </a>
+                          </div>
+                          <div>
+                            <span className="text-zinc-500">Store </span>
+                            {inq.company}
+                          </div>
+                          <div className="md:col-span-2">
+                            <span className="text-zinc-500">Website </span>
+                            {inq.websiteDisplay === "—" ? (
+                              "—"
+                            ) : (
+                              <a
+                                href={inq.websiteDisplay}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="break-all text-sky-400 underline-offset-2 hover:underline"
+                              >
+                                {inq.websiteDisplay}
+                              </a>
+                            )}
+                          </div>
+                          <div className="md:col-span-2">
+                            <span className="text-zinc-500">Visitors </span>
+                            {inq.monthlyVisitorsLabel}
+                          </div>
+                        </div>
+                        <p className="mt-3 whitespace-pre-wrap text-sm leading-relaxed text-zinc-200">{inq.message}</p>
+                      </li>
+                    );
+                  })}
+                </ul>
+              )}
+              <p className="mt-6 text-xs text-zinc-600">
+                Redis keys: <span className="font-mono text-zinc-400">fit-room:contactInquiry:*</span>,{" "}
+                <span className="font-mono text-zinc-400">fit-room:contactInquiries:index</span>,{" "}
+                <span className="font-mono text-zinc-400">fit-room:contactInquiries:unreadCount</span>
+              </p>
+            </section>
           ) : activeTab === "topUps" ? (
             <section className="mt-8 w-full overflow-hidden rounded-2xl border border-zinc-800 bg-zinc-900/60 p-6 shadow-sm md:p-8">
               <h2 className="text-base font-semibold text-zinc-100">Top-up purchases</h2>
