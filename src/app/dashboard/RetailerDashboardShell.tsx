@@ -170,8 +170,7 @@ function RetailerDashboardShellInner({
   /** Tab switches stay on this page: update React state + URL via history API only (no App Router navigation). */
   const selectTab = useCallback((next: DashboardTab) => {
     setTab(next);
-    const url = `/dashboard?${searchParamsStringForTab(next)}`;
-    window.history.replaceState(window.history.state, "", url);
+    window.history.replaceState(null, "", "/dashboard?" + searchParamsStringForTab(next));
   }, []);
 
   const [planUsed, setPlanUsed] = useState(initialPlanUsed);
