@@ -1,120 +1,138 @@
 "use client";
 
+import type { LucideIcon } from "lucide-react";
 import type { ReactNode } from "react";
-import { ChevronDown } from "lucide-react";
+import { ChevronDown, Code, CreditCard, LineChart, Rocket } from "lucide-react";
 import Link from "next/link";
 import { useId, useState } from "react";
 
-const FAQ_ITEMS: readonly { question: string; answer: ReactNode }[] = [
+type FaqEntry = { question: string; answer: ReactNode };
+
+type FaqCategory = {
+  id: string;
+  title: string;
+  icon: LucideIcon;
+  items: readonly FaqEntry[];
+};
+
+const FAQ_CATEGORIES: readonly FaqCategory[] = [
   {
-    question: "How does Wear Me work?",
-    answer:
-      "Your shoppers tap the Wear Me button on a product page, take a quick photo or upload one from their phone, and in about 20-30 seconds they see themselves wearing the item. No app to download, no account needed.",
+    id: "getting-started",
+    title: "Getting Started",
+    icon: Rocket,
+    items: [
+      {
+        question: "How does Wear Me work?",
+        answer:
+          "Your shoppers tap the Wear Me button on a product page, take a quick photo or upload one from their phone, and in about 20-30 seconds they see themselves wearing the item. No app to download, no account needed.",
+      },
+      {
+        question: "Do shoppers need an account, how fast is setup, and can I try it first?",
+        answer: (
+          <>
+            Customers don&apos;t create an account—they take a photo and get their result. Most stores are live in under ten minutes: paste one line of code, save, and you&apos;re done. Want to feel it yourself first? Visit our{" "}
+            <Link
+              href="/demo"
+              className="font-semibold text-[#d4bc94] underline decoration-[#c6a77d]/50 underline-offset-2 hover:text-[#e8dcc8] hover:decoration-[#c6a77d]"
+            >
+              demo page
+            </Link>{" "}
+            anytime—no signup required.
+          </>
+        ),
+      },
+      {
+        question: "Will my customers actually use it?",
+        answer:
+          "Yes—especially on mobile. Shoppers already expect to “try things on”; Wear Me brings that online. The button shows when it helps and stays out of the way when it doesn’t.",
+      },
+    ],
   },
   {
-    question: "How do I add it to my store?",
-    answer:
-      "We give you one line of code. You paste it into your website once and the button appears on every product page automatically.",
+    id: "technical",
+    title: "Technical",
+    icon: Code,
+    items: [
+      {
+        question: "How do I add it to my store?",
+        answer:
+          "We give you one line of code. You paste it into your website once and the button appears on every product page automatically.",
+      },
+      {
+        question: "Does it work on mobile?",
+        answer:
+          "Yes. Shoppers can use their phone camera or upload a photo from their gallery. It works on any modern phone or tablet.",
+      },
+      {
+        question: "Is my customer data safe?",
+        answer:
+          "Photos are processed to generate the result and are not stored on our servers. We don't build profiles on your customers or share their data with anyone.",
+      },
+    ],
   },
   {
-    question: "Do my customers need to create an account?",
-    answer: "No. They just take a photo and get their result. That is it.",
+    id: "for-your-business",
+    title: "For Your Business",
+    icon: LineChart,
+    items: [
+      {
+        question: "Is Wear Me worth it—and will it lift sales?",
+        answer:
+          "If even a modest share of shoppers uses it and buys something they otherwise wouldn’t, it tends to pay for itself—especially alongside fewer returns and abandoned carts. Seeing the item on themselves builds confidence before checkout, which is where conversion usually moves.",
+      },
+      {
+        question: "What kinds of stores use Wear Me, including smaller shops?",
+        answer:
+          "Any store selling apparel, footwear, accessories—anything worn—gets value when shoppers aren’t sure how it’ll look on them. Small teams benefit too: one line of code, no dedicated developer required, and each incremental sale often matters more.",
+      },
+      {
+        question: "How does this cut returns compared to great product photos?",
+        answer:
+          "Great photos show the product on a model; Wear Me shows it on your customer. Many returns come from “looked different on me than on the site.” Letting people preview on themselves removes that surprise—they know what they’re ordering.",
+      },
+    ],
   },
   {
-    question: "What happens when I use all my try-ons?",
-    answer:
-      "You will get an email heads-up before you run out. When the limit is reached the button stops showing until your plan renews or you top up.",
-  },
-  {
-    question: "Can I try it before I buy?",
-    answer: (
-      <>
-        Yes — head to our{" "}
-        <Link
-          href="/demo"
-          className="font-semibold text-[#d4bc94] underline decoration-[#c6a77d]/50 underline-offset-2 hover:text-[#e8dcc8] hover:decoration-[#c6a77d]"
-        >
-          demo page
-        </Link>{" "}
-        and try it yourself right now. No signup needed.
-      </>
-    ),
-  },
-  {
-    question: "Is it worth it for my store?",
-    answer:
-      "If even one in ten shoppers uses it and buys something they otherwise wouldn't have, it pays for itself. Most stores see fewer returns too, which saves money on its own.",
-  },
-  {
-    question: "What kind of stores use this?",
-    answer:
-      "Any store that sells clothing, shoes, accessories or anything people wear. It works best when shoppers aren't sure how something will look on them.",
-  },
-  {
-    question: "How long does the setup take?",
-    answer:
-      "Most stores are up and running in under ten minutes. You paste one line of code, save, and it just works.",
-  },
-  {
-    question: "Does it work on mobile?",
-    answer:
-      "Yes. Shoppers can use their phone camera or upload a photo from their gallery. It works on any modern phone or tablet.",
-  },
-  {
-    question: "What if my customers don't like their result?",
-    answer:
-      "They can take another photo or try a different item. There's no limit on how many times they can try - only on how many results your plan generates.",
-  },
-  {
-    question: "Is my customer data safe?",
-    answer:
-      "Photos are processed to generate the result and are not stored on our servers. We don't build profiles on your customers or share their data with anyone.",
-  },
-  {
-    question: "What if I need more try-ons mid-month?",
-    answer:
-      "You can top up anytime from your dashboard without changing your plan. Extra try-ons are available instantly after payment.",
-  },
-  {
-    question: "Can I cancel anytime?",
-    answer:
-      "Yes. There are no long contracts. You can cancel your plan whenever you like from your account settings.",
-  },
-  {
-    question: "Will it actually increase my sales?",
-    answer:
-      "When shoppers can see how something looks on them before buying, they're more confident. More confidence means more purchases and fewer abandoned carts. Stores using virtual try-on typically see higher conversion rates and fewer returns - both of which go straight to your bottom line.",
-  },
-  {
-    question: "How does it reduce returns?",
-    answer:
-      "Most returns happen because the item looked different on the model than on the buyer. When your customer tries it on themselves before buying, that surprise is gone. They know exactly what they're getting.",
-  },
-  {
-    question: "Will my customers actually use it?",
-    answer:
-      "Yes - especially on mobile. Shoppers are used to trying things on. This just brings that experience online. The button is there when they need it and invisible when they don't.",
-  },
-  {
-    question: "What makes this different from just having good product photos?",
-    answer:
-      "Good photos show the item. Wear Me shows the item on your customer. That's the difference between seeing a dress on a model and seeing it on yourself. One builds confidence, the other just builds awareness.",
-  },
-  {
-    question: "I'm a small store - is this for me too?",
-    answer:
-      "Absolutely. You don't need a big team or a developer on call. One line of code and it's done. Small stores often see the biggest impact because every sale matters more.",
+    id: "pricing-plans",
+    title: "Pricing & Plans",
+    icon: CreditCard,
+    items: [
+      {
+        question: "What happens when I hit my try-on limit—or a shopper wants another shot?",
+        answer:
+          "We email you before you run out; once the limit is reached the button hides until renewal or a top-up. Shoppers can retry with a new photo or another product—there’s no cap on attempts from their side, only on generated results under your plan.",
+      },
+      {
+        question: "What if I need more try-ons mid-month?",
+        answer:
+          "Top up anytime from your dashboard without switching plans. Extra try-ons unlock immediately after payment.",
+      },
+      {
+        question: "Can I cancel anytime?",
+        answer:
+          "Yes. There are no long contracts—cancel whenever you like from your account settings.",
+      },
+    ],
   },
 ];
 
+function faqKey(categoryId: string, question: string) {
+  return `${categoryId}::${question}`;
+}
+
 export function ContactFaq() {
   const baseId = useId();
-  const [openIndex, setOpenIndex] = useState<number | null>(0);
+  const [openKey, setOpenKey] = useState<string | null>(null);
+
+  function toggle(categoryId: string, question: string) {
+    const k = faqKey(categoryId, question);
+    setOpenKey((prev) => (prev === k ? null : k));
+  }
 
   return (
     <section
       id="faq"
-      className="scroll-mt-[calc(var(--site-header-height)+1rem)] rounded-2xl border border-[#c6a77d]/35 bg-black/20 p-6 shadow-lg shadow-black/25 backdrop-blur-md md:p-8"
+      className="scroll-mt-[calc(var(--site-header-height)+1rem)] rounded-2xl border border-[#c6a77d]/35 bg-black/15 p-6 shadow-lg shadow-black/20 backdrop-blur-md md:p-8"
       aria-labelledby={`${baseId}-faq-heading`}
     >
       <h2 id={`${baseId}-faq-heading`} className="text-lg font-semibold tracking-tight text-zinc-50 md:text-xl">
@@ -124,41 +142,77 @@ export function ContactFaq() {
         Quick answers before you reach out — happy to go deeper on the form below.
       </p>
 
-      <div className="mt-6 divide-y divide-[#c6a77d]/20 rounded-xl border border-[#c6a77d]/25 bg-black/15 backdrop-blur-sm">
-        {FAQ_ITEMS.map((item, index) => {
-          const isOpen = openIndex === index;
-          const panelId = `${baseId}-faq-panel-${index}`;
-          const triggerId = `${baseId}-faq-trigger-${index}`;
+      <div className="mt-8 flex flex-col gap-6">
+        {FAQ_CATEGORIES.map((category) => {
+          const Icon = category.icon;
           return (
-            <div key={item.question} className="first:rounded-t-xl last:rounded-b-xl">
-              <button
-                id={triggerId}
-                type="button"
-                aria-expanded={isOpen}
-                aria-controls={panelId}
-                onClick={() => setOpenIndex(isOpen ? null : index)}
-                className="flex w-full items-start justify-between gap-4 px-4 py-4 text-left transition hover:bg-[#c6a77d]/[0.06] md:px-5 md:py-4"
-              >
-                <span className="text-sm font-semibold leading-snug text-zinc-100 md:text-[15px]">{item.question}</span>
-                <ChevronDown
-                  className={`mt-0.5 h-5 w-5 shrink-0 text-[#c6a77d] transition-transform duration-200 ${
-                    isOpen ? "rotate-180" : ""
-                  }`}
+            <section
+              key={category.id}
+              className="rounded-2xl border border-[#c6a77d]/40 bg-black/30 p-5 shadow-inner shadow-black/20 backdrop-blur-sm md:p-6"
+              aria-labelledby={`${baseId}-cat-${category.id}`}
+            >
+              <div className="flex items-start gap-3 md:gap-4">
+                <div
+                  className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-[#c6a77d]/35 bg-[#c6a77d]/[0.12] text-[#d4bc94] md:h-12 md:w-12"
                   aria-hidden
-                />
-              </button>
-              <div
-                id={panelId}
-                role="region"
-                aria-labelledby={triggerId}
-                hidden={!isOpen}
-                className={isOpen ? "border-t border-[#c6a77d]/15 px-4 pb-4 pt-1 md:px-5 md:pb-5" : undefined}
-              >
-                {isOpen ? (
-                  <div className="text-sm leading-relaxed text-zinc-400 md:text-[15px]">{item.answer}</div>
-                ) : null}
+                >
+                  <Icon className="h-5 w-5 md:h-[22px] md:w-[22px]" strokeWidth={2} />
+                </div>
+                <div className="min-w-0 flex-1">
+                  <h3
+                    id={`${baseId}-cat-${category.id}`}
+                    className="text-base font-semibold tracking-tight text-zinc-50 md:text-lg"
+                  >
+                    {category.title}
+                  </h3>
+                  <ul className="mt-4 divide-y divide-[#c6a77d]/18 rounded-xl border border-[#c6a77d]/22 bg-black/25">
+                    {category.items.map((item, itemIndex) => {
+                      const k = faqKey(category.id, item.question);
+                      const isOpen = openKey === k;
+                      const stableSuffix = `${category.id}-${itemIndex}`;
+                      const panelId = `${baseId}-panel-${stableSuffix}`;
+                      const triggerId = `${baseId}-trigger-${stableSuffix}`;
+
+                      return (
+                        <li key={item.question} className="first:rounded-t-[11px] last:rounded-b-[11px]">
+                          <button
+                            id={triggerId}
+                            type="button"
+                            aria-expanded={isOpen}
+                            aria-controls={panelId}
+                            onClick={() => toggle(category.id, item.question)}
+                            className="flex w-full items-start justify-between gap-3 px-4 py-3.5 text-left transition-colors hover:bg-[#c6a77d]/[0.07] md:px-4 md:py-4"
+                          >
+                            <span className="text-sm font-semibold leading-snug text-zinc-100 md:text-[15px]">
+                              {item.question}
+                            </span>
+                            <ChevronDown
+                              className={`mt-0.5 h-5 w-5 shrink-0 text-[#c6a77d] transition-transform duration-300 ease-out motion-reduce:transition-none ${
+                                isOpen ? "rotate-180" : ""
+                              }`}
+                              aria-hidden
+                            />
+                          </button>
+                          <div
+                            id={panelId}
+                            role="region"
+                            aria-labelledby={triggerId}
+                            className="grid transition-[grid-template-rows] duration-300 ease-out motion-reduce:transition-none"
+                            style={{ gridTemplateRows: isOpen ? "1fr" : "0fr" }}
+                          >
+                            <div className="min-h-0 overflow-hidden">
+                              <div className="border-t border-[#c6a77d]/18 px-4 pb-4 pt-2 text-sm leading-relaxed text-zinc-400 md:px-4 md:text-[15px]">
+                                {item.answer}
+                              </div>
+                            </div>
+                          </div>
+                        </li>
+                      );
+                    })}
+                  </ul>
+                </div>
               </div>
-            </div>
+            </section>
           );
         })}
       </div>
