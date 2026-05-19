@@ -58,66 +58,90 @@ export function buildDeveloperInstallEmail(params: {
   storeLabel: string;
 }): { subject: string; text: string; html: string } {
   const { snippet, dashboardUrl, storeLabel } = params;
-  const label = storeLabel.trim() || "your store";
+  const label = storeLabel.trim() || "This store";
 
   const sectionsText = DEVELOPER_INSTALL_SECTIONS.map(
     (sec) =>
-      `${sec.title.toUpperCase()}\n${sec.steps.map((s, i) => `${i + 1}. ${s}`).join("\n")}`,
+      `${sec.title}\n${sec.steps.map((s, i) => `${i + 1}. ${s}`).join("\n")}`,
   ).join("\n\n");
 
-  const text = `Hello,
+  const text = `Hi there,
 
-This message was sent from the Fit Room retailer dashboard for ${label}.
+${label} has invited you to install the Fit Room virtual try-on widget on their website. It takes less than five minutes and only requires pasting one line of code.
 
-WIDGET SNIPPET (paste once on the site; keep the full line intact):
+Here is the code:
 ${snippet}
 
-Install steps by platform (choose the one that matches the site):
+Full installation instructions are below.
 
 ${sectionsText}
 
-The store owner can also sign in to Fit Room and open Dashboard → Get Code for the live snippet and animation.
+The store owner can always sign in to Fit Room and open Dashboard → Get Code to see the live snippet: ${dashboardUrl}
 
-Dashboard link: ${dashboardUrl}
+If you have any questions, reply to this email and we will help straight away.
 
-If you did not expect this email, you can ignore it.
+Thanks,
+The Fit Room Team
 
-— Fit Room
 support@fit-room.com
 `;
 
   const sectionsHtml = DEVELOPER_INSTALL_SECTIONS.map(
     (sec) => `
-    <h2 style="margin:1.25em 0 0.5em;font-size:16px;color:#fafafa;">${escapeHtml(sec.title)}</h2>
-    <ol style="margin:0 0 0 1.25em;padding:0;color:#d4d4d8;line-height:1.5;">
-      ${sec.steps.map((s) => `<li style="margin-bottom:0.5em;">${escapeHtml(s)}</li>`).join("")}
+    <h2 style="margin:1.75em 0 0.6em;font-size:17px;font-weight:600;color:#1c1917;letter-spacing:-0.02em;">${escapeHtml(sec.title)}</h2>
+    <ol style="margin:0 0 0 1.25em;padding:0;color:#44403c;line-height:1.65;font-size:15px;">
+      ${sec.steps.map((s) => `<li style="margin-bottom:0.55em;">${escapeHtml(s)}</li>`).join("")}
     </ol>`,
   ).join("");
 
   const html = `<!DOCTYPE html>
 <html>
-<body style="font-family:system-ui,-apple-system,sans-serif;background:#09090b;color:#e4e4e7;padding:24px;line-height:1.5;">
-  <p style="color:#a1a1aa;">Hello,</p>
-  <p style="color:#e4e4e7;">This message was sent from the <strong>Fit Room</strong> retailer dashboard for <strong>${escapeHtml(label)}</strong>.</p>
-
-  <h2 style="margin:1.5em 0 0.5em;font-size:16px;color:#fafafa;">Widget snippet</h2>
-  <p style="color:#a1a1aa;font-size:14px;">Paste this once on the site (full line, unchanged):</p>
-  <pre style="background:#18181b;border:1px solid #27272a;border-radius:8px;padding:14px;overflow:auto;font-size:13px;color:#f4f4f5;white-space:pre-wrap;word-break:break-all;">${escapeHtml(snippet)}</pre>
-
-  <h2 style="margin:1.5em 0 0.5em;font-size:16px;color:#fafafa;">Install steps by platform</h2>
-  <p style="color:#a1a1aa;font-size:14px;">Pick the section that matches how the site is built.</p>
-  ${sectionsHtml}
-
-  <p style="margin-top:1.5em;color:#a1a1aa;font-size:14px;">The store owner can also sign in to Fit Room and open <strong>Dashboard → Get Code</strong> for the live snippet.</p>
-  <p style="margin-top:0.75em;"><a href="${escapeHtml(dashboardUrl)}" style="color:#c6a77d;">Open dashboard</a></p>
-
-  <p style="margin-top:1.5em;color:#71717a;font-size:13px;">If you did not expect this email, you can ignore it.</p>
-  <p style="color:#71717a;font-size:13px;">— Fit Room · <a href="mailto:support@fit-room.com" style="color:#a1a1aa;">support@fit-room.com</a></p>
+<body style="margin:0;font-family:Georgia,'Times New Roman',serif;background:#fafaf9;color:#292524;line-height:1.6;">
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#fafaf9;padding:32px 16px;">
+    <tr>
+      <td align="center">
+        <table role="presentation" width="100%" style="max-width:560px;background:#ffffff;border:1px solid #e7e5e4;border-radius:12px;box-shadow:0 4px 24px rgba(28,25,23,0.06);">
+          <tr>
+            <td style="padding:36px 40px 28px;">
+              <p style="margin:0 0 16px;font-size:16px;color:#292524;">Hi there,</p>
+              <p style="margin:0 0 16px;font-size:16px;color:#44403c;">
+                <strong style="color:#1c1917;">${escapeHtml(label)}</strong> has invited you to install the <strong style="color:#1c1917;">Fit Room</strong> virtual try-on widget on their website.
+                It takes less than five minutes and only requires pasting one line of code.
+              </p>
+              <p style="margin:0 0 8px;font-size:15px;font-weight:600;color:#1c1917;">Here is the code:</p>
+              <pre style="margin:0 0 20px;background:#f5f5f4;border:1px solid #e7e5e4;border-radius:8px;padding:14px 16px;overflow:auto;font-size:13px;font-family:ui-monospace,Courier,monospace;color:#1c1917;white-space:pre-wrap;word-break:break-all;line-height:1.5;">${escapeHtml(snippet)}</pre>
+              <p style="margin:0 0 8px;font-size:16px;color:#44403c;">Full installation instructions are below.</p>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding:0 40px 28px;border-top:1px solid #f5f5f4;">
+              <p style="margin:24px 0 4px;font-size:13px;font-weight:600;text-transform:uppercase;letter-spacing:0.06em;color:#78716c;">Installation by platform</p>
+              ${sectionsHtml}
+            </td>
+          </tr>
+          <tr>
+            <td style="padding:0 40px 32px;">
+              <p style="margin:0 0 12px;font-size:14px;color:#57534e;">
+                The store owner can also open their <a href="${escapeHtml(dashboardUrl)}" style="color:#a16207;text-decoration:underline;">Fit Room dashboard</a> (Get Code tab) for the live snippet anytime.
+              </p>
+              <p style="margin:0 0 20px;font-size:16px;color:#44403c;">
+                If you have any questions, <strong>reply to this email</strong> and we will help straight away.
+              </p>
+              <p style="margin:0;font-size:16px;color:#292524;">Thanks,<br /><strong>The Fit Room Team</strong></p>
+              <p style="margin:12px 0 0;font-size:14px;color:#78716c;">
+                <a href="mailto:support@fit-room.com" style="color:#a16207;">support@fit-room.com</a>
+              </p>
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+  </table>
 </body>
 </html>`;
 
   return {
-    subject: `Fit Room Wear Me — embed code & install steps (${label})`,
+    subject: "Your Fit Room widget is ready to install",
     text,
     html,
   };

@@ -365,10 +365,9 @@ export function RetailerDashboardShell({
               </p>
             </div>
 
-            <div className="rounded-xl border border-amber-500/30 bg-amber-950/25 px-4 py-3 text-sm leading-relaxed text-amber-100/95">
-              <strong className="font-semibold text-amber-200">Keep this code private</strong> — it is unique to your store.
-              Do not share it publicly or post it on social media. Only give it to your trusted web developer to install on
-              your website.
+            <div className="rounded-xl border border-red-500/50 bg-red-950/40 px-4 py-3 text-sm font-bold leading-relaxed text-red-100">
+              Keep this code private — it is unique to your store. Do not share it publicly or post it on social media.
+              Only give it to your trusted web developer to install on your website.
             </div>
 
             <div className="rounded-2xl border border-white/10 bg-zinc-900/50 p-1 shadow-lg shadow-black/20 backdrop-blur-sm">
