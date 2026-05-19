@@ -2,7 +2,7 @@
 
 import { Activity, Coins, Gauge, ImageOff } from "lucide-react";
 import Link from "next/link";
-import { useSearchParams } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useCallback, useEffect, useMemo, useState } from "react";
 import { TryOnTimingCharts } from "@/components/TryOnTimingCharts";
 import { LOCAL_OR_UNKNOWN_PRODUCT } from "@/lib/tryOnConstants";
@@ -20,13 +20,14 @@ function parseDashboardTab(searchParams: Pick<URLSearchParams, "get">): Dashboar
   const raw = searchParams.get("tab");
   if (raw === "get-code" || raw === "getCode") return "getCode";
   if (raw === "analytics") return "analytics";
+  if (raw === "overview") return "overview";
   return "overview";
 }
 
 function pathForDashboardTab(tab: DashboardTab): string {
   if (tab === "getCode") return "/dashboard?tab=get-code";
   if (tab === "analytics") return "/dashboard?tab=analytics";
-  return "/dashboard";
+  return "/dashboard?tab=overview";
 }
 
 function DashboardShellSuspenseFallback() {
@@ -145,6 +146,7 @@ function RetailerDashboardShellInner({
   initialTopUpUsed,
   initialTopUpLimit,
 }: RetailerDashboardShellProps) {
+  const router = useRouter();
   const searchParams = useSearchParams();
   const [tab, setTab] = useState<DashboardTab>(() => parseDashboardTab(searchParams));
 
@@ -162,11 +164,13 @@ function RetailerDashboardShellInner({
     return () => window.removeEventListener("popstate", onPopState);
   }, []);
 
-  const selectTab = useCallback((next: DashboardTab) => {
-    setTab(next);
-    const href = pathForDashboardTab(next);
-    window.history.replaceState(window.history.state, "", href);
-  }, []);
+  const selectTab = useCallback(
+    (next: DashboardTab) => {
+      setTab(next);
+      router.replace(pathForDashboardTab(next), { scroll: false });
+    },
+    [router],
+  );
 
   const [planUsed, setPlanUsed] = useState(initialPlanUsed);
   const [basePlanLimit, setBasePlanLimit] = useState(initialBasePlanLimit);
