@@ -86,6 +86,16 @@ export async function sendFitRoomPlainTextMail(params: { to: string; subject: st
       subject: params.subject,
       resendEmailId: data?.id,
     });
+    void import("@/lib/fitRoomEmailSentCounters")
+      .then((m) => m.incrementOutboundEmailSentCounters())
+      .catch((redisErr: unknown) => {
+        console.error("[fit-room][email-debug] incrementOutboundEmailSentCounters failed after successful send", {
+          channel: "sendFitRoomPlainTextMail",
+          to: params.to,
+          subject: params.subject,
+          message: redisErr instanceof Error ? redisErr.message : String(redisErr),
+        });
+      });
   } catch (err: unknown) {
     if (!loggedFailure) {
       logFitRoomMailSendFailure(
@@ -132,9 +142,10 @@ export async function sendFitRoomMail(params: { to: string; subject: string; tex
       resendEmailId: data?.id,
     });
     void import("@/lib/fitRoomEmailSentCounters")
-      .then((m) => m.incrementFitRoomEmailSentCounters())
+      .then((m) => m.incrementOutboundEmailSentCounters())
       .catch((redisErr: unknown) => {
-        console.error("[fit-room][email-debug] incrementFitRoomEmailSentCounters failed after successful send", {
+        console.error("[fit-room][email-debug] incrementOutboundEmailSentCounters failed after successful send", {
+          channel: "sendFitRoomMail",
           to: params.to,
           subject: params.subject,
           message: redisErr instanceof Error ? redisErr.message : String(redisErr),

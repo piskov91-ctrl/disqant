@@ -29,10 +29,10 @@ export function fitRoomEmailSentMonthKey(d = new Date()) {
 }
 
 /**
- * Increment Redis counters after a successful `sendFitRoomMail` send.
+ * Increment Redis counters after any successful outbound transactional/marketing email (Resend).
  * Swallows Redis errors so email delivery is never affected.
  */
-export async function incrementFitRoomEmailSentCounters(): Promise<void> {
+export async function incrementOutboundEmailSentCounters(): Promise<void> {
   const redis = getRedis();
   const dayKey = fitRoomEmailSentDayKey();
   const monthKey = fitRoomEmailSentMonthKey();
@@ -60,3 +60,6 @@ export async function getFitRoomEmailSentCounts(): Promise<{ emailsSentToday: nu
     emailsSentThisMonth: parseRedisCount(monthRaw),
   };
 }
+
+/** @deprecated Use `incrementOutboundEmailSentCounters` */
+export const incrementFitRoomEmailSentCounters = incrementOutboundEmailSentCounters;

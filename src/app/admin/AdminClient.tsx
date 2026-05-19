@@ -1281,8 +1281,8 @@ export default function AdminClient() {
                 ) : emailSentStats ? (
                   <>
                     <p className="mt-2 text-xs leading-relaxed text-zinc-500">
-                      Counts from Redis (incremented when multipart Fit Room mail sends succeed). UTC calendar day /
-                      month.
+                      Counts from Redis (incremented on each successful outbound email: contact form, welcome mail,
+                      quota notices, password reset, install instructions, etc.). UTC calendar day / month.
                     </p>
                     <p className="mt-2 text-sm tabular-nums text-zinc-200">
                       Emails sent today:{" "}

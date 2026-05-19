@@ -1,4 +1,5 @@
 import { Resend } from "resend";
+import { incrementOutboundEmailSentCounters } from "@/lib/fitRoomEmailSentCounters";
 
 const TO_EMAIL = (process.env.CONTACT_TO ?? "support@fit-room.com").trim();
 
@@ -140,6 +141,12 @@ export async function POST(req: Request) {
       { status: 502 },
     );
   }
+
+  void incrementOutboundEmailSentCounters().catch((redisErr: unknown) => {
+    console.error("[fit-room][contact-form] incrementOutboundEmailSentCounters failed after successful send", {
+      message: redisErr instanceof Error ? redisErr.message : String(redisErr),
+    });
+  });
 
   return Response.json({ ok: true, id: data?.id ?? null });
 }
