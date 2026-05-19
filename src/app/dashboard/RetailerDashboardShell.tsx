@@ -369,7 +369,10 @@ function RetailerDashboardShellInner({
             type="button"
             role="tab"
             aria-selected={tab === "overview"}
-            onClick={() => selectTab("overview")}
+            onClick={() => {
+              console.log("My Plan tab clicked");
+              selectTab("overview");
+            }}
             className={`${tabBase} ${tab === "overview" ? tabActive : tabInactive}`}
           >
             My Plan
