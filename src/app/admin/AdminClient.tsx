@@ -126,11 +126,9 @@ type AdminFashnCredits = {
   onDemand: number | null;
 };
 
-type AdminResendUsage = {
-  dailyUsed: number | null;
-  monthlyUsed: number | null;
-  dailyLimit: number;
-  monthlyLimit: number;
+type AdminResendConnection = {
+  apiKeyValid: boolean;
+  domainCount: number | null;
 };
 
 type RecoveryAccountRow = {
@@ -242,7 +240,7 @@ const ADMIN_QUICK_LINKS = [
   { label: "Hostinger Email", href: "https://hpanel.hostinger.com/emails" },
   { label: "Fashn.ai", href: "https://app.fashn.ai" },
   { label: "Upstash", href: "https://console.upstash.com" },
-  { label: "Resend", href: "https://resend.com/emails" },
+  { label: "Resend Metrics", href: "https://resend.com/metrics" },
 ] as const;
 
 export default function AdminClient() {
@@ -281,9 +279,9 @@ export default function AdminClient() {
   const [fashnCreditsLoading, setFashnCreditsLoading] = useState(false);
   const [fashnCreditsError, setFashnCreditsError] = useState<string | null>(null);
 
-  const [resendUsage, setResendUsage] = useState<AdminResendUsage | null>(null);
-  const [resendUsageLoading, setResendUsageLoading] = useState(false);
-  const [resendUsageError, setResendUsageError] = useState<string | null>(null);
+  const [resendConnection, setResendConnection] = useState<AdminResendConnection | null>(null);
+  const [resendConnectionLoading, setResendConnectionLoading] = useState(false);
+  const [resendConnectionError, setResendConnectionError] = useState<string | null>(null);
 
   type ClientBillingHistoryPayload = {
     subscriptionStartedAt: string;
@@ -472,55 +470,35 @@ export default function AdminClient() {
     }
   }
 
-  async function loadResendUsage() {
-    setResendUsageLoading(true);
-    setResendUsageError(null);
+  async function loadResendConnection() {
+    setResendConnectionLoading(true);
+    setResendConnectionError(null);
     try {
       const res = await fetch("/api/admin/resend-usage");
-      const data = (await res.json()) as Partial<AdminResendUsage> & { error?: string };
+      const data = (await res.json()) as Partial<AdminResendConnection> & { error?: string };
       if (!res.ok) {
         if (data.error === "Unauthorized.") window.location.reload();
-        setResendUsageError(data.error || "Failed to load Resend email usage.");
-        if (
-          typeof data.dailyLimit === "number" &&
-          typeof data.monthlyLimit === "number" &&
-          Number.isFinite(data.dailyLimit) &&
-          Number.isFinite(data.monthlyLimit)
-        ) {
-          setResendUsage({
-            dailyUsed: typeof data.dailyUsed === "number" && Number.isFinite(data.dailyUsed) ? data.dailyUsed : null,
-            monthlyUsed:
-              typeof data.monthlyUsed === "number" && Number.isFinite(data.monthlyUsed) ? data.monthlyUsed : null,
-            dailyLimit: data.dailyLimit,
-            monthlyLimit: data.monthlyLimit,
-          });
-        } else {
-          setResendUsage(null);
-        }
+        setResendConnection(null);
+        setResendConnectionError(data.error || "Could not verify Resend API key.");
         return;
       }
-      if (
-        typeof data.dailyLimit === "number" &&
-        typeof data.monthlyLimit === "number" &&
-        Number.isFinite(data.dailyLimit) &&
-        Number.isFinite(data.monthlyLimit)
-      ) {
-        setResendUsage({
-          dailyUsed: typeof data.dailyUsed === "number" && Number.isFinite(data.dailyUsed) ? data.dailyUsed : null,
-          monthlyUsed:
-            typeof data.monthlyUsed === "number" && Number.isFinite(data.monthlyUsed) ? data.monthlyUsed : null,
-          dailyLimit: data.dailyLimit,
-          monthlyLimit: data.monthlyLimit,
+      if (data.apiKeyValid === true) {
+        setResendConnection({
+          apiKeyValid: true,
+          domainCount:
+            typeof data.domainCount === "number" && Number.isFinite(data.domainCount)
+              ? Math.floor(data.domainCount)
+              : null,
         });
       } else {
-        setResendUsage(null);
-        setResendUsageError("Unexpected response from Resend usage API.");
+        setResendConnection(null);
+        setResendConnectionError(data.error || "Resend API key verification failed.");
       }
     } catch (e) {
-      setResendUsage(null);
-      setResendUsageError(e instanceof Error ? e.message : "Failed to load Resend email usage.");
+      setResendConnection(null);
+      setResendConnectionError(e instanceof Error ? e.message : "Could not verify Resend API key.");
     } finally {
-      setResendUsageLoading(false);
+      setResendConnectionLoading(false);
     }
   }
 
@@ -603,7 +581,7 @@ export default function AdminClient() {
   useEffect(() => {
     void load();
     void loadFashnCredits();
-    void loadResendUsage();
+    void loadResendConnection();
   }, []);
 
   useEffect(() => {
@@ -822,7 +800,7 @@ export default function AdminClient() {
 
   function refreshCurrentTab() {
     void loadFashnCredits();
-    void loadResendUsage();
+    void loadResendConnection();
     if (activeTab === "clients" || activeTab === "wearMe") void load();
     else if (activeTab === "analytics") void loadAnalytics();
     else if (activeTab === "topUps") void loadTopUps();
@@ -1290,41 +1268,42 @@ export default function AdminClient() {
                   <p className="mt-2 text-sm text-zinc-500">No balance data.</p>
                 )}
               </div>
-              <div className="rounded-xl border border-rose-500/35 bg-rose-950/20 px-4 py-3 shadow-sm sm:min-w-[240px]">
-                <p className="text-[10px] font-semibold uppercase tracking-wider text-rose-200/75">
-                  Resend email usage
-                </p>
-                {resendUsageLoading ? (
-                  <p className="mt-2 text-sm text-zinc-500">Loading usage…</p>
-                ) : resendUsageError && !resendUsage ? (
+              <div className="rounded-xl border border-rose-500/35 bg-rose-950/20 px-4 py-3 shadow-sm sm:min-w-[260px]">
+                <p className="text-[10px] font-semibold uppercase tracking-wider text-rose-200/75">Resend</p>
+                {resendConnectionLoading ? (
+                  <p className="mt-2 text-sm text-zinc-500">Checking API key…</p>
+                ) : resendConnectionError ? (
                   <p
                     className="mt-2 text-sm leading-snug text-amber-200/95"
-                    title={resendUsageError}
+                    title={resendConnectionError}
                   >
-                    {resendUsageError}
+                    {resendConnectionError}
                   </p>
-                ) : resendUsage ? (
+                ) : resendConnection?.apiKeyValid ? (
                   <>
-                    <p className="mt-2 text-sm leading-snug tabular-nums text-rose-50">
-                      Emails sent today:{" "}
-                      {resendUsage.dailyUsed != null
-                        ? `${resendUsage.dailyUsed}/${resendUsage.dailyLimit}`
-                        : `—/${resendUsage.dailyLimit}`}
+                    <p className="mt-2 text-sm font-medium text-emerald-200/95">
+                      API key OK — domains endpoint responded successfully.
                     </p>
-                    <p className="mt-2 text-sm leading-snug tabular-nums text-rose-50">
-                      Emails sent this month:{" "}
-                      {resendUsage.monthlyUsed != null
-                        ? `${resendUsage.monthlyUsed}/${resendUsage.monthlyLimit}`
-                        : `—/${resendUsage.monthlyLimit}`}
-                    </p>
-                    {resendUsageError ? (
-                      <p className="mt-2 text-xs leading-snug text-amber-200/90" title={resendUsageError}>
-                        {resendUsageError}
+                    {resendConnection.domainCount != null ? (
+                      <p className="mt-1 text-xs tabular-nums text-zinc-400">
+                        Domains listed: {resendConnection.domainCount}
                       </p>
                     ) : null}
+                    <p className="mt-3 text-xs leading-relaxed text-zinc-500">
+                      Sent email counts and quotas aren&apos;t available through this API. View usage and metrics in
+                      the Resend dashboard.
+                    </p>
+                    <a
+                      href="https://resend.com/metrics"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="mt-3 inline-flex h-9 items-center justify-center rounded-full border border-rose-400/40 bg-rose-950/60 px-4 text-xs font-semibold text-rose-100 transition hover:border-rose-300/55 hover:bg-rose-900/50"
+                    >
+                      Open Resend Metrics
+                    </a>
                   </>
                 ) : (
-                  <p className="mt-2 text-sm text-zinc-500">No usage data.</p>
+                  <p className="mt-2 text-sm text-zinc-500">Could not verify Resend connection.</p>
                 )}
               </div>
               <div className="flex flex-wrap items-center gap-3">
