@@ -14,6 +14,7 @@ function safeNextPath(raw: string | null): string {
 function LoginFormInner() {
   const searchParams = useSearchParams();
   const next = safeNextPath(searchParams.get("next"));
+  const resetOk = searchParams.get("reset") === "success";
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -48,6 +49,11 @@ function LoginFormInner() {
 
   return (
     <form onSubmit={handleSubmit} className="mt-8 space-y-5" noValidate>
+      {resetOk ? (
+        <div className="rounded-xl border border-emerald-900/50 bg-emerald-950/35 px-4 py-3 text-sm text-emerald-100">
+          Your password was updated. Log in with your new password.
+        </div>
+      ) : null}
       <div>
         <label htmlFor="li-email" className="block text-sm font-medium text-zinc-200">
           Email

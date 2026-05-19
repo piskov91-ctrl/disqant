@@ -810,3 +810,59 @@ export async function clearRetailerSessionCookie() {
     jar.set({ name, value: "", ...expired });
   }
 }
+
+const PASSWORD_RESET_PREFIX = "fit-room:retailer:pwd-reset:";
+const PASSWORD_RESET_TTL_SEC = 60 * 60;
+
+/**
+ * Stores a one-time token (1 hour) for self-service password reset. Does not reveal whether the user exists.
+ */
+export async function createRetailerPasswordResetToken(userId: string): Promise<string> {
+  const id = userId.trim();
+  if (!id) throw new Error("User id is required.");
+  const token = crypto.randomBytes(32).toString("base64url");
+  await getRedis().set(`${PASSWORD_RESET_PREFIX}${token}`, JSON.stringify({ userId: id }), {
+    ex: PASSWORD_RESET_TTL_SEC,
+  });
+  return token;
+}
+
+/**
+ * Sets a new password using a valid token, then deletes the token.
+ */
+export async function resetRetailerPasswordWithToken(token: string, newPassword: string): Promise<void> {
+  const t = token.trim();
+  if (!t) {
+    throw new Error("Reset link is invalid.");
+  }
+  const key = `${PASSWORD_RESET_PREFIX}${t}`;
+  const redis = getRedis();
+  const raw = await redis.get(key);
+  if (raw == null || typeof raw !== "string") {
+    throw new Error("This reset link is invalid or has expired. Request a new one from the login page.");
+  }
+  let userId: string;
+  try {
+    const p = JSON.parse(raw) as { userId?: unknown };
+    if (typeof p.userId !== "string" || !p.userId.trim()) throw new Error("bad");
+    userId = p.userId.trim();
+  } catch {
+    throw new Error("This reset link is invalid or has expired.");
+  }
+
+  const pwdErr = validateRetailerPasswordStrength(newPassword);
+  if (pwdErr) {
+    throw new Error(pwdErr);
+  }
+
+  const row = await loadRetailerRecord(userId);
+  if (!row?.user || row.user.deletedAt) {
+    await redis.del(key).catch(() => {});
+    throw new Error("This reset link is invalid or has expired.");
+  }
+
+  const { salt, hash } = hashRetailerPassword(newPassword);
+  const next: RetailerUser = { ...row.user, passwordSalt: salt, passwordHash: hash };
+  await redis.set(row.userRedisKey, JSON.stringify(next));
+  await redis.del(key);
+}

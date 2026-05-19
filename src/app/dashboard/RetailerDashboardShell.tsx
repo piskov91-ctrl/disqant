@@ -2,7 +2,8 @@
 
 import { ImageOff } from "lucide-react";
 import Link from "next/link";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import { Suspense, useCallback, useEffect, useMemo, useState } from "react";
 import { TryOnTimingCharts } from "@/components/TryOnTimingCharts";
 import { LOCAL_OR_UNKNOWN_PRODUCT } from "@/lib/tryOnConstants";
 import { DashboardEmailDeveloperPanel } from "./DashboardEmailDeveloperPanel";
@@ -11,6 +12,28 @@ import { DashboardInstallPreviewAnimation } from "./DashboardInstallPreviewAnima
 import { DashboardTopUpPanel } from "./DashboardTopUpPanel";
 
 type DashboardTab = "overview" | "getCode" | "analytics";
+
+function parseDashboardTab(searchParams: Pick<URLSearchParams, "get">): DashboardTab {
+  const raw = searchParams.get("tab");
+  if (raw === "get-code" || raw === "getCode") return "getCode";
+  if (raw === "analytics") return "analytics";
+  return "overview";
+}
+
+function pathForDashboardTab(tab: DashboardTab): string {
+  if (tab === "getCode") return "/dashboard?tab=get-code";
+  if (tab === "analytics") return "/dashboard?tab=analytics";
+  return "/dashboard";
+}
+
+function DashboardShellSuspenseFallback() {
+  return (
+    <div className="mx-auto max-w-6xl px-6 pb-20 pt-8 md:pt-10">
+      <div className="h-12 w-full max-w-lg animate-pulse rounded-full bg-zinc-900/80" />
+      <div className="mt-10 h-56 animate-pulse rounded-2xl border border-white/5 bg-zinc-900/40" />
+    </div>
+  );
+}
 
 type ClientUsagePayload = {
   error?: string;
@@ -68,7 +91,15 @@ const tabBase =
 const tabInactive = "text-zinc-500 hover:text-zinc-300";
 const tabActive = "bg-white/[0.07] text-zinc-50 shadow-[inset_0_1px_0_0_rgba(255,255,255,0.06)]";
 
-export function RetailerDashboardShell({
+export function RetailerDashboardShell(props: RetailerDashboardShellProps) {
+  return (
+    <Suspense fallback={<DashboardShellSuspenseFallback />}>
+      <RetailerDashboardShellInner {...props} />
+    </Suspense>
+  );
+}
+
+function RetailerDashboardShellInner({
   welcomeHeading,
   accountSubtitle,
   websiteUrl,
@@ -77,7 +108,17 @@ export function RetailerDashboardShell({
   initialUsed,
   initialLimit,
 }: RetailerDashboardShellProps) {
-  const [tab, setTab] = useState<DashboardTab>("overview");
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const tab = useMemo(() => parseDashboardTab(searchParams), [searchParams]);
+
+  const selectTab = useCallback(
+    (next: DashboardTab) => {
+      router.replace(pathForDashboardTab(next), { scroll: false });
+    },
+    [router],
+  );
+
   const [used, setUsed] = useState(initialUsed);
   const [limit, setLimit] = useState(initialLimit);
   const [usageLoading, setUsageLoading] = useState(false);
@@ -138,12 +179,12 @@ export function RetailerDashboardShell({
   useEffect(() => {
     if (typeof window === "undefined") return;
     const sp = new URLSearchParams(window.location.search);
-    const topup = sp.get("topup");
-    if (topup === "success") {
-      void refreshUsage();
-      const path = `${window.location.pathname}${window.location.hash}`;
-      window.history.replaceState(null, "", path);
-    }
+    if (sp.get("topup") !== "success") return;
+    void refreshUsage();
+    sp.delete("topup");
+    const q = sp.toString();
+    const nextUrl = `${window.location.pathname}${q ? `?${q}` : ""}${window.location.hash}`;
+    window.history.replaceState(null, "", nextUrl);
   }, [refreshUsage]);
 
   useEffect(() => {
@@ -227,7 +268,7 @@ export function RetailerDashboardShell({
             type="button"
             role="tab"
             aria-selected={tab === "overview"}
-            onClick={() => setTab("overview")}
+            onClick={() => selectTab("overview")}
             className={`${tabBase} ${tab === "overview" ? tabActive : tabInactive}`}
           >
             Overview
@@ -236,7 +277,7 @@ export function RetailerDashboardShell({
             type="button"
             role="tab"
             aria-selected={tab === "getCode"}
-            onClick={() => setTab("getCode")}
+            onClick={() => selectTab("getCode")}
             className={`${tabBase} ${tab === "getCode" ? tabActive : tabInactive}`}
           >
             Get Code
@@ -245,7 +286,7 @@ export function RetailerDashboardShell({
             type="button"
             role="tab"
             aria-selected={tab === "analytics"}
-            onClick={() => setTab("analytics")}
+            onClick={() => selectTab("analytics")}
             className={`${tabBase} ${tab === "analytics" ? tabActive : tabInactive}`}
           >
             Analytics
