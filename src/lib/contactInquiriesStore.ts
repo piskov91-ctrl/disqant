@@ -72,6 +72,55 @@ export async function listContactInquiries(limit: number): Promise<ContactInquir
   return out;
 }
 
+async function syncUnreadCountFromIndex(): Promise<number> {
+  const redis = getRedis();
+  const ids = (await redis.lrange(INDEX_KEY, 0, CONTACT_INQUIRIES_INDEX_MAX - 1)) as string[] | null;
+  if (!ids?.length) {
+    await redis.set(UNREAD_KEY, "0");
+    return 0;
+  }
+  const keys = ids.map(recordKey);
+  const rowsRaw = (await redis.mget(...keys)) as unknown[];
+  let unread = 0;
+  for (const raw of rowsRaw) {
+    if (raw == null) continue;
+    try {
+      const row = JSON.parse(String(raw)) as ContactInquiryRecord;
+      if (!row.read) unread++;
+    } catch {
+      /* skip */
+    }
+  }
+  await redis.set(UNREAD_KEY, String(unread));
+  return unread;
+}
+
+/** Marks every indexed inquiry as read and realigns the unread counter from index contents. */
+export async function markAllContactInquiriesRead(): Promise<void> {
+  const redis = getRedis();
+  const ids = (await redis.lrange(INDEX_KEY, 0, CONTACT_INQUIRIES_INDEX_MAX - 1)) as string[] | null;
+  if (!ids?.length) {
+    await redis.set(UNREAD_KEY, "0");
+    return;
+  }
+  const keys = ids.map(recordKey);
+  const rowsRaw = (await redis.mget(...keys)) as unknown[];
+  for (let i = 0; i < ids.length; i++) {
+    const raw = rowsRaw[i];
+    if (raw == null) continue;
+    try {
+      const row = JSON.parse(String(raw)) as ContactInquiryRecord;
+      if (!row.read) {
+        row.read = true;
+        await redis.set(recordKey(String(ids[i]).trim()), JSON.stringify(row));
+      }
+    } catch {
+      /* skip */
+    }
+  }
+  await syncUnreadCountFromIndex();
+}
+
 /** Marks inquiry read and decrements unread counter once. Returns false if id unknown. */
 export async function markContactInquiryRead(id: string): Promise<boolean> {
   const trimmed = id.trim();

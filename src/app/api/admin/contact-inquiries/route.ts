@@ -3,6 +3,7 @@ import { ADMIN_AUTH_COOKIE, isAdminAuthorizedCookieValue } from "@/lib/adminAuth
 import {
   getUnreadContactInquiryCount,
   listContactInquiries,
+  markAllContactInquiriesRead,
   markContactInquiryRead,
 } from "@/lib/contactInquiriesStore";
 
@@ -49,6 +50,27 @@ export async function POST(req: Request) {
     body = await req.json();
   } catch {
     return Response.json({ error: "Invalid JSON body." }, { status: 400 });
+  }
+
+  const markAllRead =
+    typeof body === "object" &&
+    body !== null &&
+    (body as { markAllRead?: unknown }).markAllRead === true;
+
+  if (markAllRead) {
+    try {
+      await markAllContactInquiriesRead();
+      const [unreadCount, inquiries] = await Promise.all([
+        getUnreadContactInquiryCount(),
+        listContactInquiries(200),
+      ]);
+      return Response.json({ ok: true, unreadCount, inquiries });
+    } catch (e) {
+      return Response.json(
+        { error: e instanceof Error ? e.message : "Could not mark inquiries as read." },
+        { status: 503 },
+      );
+    }
   }
 
   const id =

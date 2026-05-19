@@ -323,7 +323,6 @@ export default function AdminClient() {
   const [contactInquiries, setContactInquiries] = useState<ContactInquiryRow[]>([]);
   const [contactInquiriesLoading, setContactInquiriesLoading] = useState(false);
   const [contactInquiriesError, setContactInquiriesError] = useState<string | null>(null);
-  const [contactMarkingReadId, setContactMarkingReadId] = useState<string | null>(null);
 
   type QuotaEmailPreviewPayload = {
     subject: string;
@@ -542,7 +541,11 @@ export default function AdminClient() {
     setContactInquiriesLoading(true);
     setContactInquiriesError(null);
     try {
-      const res = await fetch("/api/admin/contact-inquiries");
+      const res = await fetch("/api/admin/contact-inquiries", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ markAllRead: true }),
+      });
       const data = (await res.json()) as {
         unreadCount?: number;
         inquiries?: ContactInquiryRow[];
@@ -565,32 +568,6 @@ export default function AdminClient() {
       setContactInquiries([]);
     } finally {
       setContactInquiriesLoading(false);
-    }
-  }
-
-  async function markContactInquiryReadAction(id: string) {
-    setContactMarkingReadId(id);
-    setContactInquiriesError(null);
-    try {
-      const res = await fetch("/api/admin/contact-inquiries", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ id }),
-      });
-      const data = (await res.json()) as { ok?: boolean; unreadCount?: number; error?: string };
-      if (!res.ok) {
-        if (data.error === "Unauthorized.") window.location.reload();
-        setContactInquiriesError(data.error || "Could not mark as read.");
-        return;
-      }
-      if (typeof data.unreadCount === "number" && Number.isFinite(data.unreadCount)) {
-        setContactInquiriesUnread(Math.max(0, Math.floor(data.unreadCount)));
-      }
-      setContactInquiries((prev) => prev.map((row) => (row.id === id ? { ...row, read: true } : row)));
-    } catch (e) {
-      setContactInquiriesError(e instanceof Error ? e.message : "Could not mark as read.");
-    } finally {
-      setContactMarkingReadId(null);
     }
   }
 
@@ -1983,8 +1960,8 @@ export default function AdminClient() {
             <section className="mt-8 w-full overflow-hidden rounded-2xl border border-zinc-800 bg-zinc-900/60 p-6 shadow-sm md:p-8">
               <h2 className="text-base font-semibold text-zinc-100">Contact form submissions</h2>
               <p className="mt-1 text-sm text-zinc-400">
-                Stored when each public contact form send succeeds (Redis). Mark entries read after you&apos;ve handled
-                them; the red badge shows unread count across all admin tabs.
+                Stored when each public contact form send succeeds (Redis). Opening this tab marks every listed
+                submission as read and clears the nav badge until new messages arrive.
               </p>
               {contactInquiriesError ? (
                 <div className="mt-6 rounded-xl border border-red-900/60 bg-red-950/40 px-4 py-3 text-sm text-red-200">
@@ -2008,40 +1985,14 @@ export default function AdminClient() {
                           minute: "2-digit",
                         })
                       : "—";
-                    const busy = contactMarkingReadId === inq.id;
                     return (
                       <li
                         key={inq.id}
-                        className={`rounded-xl border px-4 py-4 md:px-5 ${
-                          inq.read
-                            ? "border-zinc-800 bg-zinc-950/40"
-                            : "border-red-500/40 bg-red-950/20"
-                        }`}
+                        className="rounded-xl border border-zinc-800 bg-zinc-950/40 px-4 py-4 md:px-5"
                       >
-                        <div className="flex flex-wrap items-start justify-between gap-3">
-                          <div className="min-w-0">
-                            <div className="flex flex-wrap items-center gap-2">
-                              <span className="font-semibold text-zinc-100">{inq.name}</span>
-                              {!inq.read ? (
-                                <span className="rounded-full bg-red-600 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-white">
-                                  Unread
-                                </span>
-                              ) : null}
-                            </div>
-                            <p className="mt-1 text-xs text-zinc-500">{when} UTC</p>
-                          </div>
-                          {!inq.read ? (
-                            <button
-                              type="button"
-                              disabled={busy}
-                              onClick={() => void markContactInquiryReadAction(inq.id)}
-                              className="inline-flex h-9 shrink-0 items-center justify-center rounded-full border border-zinc-600 bg-zinc-800 px-4 text-xs font-semibold text-zinc-100 transition hover:border-zinc-500 hover:bg-zinc-700 disabled:cursor-not-allowed disabled:opacity-50"
-                            >
-                              {busy ? "…" : "Mark as read"}
-                            </button>
-                          ) : (
-                            <span className="text-xs font-medium text-zinc-500">Read</span>
-                          )}
+                        <div className="min-w-0">
+                          <span className="font-semibold text-zinc-100">{inq.name}</span>
+                          <p className="mt-1 text-xs text-zinc-500">{when} UTC</p>
                         </div>
                         <div className="mt-3 grid gap-2 text-sm text-zinc-300 md:grid-cols-2">
                           <div>
