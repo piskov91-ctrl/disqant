@@ -80,6 +80,31 @@ const FAQ_ITEMS: readonly { question: string; answer: ReactNode }[] = [
     answer:
       "Yes. There are no long contracts. You can cancel your plan whenever you like from your account settings.",
   },
+  {
+    question: "Will it actually increase my sales?",
+    answer:
+      "When shoppers can see how something looks on them before buying, they're more confident. More confidence means more purchases and fewer abandoned carts. Stores using virtual try-on typically see higher conversion rates and fewer returns - both of which go straight to your bottom line.",
+  },
+  {
+    question: "How does it reduce returns?",
+    answer:
+      "Most returns happen because the item looked different on the model than on the buyer. When your customer tries it on themselves before buying, that surprise is gone. They know exactly what they're getting.",
+  },
+  {
+    question: "Will my customers actually use it?",
+    answer:
+      "Yes - especially on mobile. Shoppers are used to trying things on. This just brings that experience online. The button is there when they need it and invisible when they don't.",
+  },
+  {
+    question: "What makes this different from just having good product photos?",
+    answer:
+      "Good photos show the item. Wear Me shows the item on your customer. That's the difference between seeing a dress on a model and seeing it on yourself. One builds confidence, the other just builds awareness.",
+  },
+  {
+    question: "I'm a small store - is this for me too?",
+    answer:
+      "Absolutely. You don't need a big team or a developer on call. One line of code and it's done. Small stores often see the biggest impact because every sale matters more.",
+  },
 ];
 
 export function ContactFaq() {
