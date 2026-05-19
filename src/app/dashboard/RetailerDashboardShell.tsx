@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { TryOnTimingCharts } from "@/components/TryOnTimingCharts";
 import { LOCAL_OR_UNKNOWN_PRODUCT } from "@/lib/tryOnConstants";
+import { DashboardEmailDeveloperPanel } from "./DashboardEmailDeveloperPanel";
 import { DashboardInstallPlatformGuide } from "./DashboardInstallPlatformGuide";
 import { DashboardInstallPreviewAnimation } from "./DashboardInstallPreviewAnimation";
 
@@ -380,6 +381,8 @@ export function RetailerDashboardShell({
                 {snippet || "Loading your embed code…"}
               </pre>
             </div>
+
+            <DashboardEmailDeveloperPanel />
 
             <DashboardInstallPreviewAnimation />
 
