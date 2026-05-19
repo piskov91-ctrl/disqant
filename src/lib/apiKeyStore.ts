@@ -426,3 +426,31 @@ export async function updateClientKey(params: {
   return next;
 }
 
+/**
+ * Batch job: apply the same monthly usage reset as lazy reads, for every client in the admin index.
+ * Uses UTC calendar (aligned with `billingCycle`). Skips soft-deleted keys.
+ */
+export async function applyDueMonthlyUsageResetsForAllClients(now = new Date()): Promise<{
+  examined: number;
+  updated: number;
+}> {
+  const summaries = await listClientKeys();
+  const redis = getRedis();
+  let examined = 0;
+  let updated = 0;
+
+  for (const summary of summaries) {
+    if (summary.deletedAt) continue;
+    examined += 1;
+    const bundle = await getRecordForMutation(summary.id);
+    if (!bundle || bundle.rec.deletedAt) continue;
+    const after = applyAllDueMonthlyUsageResets(bundle.rec, now);
+    if (monthlyBillingCycleChanged(bundle.rec, after)) {
+      await redis.set(bundle.redisKey, after);
+      updated += 1;
+    }
+  }
+
+  return { examined, updated };
+}
+
