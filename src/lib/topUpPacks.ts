@@ -12,9 +12,9 @@ export type TopUpPack = {
 };
 
 export const TOP_UP_PACKS: readonly TopUpPack[] = [
-  { id: "100", tryOns: 100, amountGbpPence: 2500, label: "100 try-ons — £25" },
-  { id: "300", tryOns: 300, amountGbpPence: 6500, label: "300 try-ons — £65" },
-  { id: "500", tryOns: 500, amountGbpPence: 9900, label: "500 try-ons — £99" },
+  { id: "100", tryOns: 100, amountGbpPence: 5500, label: "100 try-ons — £55" },
+  { id: "300", tryOns: 300, amountGbpPence: 15500, label: "300 try-ons — £155" },
+  { id: "500", tryOns: 500, amountGbpPence: 24500, label: "500 try-ons — £245" },
 ] as const;
 
 const byId: Record<TopUpPackId, TopUpPack> = {

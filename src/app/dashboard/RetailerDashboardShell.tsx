@@ -156,8 +156,6 @@ export function RetailerDashboardShell({
     [used, limit],
   );
   const blocked = limit > 0 && used >= limit;
-  const lowOnTryOns = limit > 0 && !blocked && pct >= 75;
-  const showTopUp = limit > 0 && (blocked || lowOnTryOns);
 
   const [analytics, setAnalytics] = useState<AnalyticsPayload | null>(null);
   const [analyticsLoading, setAnalyticsLoading] = useState(false);
@@ -365,11 +363,9 @@ export function RetailerDashboardShell({
                   </div>
                 </div>
 
-                {showTopUp ? (
-                  <div className="pt-4">
-                    <DashboardTopUpPanel />
-                  </div>
-                ) : null}
+                <div className="pt-4">
+                  <DashboardTopUpPanel />
+                </div>
               </div>
             </div>
           </div>

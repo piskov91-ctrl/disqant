@@ -42,8 +42,8 @@ export function DashboardTopUpPanel() {
           <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[#c6a77d]/90">Top up</p>
           <h3 className="mt-2 text-base font-semibold text-zinc-50">Add more try-ons</h3>
           <p className="mt-1 max-w-xl text-sm leading-relaxed text-zinc-400">
-            Running low? Purchase extra try-ons as a one-time payment. They are added to your current plan&apos;s API key
-            immediately after payment.
+            Buy extra try-ons anytime as a one-time payment. After checkout completes, the try-ons are added to your
+            existing limit on the same API key.
           </p>
         </div>
       </div>
