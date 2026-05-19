@@ -179,8 +179,8 @@ export function DashboardInstallPlatformGuide() {
       </div>
 
       <p className="mt-6 rounded-xl border border-white/10 bg-zinc-950/50 px-4 py-3 text-sm leading-relaxed text-zinc-400">
-        <strong className="text-zinc-200">Not sure?</strong> Just forward this page to your web developer—they&apos;ll know
-        exactly what to do.
+        <strong className="text-zinc-200">Not sure where to paste it?</strong> Just forward this page to your web developer
+        — they&apos;ll know exactly what to do in under 2 minutes.
       </p>
     </div>
   );
