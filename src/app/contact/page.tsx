@@ -29,11 +29,11 @@ export default function ContactPage() {
           </div>
         </section>
 
-        <section className="border-t border-zinc-800 bg-zinc-950 py-16">
+        <section className="border-t border-white/10 py-16">
           <div className="mx-auto max-w-xl space-y-10 px-6">
             <ContactFaq />
             <ContactForm />
-            <p className="text-center text-sm text-zinc-500">
+            <p className="text-center text-sm text-zinc-300/90">
               You can also email us at{" "}
               <a
                 href="mailto:support@fit-room.com"

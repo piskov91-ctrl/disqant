@@ -86,7 +86,7 @@ export function ContactForm() {
   }
 
   return (
-    <div className="rounded-2xl border border-white/10 bg-zinc-950 p-6 shadow-lg shadow-black/30 md:p-8">
+    <div className="rounded-2xl border border-white/15 bg-black/20 p-6 shadow-lg shadow-black/25 backdrop-blur-md md:p-8">
       <form onSubmit={onSubmit} className="space-y-5">
         <div>
           <label htmlFor="contact-name" className={labelClass}>

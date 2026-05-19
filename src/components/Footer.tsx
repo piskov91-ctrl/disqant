@@ -18,13 +18,19 @@ export function Footer() {
         </p>
         <nav
           className="flex flex-wrap items-center justify-center gap-x-4 gap-y-2 text-zinc-400"
-          aria-label="Legal"
+          aria-label="Legal and help"
         >
           <Link
             href="/terms"
             className="transition hover:text-zinc-100"
           >
             Terms &amp; Conditions
+          </Link>
+          <span className="text-zinc-700" aria-hidden>
+            ·
+          </span>
+          <Link href="/contact#faq" className="transition hover:text-zinc-100">
+            FAQ
           </Link>
           <span className="text-zinc-700" aria-hidden>
             ·

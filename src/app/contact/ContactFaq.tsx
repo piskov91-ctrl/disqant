@@ -48,7 +48,8 @@ export function ContactFaq() {
 
   return (
     <section
-      className="rounded-2xl border border-[#c6a77d]/25 bg-zinc-950 p-6 shadow-lg shadow-black/40 md:p-8"
+      id="faq"
+      className="scroll-mt-[calc(var(--site-header-height)+1rem)] rounded-2xl border border-[#c6a77d]/35 bg-black/20 p-6 shadow-lg shadow-black/25 backdrop-blur-md md:p-8"
       aria-labelledby={`${baseId}-faq-heading`}
     >
       <h2 id={`${baseId}-faq-heading`} className="text-lg font-semibold tracking-tight text-zinc-50 md:text-xl">
@@ -58,7 +59,7 @@ export function ContactFaq() {
         Quick answers before you reach out — happy to go deeper on the form below.
       </p>
 
-      <div className="mt-6 divide-y divide-[#c6a77d]/15 rounded-xl border border-[#c6a77d]/20 bg-zinc-900/40">
+      <div className="mt-6 divide-y divide-[#c6a77d]/20 rounded-xl border border-[#c6a77d]/25 bg-black/15 backdrop-blur-sm">
         {FAQ_ITEMS.map((item, index) => {
           const isOpen = openIndex === index;
           const panelId = `${baseId}-faq-panel-${index}`;
