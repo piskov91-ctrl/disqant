@@ -4,18 +4,21 @@ import {
   getClientByApiKey,
   getClientKeyRecordById,
 } from "@/lib/apiKeyStore";
-import { subscriptionPlanCap, totalTryOnsUsed } from "@/lib/clientTryOnBuckets";
+import { storedOrDerivedBasePlanLimit, totalTryOnsUsed } from "@/lib/clientTryOnBuckets";
 import { getRetailerSessionUser } from "@/lib/retailerAuth";
 
 export const runtime = "nodejs";
 
 function clientUsagePayload(client: ClientApiKeyRecord) {
+  const basePlanLimit = storedOrDerivedBasePlanLimit(client);
   return {
     clientName: client.clientName,
     usageCount: totalTryOnsUsed(client),
     usageLimit: client.usageLimit,
+    basePlanLimit,
     planUsageCount: client.usageCount,
-    planLimit: subscriptionPlanCap(client),
+    /** @deprecated use basePlanLimit */
+    planLimit: basePlanLimit,
     topUpUsageCount: client.topUpUsageCount ?? 0,
     topUpLimit: client.topUpLimit ?? 0,
   };

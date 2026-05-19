@@ -6,7 +6,7 @@ import { Header } from "@/components/Header";
 import { getClientKeyRecordById } from "@/lib/apiKeyStore";
 import { retailerWelcomeGreetingName } from "@/lib/retailerDisplayName";
 import { getRetailerSessionUser } from "@/lib/retailerAuth";
-import { subscriptionPlanCap } from "@/lib/clientTryOnBuckets";
+import { storedOrDerivedBasePlanLimit } from "@/lib/clientTryOnBuckets";
 import { planLabelFromTryOnLimit } from "@/lib/subscriptionPlans";
 import { RetailerDashboardShell } from "./RetailerDashboardShell";
 
@@ -113,7 +113,7 @@ export default async function DashboardPage() {
     );
   }
 
-  const planCap = subscriptionPlanCap(client);
+  const planCap = storedOrDerivedBasePlanLimit(client);
   const planLabel = planLabelFromTryOnLimit(planCap);
 
   const accountSubtitle =
@@ -135,7 +135,7 @@ export default async function DashboardPage() {
           planLabel={planLabel}
           apiKey={client.key}
           initialPlanUsed={client.usageCount}
-          initialPlanLimit={planCap}
+          initialBasePlanLimit={planCap}
           initialTopUpUsed={client.topUpUsageCount ?? 0}
           initialTopUpLimit={client.topUpLimit ?? 0}
         />

@@ -9,13 +9,21 @@ export type TryOnBucketFields = {
   topUpAllowanceTryOns?: number;
 };
 
-/** Subscription plan cap (try-ons per cycle before top-ups). */
-export function subscriptionPlanCap(rec: TryOnBucketFields): number {
+/**
+ * Persisted monthly plan cap, or derived from total − top-up when legacy rows omit `basePlanLimit`.
+ * Use this when displaying `usageCount / basePlanLimit` in UI.
+ */
+export function storedOrDerivedBasePlanLimit(rec: TryOnBucketFields): number {
   if (typeof rec.basePlanLimit === "number" && rec.basePlanLimit > 0) {
     return Math.floor(rec.basePlanLimit);
   }
   const top = Math.floor(rec.topUpLimit ?? 0);
   return Math.max(0, Math.floor(rec.usageLimit) - top);
+}
+
+/** Subscription plan cap (same as {@link storedOrDerivedBasePlanLimit}). */
+export function subscriptionPlanCap(rec: TryOnBucketFields): number {
+  return storedOrDerivedBasePlanLimit(rec);
 }
 
 export function totalTryOnsUsed(rec: TryOnBucketFields): number {

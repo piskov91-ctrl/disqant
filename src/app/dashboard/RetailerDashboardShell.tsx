@@ -39,6 +39,7 @@ type ClientUsagePayload = {
   error?: string;
   usageCount?: number;
   usageLimit?: number;
+  basePlanLimit?: number;
   planUsageCount?: number;
   planLimit?: number;
   topUpUsageCount?: number;
@@ -86,8 +87,10 @@ export type RetailerDashboardShellProps = {
   websiteUrl: string | null;
   planLabel: string;
   apiKey: string;
+  /** Subscription bucket usage (`usageCount`). */
   initialPlanUsed: number;
-  initialPlanLimit: number;
+  /** Monthly plan cap (`basePlanLimit`). */
+  initialBasePlanLimit: number;
   initialTopUpUsed: number;
   initialTopUpLimit: number;
 };
@@ -112,7 +115,7 @@ function RetailerDashboardShellInner({
   planLabel,
   apiKey,
   initialPlanUsed,
-  initialPlanLimit,
+  initialBasePlanLimit,
   initialTopUpUsed,
   initialTopUpLimit,
 }: RetailerDashboardShellProps) {
@@ -140,7 +143,7 @@ function RetailerDashboardShellInner({
   }, []);
 
   const [planUsed, setPlanUsed] = useState(initialPlanUsed);
-  const [planLimit, setPlanLimit] = useState(initialPlanLimit);
+  const [basePlanLimit, setBasePlanLimit] = useState(initialBasePlanLimit);
   const [topUpUsed, setTopUpUsed] = useState(initialTopUpUsed);
   const [topUpLimit, setTopUpLimit] = useState(initialTopUpLimit);
   const [usageLoading, setUsageLoading] = useState(false);
@@ -187,14 +190,20 @@ function RetailerDashboardShellInner({
         setUsageError(data.error || "Could not load try-on usage.");
         return;
       }
+      const base =
+        typeof data.basePlanLimit === "number"
+          ? data.basePlanLimit
+          : typeof data.planLimit === "number"
+            ? data.planLimit
+            : NaN;
       if (
         typeof data.planUsageCount === "number" &&
-        typeof data.planLimit === "number" &&
+        Number.isFinite(base) &&
         typeof data.topUpUsageCount === "number" &&
         typeof data.topUpLimit === "number"
       ) {
         setPlanUsed(data.planUsageCount);
-        setPlanLimit(data.planLimit);
+        setBasePlanLimit(base);
         setTopUpUsed(data.topUpUsageCount);
         setTopUpLimit(data.topUpLimit);
       }
@@ -221,12 +230,18 @@ function RetailerDashboardShellInner({
   }, [refreshUsage]);
 
   const totalUsed = useMemo(() => planUsed + topUpUsed, [planUsed, topUpUsed]);
-  const totalLimit = useMemo(() => planLimit + topUpLimit, [planLimit, topUpLimit]);
+  const totalLimit = useMemo(() => basePlanLimit + topUpLimit, [basePlanLimit, topUpLimit]);
 
   const remaining = useMemo(() => Math.max(0, totalLimit - totalUsed), [totalLimit, totalUsed]);
-  const pct = useMemo(
-    () => (totalLimit > 0 ? Math.min(100, Math.round((totalUsed / totalLimit) * 100)) : 0),
-    [totalUsed, totalLimit],
+  const planPct = useMemo(
+    () =>
+      basePlanLimit > 0 ? Math.min(100, Math.round((planUsed / basePlanLimit) * 100)) : 0,
+    [planUsed, basePlanLimit],
+  );
+  const topUpPct = useMemo(
+    () =>
+      topUpLimit > 0 ? Math.min(100, Math.round((topUpUsed / topUpLimit) * 100)) : 0,
+    [topUpUsed, topUpLimit],
   );
   const blocked = totalLimit > 0 && totalUsed >= totalLimit;
 
@@ -421,26 +436,37 @@ function RetailerDashboardShellInner({
                   ))}
                 </div>
 
-                <div>
-                  <div className="flex flex-wrap items-center justify-between gap-2 text-sm font-medium text-zinc-300">
-                    <div className="flex flex-col gap-1">
+                <div className="space-y-4">
+                  <div>
+                    <div className="flex flex-wrap items-center justify-between gap-2 text-sm font-medium text-zinc-300">
                       <span className="tabular-nums">
-                        Monthly plan: {planUsed.toLocaleString()} / {planLimit.toLocaleString()}
+                        Monthly plan: {planUsed.toLocaleString()} / {basePlanLimit.toLocaleString()}
                       </span>
-                      {topUpLimit > 0 ? (
+                      <span className="tabular-nums text-zinc-500">{planPct}% of plan</span>
+                    </div>
+                    <div className="mt-2 h-2 w-full overflow-hidden rounded-full border border-white/10 bg-zinc-950/60">
+                      <div
+                        className="h-full rounded-full bg-gradient-to-r from-[#7c3aed] to-[#a855f7]"
+                        style={{ width: `${planPct}%` }}
+                      />
+                    </div>
+                  </div>
+                  {topUpLimit > 0 ? (
+                    <div>
+                      <div className="flex flex-wrap items-center justify-between gap-2 text-sm font-medium text-zinc-300">
                         <span className="tabular-nums text-zinc-400">
                           Top Up: {topUpUsed.toLocaleString()} / {topUpLimit.toLocaleString()}
                         </span>
-                      ) : null}
+                        <span className="tabular-nums text-zinc-500">{topUpPct}% of top-up</span>
+                      </div>
+                      <div className="mt-2 h-2 w-full overflow-hidden rounded-full border border-white/10 bg-zinc-950/60">
+                        <div
+                          className="h-full rounded-full bg-gradient-to-r from-[#a855f7] to-[#ec4899]"
+                          style={{ width: `${topUpPct}%` }}
+                        />
+                      </div>
                     </div>
-                    <span className="tabular-nums text-zinc-500">{pct}% of total limit</span>
-                  </div>
-                  <div className="mt-3 h-3 w-full overflow-hidden rounded-full border border-white/10 bg-zinc-950/60">
-                    <div
-                      className="h-full rounded-full bg-gradient-to-r from-[#7c3aed] via-[#a855f7] to-[#ec4899]"
-                      style={{ width: `${pct}%` }}
-                    />
-                  </div>
+                  ) : null}
                 </div>
 
                 <div className="pt-4">

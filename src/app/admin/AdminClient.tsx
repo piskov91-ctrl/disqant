@@ -7,7 +7,7 @@ import { Footer } from "@/components/Footer";
 import { AnalyticsInsightsModal } from "@/components/AnalyticsInsightsModal";
 import { AdminWearMeClient } from "@/app/admin/AdminWearMeClient";
 import { getNextMonthlyResetUtcDateForDisplay } from "@/lib/billingCycle";
-import { subscriptionPlanCap, totalTryOnsUsed, clientTryOnFullyBlocked } from "@/lib/clientTryOnBuckets";
+import { storedOrDerivedBasePlanLimit, totalTryOnsUsed, clientTryOnFullyBlocked } from "@/lib/clientTryOnBuckets";
 
 type KeyRecord = {
   id: string;
@@ -699,7 +699,7 @@ export default function AdminClient() {
     setEditing(rec);
     setEditClientName(rec.clientName);
     setEditContactEmail(rec.contactEmail?.trim() ?? "");
-    setEditMonthlyPlanLimit(String(subscriptionPlanCap(rec)));
+    setEditMonthlyPlanLimit(String(storedOrDerivedBasePlanLimit(rec)));
     setEditTopUpLimit(String(rec.topUpLimit ?? 0));
     setEditFashnApiKey("");
   }
@@ -1426,13 +1426,14 @@ export default function AdminClient() {
                     </div>
 
                     {keys.map((k) => {
-                      const planCap = subscriptionPlanCap(k);
+                      const basePlanLimit = storedOrDerivedBasePlanLimit(k);
                       const planUsed = k.usageCount;
                       const topLim = k.topUpLimit ?? 0;
                       const topUsed = k.topUpUsageCount ?? 0;
-                      const totalUsed = totalTryOnsUsed(k);
-                      const pct =
-                        k.usageLimit > 0 ? Math.min(100, Math.round((totalUsed / k.usageLimit) * 100)) : 0;
+                      const planPct =
+                        basePlanLimit > 0 ? Math.min(100, Math.round((planUsed / basePlanLimit) * 100)) : 0;
+                      const topPct =
+                        topLim > 0 ? Math.min(100, Math.round((topUsed / topLim) * 100)) : 0;
                       const blocked = k.usageLimit > 0 && clientTryOnFullyBlocked(k);
                       const historyOpen = expandedHistoryClientId === k.id;
                       const bh = billingHistoryByClient[k.id];
@@ -1484,24 +1485,33 @@ export default function AdminClient() {
                             <div className="text-sm tabular-nums text-zinc-300" title="Monthly auto reset schedule (UTC)">
                               {formatNextResetUtc(k)}
                             </div>
-                            <div className="flex items-center gap-3">
-                              <div className="h-2 w-24 overflow-hidden rounded-full border border-zinc-700 bg-zinc-800">
-                                <div
-                                  className="h-full rounded-full bg-gradient-to-r from-[#7c3aed] to-[#ec4899]"
-                                  style={{ width: `${pct}%` }}
-                                />
-                              </div>
-                              <span className="flex min-w-0 flex-col gap-0.5 text-sm font-semibold leading-snug text-zinc-300">
-                                <span className="tabular-nums">
-                                  Plan: {planUsed}/{planCap}
+                            <div className="flex min-w-0 flex-col gap-2">
+                              <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
+                                <div className="h-2 w-14 shrink-0 overflow-hidden rounded-full border border-zinc-700 bg-zinc-800">
+                                  <div
+                                    className="h-full rounded-full bg-gradient-to-r from-[#7c3aed] to-[#a855f7]"
+                                    style={{ width: `${planPct}%` }}
+                                  />
+                                </div>
+                                <span className="text-xs font-semibold tabular-nums text-zinc-500">{planPct}%</span>
+                                <span className="text-sm font-semibold tabular-nums text-zinc-300">
+                                  Plan: {planUsed}/{basePlanLimit}
                                 </span>
-                                {topLim > 0 ? (
-                                  <span className="tabular-nums text-zinc-400">
+                              </div>
+                              {topLim > 0 ? (
+                                <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
+                                  <div className="h-2 w-14 shrink-0 overflow-hidden rounded-full border border-zinc-700 bg-zinc-800">
+                                    <div
+                                      className="h-full rounded-full bg-gradient-to-r from-[#a855f7] to-[#ec4899]"
+                                      style={{ width: `${topPct}%` }}
+                                    />
+                                  </div>
+                                  <span className="text-xs font-semibold tabular-nums text-zinc-500">{topPct}%</span>
+                                  <span className="text-sm font-semibold tabular-nums text-zinc-400">
                                     Top Up: {topUsed}/{topLim}
                                   </span>
-                                ) : null}
-                              </span>
-                              <span className="text-sm font-semibold text-zinc-500">{pct}%</span>
+                                </div>
+                              ) : null}
                             </div>
                             <div>
                               <span
@@ -1813,13 +1823,13 @@ export default function AdminClient() {
                       className="mt-2 block w-full rounded-xl border border-zinc-700 bg-zinc-950 px-4 py-3 text-sm text-zinc-100 outline-none transition focus:border-accent/60"
                     >
                       {keys.map((k) => {
-                        const pc = subscriptionPlanCap(k);
+                        const basePlanLimit = storedOrDerivedBasePlanLimit(k);
                         const tl = k.topUpLimit ?? 0;
                         const tu = k.topUpUsageCount ?? 0;
                         const label =
                           tl > 0
-                            ? `${k.clientName} · Plan ${k.usageCount}/${pc}, Top up ${tu}/${tl}`
-                            : `${k.clientName} · Plan ${k.usageCount}/${pc}`;
+                            ? `${k.clientName} · Plan ${k.usageCount}/${basePlanLimit}, Top Up ${tu}/${tl}`
+                            : `${k.clientName} · Plan ${k.usageCount}/${basePlanLimit}`;
                         return (
                           <option key={k.id} value={k.id}>
                             {label}
