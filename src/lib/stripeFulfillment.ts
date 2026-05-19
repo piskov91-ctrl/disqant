@@ -108,10 +108,17 @@ async function fulfillPaidSubscriptionCheckoutSession(session: Stripe.Checkout.S
 
   // Always provision a brand-new client key on paid checkout, even if the account had an older key.
   // This ensures each paying customer gets a unique API key and avoids accidentally reusing any shared/demo key.
+  const subscribedAtMs =
+    typeof session.created === "number" && Number.isFinite(session.created)
+      ? session.created * 1000
+      : Date.now();
+  const anchorSourceDate = new Date(subscribedAtMs);
+
   const rec = await createClientKey({
     clientName,
     contactEmail,
     usageLimit: tryOnLimit,
+    anchorSourceDate,
   });
 
   await linkRetailerToClientId(user.id, rec.id);

@@ -13,6 +13,8 @@ type KeyRecord = {
   key: string;
   usageLimit: number;
   usageCount: number;
+  billingAnchorDay?: number;
+  lastAutoBillingResetYyyymmdd?: string;
   /** Equals `usageLimit` when the 75% quota warning was sent this cycle */
   usageSeventyFivePctEmailSentForLimit?: number;
   /** Equals `usageLimit` when the 99% quota warning was sent this cycle */

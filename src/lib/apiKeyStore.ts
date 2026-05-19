@@ -6,6 +6,11 @@ import {
   usageIncrementShouldPersistNinetyNinePctEmailFlag,
   usageIncrementShouldPersistSeventyFivePctEmailFlag,
 } from "@/lib/usageTryOnQuotaEmailPolicy";
+import {
+  applyAllDueMonthlyUsageResets,
+  billingAnchorDayFromUtcDate,
+  monthlyBillingCycleChanged,
+} from "@/lib/billingCycle";
 
 export type ClientApiKeyRecord = {
   id: string;
@@ -16,6 +21,13 @@ export type ClientApiKeyRecord = {
   fashnApiKey: string;
   usageLimit: number;
   usageCount: number;
+  /**
+   * UTC calendar day-of-month (1–31) for automatic monthly `usageCount` reset.
+   * Usually the subscription signup day; shorter months use the last day when anchor > length.
+   */
+  billingAnchorDay?: number;
+  /** YYYY-MM-DD (UTC) of the last automatic monthly reset applied. */
+  lastAutoBillingResetYyyymmdd?: string;
   /** When equal to usageLimit, the 75% try-on quota email was already sent for this limit tier (reset on usage reset). */
   usageSeventyFivePctEmailSentForLimit?: number;
   /** When equal to usageLimit, the 99% try-on quota email was already sent for this limit tier (reset on usage reset). */
@@ -132,6 +144,10 @@ export async function createClientKey(params: {
   contactEmail?: string;
   usageLimit: number;
   fashnApiKey?: string;
+  /** Explicit billing anchor day 1–31; otherwise derived from `anchorSourceDate` or key creation instant. */
+  billingAnchorDay?: number;
+  /** When `billingAnchorDay` is omitted, anchor day is the UTC day-of-month of this instant (e.g. Stripe checkout). */
+  anchorSourceDate?: Date;
 }) {
   const clientName = params.clientName.trim();
   if (!clientName) throw new Error("Client name is required.");
@@ -144,6 +160,13 @@ export async function createClientKey(params: {
 
   const redis = getRedis();
   const now = new Date().toISOString();
+
+  let billingAnchor: number;
+  if (typeof params.billingAnchorDay === "number" && params.billingAnchorDay >= 1 && params.billingAnchorDay <= 31) {
+    billingAnchor = Math.floor(params.billingAnchorDay);
+  } else {
+    billingAnchor = billingAnchorDayFromUtcDate(params.anchorSourceDate ?? new Date());
+  }
 
   const fashnApiKey =
     (params.fashnApiKey ? params.fashnApiKey.trim() : "") ||
@@ -161,6 +184,7 @@ export async function createClientKey(params: {
     fashnApiKey,
     usageLimit: Math.floor(params.usageLimit),
     usageCount: 0,
+    billingAnchorDay: billingAnchor,
     createdAt: now,
   };
 
@@ -217,7 +241,12 @@ export async function getClientByApiKey(apiKey: string) {
   const recKey = legacy ? recordKeyLegacy(id) : recordKey(id);
   const rec = (await redis.get(recKey)) as ClientApiKeyRecord | null;
   if (!rec || rec.deletedAt) return null;
-  return rec;
+  const now = new Date();
+  const after = applyAllDueMonthlyUsageResets(rec, now);
+  if (monthlyBillingCycleChanged(rec, after)) {
+    await redis.set(recKey, after);
+  }
+  return after;
 }
 
 export async function markClientKeyDeleted(params: { id: string; deletedAt?: string }): Promise<ClientApiKeyRecord> {
@@ -246,10 +275,16 @@ export async function markClientKeyDeleted(params: { id: string; deletedAt?: str
 /** Load a client key record by internal id (e.g. retailer dashboard). */
 export async function getClientKeyRecordById(id: string): Promise<ClientApiKeyRecord | null> {
   if (!id) return null;
-  const redis = getRedis();
-  const rec = (await redis.get(recordKey(id))) as ClientApiKeyRecord | null;
-  if (rec) return rec;
-  return (await redis.get(recordKeyLegacy(id))) as ClientApiKeyRecord | null;
+  const bundle = await getRecordForMutation(id);
+  if (!bundle) return null;
+  const { rec, redisKey } = bundle;
+  if (rec.deletedAt) return rec;
+  const now = new Date();
+  const after = applyAllDueMonthlyUsageResets(rec, now);
+  if (monthlyBillingCycleChanged(rec, after)) {
+    await getRedis().set(redisKey, after);
+  }
+  return after;
 }
 
 export async function assertClientCanUseByApiKey(apiKey: string) {
@@ -263,7 +298,11 @@ export async function incrementUsageOrThrow(id: string) {
   const redis = getRedis();
   const bundle = await getRecordForMutation(id);
   if (!bundle) throw new Error("Client key not found.");
-  const { rec, redisKey } = bundle;
+  const { redisKey } = bundle;
+  let rec = applyAllDueMonthlyUsageResets(bundle.rec, new Date());
+  if (monthlyBillingCycleChanged(bundle.rec, rec)) {
+    await redis.set(redisKey, rec);
+  }
   if (rec.usageCount >= rec.usageLimit) throw new Error("Try-on limit exceeded.");
   const nextBase: ClientApiKeyRecord = { ...rec, usageCount: rec.usageCount + 1 };
   const resendConfigured = isFitRoomEmailConfigured();
@@ -335,9 +374,14 @@ export async function incrementClientTryOnLimit(id: string, delta: number) {
   const { rec, redisKey } = bundle;
   if (rec.deletedAt) throw new Error("This API key is no longer active.");
 
+  let cur = applyAllDueMonthlyUsageResets(rec, new Date());
+  if (monthlyBillingCycleChanged(rec, cur)) {
+    await redis.set(redisKey, cur);
+  }
+
   const next: ClientApiKeyRecord = {
-    ...rec,
-    usageLimit: rec.usageLimit + delta,
+    ...cur,
+    usageLimit: cur.usageLimit + delta,
   };
   await redis.set(redisKey, next);
   return next;
