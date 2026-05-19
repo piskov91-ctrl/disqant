@@ -38,6 +38,8 @@ export function HeaderNav() {
   }, [pathname]);
 
   const loggedIn = Boolean(retailerUser);
+  /** On /dashboard, label as "Dashboard" so it isn’t confused with in-page tabs (e.g. My Plan). */
+  const retailerDashboardNavLabel = pathname === "/dashboard" ? "Dashboard" : "Overview";
 
   function desktopNavLinkClass(href: string) {
     const active = pathname === href;
@@ -104,8 +106,11 @@ export function HeaderNav() {
           Contact
         </Link>
         {loggedIn ? (
-          <Link href="/dashboard" className={desktopNavLinkClass("/dashboard")}>
-            Overview
+          <Link
+            href="/dashboard"
+            className={`${desktopNavLinkClass("/dashboard")} shrink-0 whitespace-nowrap`}
+          >
+            {retailerDashboardNavLabel}
           </Link>
         ) : null}
       </nav>
@@ -182,8 +187,12 @@ export function HeaderNav() {
               </Link>
               {loggedIn && retailerUser ? (
                 <>
-                  <Link href="/dashboard" className={mobileNavLinkClass("/dashboard")} onClick={() => setOpen(false)}>
-                    Overview
+                  <Link
+                    href="/dashboard"
+                    className={`${mobileNavLinkClass("/dashboard")} whitespace-nowrap`}
+                    onClick={() => setOpen(false)}
+                  >
+                    {retailerDashboardNavLabel}
                   </Link>
                   <Link href="/profile" className={mobileNavLinkClass("/profile")} onClick={() => setOpen(false)}>
                     Profile Settings
