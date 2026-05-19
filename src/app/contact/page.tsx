@@ -1,6 +1,7 @@
 import { Footer } from "@/components/Footer";
 import { Header } from "@/components/Header";
 import type { Metadata } from "next";
+import { ContactFaq } from "./ContactFaq";
 import { ContactForm } from "./ContactForm";
 
 export const metadata: Metadata = {
@@ -28,14 +29,15 @@ export default function ContactPage() {
           </div>
         </section>
 
-        <section className="bg-white py-16">
-          <div className="mx-auto max-w-xl px-6">
+        <section className="border-t border-zinc-800 bg-zinc-950 py-16">
+          <div className="mx-auto max-w-xl space-y-10 px-6">
+            <ContactFaq />
             <ContactForm />
-            <p className="mt-8 text-center text-sm text-zinc-500">
+            <p className="text-center text-sm text-zinc-500">
               You can also email us at{" "}
               <a
                 href="mailto:support@fit-room.com"
-                className="font-medium text-zinc-800 underline decoration-zinc-300 underline-offset-2 hover:decoration-zinc-500"
+                className="font-medium text-[#c6a77d] underline decoration-[#c6a77d]/40 underline-offset-2 hover:text-[#d4bc94] hover:decoration-[#c6a77d]"
               >
                 support@fit-room.com
               </a>
