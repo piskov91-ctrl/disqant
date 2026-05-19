@@ -40,6 +40,46 @@ const FAQ_ITEMS: readonly { question: string; answer: ReactNode }[] = [
       </>
     ),
   },
+  {
+    question: "Is it worth it for my store?",
+    answer:
+      "If even one in ten shoppers uses it and buys something they otherwise wouldn't have, it pays for itself. Most stores see fewer returns too, which saves money on its own.",
+  },
+  {
+    question: "What kind of stores use this?",
+    answer:
+      "Any store that sells clothing, shoes, accessories or anything people wear. It works best when shoppers aren't sure how something will look on them.",
+  },
+  {
+    question: "How long does the setup take?",
+    answer:
+      "Most stores are up and running in under ten minutes. You paste one line of code, save, and it just works.",
+  },
+  {
+    question: "Does it work on mobile?",
+    answer:
+      "Yes. Shoppers can use their phone camera or upload a photo from their gallery. It works on any modern phone or tablet.",
+  },
+  {
+    question: "What if my customers don't like their result?",
+    answer:
+      "They can take another photo or try a different item. There's no limit on how many times they can try - only on how many results your plan generates.",
+  },
+  {
+    question: "Is my customer data safe?",
+    answer:
+      "Photos are processed to generate the result and are not stored on our servers. We don't build profiles on your customers or share their data with anyone.",
+  },
+  {
+    question: "What if I need more try-ons mid-month?",
+    answer:
+      "You can top up anytime from your dashboard without changing your plan. Extra try-ons are available instantly after payment.",
+  },
+  {
+    question: "Can I cancel anytime?",
+    answer:
+      "Yes. There are no long contracts. You can cancel your plan whenever you like from your account settings.",
+  },
 ];
 
 export function ContactFaq() {
