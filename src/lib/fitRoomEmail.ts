@@ -131,6 +131,15 @@ export async function sendFitRoomMail(params: { to: string; subject: string; tex
       subject: params.subject,
       resendEmailId: data?.id,
     });
+    void import("@/lib/fitRoomEmailSentCounters")
+      .then((m) => m.incrementFitRoomEmailSentCounters())
+      .catch((redisErr: unknown) => {
+        console.error("[fit-room][email-debug] incrementFitRoomEmailSentCounters failed after successful send", {
+          to: params.to,
+          subject: params.subject,
+          message: redisErr instanceof Error ? redisErr.message : String(redisErr),
+        });
+      });
   } catch (err: unknown) {
     if (!loggedFailure) {
       logFitRoomMailSendFailure("sendFitRoomMail", { from, to: params.to, subject: params.subject }, err);

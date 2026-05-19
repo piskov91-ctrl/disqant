@@ -126,11 +126,9 @@ type AdminFashnCredits = {
   onDemand: number | null;
 };
 
-type AdminResendConnection = {
-  apiKeyValid: boolean;
-  /** Used quota from Resend response headers (may be absent depending on API/plan). */
-  dailySent: number | null;
-  monthlySent: number | null;
+type AdminEmailSentStats = {
+  emailsSentToday: number;
+  emailsSentThisMonth: number;
 };
 
 type RecoveryAccountRow = {
@@ -281,9 +279,9 @@ export default function AdminClient() {
   const [fashnCreditsLoading, setFashnCreditsLoading] = useState(false);
   const [fashnCreditsError, setFashnCreditsError] = useState<string | null>(null);
 
-  const [resendConnection, setResendConnection] = useState<AdminResendConnection | null>(null);
-  const [resendConnectionLoading, setResendConnectionLoading] = useState(false);
-  const [resendConnectionError, setResendConnectionError] = useState<string | null>(null);
+  const [emailSentStats, setEmailSentStats] = useState<AdminEmailSentStats | null>(null);
+  const [emailSentStatsLoading, setEmailSentStatsLoading] = useState(false);
+  const [emailSentStatsError, setEmailSentStatsError] = useState<string | null>(null);
 
   type ClientBillingHistoryPayload = {
     subscriptionStartedAt: string;
@@ -472,41 +470,32 @@ export default function AdminClient() {
     }
   }
 
-  async function loadResendConnection() {
-    setResendConnectionLoading(true);
-    setResendConnectionError(null);
+  async function loadEmailSentStats() {
+    setEmailSentStatsLoading(true);
+    setEmailSentStatsError(null);
     try {
-      const res = await fetch("/api/admin/resend-usage");
-      const data = (await res.json()) as Partial<AdminResendConnection> & { error?: string };
+      const res = await fetch("/api/admin/email-sent-stats");
+      const data = (await res.json()) as Partial<AdminEmailSentStats> & { error?: string };
       if (!res.ok) {
         if (data.error === "Unauthorized.") window.location.reload();
-        setResendConnection(null);
-        setResendConnectionError(data.error || "Could not verify Resend API key.");
+        setEmailSentStats(null);
+        setEmailSentStatsError(data.error || "Could not load email send counters.");
         return;
       }
-      if (data.apiKeyValid === true) {
-        const dailySent =
-          typeof data.dailySent === "number" && Number.isFinite(data.dailySent)
-            ? Math.floor(data.dailySent)
-            : null;
-        const monthlySent =
-          typeof data.monthlySent === "number" && Number.isFinite(data.monthlySent)
-            ? Math.floor(data.monthlySent)
-            : null;
-        setResendConnection({
-          apiKeyValid: true,
-          dailySent,
-          monthlySent,
-        });
-      } else {
-        setResendConnection(null);
-        setResendConnectionError(data.error || "Resend API key verification failed.");
-      }
+      const emailsSentToday =
+        typeof data.emailsSentToday === "number" && Number.isFinite(data.emailsSentToday)
+          ? Math.floor(data.emailsSentToday)
+          : 0;
+      const emailsSentThisMonth =
+        typeof data.emailsSentThisMonth === "number" && Number.isFinite(data.emailsSentThisMonth)
+          ? Math.floor(data.emailsSentThisMonth)
+          : 0;
+      setEmailSentStats({ emailsSentToday, emailsSentThisMonth });
     } catch (e) {
-      setResendConnection(null);
-      setResendConnectionError(e instanceof Error ? e.message : "Could not verify Resend API key.");
+      setEmailSentStats(null);
+      setEmailSentStatsError(e instanceof Error ? e.message : "Could not load email send counters.");
     } finally {
-      setResendConnectionLoading(false);
+      setEmailSentStatsLoading(false);
     }
   }
 
@@ -589,7 +578,7 @@ export default function AdminClient() {
   useEffect(() => {
     void load();
     void loadFashnCredits();
-    void loadResendConnection();
+    void loadEmailSentStats();
   }, []);
 
   useEffect(() => {
@@ -808,7 +797,7 @@ export default function AdminClient() {
 
   function refreshCurrentTab() {
     void loadFashnCredits();
-    void loadResendConnection();
+    void loadEmailSentStats();
     if (activeTab === "clients" || activeTab === "wearMe") void load();
     else if (activeTab === "analytics") void loadAnalytics();
     else if (activeTab === "topUps") void loadTopUps();
@@ -1277,42 +1266,36 @@ export default function AdminClient() {
                 )}
               </div>
               <div className="rounded-xl border border-rose-500/35 bg-rose-950/20 px-4 py-3 shadow-sm sm:min-w-[260px]">
-                <p className="text-[10px] font-semibold uppercase tracking-wider text-rose-200/75">Resend</p>
-                {resendConnectionLoading ? (
-                  <p className="mt-2 text-sm text-zinc-500">Checking API key…</p>
-                ) : resendConnectionError ? (
+                <p className="text-[10px] font-semibold uppercase tracking-wider text-rose-200/75">
+                  Fit Room email
+                </p>
+                {emailSentStatsLoading ? (
+                  <p className="mt-2 text-sm text-zinc-500">Loading counters…</p>
+                ) : emailSentStatsError ? (
                   <p
                     className="mt-2 text-sm leading-snug text-amber-200/95"
-                    title={resendConnectionError}
+                    title={emailSentStatsError}
                   >
-                    {resendConnectionError}
+                    {emailSentStatsError}
                   </p>
-                ) : resendConnection?.apiKeyValid ? (
+                ) : emailSentStats ? (
                   <>
-                    <p className="mt-2 text-sm font-medium text-emerald-200/95">
-                      API key OK — emails endpoint responded successfully.
+                    <p className="mt-2 text-xs leading-relaxed text-zinc-500">
+                      Counts from Redis (incremented when multipart Fit Room mail sends succeed). UTC calendar day /
+                      month.
                     </p>
-                    <p className="mt-2 text-xs tabular-nums text-zinc-300">
-                      Sent today:{" "}
-                      <span className="font-semibold text-zinc-100">
-                        {resendConnection.dailySent != null
-                          ? resendConnection.dailySent.toLocaleString()
-                          : "—"}
+                    <p className="mt-2 text-sm tabular-nums text-zinc-200">
+                      Emails sent today:{" "}
+                      <span className="font-semibold text-zinc-50">
+                        {emailSentStats.emailsSentToday.toLocaleString()}
                       </span>
                     </p>
-                    <p className="mt-1 text-xs tabular-nums text-zinc-300">
-                      Sent this month:{" "}
-                      <span className="font-semibold text-zinc-100">
-                        {resendConnection.monthlySent != null
-                          ? resendConnection.monthlySent.toLocaleString()
-                          : "—"}
+                    <p className="mt-1 text-sm tabular-nums text-zinc-200">
+                      Emails sent this month:{" "}
+                      <span className="font-semibold text-zinc-50">
+                        {emailSentStats.emailsSentThisMonth.toLocaleString()}
                       </span>
                     </p>
-                    {(resendConnection.dailySent == null || resendConnection.monthlySent == null) ? (
-                      <p className="mt-2 text-xs leading-relaxed text-zinc-500">
-                        Quota headers were not returned on this response; open Resend for full metrics.
-                      </p>
-                    ) : null}
                     <a
                       href="https://resend.com/metrics"
                       target="_blank"
@@ -1323,7 +1306,7 @@ export default function AdminClient() {
                     </a>
                   </>
                 ) : (
-                  <p className="mt-2 text-sm text-zinc-500">Could not verify Resend connection.</p>
+                  <p className="mt-2 text-sm text-zinc-500">No counter data.</p>
                 )}
               </div>
               <div className="flex flex-wrap items-center gap-3">
