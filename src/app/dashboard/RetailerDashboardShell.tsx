@@ -376,7 +376,7 @@ function RetailerDashboardShellInner({
             onClick={() => selectTab("overview")}
             className={`${tabBase} ${tab === "overview" ? tabActive : tabInactive}`}
           >
-            Overview
+            My Plan
           </button>
           <button
             type="button"
