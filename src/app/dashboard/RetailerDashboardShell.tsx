@@ -2,7 +2,7 @@
 
 import { Activity, Coins, Gauge, ImageOff } from "lucide-react";
 import Link from "next/link";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useSearchParams } from "next/navigation";
 import { Suspense, useCallback, useEffect, useMemo, useState } from "react";
 import { TryOnTimingCharts } from "@/components/TryOnTimingCharts";
 import { LOCAL_OR_UNKNOWN_PRODUCT } from "@/lib/tryOnConstants";
@@ -150,7 +150,6 @@ function RetailerDashboardShellInner({
   initialTopUpUsed,
   initialTopUpLimit,
 }: RetailerDashboardShellProps) {
-  const router = useRouter();
   const searchParams = useSearchParams();
   const [tab, setTab] = useState<DashboardTab>(() => parseDashboardTab(searchParams));
 
@@ -168,14 +167,12 @@ function RetailerDashboardShellInner({
     return () => window.removeEventListener("popstate", onPopState);
   }, []);
 
-  const selectTab = useCallback(
-    (next: DashboardTab) => {
-      setTab(next);
-      const basePath = "/dashboard";
-      router.replace(`${basePath}?${searchParamsStringForTab(next)}`, { scroll: false });
-    },
-    [router],
-  );
+  /** Tab switches stay on this page: update React state + URL via history API only (no App Router navigation). */
+  const selectTab = useCallback((next: DashboardTab) => {
+    setTab(next);
+    const url = `/dashboard?${searchParamsStringForTab(next)}`;
+    window.history.replaceState(window.history.state, "", url);
+  }, []);
 
   const [planUsed, setPlanUsed] = useState(initialPlanUsed);
   const [basePlanLimit, setBasePlanLimit] = useState(initialBasePlanLimit);
