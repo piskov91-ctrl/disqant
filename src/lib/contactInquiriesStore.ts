@@ -30,19 +30,53 @@ export type ContactInquiryInput = Omit<ContactInquiryRecord, "id" | "createdAt" 
  * Persist a new contact form submission (Redis). Increments unread counter.
  */
 export async function recordContactInquiry(fields: ContactInquiryInput): Promise<string> {
-  const redis = getRedis();
-  const id = crypto.randomUUID();
-  const row: ContactInquiryRecord = {
-    id,
-    createdAt: new Date().toISOString(),
-    read: false,
-    ...fields,
-  };
-  await redis.set(recordKey(id), JSON.stringify(row));
-  await redis.lpush(INDEX_KEY, id);
-  await redis.ltrim(INDEX_KEY, 0, CONTACT_INQUIRIES_INDEX_MAX - 1);
-  await redis.incr(UNREAD_KEY);
-  return id;
+  console.log("[fit-room][contactInquiry] recordContactInquiry called", {
+    name: fields.name,
+    email: fields.email,
+    company: fields.company,
+    websiteDisplay: fields.websiteDisplay,
+    monthlyVisitors: fields.monthlyVisitors,
+    monthlyVisitorsLabel: fields.monthlyVisitorsLabel,
+    messageLength: fields.message.length,
+    messagePreview:
+      fields.message.length > 160 ? `${fields.message.slice(0, 160)}…` : fields.message,
+  });
+
+  try {
+    const redis = getRedis();
+    const id = crypto.randomUUID();
+    const row: ContactInquiryRecord = {
+      id,
+      createdAt: new Date().toISOString(),
+      read: false,
+      ...fields,
+    };
+    const redisRecordKey = recordKey(id);
+    const payload = JSON.stringify(row);
+    const payloadUtf8Bytes = new TextEncoder().encode(payload).length;
+
+    await redis.set(redisRecordKey, payload);
+    await redis.lpush(INDEX_KEY, id);
+    await redis.ltrim(INDEX_KEY, 0, CONTACT_INQUIRIES_INDEX_MAX - 1);
+    const unreadAfter = await redis.incr(UNREAD_KEY);
+
+    console.log("[fit-room][contactInquiry] saved to Redis OK", {
+      id,
+      redisRecordKey,
+      indexKey: INDEX_KEY,
+      unreadKey: UNREAD_KEY,
+      payloadUtf8Bytes,
+      unreadCounterRaw: unreadAfter,
+    });
+
+    return id;
+  } catch (err) {
+    console.error("[fit-room][contactInquiry] recordContactInquiry failed (Redis / getRedis)", {
+      message: err instanceof Error ? err.message : String(err),
+      stack: err instanceof Error ? err.stack : undefined,
+    });
+    throw err;
+  }
 }
 
 export async function getUnreadContactInquiryCount(): Promise<number> {
