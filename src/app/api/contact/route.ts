@@ -1,8 +1,29 @@
 import { Resend } from "resend";
 
-const TO_EMAIL = process.env.CONTACT_TO ?? "support@fit-room.com";
-/** Verifiable sender; override with RESEND_FROM. Default matches Fit Room transactional mail. */
-const FROM_EMAIL = process.env.RESEND_FROM?.trim() ?? "Fit Room <support@fit-room.com>";
+const TO_EMAIL = (process.env.CONTACT_TO ?? "support@fit-room.com").trim();
+
+/**
+ * Outbound sender for the contact form — must not be the same mailbox as {@link TO_EMAIL}.
+ * Sending From support@ → To support@ often never reaches external forwarding (Hostinger → Gmail);
+ * Resend still accepts the API call, so it looks "logged" only.
+ */
+const CONTACT_FORM_FROM_DEFAULT = "Fit Room <website@fit-room.com>";
+
+function extractBareEmail(fromHeaderStyle: string): string {
+  const t = fromHeaderStyle.trim();
+  const m = t.match(/<([^>]+)>/);
+  return (m ? m[1] : t).trim().toLowerCase();
+}
+
+function resolveContactFormFrom(): string {
+  const explicit = process.env.CONTACT_FORM_FROM?.trim();
+  if (explicit) return explicit;
+  const fallback = CONTACT_FORM_FROM_DEFAULT;
+  if (extractBareEmail(fallback) === extractBareEmail(TO_EMAIL)) {
+    return "Fit Room <noreply@fit-room.com>";
+  }
+  return fallback;
+}
 
 const VISITOR_OPTIONS = new Set(["under-10k", "10k-50k", "50k-100k", "100k-plus"]);
 
@@ -98,10 +119,16 @@ export async function POST(req: Request) {
   )}</pre>
   `;
 
+  let from = resolveContactFormFrom();
+  if (extractBareEmail(from) === extractBareEmail(TO_EMAIL)) {
+    from = CONTACT_FORM_FROM_DEFAULT;
+  }
+
   const resend = new Resend(apiKey);
   const { data, error } = await resend.emails.send({
-    from: FROM_EMAIL,
+    from,
     to: [TO_EMAIL],
+    replyTo: email,
     subject: `Contact: ${name} — ${company}`,
     text,
     html,
