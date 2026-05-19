@@ -299,7 +299,7 @@ export async function incrementUsageOrThrow(id: string) {
   const bundle = await getRecordForMutation(id);
   if (!bundle) throw new Error("Client key not found.");
   const { redisKey } = bundle;
-  let rec = applyAllDueMonthlyUsageResets(bundle.rec, new Date());
+  const rec = applyAllDueMonthlyUsageResets(bundle.rec, new Date());
   if (monthlyBillingCycleChanged(bundle.rec, rec)) {
     await redis.set(redisKey, rec);
   }
@@ -374,7 +374,7 @@ export async function incrementClientTryOnLimit(id: string, delta: number) {
   const { rec, redisKey } = bundle;
   if (rec.deletedAt) throw new Error("This API key is no longer active.");
 
-  let cur = applyAllDueMonthlyUsageResets(rec, new Date());
+  const cur = applyAllDueMonthlyUsageResets(rec, new Date());
   if (monthlyBillingCycleChanged(rec, cur)) {
     await redis.set(redisKey, cur);
   }
