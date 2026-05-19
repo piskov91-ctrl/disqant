@@ -2,12 +2,71 @@ import type Stripe from "stripe";
 import {
   createClientKey,
   getRedis,
+  incrementClientTryOnLimit,
 } from "@/lib/apiKeyStore";
 import { getRetailerById, linkRetailerToClientId, type RetailerUser } from "@/lib/retailerAuth";
 import { getSubscriptionPlanDefinition, parseSubscriptionPlanKey } from "@/lib/subscriptionPlans";
+import { STRIPE_TOP_UP_CHECKOUT_KIND, getTopUpPackById, parseTopUpPackId } from "@/lib/topUpPacks";
 
 function idempotencyRedisKey(checkoutSessionId: string): string {
   return `fit-room:stripe:checkout-done:${checkoutSessionId}`;
+}
+
+function parsePositiveInt(raw: string | undefined): number | null {
+  if (raw == null || typeof raw !== "string") return null;
+  const n = Number.parseInt(raw, 10);
+  if (!Number.isFinite(n) || n <= 0) return null;
+  return n;
+}
+
+async function fulfillPaidTopUpCheckoutSession(session: Stripe.Checkout.Session): Promise<void> {
+  const retailerUserId = (session.metadata?.retailer_user_id ?? session.client_reference_id ?? "").trim();
+  const clientId = (session.metadata?.client_id ?? "").trim();
+  const packIdRaw = session.metadata?.top_up_pack ?? "";
+  const packId = parseTopUpPackId(packIdRaw);
+  const metaTryOns = parsePositiveInt(session.metadata?.try_on_add ?? undefined);
+
+  if (!retailerUserId || !clientId || !packId) {
+    console.error("[stripe] top-up checkout session missing fulfillment metadata", {
+      sessionId: session.id,
+      retailerUserId: retailerUserId || null,
+      clientId: clientId || null,
+      top_up_pack: packIdRaw || null,
+    });
+    throw new Error("Invalid Stripe top-up metadata for fulfillment.");
+  }
+
+  const pack = getTopUpPackById(packId);
+  if (metaTryOns != null && metaTryOns !== pack.tryOns) {
+    console.error("[stripe] top-up try_on_add mismatch", {
+      sessionId: session.id,
+      metaTryOns,
+      packTryOns: pack.tryOns,
+    });
+    throw new Error("Top-up pack mismatch.");
+  }
+
+  const user = await findRetailerIdentityForStripeSession(retailerUserId);
+  if (!user) {
+    console.error("[stripe] retailer user not found for top-up checkout", {
+      sessionId: session.id,
+      retailerUserId,
+    });
+    throw new Error("Retailer account not found for Stripe top-up.");
+  }
+
+  const linked = user.clientId?.trim() || "";
+  if (linked !== clientId) {
+    console.error("[stripe] top-up client_id does not match retailer linkage", {
+      sessionId: session.id,
+      retailerUserId,
+      metadataClientId: clientId,
+      linkedClientId: linked || null,
+    });
+    throw new Error("Top-up client does not match this account.");
+  }
+
+  await incrementClientTryOnLimit(clientId, pack.tryOns);
 }
 
 /**
@@ -80,8 +139,26 @@ export async function releaseStripeCheckoutProcessing(sessionId: string): Promis
 }
 
 export async function fulfillCheckoutSessionIfPaid(session: Stripe.Checkout.Session): Promise<void> {
-  if (session.mode !== "subscription") return;
   if (session.payment_status !== "paid") return;
+
+  const isTopUp = session.metadata?.checkout_kind === STRIPE_TOP_UP_CHECKOUT_KIND;
+  if (isTopUp) {
+    if (session.mode !== "payment") {
+      console.error("[stripe] top-up checkout has unexpected mode", { sessionId: session.id, mode: session.mode });
+      return;
+    }
+    const claimed = await claimStripeCheckoutProcessing(session.id);
+    if (!claimed) return;
+    try {
+      await fulfillPaidTopUpCheckoutSession(session);
+    } catch (e) {
+      await releaseStripeCheckoutProcessing(session.id);
+      throw e;
+    }
+    return;
+  }
+
+  if (session.mode !== "subscription") return;
 
   const claimed = await claimStripeCheckoutProcessing(session.id);
   if (!claimed) return;

@@ -322,6 +322,27 @@ export async function resetUsage(id: string) {
   return next;
 }
 
+/** Add try-on quota to an existing client (e.g. after a one-time top-up payment). */
+export async function incrementClientTryOnLimit(id: string, delta: number) {
+  const redis = getRedis();
+  if (!id) throw new Error("Key id is required.");
+  if (!Number.isFinite(delta) || delta <= 0 || !Number.isInteger(delta)) {
+    throw new Error("Top-up amount must be a positive whole number.");
+  }
+
+  const bundle = await getRecordForMutation(id);
+  if (!bundle) throw new Error("Client key not found.");
+  const { rec, redisKey } = bundle;
+  if (rec.deletedAt) throw new Error("This API key is no longer active.");
+
+  const next: ClientApiKeyRecord = {
+    ...rec,
+    usageLimit: rec.usageLimit + delta,
+  };
+  await redis.set(redisKey, next);
+  return next;
+}
+
 export async function updateClientKey(params: {
   id: string;
   clientName: string;

@@ -8,6 +8,7 @@ import { LOCAL_OR_UNKNOWN_PRODUCT } from "@/lib/tryOnConstants";
 import { DashboardEmailDeveloperPanel } from "./DashboardEmailDeveloperPanel";
 import { DashboardInstallPlatformGuide } from "./DashboardInstallPlatformGuide";
 import { DashboardInstallPreviewAnimation } from "./DashboardInstallPreviewAnimation";
+import { DashboardTopUpPanel } from "./DashboardTopUpPanel";
 
 type DashboardTab = "overview" | "getCode" | "analytics";
 
@@ -135,6 +136,17 @@ export function RetailerDashboardShell({
   }, []);
 
   useEffect(() => {
+    if (typeof window === "undefined") return;
+    const sp = new URLSearchParams(window.location.search);
+    const topup = sp.get("topup");
+    if (topup === "success") {
+      void refreshUsage();
+      const path = `${window.location.pathname}${window.location.hash}`;
+      window.history.replaceState(null, "", path);
+    }
+  }, [refreshUsage]);
+
+  useEffect(() => {
     void refreshUsage();
   }, [refreshUsage]);
 
@@ -144,6 +156,8 @@ export function RetailerDashboardShell({
     [used, limit],
   );
   const blocked = limit > 0 && used >= limit;
+  const lowOnTryOns = limit > 0 && !blocked && pct >= 75;
+  const showTopUp = limit > 0 && (blocked || lowOnTryOns);
 
   const [analytics, setAnalytics] = useState<AnalyticsPayload | null>(null);
   const [analyticsLoading, setAnalyticsLoading] = useState(false);
@@ -350,6 +364,12 @@ export function RetailerDashboardShell({
                     />
                   </div>
                 </div>
+
+                {showTopUp ? (
+                  <div className="pt-4">
+                    <DashboardTopUpPanel />
+                  </div>
+                ) : null}
               </div>
             </div>
           </div>
