@@ -24,10 +24,12 @@ function parseDashboardTab(searchParams: Pick<URLSearchParams, "get">): Dashboar
   return "overview";
 }
 
-function pathForDashboardTab(tab: DashboardTab): string {
-  if (tab === "getCode") return "/dashboard?tab=get-code";
-  if (tab === "analytics") return "/dashboard?tab=analytics";
-  return "/dashboard?tab=overview";
+function searchParamsStringForTab(tab: DashboardTab): string {
+  const qs = new URLSearchParams();
+  if (tab === "getCode") qs.set("tab", "get-code");
+  else if (tab === "analytics") qs.set("tab", "analytics");
+  else qs.set("tab", "overview");
+  return qs.toString();
 }
 
 function DashboardShellSuspenseFallback() {
@@ -169,7 +171,8 @@ function RetailerDashboardShellInner({
   const selectTab = useCallback(
     (next: DashboardTab) => {
       setTab(next);
-      router.replace(pathForDashboardTab(next), { scroll: false });
+      const basePath = "/dashboard";
+      router.replace(`${basePath}?${searchParamsStringForTab(next)}`, { scroll: false });
     },
     [router],
   );
