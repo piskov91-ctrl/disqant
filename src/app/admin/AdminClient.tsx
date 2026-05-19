@@ -8,6 +8,7 @@ import { AnalyticsInsightsModal } from "@/components/AnalyticsInsightsModal";
 import { AdminWearMeClient } from "@/app/admin/AdminWearMeClient";
 import { getNextMonthlyResetUtcDateForDisplay } from "@/lib/billingCycle";
 import { storedOrDerivedBasePlanLimit, totalTryOnsUsed, clientTryOnFullyBlocked } from "@/lib/clientTryOnBuckets";
+import { tryOnUsageFillStyle } from "@/lib/tryOnUsageBarStyle";
 
 type KeyRecord = {
   id: string;
@@ -1707,10 +1708,7 @@ export default function AdminClient() {
                             <div className="flex min-w-0 flex-col gap-2">
                               <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
                                 <div className="h-2 w-14 shrink-0 overflow-hidden rounded-full border border-zinc-700 bg-zinc-800">
-                                  <div
-                                    className="h-full rounded-full bg-gradient-to-r from-[#7c3aed] to-[#a855f7]"
-                                    style={{ width: `${planPct}%` }}
-                                  />
+                                  <div className="h-full min-w-0 rounded-full" style={tryOnUsageFillStyle(planPct)} />
                                 </div>
                                 <span className="text-xs font-semibold tabular-nums text-zinc-500">{planPct}%</span>
                                 <span className="text-sm font-semibold tabular-nums text-zinc-300">
@@ -1720,10 +1718,7 @@ export default function AdminClient() {
                               {topLim > 0 ? (
                                 <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
                                   <div className="h-2 w-14 shrink-0 overflow-hidden rounded-full border border-zinc-700 bg-zinc-800">
-                                    <div
-                                      className="h-full rounded-full bg-gradient-to-r from-[#a855f7] to-[#ec4899]"
-                                      style={{ width: `${topPct}%` }}
-                                    />
+                                    <div className="h-full min-w-0 rounded-full" style={tryOnUsageFillStyle(topPct)} />
                                   </div>
                                   <span className="text-xs font-semibold tabular-nums text-zinc-500">{topPct}%</span>
                                   <span className="text-sm font-semibold tabular-nums text-zinc-400">

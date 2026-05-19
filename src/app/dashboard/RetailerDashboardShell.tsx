@@ -6,6 +6,7 @@ import { useSearchParams } from "next/navigation";
 import { Suspense, useCallback, useEffect, useMemo, useState } from "react";
 import { TryOnTimingCharts } from "@/components/TryOnTimingCharts";
 import { LOCAL_OR_UNKNOWN_PRODUCT } from "@/lib/tryOnConstants";
+import { tryOnUsageFillStyle } from "@/lib/tryOnUsageBarStyle";
 import { DashboardEmailDeveloperPanel } from "./DashboardEmailDeveloperPanel";
 import { DashboardInstallPlatformGuide } from "./DashboardInstallPlatformGuide";
 import { DashboardInstallPreviewAnimation } from "./DashboardInstallPreviewAnimation";
@@ -445,10 +446,7 @@ function RetailerDashboardShellInner({
                       <span className="tabular-nums text-zinc-500">{planPct}% of plan</span>
                     </div>
                     <div className="mt-2 h-2 w-full overflow-hidden rounded-full border border-white/10 bg-zinc-950/60">
-                      <div
-                        className="h-full rounded-full bg-gradient-to-r from-[#7c3aed] to-[#a855f7]"
-                        style={{ width: `${planPct}%` }}
-                      />
+                      <div className="h-full min-w-0 rounded-full" style={tryOnUsageFillStyle(planPct)} />
                     </div>
                   </div>
                   {topUpLimit > 0 ? (
@@ -460,10 +458,7 @@ function RetailerDashboardShellInner({
                         <span className="tabular-nums text-zinc-500">{topUpPct}% of top-up</span>
                       </div>
                       <div className="mt-2 h-2 w-full overflow-hidden rounded-full border border-white/10 bg-zinc-950/60">
-                        <div
-                          className="h-full rounded-full bg-gradient-to-r from-[#a855f7] to-[#ec4899]"
-                          style={{ width: `${topUpPct}%` }}
-                        />
+                        <div className="h-full min-w-0 rounded-full" style={tryOnUsageFillStyle(topUpPct)} />
                       </div>
                     </div>
                   ) : null}
