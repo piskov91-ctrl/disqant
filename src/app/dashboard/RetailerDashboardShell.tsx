@@ -7,6 +7,7 @@ import { Suspense, useCallback, useEffect, useMemo, useState } from "react";
 import { TryOnTimingCharts } from "@/components/TryOnTimingCharts";
 import { LOCAL_OR_UNKNOWN_PRODUCT } from "@/lib/tryOnConstants";
 import { tryOnUsageFillStyle } from "@/lib/tryOnUsageBarStyle";
+import { retailerDashboardPlanFromBaseLimit } from "@/lib/subscriptionPlans";
 import { DashboardEmailDeveloperPanel } from "./DashboardEmailDeveloperPanel";
 import { DashboardInstallPlatformGuide } from "./DashboardInstallPlatformGuide";
 import { DashboardInstallPreviewAnimation } from "./DashboardInstallPreviewAnimation";
@@ -82,11 +83,22 @@ function ProductThumb({ url }: { url: string }) {
   );
 }
 
+export type RetailerPlanSummary = {
+  planName: string;
+  monthlyTryOnLimit: number;
+  /** GBP formatted (e.g. £149.00); null for custom / unknown pricing. */
+  monthlyPriceLabel: string | null;
+  /** Long formatted UTC calendar date for next allowance reset. */
+  nextResetLabel: string;
+  /** Resolved billing anchor 1–31 (UTC day-of-month). */
+  billingAnchorDayUtc: number;
+};
+
 export type RetailerDashboardShellProps = {
   welcomeHeading: string;
   accountSubtitle: string;
   websiteUrl: string | null;
-  planLabel: string;
+  planSummary: RetailerPlanSummary;
   apiKey: string;
   /** Subscription bucket usage (`usageCount`). */
   initialPlanUsed: number;
@@ -95,6 +107,16 @@ export type RetailerDashboardShellProps = {
   initialTopUpUsed: number;
   initialTopUpLimit: number;
 };
+
+function utcCalendarDayOrdinal(day: number): string {
+  const d = Math.floor(day);
+  if (d < 1 || d > 31) return String(day);
+  const mod10 = d % 10;
+  const mod100 = d % 100;
+  const suffix =
+    mod100 >= 11 && mod100 <= 13 ? "th" : mod10 === 1 ? "st" : mod10 === 2 ? "nd" : mod10 === 3 ? "rd" : "th";
+  return `${d}${suffix}`;
+}
 
 const tabBase =
   "rounded-full px-5 py-2.5 text-sm font-semibold transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#c6a77d]/40 focus-visible:ring-offset-2 focus-visible:ring-offset-zinc-950";
@@ -113,7 +135,7 @@ function RetailerDashboardShellInner({
   welcomeHeading,
   accountSubtitle,
   websiteUrl,
-  planLabel,
+  planSummary,
   apiKey,
   initialPlanUsed,
   initialBasePlanLimit,
@@ -149,6 +171,25 @@ function RetailerDashboardShellInner({
   const [topUpLimit, setTopUpLimit] = useState(initialTopUpLimit);
   const [usageLoading, setUsageLoading] = useState(false);
   const [usageError, setUsageError] = useState<string | null>(null);
+
+  const derivedPlan = useMemo(() => retailerDashboardPlanFromBaseLimit(basePlanLimit), [basePlanLimit]);
+  const derivedMonthlyPriceLabel = useMemo(() => {
+    if (derivedPlan.priceGbpPence == null) return null;
+    return new Intl.NumberFormat("en-GB", { style: "currency", currency: "GBP" }).format(
+      derivedPlan.priceGbpPence / 100,
+    );
+  }, [derivedPlan.priceGbpPence]);
+
+  /** Anchor day + next reset from server; tier/limit/price follow live `basePlanLimit` after refresh. */
+  const displayPlanSummary = useMemo(
+    () => ({
+      ...planSummary,
+      planName: derivedPlan.planName,
+      monthlyTryOnLimit: derivedPlan.monthlyTryOnLimit,
+      monthlyPriceLabel: derivedMonthlyPriceLabel,
+    }),
+    [planSummary, derivedPlan.planName, derivedPlan.monthlyTryOnLimit, derivedMonthlyPriceLabel],
+  );
 
   const [origin, setOrigin] = useState("");
   useEffect(() => {
@@ -400,9 +441,58 @@ function RetailerDashboardShellInner({
                   <p className="text-[11px] font-semibold uppercase tracking-[0.26em] text-[#d4bc94]/88">
                     Your plan
                   </p>
-                  <p className="mt-5 text-xl font-semibold tracking-tight text-zinc-50">{planLabel}</p>
-                  <p className="mt-4 flex-1 text-sm leading-relaxed text-zinc-500">
-                    Monthly allowance and billing follow this plan. Change tier anytime when your traffic grows.
+                  <p className="mt-5 text-2xl font-semibold tracking-tight text-zinc-50">{displayPlanSummary.planName}</p>
+
+                  <dl className="mt-8 space-y-6 border-t border-[#c6a77d]/15 pt-8">
+                    <div>
+                      <dt className="text-[11px] font-semibold uppercase tracking-[0.2em] text-zinc-500">
+                        Monthly try-on limit
+                      </dt>
+                      <dd className="mt-2 tabular-nums text-lg font-medium text-[#f0ebe3]">
+                        {displayPlanSummary.monthlyTryOnLimit > 0
+                          ? `${displayPlanSummary.monthlyTryOnLimit.toLocaleString()} try-ons / month`
+                          : "—"}
+                      </dd>
+                    </div>
+                    <div>
+                      <dt className="text-[11px] font-semibold uppercase tracking-[0.2em] text-zinc-500">
+                        Price
+                      </dt>
+                      <dd className="mt-2 text-lg font-medium text-[#f0ebe3]">
+                        {displayPlanSummary.monthlyPriceLabel ? (
+                          <>
+                            {displayPlanSummary.monthlyPriceLabel}
+                            <span className="text-base font-normal text-zinc-500"> / month</span>
+                          </>
+                        ) : (
+                          <>
+                            <span className="text-zinc-400">—</span>
+                            <p className="mt-1.5 text-xs font-normal leading-relaxed text-zinc-600">
+                              Standard tiers show published pricing. Custom plans follow your agreement.
+                            </p>
+                          </>
+                        )}
+                      </dd>
+                    </div>
+                    <div>
+                      <dt className="text-[11px] font-semibold uppercase tracking-[0.2em] text-zinc-500">
+                        Next allowance reset
+                      </dt>
+                      <dd className="mt-2 text-base font-medium leading-snug text-[#e8dcc8]">
+                        {displayPlanSummary.nextResetLabel}
+                      </dd>
+                      <dd className="mt-3 text-xs leading-relaxed text-zinc-600">
+                        Cycle anchored to the{" "}
+                        <span className="font-medium text-zinc-500">
+                          {utcCalendarDayOrdinal(displayPlanSummary.billingAnchorDayUtc)}
+                        </span>{" "}
+                        of each month (UTC). Shorter months use the last calendar day when needed.
+                      </dd>
+                    </div>
+                  </dl>
+
+                  <p className="mt-8 flex-1 text-sm leading-relaxed text-zinc-500">
+                    Upgrade or change tier anytime—your monthly bucket and billing follow the plan you select.
                   </p>
                   <Link
                     href="/subscriptions"

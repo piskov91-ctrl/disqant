@@ -40,3 +40,34 @@ export function planLabelFromTryOnLimit(limit: number): string {
   }
   return "Custom plan";
 }
+
+/** Short tier label for retailer dashboard (matches SUBSCRIPTION_PLANS try-on caps). */
+export function retailerDashboardPlanFromBaseLimit(limit: number): {
+  planName: string;
+  monthlyTryOnLimit: number;
+  priceGbpPence: number | null;
+} {
+  const lim = Math.floor(limit);
+  if (!Number.isFinite(lim) || lim <= 0) {
+    return { planName: "Custom Plan", monthlyTryOnLimit: lim, priceGbpPence: null };
+  }
+
+  const tierNames: Record<SubscriptionPlanKey, string> = {
+    starter: "Starter",
+    growth: "Growth",
+    pro: "Pro",
+  };
+
+  for (const key of ["starter", "growth", "pro"] as const) {
+    const p = SUBSCRIPTION_PLANS[key];
+    if (p.tryOnLimit === lim) {
+      return {
+        planName: tierNames[key],
+        monthlyTryOnLimit: lim,
+        priceGbpPence: p.amountGbpPence,
+      };
+    }
+  }
+
+  return { planName: "Custom Plan", monthlyTryOnLimit: lim, priceGbpPence: null };
+}

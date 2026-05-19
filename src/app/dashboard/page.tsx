@@ -7,7 +7,8 @@ import { getClientKeyRecordById } from "@/lib/apiKeyStore";
 import { retailerWelcomeGreetingName } from "@/lib/retailerDisplayName";
 import { getRetailerSessionUser } from "@/lib/retailerAuth";
 import { storedOrDerivedBasePlanLimit } from "@/lib/clientTryOnBuckets";
-import { planLabelFromTryOnLimit } from "@/lib/subscriptionPlans";
+import { getNextMonthlyResetUtcDateForDisplay, resolveBillingAnchorDay } from "@/lib/billingCycle";
+import { retailerDashboardPlanFromBaseLimit } from "@/lib/subscriptionPlans";
 import { RetailerDashboardShell } from "./RetailerDashboardShell";
 
 export const metadata: Metadata = {
@@ -114,8 +115,28 @@ export default async function DashboardPage() {
   }
 
   const planCap = storedOrDerivedBasePlanLimit(client);
-  const planLabel = planLabelFromTryOnLimit(planCap);
+  const planBits = retailerDashboardPlanFromBaseLimit(planCap);
+  const billingAnchorDayUtc = resolveBillingAnchorDay(client);
+  const nextResetUtc = getNextMonthlyResetUtcDateForDisplay(client);
+  const nextResetLabel = `${new Intl.DateTimeFormat("en-GB", {
+    weekday: "long",
+    day: "numeric",
+    month: "long",
+    year: "numeric",
+    timeZone: "UTC",
+  }).format(nextResetUtc)} (UTC)`;
+  const monthlyPriceLabel =
+    typeof planBits.priceGbpPence === "number"
+      ? new Intl.NumberFormat("en-GB", { style: "currency", currency: "GBP" }).format(planBits.priceGbpPence / 100)
+      : null;
 
+  const planSummary = {
+    planName: planBits.planName,
+    monthlyTryOnLimit: planBits.monthlyTryOnLimit,
+    monthlyPriceLabel,
+    nextResetLabel,
+    billingAnchorDayUtc,
+  };
   const accountSubtitle =
     [
       [user.firstName, user.lastName].filter(Boolean).join(" ").trim(),
@@ -132,7 +153,7 @@ export default async function DashboardPage() {
           welcomeHeading={`Welcome back, ${greeting}!`}
           accountSubtitle={accountSubtitle}
           websiteUrl={user.websiteUrl?.trim() ? user.websiteUrl.trim() : null}
-          planLabel={planLabel}
+          planSummary={planSummary}
           apiKey={client.key}
           initialPlanUsed={client.usageCount}
           initialBasePlanLimit={planCap}
