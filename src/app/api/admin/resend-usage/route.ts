@@ -3,7 +3,13 @@ import { ADMIN_AUTH_COOKIE, isAdminAuthorizedCookieValue } from "@/lib/adminAuth
 
 export const runtime = "nodejs";
 
-const RESEND_DOMAINS_URL = "https://api.resend.com/domains";
+const RESEND_EMAILS_URL = "https://api.resend.com/emails?limit=1";
+
+function parseQuotaHeader(value: string | null): number | null {
+  if (value == null || value === "") return null;
+  const n = Number.parseInt(value, 10);
+  return Number.isFinite(n) && n >= 0 ? n : null;
+}
 
 async function requireAdmin() {
   const jar = await cookies();
@@ -13,17 +19,20 @@ async function requireAdmin() {
 export async function GET() {
   if (!(await requireAdmin())) return Response.json({ error: "Unauthorized." }, { status: 401 });
 
-  const apiKey = (process.env.RESEND_API_KEY || "").trim();
+  const apiKey = (process.env.RESEND_FULL_API_KEY || "").trim();
   if (!apiKey) {
     return Response.json(
-      { error: "RESEND_API_KEY is not set in the server environment.", apiKeyValid: false },
+      {
+        error: "RESEND_FULL_API_KEY is not set in the server environment.",
+        apiKeyValid: false,
+      },
       { status: 503 },
     );
   }
 
   let res: Response;
   try {
-    res = await fetch(RESEND_DOMAINS_URL, {
+    res = await fetch(RESEND_EMAILS_URL, {
       method: "GET",
       headers: { Authorization: `Bearer ${apiKey}` },
       cache: "no-store",
@@ -55,20 +64,12 @@ export async function GET() {
     return Response.json({ error: message, apiKeyValid: false }, { status: 502 });
   }
 
-  let domainCount: number | null = null;
-  if (text) {
-    try {
-      const body = JSON.parse(text) as { data?: unknown };
-      if (Array.isArray(body.data)) {
-        domainCount = body.data.length;
-      }
-    } catch {
-      /* ignore */
-    }
-  }
+  const dailySent = parseQuotaHeader(res.headers.get("x-resend-daily-quota"));
+  const monthlySent = parseQuotaHeader(res.headers.get("x-resend-monthly-quota"));
 
   return Response.json({
     apiKeyValid: true,
-    domainCount,
+    dailySent,
+    monthlySent,
   });
 }

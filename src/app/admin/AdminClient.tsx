@@ -128,7 +128,9 @@ type AdminFashnCredits = {
 
 type AdminResendConnection = {
   apiKeyValid: boolean;
-  domainCount: number | null;
+  /** Used quota from Resend response headers (may be absent depending on API/plan). */
+  dailySent: number | null;
+  monthlySent: number | null;
 };
 
 type RecoveryAccountRow = {
@@ -483,12 +485,18 @@ export default function AdminClient() {
         return;
       }
       if (data.apiKeyValid === true) {
+        const dailySent =
+          typeof data.dailySent === "number" && Number.isFinite(data.dailySent)
+            ? Math.floor(data.dailySent)
+            : null;
+        const monthlySent =
+          typeof data.monthlySent === "number" && Number.isFinite(data.monthlySent)
+            ? Math.floor(data.monthlySent)
+            : null;
         setResendConnection({
           apiKeyValid: true,
-          domainCount:
-            typeof data.domainCount === "number" && Number.isFinite(data.domainCount)
-              ? Math.floor(data.domainCount)
-              : null,
+          dailySent,
+          monthlySent,
         });
       } else {
         setResendConnection(null);
@@ -1282,17 +1290,29 @@ export default function AdminClient() {
                 ) : resendConnection?.apiKeyValid ? (
                   <>
                     <p className="mt-2 text-sm font-medium text-emerald-200/95">
-                      API key OK — domains endpoint responded successfully.
+                      API key OK — emails endpoint responded successfully.
                     </p>
-                    {resendConnection.domainCount != null ? (
-                      <p className="mt-1 text-xs tabular-nums text-zinc-400">
-                        Domains listed: {resendConnection.domainCount}
+                    <p className="mt-2 text-xs tabular-nums text-zinc-300">
+                      Sent today:{" "}
+                      <span className="font-semibold text-zinc-100">
+                        {resendConnection.dailySent != null
+                          ? resendConnection.dailySent.toLocaleString()
+                          : "—"}
+                      </span>
+                    </p>
+                    <p className="mt-1 text-xs tabular-nums text-zinc-300">
+                      Sent this month:{" "}
+                      <span className="font-semibold text-zinc-100">
+                        {resendConnection.monthlySent != null
+                          ? resendConnection.monthlySent.toLocaleString()
+                          : "—"}
+                      </span>
+                    </p>
+                    {(resendConnection.dailySent == null || resendConnection.monthlySent == null) ? (
+                      <p className="mt-2 text-xs leading-relaxed text-zinc-500">
+                        Quota headers were not returned on this response; open Resend for full metrics.
                       </p>
                     ) : null}
-                    <p className="mt-3 text-xs leading-relaxed text-zinc-500">
-                      Sent email counts and quotas aren&apos;t available through this API. View usage and metrics in
-                      the Resend dashboard.
-                    </p>
                     <a
                       href="https://resend.com/metrics"
                       target="_blank"
