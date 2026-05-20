@@ -3,7 +3,9 @@ import type { ReactNode } from "react";
 import { Footer } from "@/components/Footer";
 import { Header } from "@/components/Header";
 import { Pricing } from "@/components/Pricing";
+import type { TestimonialSlide } from "@/components/TestimonialsSlideshow";
 import { Testimonials } from "@/components/Testimonials";
+import { listApprovedSubscriptionsFeedback } from "@/lib/subscriptionsFeedbackStore";
 import { SubscriptionsFeedbackSection } from "./SubscriptionsFeedbackSection";
 
 export const metadata: Metadata = {
@@ -17,6 +19,14 @@ type PageProps = {
 
 export default async function SubscriptionsPage(props: PageProps) {
   const q = await props.searchParams;
+
+  const approvedRows = await listApprovedSubscriptionsFeedback(80).catch(() => []);
+  const merchantSlides: TestimonialSlide[] = approvedRows.map((r) => ({
+    id: r.id,
+    rating: r.rating,
+    quote: r.message,
+    attribution: `— ${r.storeName}`,
+  }));
 
   let checkoutBanner: ReactNode = null;
   if (q.checkout === "success") {
@@ -51,7 +61,7 @@ export default async function SubscriptionsPage(props: PageProps) {
           {checkoutBanner}
         </div>
         <Pricing sectionId="" />
-        <Testimonials tone="dark" />
+        <Testimonials tone="dark" merchantSlides={merchantSlides} />
         <SubscriptionsFeedbackSection />
       </main>
       <Footer />

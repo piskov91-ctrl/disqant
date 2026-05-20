@@ -5,6 +5,13 @@ import { TESTIMONIAL_REVIEWS } from "@/data/testimonialReviews";
 
 export type TestimonialsSlideshowTone = "light" | "dark";
 
+export type TestimonialSlide = {
+  id: string;
+  rating: number;
+  quote: string;
+  attribution: string;
+};
+
 const INTERVAL_MS = 3000;
 const STAR_MAX = 5;
 
@@ -40,16 +47,34 @@ function Stars({ rating, filledClass, emptyClass }: { rating: number; filledClas
   );
 }
 
+const CURATED_SLIDES: TestimonialSlide[] = TESTIMONIAL_REVIEWS.map((r, i) => ({
+  id: `curated-${r.attribution}-${i}`,
+  rating: r.rating,
+  quote: r.quote,
+  attribution: r.attribution,
+}));
+
 export function TestimonialsSlideshow({
   tone = "light",
   className = "",
+  slides,
 }: {
   tone?: TestimonialsSlideshowTone;
   className?: string;
+  /** When set (non-empty), drives the carousel instead of curated marketing testimonials. */
+  slides?: readonly TestimonialSlide[];
 }) {
   const prefersReducedMotion = usePrefersReducedMotion();
+  /** Reset carousel when slide identities change */
+  const slideKey = slides?.length ? slides.map((s) => s.id).join("|") : "curated";
+  const resolvedSlides = slides?.length ? slides : CURATED_SLIDES;
+
   const [index, setIndex] = useState(0);
-  const len = TESTIMONIAL_REVIEWS.length;
+  useEffect(() => {
+    setIndex(0);
+  }, [slideKey]);
+
+  const len = resolvedSlides.length;
 
   const goPrev = useCallback(() => setIndex((i) => (i <= 0 ? len - 1 : i - 1)), [len]);
   const goNext = useCallback(() => setIndex((i) => (i >= len - 1 ? 0 : i + 1)), [len]);
@@ -62,7 +87,9 @@ export function TestimonialsSlideshow({
     return () => window.clearInterval(id);
   }, [prefersReducedMotion, len]);
 
-  const current = TESTIMONIAL_REVIEWS[index];
+  if (len < 1) return null;
+
+  const current = resolvedSlides[index];
   const starTone =
     tone === "dark"
       ? { filled: "text-amber-400", empty: "text-[#F5EDE4]/25" }
@@ -125,9 +152,9 @@ export function TestimonialsSlideshow({
       </div>
 
       <div className="mt-8 flex justify-center gap-2" role="tablist" aria-label="Choose review slide">
-        {TESTIMONIAL_REVIEWS.map((r, i) => (
+        {resolvedSlides.map((r, i) => (
           <button
-            key={`${r.attribution}-${i}`}
+            key={`${r.id}-${i}`}
             type="button"
             role="tab"
             aria-selected={i === index}

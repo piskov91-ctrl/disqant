@@ -119,7 +119,14 @@ type AnalyticsSummary = {
   demoVisitors: DemoVisitorAnalyticsRow[];
 };
 
-type AdminTab = "clients" | "contact" | "topUps" | "analytics" | "wearMe" | "recovery";
+type AdminTab =
+  | "clients"
+  | "contact"
+  | "reviews"
+  | "topUps"
+  | "analytics"
+  | "wearMe"
+  | "recovery";
 
 type AdminFashnCredits = {
   total: number | null;
@@ -156,6 +163,15 @@ type ContactInquiryRow = {
   monthlyVisitors: string;
   monthlyVisitorsLabel: string;
   message: string;
+};
+
+type SubscriptionsPendingReviewRow = {
+  id: string;
+  createdAt: string;
+  rating: number;
+  message: string;
+  storeName: string;
+  status: "pending" | "approved";
 };
 
 const CREDIT_PLANS = [
@@ -324,6 +340,12 @@ export default function AdminClient() {
   const [contactInquiries, setContactInquiries] = useState<ContactInquiryRow[]>([]);
   const [contactInquiriesLoading, setContactInquiriesLoading] = useState(false);
   const [contactInquiriesError, setContactInquiriesError] = useState<string | null>(null);
+
+  const [reviewsPendingBadge, setReviewsPendingBadge] = useState(0);
+  const [subscriptionReviewsPending, setSubscriptionReviewsPending] = useState<SubscriptionsPendingReviewRow[]>([]);
+  const [subscriptionReviewsLoading, setSubscriptionReviewsLoading] = useState(false);
+  const [subscriptionReviewsError, setSubscriptionReviewsError] = useState<string | null>(null);
+  const [subscriptionModerationBusyId, setSubscriptionModerationBusyId] = useState<string | null>(null);
 
   type QuotaEmailPreviewPayload = {
     subject: string;
@@ -572,6 +594,90 @@ export default function AdminClient() {
     }
   }
 
+  async function loadSubscriptionReviewsBadge() {
+    try {
+      const res = await fetch("/api/admin/subscriptions-reviews?badge=1");
+      const data = (await res.json()) as { pendingCount?: number; error?: string };
+      if (!res.ok) {
+        if (data.error === "Unauthorized.") window.location.reload();
+        setReviewsPendingBadge(0);
+        return;
+      }
+      const u =
+        typeof data.pendingCount === "number" && Number.isFinite(data.pendingCount)
+          ? Math.max(0, Math.floor(data.pendingCount))
+          : 0;
+      setReviewsPendingBadge(u);
+    } catch {
+      setReviewsPendingBadge(0);
+    }
+  }
+
+  async function loadSubscriptionReviewsPendingList() {
+    setSubscriptionReviewsLoading(true);
+    setSubscriptionReviewsError(null);
+    try {
+      const res = await fetch("/api/admin/subscriptions-reviews");
+      const data = (await res.json()) as {
+        pending?: SubscriptionsPendingReviewRow[];
+        error?: string;
+      };
+      if (!res.ok) {
+        if (data.error === "Unauthorized.") window.location.reload();
+        setSubscriptionReviewsError(data.error || "Could not load pending reviews.");
+        setSubscriptionReviewsPending([]);
+        return;
+      }
+      setSubscriptionReviewsPending(Array.isArray(data.pending) ? data.pending : []);
+      void loadSubscriptionReviewsBadge();
+    } catch (e) {
+      setSubscriptionReviewsError(e instanceof Error ? e.message : "Could not load pending reviews.");
+      setSubscriptionReviewsPending([]);
+    } finally {
+      setSubscriptionReviewsLoading(false);
+    }
+  }
+
+  async function moderateSubscriptionReview(id: string, action: "approve" | "reject") {
+    const label = action === "approve" ? "Approve" : "Reject";
+    const okConfirm =
+      action === "approve"
+        ? true
+        : window.confirm(`${label} this review permanently? This removes it from the queue.`);
+
+    if (!okConfirm) return;
+
+    setSubscriptionModerationBusyId(id);
+    setSubscriptionReviewsError(null);
+    try {
+      const res = await fetch("/api/admin/subscriptions-reviews", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action, id }),
+      });
+      const data = (await res.json()) as {
+        pending?: SubscriptionsPendingReviewRow[];
+        pendingCount?: number;
+        error?: string;
+      };
+      if (!res.ok) {
+        if (data.error === "Unauthorized.") window.location.reload();
+        setSubscriptionReviewsError(data.error || "Could not apply moderation.");
+        return;
+      }
+      setSubscriptionReviewsPending(Array.isArray(data.pending) ? data.pending : []);
+      if (typeof data.pendingCount === "number" && Number.isFinite(data.pendingCount)) {
+        setReviewsPendingBadge(Math.max(0, Math.floor(data.pendingCount)));
+      } else {
+        void loadSubscriptionReviewsBadge();
+      }
+    } catch (e) {
+      setSubscriptionReviewsError(e instanceof Error ? e.message : "Could not apply moderation.");
+    } finally {
+      setSubscriptionModerationBusyId(null);
+    }
+  }
+
   async function loadRecovery() {
     setRecoveryLoading(true);
     setRecoveryError(null);
@@ -653,6 +759,7 @@ export default function AdminClient() {
     void loadFashnCredits();
     void loadEmailSentStats();
     void loadContactInquiriesBadge();
+    void loadSubscriptionReviewsBadge();
   }, []);
 
   useEffect(() => {
@@ -668,7 +775,8 @@ export default function AdminClient() {
     if (activeTab === "recovery") void loadRecovery();
     if (activeTab === "topUps") void loadTopUps();
     if (activeTab === "contact") void loadContactInquiries();
-  }, [activeTab]);
+    if (activeTab === "reviews") void loadSubscriptionReviewsPendingList();
+  }, [activeTab]); // eslint-disable-line react-hooks/exhaustive-deps -- loaders are not memoised; tab key is intentional.
 
   useEffect(() => {
     if (!quotaPreviewOpen) return;
@@ -874,10 +982,12 @@ export default function AdminClient() {
     void loadFashnCredits();
     void loadEmailSentStats();
     void loadContactInquiriesBadge();
+    void loadSubscriptionReviewsBadge();
     if (activeTab === "clients" || activeTab === "wearMe") void load();
     else if (activeTab === "analytics") void loadAnalytics();
     else if (activeTab === "topUps") void loadTopUps();
     else if (activeTab === "contact") void loadContactInquiries();
+    else if (activeTab === "reviews") void loadSubscriptionReviewsPendingList();
     else void loadRecovery();
   }
 
@@ -892,7 +1002,9 @@ export default function AdminClient() {
             ? topUpsLoading
             : activeTab === "contact"
               ? contactInquiriesLoading
-              : false;
+              : activeTab === "reviews"
+                ? subscriptionReviewsLoading
+                : false;
 
   const wearMeKeyRecord = useMemo(
     () => keys.find((k) => k.id === wearMeKeyId) ?? null,
@@ -1491,6 +1603,34 @@ export default function AdminClient() {
             <button
               type="button"
               role="tab"
+              aria-selected={activeTab === "reviews"}
+              aria-label={
+                reviewsPendingBadge > 0
+                  ? `Subscription reviews moderation, ${reviewsPendingBadge} pending`
+                  : "Subscription reviews moderation"
+              }
+              onClick={() => setActiveTab("reviews")}
+              className={`rounded-full px-5 py-2 text-sm font-semibold transition ${
+                activeTab === "reviews"
+                  ? "bg-zinc-800 text-zinc-100 shadow-sm"
+                  : "text-zinc-500 hover:text-zinc-300"
+              }`}
+            >
+              <span className="inline-flex items-center justify-center gap-2">
+                Reviews
+                {reviewsPendingBadge > 0 ? (
+                  <span
+                    className="inline-flex min-h-[1.125rem] min-w-[1.125rem] items-center justify-center rounded-full bg-amber-600 px-1.5 text-[10px] font-bold leading-none text-white tabular-nums"
+                    aria-hidden
+                  >
+                    {reviewsPendingBadge > 99 ? "99+" : reviewsPendingBadge}
+                  </span>
+                ) : null}
+              </span>
+            </button>
+            <button
+              type="button"
+              role="tab"
               aria-selected={activeTab === "topUps"}
               onClick={() => setActiveTab("topUps")}
               className={`rounded-full px-5 py-2 text-sm font-semibold transition ${
@@ -2033,6 +2173,88 @@ export default function AdminClient() {
                 Redis keys: <span className="font-mono text-zinc-400">fit-room:contactInquiry:*</span>,{" "}
                 <span className="font-mono text-zinc-400">fit-room:contactInquiries:index</span>,{" "}
                 <span className="font-mono text-zinc-400">fit-room:contactInquiries:unreadCount</span>
+              </p>
+            </section>
+          ) : activeTab === "reviews" ? (
+            <section className="mt-8 w-full overflow-hidden rounded-2xl border border-zinc-800 bg-zinc-900/60 p-6 shadow-sm md:p-8">
+              <h2 className="text-base font-semibold text-zinc-100">Subscriptions — pending merchant reviews</h2>
+              <p className="mt-1 text-sm text-zinc-400">
+                Approve a submission to publish it on the public Subscriptions page carousel. Reject permanently removes
+                the entry from Redis.
+              </p>
+              {subscriptionReviewsError ? (
+                <div className="mt-6 rounded-xl border border-red-900/60 bg-red-950/40 px-4 py-3 text-sm text-red-200">
+                  {subscriptionReviewsError}
+                </div>
+              ) : null}
+              {subscriptionReviewsLoading ? (
+                <div className="mt-8 text-sm text-zinc-500">Loading pending reviews…</div>
+              ) : subscriptionReviewsPending.length === 0 ? (
+                <div className="mt-8 text-sm text-zinc-500">No pending submissions.</div>
+              ) : (
+                <ul className="mt-6 space-y-4">
+                  {subscriptionReviewsPending.map((row) => {
+                    const busy = subscriptionModerationBusyId === row.id;
+                    const when = Number.isFinite(Date.parse(row.createdAt))
+                      ? new Date(row.createdAt).toLocaleString("en-GB", {
+                          timeZone: "UTC",
+                          day: "numeric",
+                          month: "short",
+                          year: "numeric",
+                          hour: "2-digit",
+                          minute: "2-digit",
+                        })
+                      : "—";
+                    return (
+                      <li
+                        key={row.id}
+                        className="rounded-xl border border-zinc-800 bg-zinc-950/40 px-4 py-4 md:px-5 md:py-5"
+                      >
+                        <div className="flex flex-wrap items-start justify-between gap-3">
+                          <div className="min-w-0">
+                            <span className="font-semibold text-zinc-100">{row.storeName}</span>
+                            <p className="mt-1 text-xs font-mono text-zinc-500">{row.id}</p>
+                            <p className="mt-1 text-xs text-zinc-500">{when} UTC · pending</p>
+                          </div>
+                          <div
+                            className="text-lg tracking-tight text-amber-300"
+                            aria-label={`Rating ${row.rating} out of five`}
+                          >
+                            <span aria-hidden>
+                              {"★".repeat(Math.min(5, Math.max(0, row.rating)))}
+                              {"☆".repeat(Math.min(5, Math.max(0, 5 - row.rating)))}
+                            </span>
+                            <span className="sr-only">{row.rating} out of 5</span>
+                          </div>
+                        </div>
+                        <p className="mt-4 whitespace-pre-wrap text-sm leading-relaxed text-zinc-200">{row.message}</p>
+                        <div className="mt-4 flex flex-wrap gap-2">
+                          <button
+                            type="button"
+                            disabled={busy || subscriptionReviewsLoading}
+                            onClick={() => void moderateSubscriptionReview(row.id, "approve")}
+                            className="inline-flex h-10 items-center justify-center rounded-full border border-emerald-700/65 bg-emerald-950/50 px-4 text-xs font-semibold uppercase tracking-wide text-emerald-100 transition hover:border-emerald-500/65 hover:bg-emerald-950/85 disabled:cursor-not-allowed disabled:opacity-45"
+                          >
+                            Approve
+                          </button>
+                          <button
+                            type="button"
+                            disabled={busy || subscriptionReviewsLoading}
+                            onClick={() => void moderateSubscriptionReview(row.id, "reject")}
+                            className="inline-flex h-10 items-center justify-center rounded-full border border-rose-800/65 bg-rose-950/40 px-4 text-xs font-semibold uppercase tracking-wide text-rose-100 transition hover:border-rose-600/65 hover:bg-rose-950/85 disabled:cursor-not-allowed disabled:opacity-45"
+                          >
+                            Reject
+                          </button>
+                        </div>
+                      </li>
+                    );
+                  })}
+                </ul>
+              )}
+              <p className="mt-6 text-xs text-zinc-600">
+                Approved records: <span className="font-mono text-zinc-400">fit-room:subscriptionsFeedback:approved:index</span>
+                . Pending queue:{" "}
+                <span className="font-mono text-zinc-400">fit-room:subscriptionsFeedback:pending:index</span>.
               </p>
             </section>
           ) : activeTab === "topUps" ? (

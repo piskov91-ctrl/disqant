@@ -7,12 +7,19 @@ const GOLD = "#c6a77d";
 
 export function SubscriptionsFeedbackSection() {
   const formId = useId();
+  const [storeName, setStoreName] = useState("");
   const [rating, setRating] = useState<number>(0);
   const [message, setMessage] = useState("");
   const [status, setStatus] = useState<"idle" | "sending" | "success" | "error">("idle");
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
   const submit = useCallback(async () => {
+    const storeTrim = storeName.trim();
+    if (storeTrim.length < 2) {
+      setErrorMsg("Please enter your store name.");
+      setStatus("error");
+      return;
+    }
     if (rating < 1 || rating > 5) {
       setErrorMsg("Tap a star to rate from 1 to 5.");
       setStatus("error");
@@ -31,7 +38,7 @@ export function SubscriptionsFeedbackSection() {
       const res = await fetch("/api/subscriptions/feedback", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ rating, message: trimmed }),
+        body: JSON.stringify({ storeName: storeTrim, rating, message: trimmed }),
       });
       const data = (await res.json()) as { ok?: boolean; error?: string };
       if (!res.ok) {
@@ -42,11 +49,12 @@ export function SubscriptionsFeedbackSection() {
       setStatus("success");
       setMessage("");
       setRating(0);
+      setStoreName("");
     } catch {
       setErrorMsg("Network error. Check your connection and try again.");
       setStatus("error");
     }
-  }, [rating, message]);
+  }, [storeName, rating, message]);
 
   return (
     <section
@@ -65,8 +73,31 @@ export function SubscriptionsFeedbackSection() {
         </p>
 
         <div className="mt-10 rounded-2xl border border-[#c6a77d]/28 bg-[#0f0f10]/95 p-6 shadow-[0_24px_60px_-28px_rgba(0,0,0,0.85)] md:p-8">
+          <div>
+            <label
+              htmlFor={`${formId}-store`}
+              className="text-[11px] font-semibold uppercase tracking-[0.22em] text-[#d4bc94]/90"
+            >
+              Store name
+            </label>
+            <input
+              id={`${formId}-store`}
+              name="storeName"
+              type="text"
+              autoComplete="organization"
+              value={storeName}
+              disabled={status === "sending"}
+              placeholder="Your shop name as it should appear on reviews"
+              className="mt-2 block w-full rounded-xl border border-[#c6a77d]/25 bg-black/55 px-4 py-3 text-sm text-[#f0ebe3] placeholder:text-zinc-600 focus:border-[#c6a77d]/55 focus:outline-none focus:ring-1 focus:ring-[#c6a77d]/35 disabled:opacity-55"
+              onChange={(e) => {
+                setStoreName(e.target.value);
+                if (status === "error") setStatus("idle");
+              }}
+            />
+          </div>
+
           <fieldset className="border-0 p-0">
-            <legend className="mb-3 text-[11px] font-semibold uppercase tracking-[0.22em] text-[#d4bc94]/90">
+            <legend className="mb-3 mt-8 text-[11px] font-semibold uppercase tracking-[0.22em] text-[#d4bc94]/90">
               Your rating
             </legend>
             <div className="flex flex-col items-center gap-3">
@@ -128,7 +159,7 @@ export function SubscriptionsFeedbackSection() {
           ) : null}
           {status === "success" ? (
             <p className="mt-4 text-sm font-medium text-[#c9e86c]" role="status">
-              Thanks — your feedback has been sent.
+              Thanks — we received your review. After a quick moderation check it may appear on this page.
             </p>
           ) : null}
 
