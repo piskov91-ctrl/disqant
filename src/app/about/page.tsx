@@ -1,147 +1,99 @@
+import type { Metadata } from "next";
+import Link from "next/link";
 import { Footer } from "@/components/Footer";
 import { Header } from "@/components/Header";
+
+export const metadata: Metadata = {
+  title: "About Wear Me",
+  description:
+    "Virtual try-on for your store in one line of code — see how Wear Me turns hesitation into confident purchases.",
+};
 
 export default function AboutPage() {
   return (
     <>
       <Header />
       <main className="pt-[var(--site-header-height)]">
-        {/* HERO */}
-        <section className="border-b border-surface-border bg-white py-14">
+        <section className="border-b border-surface-border bg-white py-14 md:py-16">
           <div className="mx-auto max-w-6xl px-6">
             <p className="mb-4 inline-flex items-center gap-2 rounded-full border border-surface-border bg-surface-raised px-4 py-1.5 text-xs font-medium uppercase tracking-wider text-zinc-600">
-              About
+              About Wear Me
             </p>
-            <h1 className="text-balance text-4xl font-semibold tracking-tight text-zinc-900 md:text-5xl">About Fit Room</h1>
-            <p className="mt-4 max-w-2xl text-lg leading-relaxed text-zinc-600">
-              We build practical tools for fashion retailers—starting with virtual try-on that feels believable, fast, and
-              easy to add to a product page.
-            </p>
+            <h1 className="max-w-3xl text-balance text-4xl font-semibold tracking-tight text-zinc-900 md:text-5xl">
+              The fitting room your online store never had
+            </h1>
           </div>
         </section>
 
-        {/* OUR MISSION */}
-        <section className="bg-white py-16">
+        <section className="border-b border-surface-border bg-surface-muted/40 py-14 md:py-16">
           <div className="mx-auto max-w-6xl px-6">
-            <h2 className="text-sm font-semibold uppercase tracking-widest text-accent">Our mission</h2>
-            <p className="mt-3 max-w-3xl text-2xl font-semibold tracking-tight text-zinc-900 md:text-3xl">
-              Why we built this
-            </p>
-            <div className="mt-6 max-w-3xl space-y-4 text-sm leading-relaxed text-zinc-600 md:text-base">
+            <h2 className="text-xl font-semibold tracking-tight text-zinc-900 md:text-2xl">What is Wear Me?</h2>
+            <div className="mt-5 max-w-3xl space-y-4 text-base leading-relaxed text-zinc-700 md:text-lg">
               <p>
-                We started Fit Room because shopping for clothes online still depends on guesswork. Shoppers squint at
-                photos, read reviews, and hope for the best—then a chunk of orders come back when reality doesn&apos;t
-                match expectations.
-              </p>
-              <p>
-                Our mission is to give UK online retailers a simple way to add virtual try-on to the product page, so
-                customers can make better decisions before they pay. The goal isn&apos;t novelty—it&apos;s confidence.
-              </p>
-              <p>
-                We care about the boring stuff too: easy integration, clear usage, and a shopper experience that feels
-                normal, not like a science experiment.
+                Wear Me is a virtual try-on button that lives on your product pages. A shopper sees something they
+                like, taps Wear Me, takes a quick photo, and in about 20 seconds they see themselves actually wearing it.
+                No app. No account. No faff. Just a moment that turns &quot;I wonder if this would suit me&quot; into
+                &quot;I&apos;m buying this.&quot;
               </p>
             </div>
           </div>
         </section>
 
-        {/* THE PROBLEM WE SOLVE */}
-        <section className="border-y border-surface-border bg-surface-muted/40 py-20">
+        <section className="border-b border-surface-border bg-white py-14 md:py-16">
           <div className="mx-auto max-w-6xl px-6">
-            <h2 className="text-sm font-semibold uppercase tracking-widest text-accent">The problem we solve</h2>
-            <p className="mt-3 max-w-3xl text-2xl font-semibold tracking-tight text-zinc-900 md:text-3xl">
-              Online returns and shopper confidence
-            </p>
-            <div className="mt-6 max-w-3xl space-y-4 text-sm leading-relaxed text-zinc-600 md:text-base">
+            <h2 className="text-xl font-semibold tracking-tight text-zinc-900 md:text-2xl">
+              Why it matters for your store
+            </h2>
+            <div className="mt-5 max-w-3xl space-y-4 text-base leading-relaxed text-zinc-700 md:text-lg">
               <p>
-                Returns are expensive in ways that don&apos;t always show up in a single line item: restocking, support
-                tickets, lost margin, and the quiet damage to customer trust.
-              </p>
-              <p>
-                A lot of those returns start with a simple mismatch—what the shopper imagined versus what arrived. Virtual
-                try-on doesn&apos;t fix every fit issue, but it helps people feel more sure about what they&apos;re
-                choosing, which can reduce returns and protect margin.
-              </p>
-              <p>
-                For store teams, the win is also operational: fewer “it looked different on me” conversations, fewer
-                emotional refund requests, and a clearer story on the PDP about what the product is for.
+                Returns cost you money. Hesitation costs you sales. When someone can see how your clothes look on their own
+                body before they buy, both of those problems shrink. They buy with confidence. They keep what they
+                ordered. And they remember your store as the one that made shopping feel easy.
               </p>
             </div>
           </div>
         </section>
 
-        {/* WHO WE ARE */}
-        <section className="bg-white py-20">
+        <section className="border-b border-surface-border bg-surface-muted/40 py-14 md:py-16">
           <div className="mx-auto max-w-6xl px-6">
-            <h2 className="text-sm font-semibold uppercase tracking-widest text-accent">Who we are</h2>
-            <p className="mt-3 max-w-3xl text-2xl font-semibold tracking-tight text-zinc-900 md:text-3xl">
-              A small team passionate about fashion tech
-            </p>
-            <div className="mt-6 max-w-3xl space-y-4 text-sm leading-relaxed text-zinc-600 md:text-base">
+            <h2 className="text-xl font-semibold tracking-tight text-zinc-900 md:text-2xl">
+              One line of code. That is genuinely it.
+            </h2>
+            <div className="mt-5 max-w-3xl space-y-4 text-base leading-relaxed text-zinc-700 md:text-lg">
               <p>
-                We&apos;re a small team with a mix of retail instincts and product engineering habits. We&apos;ve seen
-                what it&apos;s like to launch campaigns on tight calendars, keep conversion healthy, and keep support
-                from getting overwhelmed.
-              </p>
-              <p>
-                That&apos;s why we build with retailers in mind: the people managing Shopify themes, the teams running
-                WooCommerce with custom plugins, and the founders who still answer customer emails on Sunday night.
-              </p>
-              <p>
-                We don&apos;t pretend virtual try-on is magic. We treat it as a product decision: if it doesn&apos;t
-                help shoppers feel clearer, it doesn&apos;t belong on the page.
+                You don&apos;t need a developer on standby. You don&apos;t need to rebuild your website. You paste one
+                line of code into your store, save, and the button appears on every product page automatically. If you can
+                copy and paste, you can have Wear Me live today.
               </p>
             </div>
           </div>
         </section>
 
-        {/* OUR VALUES */}
-        <section className="border-y border-surface-border bg-surface-muted/40 py-20">
+        <section className="border-b border-surface-border bg-white py-14 md:py-16">
           <div className="mx-auto max-w-6xl px-6">
-            <h2 className="text-sm font-semibold uppercase tracking-widest text-accent">Our values</h2>
-            <p className="mt-3 max-w-3xl text-2xl font-semibold tracking-tight text-zinc-900 md:text-3xl">
-              Simplicity, innovation, accessibility
-            </p>
-            <div className="mt-10 grid gap-6 md:grid-cols-3">
-              <div className="rounded-2xl border border-surface-border bg-white p-7 shadow-sm">
-                <h3 className="text-lg font-semibold text-zinc-900">Simplicity</h3>
-                <p className="mt-2 text-sm leading-relaxed text-zinc-600">
-                  Retail moves fast. We aim for clear defaults, honest copy, and flows that don&apos;t require a manual.
-                </p>
-              </div>
-              <div className="rounded-2xl border border-surface-border bg-white p-7 shadow-sm">
-                <h3 className="text-lg font-semibold text-zinc-900">Innovation</h3>
-                <p className="mt-2 text-sm leading-relaxed text-zinc-600">
-                  We use modern AI where it helps shoppers—but we measure success in business outcomes, not buzzwords.
-                </p>
-              </div>
-              <div className="rounded-2xl border border-surface-border bg-white p-7 shadow-sm">
-                <h3 className="text-lg font-semibold text-zinc-900">Accessibility</h3>
-                <p className="mt-2 text-sm leading-relaxed text-zinc-600">
-                  Try-on should feel approachable: camera or gallery, mobile-first, and language that doesn&apos;t talk
-                  down to customers.
-                </p>
-              </div>
+            <h2 className="text-xl font-semibold tracking-tight text-zinc-900 md:text-2xl">
+              Built for stores like yours
+            </h2>
+            <div className="mt-5 max-w-3xl space-y-4 text-base leading-relaxed text-zinc-700 md:text-lg">
+              <p>
+                Whether you sell 50 products or 5,000, Wear Me works the same way. Small boutiques use it. Growing brands
+                use it. The button looks and feels like part of your store, not a third-party add-on.
+              </p>
             </div>
           </div>
         </section>
 
-        {/* CONTACT */}
-        <section className="bg-white py-20">
-          <div className="mx-auto max-w-6xl px-6">
-            <div className="rounded-3xl border border-surface-border bg-white p-10 shadow-sm md:p-12">
-              <h2 className="text-sm font-semibold uppercase tracking-widest text-accent">Contact</h2>
-              <p className="mt-3 text-2xl font-semibold tracking-tight text-zinc-900 md:text-3xl">Talk to us</p>
-              <p className="mt-3 max-w-2xl text-sm leading-relaxed text-zinc-600 md:text-base">
-                If you&apos;re a UK retailer thinking about virtual try-on, we&apos;re happy to answer practical
-                questions—how it installs, what shoppers experience, and what to measure after you go live.
-              </p>
-              <div className="mt-6">
-                <a className="btn-accent-gradient" href="mailto:support@fit-room.com">
-                  support@fit-room.com
-                </a>
-              </div>
-            </div>
+        <section className="border-b border-surface-border bg-surface-muted/40 py-16 md:py-20">
+          <div className="mx-auto max-w-6xl px-6 text-center">
+            <Link
+              href="/demo"
+              className="btn-accent-gradient inline-flex min-w-[12rem] items-center justify-center gap-2 px-8 py-3 text-base font-semibold"
+            >
+              See it in action
+              <span aria-hidden className="text-lg leading-none">
+                →
+              </span>
+            </Link>
           </div>
         </section>
       </main>

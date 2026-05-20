@@ -18,12 +18,15 @@ export function Footer() {
         </p>
         <nav
           className="flex flex-wrap items-center justify-center gap-x-4 gap-y-2 text-zinc-400"
-          aria-label="Legal and help"
+          aria-label="Site and legal links"
         >
-          <Link
-            href="/terms"
-            className="transition hover:text-zinc-100"
-          >
+          <Link href="/about" className="transition hover:text-zinc-100">
+            About
+          </Link>
+          <span className="text-zinc-700" aria-hidden>
+            ·
+          </span>
+          <Link href="/terms" className="transition hover:text-zinc-100">
             Terms &amp; Conditions
           </Link>
           <span className="text-zinc-700" aria-hidden>

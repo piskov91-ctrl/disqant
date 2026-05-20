@@ -109,6 +109,9 @@ export function HeaderNav({ initialNavUser }: HeaderNavProps) {
         <Link href="/how-it-works" className={desktopNavLinkClass("/how-it-works")}>
           How it works
         </Link>
+        <Link href="/about" className={desktopNavLinkClass("/about")}>
+          About
+        </Link>
         <Link href="/pricing" className={desktopNavLinkClass("/pricing")}>
           Subscriptions
         </Link>
@@ -188,6 +191,9 @@ export function HeaderNav({ initialNavUser }: HeaderNavProps) {
             <nav className="flex flex-col gap-1" aria-label="Mobile">
               <Link href="/how-it-works" className={mobileNavLinkClass("/how-it-works")} onClick={() => setOpen(false)}>
                 How it works
+              </Link>
+              <Link href="/about" className={mobileNavLinkClass("/about")} onClick={() => setOpen(false)}>
+                About
               </Link>
               <Link href="/pricing" className={mobileNavLinkClass("/pricing")} onClick={() => setOpen(false)}>
                 Subscriptions
