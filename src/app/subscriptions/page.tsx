@@ -5,6 +5,7 @@ import { Header } from "@/components/Header";
 import { Pricing } from "@/components/Pricing";
 import type { TestimonialSlide } from "@/components/TestimonialsSlideshow";
 import { listApprovedSubscriptionsFeedback } from "@/lib/subscriptionsFeedbackStore";
+import { getRetailerSessionUser } from "@/lib/retailerAuth";
 import { SubscriptionsFeedbackSection } from "./SubscriptionsFeedbackSection";
 import { SubscriptionsSubscriberTestimonials } from "./SubscriptionsSubscriberTestimonials";
 
@@ -22,6 +23,7 @@ type PageProps = {
 
 export default async function SubscriptionsPage(props: PageProps) {
   const q = await props.searchParams;
+  const retailerUser = await getRetailerSessionUser();
 
   const approvedRows = await listApprovedSubscriptionsFeedback(80).catch(() => []);
   const subscriberSlides: TestimonialSlide[] = approvedRows.map((r) => ({
@@ -65,7 +67,7 @@ export default async function SubscriptionsPage(props: PageProps) {
         </div>
         <Pricing sectionId="" />
         <SubscriptionsSubscriberTestimonials initialSubscriberSlides={subscriberSlides} />
-        <SubscriptionsFeedbackSection />
+        {retailerUser ? <SubscriptionsFeedbackSection /> : null}
       </main>
       <Footer />
     </>
