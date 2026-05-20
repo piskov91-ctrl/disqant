@@ -38,7 +38,7 @@ export default function ProductPage() {
               enough that you can roll it out across your catalogue without turning it into a months-long project.
             </p>
             <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:items-center">
-              <Link href="/pricing" className="wear-me-btn sm:inline-flex">
+              <Link href="/subscriptions" className="wear-me-btn sm:inline-flex">
                 Get started
               </Link>
             </div>
