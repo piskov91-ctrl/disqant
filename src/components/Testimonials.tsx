@@ -1,7 +1,4 @@
-import {
-  DISPLAY_AVERAGE_OUT_OF_FIVE,
-  TESTIMONIAL_REVIEWS,
-} from "@/data/testimonialReviews";
+import { DISPLAY_AVERAGE_OUT_OF_FIVE } from "@/data/testimonialReviews";
 import {
   TestimonialsSlideshow,
   type TestimonialSlide,
@@ -25,7 +22,7 @@ type TestimonialsProps = {
   /** Override curated footnote. */
   footnote?: string;
   /**
-   * When true, the marketing carousel from `TESTIMONIAL_REVIEWS` is not rendered (subscriber block only).
+   * When true, the marketing carousel from curated marketing testimonials is not rendered (subscriber block only).
    * Subscriptions uses this temporarily while testing the feedback pipeline.
    */
   hideCuratedTestimonials?: boolean;
@@ -40,21 +37,13 @@ export function Testimonials({
   hideCuratedTestimonials = false,
 }: TestimonialsProps) {
   const isDark = tone === "dark";
-  const curatedReviewCount = TESTIMONIAL_REVIEWS.length;
 
-  const marketingStats =
+  const marketingAvg =
     marketingCarouselSlides && marketingCarouselSlides.length > 0
-      ? {
-          count: marketingCarouselSlides.length,
-          avg:
-            Math.round(
-              (marketingCarouselSlides.reduce((acc, s) => acc + s.rating, 0) / marketingCarouselSlides.length) * 10,
-            ) / 10,
-        }
-      : {
-          count: curatedReviewCount,
-          avg: DISPLAY_AVERAGE_OUT_OF_FIVE,
-        };
+      ? Math.round(
+          (marketingCarouselSlides.reduce((acc, s) => acc + s.rating, 0) / marketingCarouselSlides.length) * 10,
+        ) / 10
+      : DISPLAY_AVERAGE_OUT_OF_FIVE;
 
   const effectiveCuratedFootnote =
     footnote ??
@@ -63,10 +52,9 @@ export function Testimonials({
 
   const subscriberList = subscriberSlides ?? [];
   const hasSubscriberSlides = subscriberList.length > 0;
-  const subscriberCount = subscriberList.length;
   const subscriberAvg =
-    subscriberCount > 0
-      ? Math.round((subscriberList.reduce((acc, r) => acc + r.rating, 0) / subscriberCount) * 10) / 10
+    subscriberList.length > 0
+      ? Math.round((subscriberList.reduce((acc, r) => acc + r.rating, 0) / subscriberList.length) * 10) / 10
       : 0;
 
   if (hideCuratedTestimonials && !hasSubscriberSlides) {
@@ -107,12 +95,7 @@ export function Testimonials({
               <span className={`font-semibold ${isDark ? "text-amber-400" : "text-amber-500"}`} aria-hidden>
                 ★
               </span>
-              <span className="font-semibold">{marketingStats.avg.toFixed(1)} out of 5</span>
-              <span className={`font-normal ${isDark ? "text-[#F5EDE4]/85" : "text-zinc-600"}`}>from</span>
-              <span className={`font-semibold ${isDark ? "text-[#F5EDE4]" : "text-zinc-900"}`}>
-                {marketingStats.count}
-              </span>
-              <span className={`font-normal ${isDark ? "text-[#F5EDE4]/85" : "text-zinc-600"}`}>reviews</span>
+              <span className="font-semibold">{marketingAvg.toFixed(1)} out of 5</span>
             </p>
 
             <p
@@ -167,11 +150,6 @@ export function Testimonials({
                 ★
               </span>
               <span className="font-semibold">{subscriberAvg.toFixed(1)} out of 5</span>
-              <span className={`font-normal ${isDark ? "text-[#F5EDE4]/85" : "text-zinc-600"}`}>from</span>
-              <span className={`font-semibold ${isDark ? "text-[#F5EDE4]" : "text-zinc-900"}`}>
-                {subscriberCount}
-              </span>
-              <span className={`font-normal ${isDark ? "text-[#F5EDE4]/85" : "text-zinc-600"}`}>reviews</span>
             </p>
 
             <p

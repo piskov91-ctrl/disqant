@@ -1,7 +1,7 @@
 import type { TestimonialSlide } from "@/components/TestimonialsSlideshow";
 
-/** How long a just-submitted review appears in the carousel (before admin approval), including across refresh. */
-export const SUBSCRIPTIONS_PENDING_FEEDBACK_PREVIEW_MS = 60_000;
+/** How long a just-submitted review appears in the carousel (before admin approval), including across refresh (5 minutes). */
+export const SUBSCRIPTIONS_PENDING_FEEDBACK_PREVIEW_MS = 300_000;
 
 export const SUBSCRIPTIONS_PENDING_FEEDBACK_STORAGE_KEY = "fit-room:subscriptions:pendingFeedbackPreviews";
 
