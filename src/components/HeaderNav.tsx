@@ -109,14 +109,14 @@ export function HeaderNav({ initialNavUser }: HeaderNavProps) {
         <Link href="/how-it-works" className={desktopNavLinkClass("/how-it-works")}>
           How it works
         </Link>
-        <Link href="/about" className={`${desktopNavLinkClass("/about")} nav-about-us-highlight`}>
-          About Us
-        </Link>
         <Link href="/pricing" className={desktopNavLinkClass("/pricing")}>
           Subscriptions
         </Link>
         <Link href="/demo" className={desktopNavLinkClass("/demo")}>
           Demo
+        </Link>
+        <Link href="/about" className={`${desktopNavLinkClass("/about")} nav-about-us-highlight`}>
+          About Us
         </Link>
         <Link href="/contact" className={desktopNavLinkClass("/contact")}>
           Contact
@@ -192,14 +192,14 @@ export function HeaderNav({ initialNavUser }: HeaderNavProps) {
               <Link href="/how-it-works" className={mobileNavLinkClass("/how-it-works")} onClick={() => setOpen(false)}>
                 How it works
               </Link>
-              <Link href="/about" className={`${mobileNavLinkClass("/about")} nav-about-us-highlight`} onClick={() => setOpen(false)}>
-                About Us
-              </Link>
               <Link href="/pricing" className={mobileNavLinkClass("/pricing")} onClick={() => setOpen(false)}>
                 Subscriptions
               </Link>
               <Link href="/demo" className={mobileNavLinkClass("/demo")} onClick={() => setOpen(false)}>
                 Demo
+              </Link>
+              <Link href="/about" className={`${mobileNavLinkClass("/about")} nav-about-us-highlight`} onClick={() => setOpen(false)}>
+                About Us
               </Link>
               <Link href="/contact" className={mobileNavLinkClass("/contact")} onClick={() => setOpen(false)}>
                 Contact
