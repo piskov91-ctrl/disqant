@@ -20,8 +20,8 @@ export function Footer() {
           className="flex flex-wrap items-center justify-center gap-x-4 gap-y-2 text-zinc-400"
           aria-label="Site and legal links"
         >
-          <Link href="/about" className="transition hover:text-zinc-100">
-            About
+          <Link href="/about" className="nav-about-us-highlight transition hover:text-zinc-100">
+            About Us
           </Link>
           <span className="text-zinc-700" aria-hidden>
             ·

@@ -109,11 +109,8 @@ export function HeaderNav({ initialNavUser }: HeaderNavProps) {
         <Link href="/how-it-works" className={desktopNavLinkClass("/how-it-works")}>
           How it works
         </Link>
-        <Link
-          href="/about"
-          className={`${desktopNavLinkClass("/about")} motion-safe:animate-header-about-glow motion-reduce:animate-none`}
-        >
-          About
+        <Link href="/about" className={`${desktopNavLinkClass("/about")} nav-about-us-highlight`}>
+          About Us
         </Link>
         <Link href="/pricing" className={desktopNavLinkClass("/pricing")}>
           Subscriptions
@@ -195,12 +192,8 @@ export function HeaderNav({ initialNavUser }: HeaderNavProps) {
               <Link href="/how-it-works" className={mobileNavLinkClass("/how-it-works")} onClick={() => setOpen(false)}>
                 How it works
               </Link>
-              <Link
-                href="/about"
-                className={`${mobileNavLinkClass("/about")} motion-safe:animate-header-about-glow motion-reduce:animate-none`}
-                onClick={() => setOpen(false)}
-              >
-                About
+              <Link href="/about" className={`${mobileNavLinkClass("/about")} nav-about-us-highlight`} onClick={() => setOpen(false)}>
+                About Us
               </Link>
               <Link href="/pricing" className={mobileNavLinkClass("/pricing")} onClick={() => setOpen(false)}>
                 Subscriptions

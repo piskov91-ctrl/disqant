@@ -52,20 +52,10 @@ const config: Config = {
           "0%, 100%": { transform: "translateY(0)", opacity: "0.75" },
           "50%": { transform: "translateY(6px)", opacity: "1" },
         },
-        /** Primary header “About” link — subtle gold emphasis without animating layout. */
-        "header-about-glow": {
-          "0%, 100%": {
-            filter: "drop-shadow(0 0 5px rgba(198, 167, 125, 0.28)) drop-shadow(0 0 12px rgba(198, 167, 125, 0.12))",
-          },
-          "50%": {
-            filter: "drop-shadow(0 0 10px rgba(198, 167, 125, 0.48)) drop-shadow(0 0 22px rgba(212, 188, 148, 0.18))",
-          },
-        },
       },
       animation: {
         "hero-arrow-x": "hero-arrow-x 1.35s ease-in-out infinite",
         "hero-arrow-y": "hero-arrow-y 1.35s ease-in-out infinite",
-        "header-about-glow": "header-about-glow 2.85s ease-in-out infinite",
       },
     },
   },

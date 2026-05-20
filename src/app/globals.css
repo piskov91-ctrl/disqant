@@ -292,6 +292,43 @@ body header.site-header nav[aria-label="Primary"] a.header-nav-link.header-nav-l
   }
 }
 
+/* Soft gold pulse (#c6a77d rgb) — “About Us” in primary nav, mobile menu, footer. */
+@keyframes nav-about-us-gold-pulse {
+  0%,
+  100% {
+    filter: drop-shadow(0 0 5px rgb(198 167 125 / 0.32));
+    text-shadow:
+      0 0 8px rgb(198 167 125 / 0.22),
+      0 0 16px rgb(198 167 125 / 0.08);
+  }
+  50% {
+    filter: drop-shadow(0 0 12px rgb(198 167 125 / 0.48));
+    text-shadow:
+      0 0 14px rgb(198 167 125 / 0.36),
+      0 0 28px rgb(198 167 125 / 0.14);
+  }
+}
+
+body header.site-header nav[aria-label="Primary"] a.header-nav-link.nav-about-us-highlight,
+body header.site-header nav[aria-label="Mobile"] a.nav-about-us-highlight {
+  animation: nav-about-us-gold-pulse 2.75s ease-in-out infinite;
+}
+
+body footer a.nav-about-us-highlight {
+  display: inline-block;
+  animation: nav-about-us-gold-pulse 2.75s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  body header.site-header nav[aria-label="Primary"] a.header-nav-link.nav-about-us-highlight,
+  body header.site-header nav[aria-label="Mobile"] a.nav-about-us-highlight,
+  body footer a.nav-about-us-highlight {
+    animation: none !important;
+    filter: drop-shadow(0 0 8px rgb(198 167 125 / 0.28));
+    text-shadow: 0 0 10px rgb(198 167 125 / 0.2);
+  }
+}
+
 /**
  * Logo in main site header (`Header.tsx`): oversized vs slim bar; cropped tagline; contrast on dark BG.
  */
