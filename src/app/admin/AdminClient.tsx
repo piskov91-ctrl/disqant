@@ -2177,10 +2177,11 @@ export default function AdminClient() {
             </section>
           ) : activeTab === "reviews" ? (
             <section className="mt-8 w-full overflow-hidden rounded-2xl border border-zinc-800 bg-zinc-900/60 p-6 shadow-sm md:p-8">
-              <h2 className="text-base font-semibold text-zinc-100">Subscriptions — pending merchant reviews</h2>
+              <h2 className="text-base font-semibold text-zinc-100">Reviews</h2>
               <p className="mt-1 text-sm text-zinc-400">
-                Approve a submission to publish it on the public Subscriptions page carousel. Reject permanently removes
-                the entry from Redis.
+                Pending merchant feedback from the Subscriptions page. <strong className="font-medium text-zinc-300">Approve</strong> sets{' '}
+                <span className="font-mono text-zinc-500">status: approved</span> in Redis so it appears below the curated
+                testimonials on the site. <strong className="font-medium text-zinc-300">Reject</strong> deletes the record.
               </p>
               {subscriptionReviewsError ? (
                 <div className="mt-6 rounded-xl border border-red-900/60 bg-red-950/40 px-4 py-3 text-sm text-red-200">
@@ -2195,6 +2196,7 @@ export default function AdminClient() {
                 <ul className="mt-6 space-y-4">
                   {subscriptionReviewsPending.map((row) => {
                     const busy = subscriptionModerationBusyId === row.id;
+                    const r = Math.round(Math.min(5, Math.max(1, row.rating)));
                     const when = Number.isFinite(Date.parse(row.createdAt))
                       ? new Date(row.createdAt).toLocaleString("en-GB", {
                           timeZone: "UTC",
@@ -2210,41 +2212,63 @@ export default function AdminClient() {
                         key={row.id}
                         className="rounded-xl border border-zinc-800 bg-zinc-950/40 px-4 py-4 md:px-5 md:py-5"
                       >
-                        <div className="flex flex-wrap items-start justify-between gap-3">
-                          <div className="min-w-0">
-                            <span className="font-semibold text-zinc-100">{row.storeName}</span>
-                            <p className="mt-1 text-xs font-mono text-zinc-500">{row.id}</p>
-                            <p className="mt-1 text-xs text-zinc-500">{when} UTC · pending</p>
+                        <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between lg:gap-6">
+                          <div className="min-w-0 flex-1 space-y-3">
+                            <div>
+                              <p className="text-[10px] font-semibold uppercase tracking-wider text-zinc-500">
+                                Store name
+                              </p>
+                              <p className="mt-1 text-base font-semibold text-zinc-100">{row.storeName}</p>
+                              <p className="mt-1 font-mono text-[10px] text-zinc-600" title="Redis record id">
+                                {row.id}
+                              </p>
+                            </div>
+                            <div>
+                              <p className="text-[10px] font-semibold uppercase tracking-wider text-zinc-500">Date</p>
+                              <p className="mt-1 text-sm text-zinc-300">{when} UTC</p>
+                              <p className="mt-0.5 text-xs text-zinc-600">Status: pending moderation</p>
+                            </div>
+                            <div>
+                              <p className="text-[10px] font-semibold uppercase tracking-wider text-zinc-500">
+                                Star rating
+                              </p>
+                              <div className="mt-1 flex flex-wrap items-center gap-2">
+                                <span className="text-lg tracking-tight text-amber-300" aria-hidden>
+                                  {"★".repeat(r)}
+                                  {"☆".repeat(5 - r)}
+                                </span>
+                                <span className="text-sm tabular-nums text-zinc-400" aria-label={`${r} out of 5 stars`}>
+                                  {r} / 5
+                                </span>
+                              </div>
+                            </div>
+                            <div>
+                              <p className="text-[10px] font-semibold uppercase tracking-wider text-zinc-500">Comment</p>
+                              <p className="mt-2 whitespace-pre-wrap text-sm leading-relaxed text-zinc-200">
+                                {row.message}
+                              </p>
+                            </div>
                           </div>
-                          <div
-                            className="text-lg tracking-tight text-amber-300"
-                            aria-label={`Rating ${row.rating} out of five`}
-                          >
-                            <span aria-hidden>
-                              {"★".repeat(Math.min(5, Math.max(0, row.rating)))}
-                              {"☆".repeat(Math.min(5, Math.max(0, 5 - row.rating)))}
-                            </span>
-                            <span className="sr-only">{row.rating} out of 5</span>
+                          <div className="flex shrink-0 flex-row flex-wrap items-center gap-2 lg:flex-col lg:items-stretch lg:pt-7">
+                            <button
+                              type="button"
+                              disabled={busy || subscriptionReviewsLoading}
+                              onClick={() => void moderateSubscriptionReview(row.id, "approve")}
+                              className="inline-flex min-h-[2.5rem] flex-1 items-center justify-center rounded-lg border border-emerald-700/65 bg-emerald-950/50 px-4 text-xs font-semibold uppercase tracking-wide text-emerald-100 transition hover:border-emerald-500/65 hover:bg-emerald-950/85 disabled:cursor-not-allowed disabled:opacity-45 lg:flex-none"
+                              title="Set status to approved in Redis — visible on Subscriptions page"
+                            >
+                              Approve
+                            </button>
+                            <button
+                              type="button"
+                              disabled={busy || subscriptionReviewsLoading}
+                              onClick={() => void moderateSubscriptionReview(row.id, "reject")}
+                              className="inline-flex min-h-[2.5rem] flex-1 items-center justify-center rounded-lg border border-rose-800/65 bg-rose-950/40 px-4 text-xs font-semibold uppercase tracking-wide text-rose-100 transition hover:border-rose-600/65 hover:bg-rose-950/85 disabled:cursor-not-allowed disabled:opacity-45 lg:flex-none"
+                              title="Delete this review record from Redis"
+                            >
+                              Reject
+                            </button>
                           </div>
-                        </div>
-                        <p className="mt-4 whitespace-pre-wrap text-sm leading-relaxed text-zinc-200">{row.message}</p>
-                        <div className="mt-4 flex flex-wrap gap-2">
-                          <button
-                            type="button"
-                            disabled={busy || subscriptionReviewsLoading}
-                            onClick={() => void moderateSubscriptionReview(row.id, "approve")}
-                            className="inline-flex h-10 items-center justify-center rounded-full border border-emerald-700/65 bg-emerald-950/50 px-4 text-xs font-semibold uppercase tracking-wide text-emerald-100 transition hover:border-emerald-500/65 hover:bg-emerald-950/85 disabled:cursor-not-allowed disabled:opacity-45"
-                          >
-                            Approve
-                          </button>
-                          <button
-                            type="button"
-                            disabled={busy || subscriptionReviewsLoading}
-                            onClick={() => void moderateSubscriptionReview(row.id, "reject")}
-                            className="inline-flex h-10 items-center justify-center rounded-full border border-rose-800/65 bg-rose-950/40 px-4 text-xs font-semibold uppercase tracking-wide text-rose-100 transition hover:border-rose-600/65 hover:bg-rose-950/85 disabled:cursor-not-allowed disabled:opacity-45"
-                          >
-                            Reject
-                          </button>
                         </div>
                       </li>
                     );
