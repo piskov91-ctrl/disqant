@@ -16,6 +16,30 @@ export type StoredPendingFeedbackPreview = {
   attribution: string;
 };
 
+/** Matches curated testimonials (e.g. "— L**** Store"): first letter + **** + remaining words. */
+export function maskStoreNameForPendingFeedbackCarousel(storeName: string): string {
+  const t = storeName.trim();
+  if (!t.length) return "— ****";
+
+  const words = t.split(/\s+/).filter(Boolean);
+  const firstWord = words[0]!;
+  const letterMatch = firstWord.match(/\p{L}/u);
+  const letter = letterMatch ? letterMatch[0]!.toUpperCase() : firstWord.charAt(0).toUpperCase();
+  const restWords = words.slice(1).join(" ");
+  const maskedCore = restWords.length > 0 ? `${letter}**** ${restWords}` : `${letter}****`;
+  return `— ${maskedCore}`;
+}
+
+/** Normalize attribution from localStorage (handles legacy rows saved before masking). */
+function normalizeStoredPendingAttribution(attribution: string): string {
+  const body = attribution.replace(/^\u2014\s*/, "").replace(/^-\s*/, "").trim();
+  if (!body) return "— ****";
+  if (/\*{2,}/.test(body)) {
+    return attribution.replace(/^\s+/, "").startsWith("\u2014") ? attribution.trim() : `— ${body}`;
+  }
+  return maskStoreNameForPendingFeedbackCarousel(body);
+}
+
 function parseStored(raw: string | null): StoredPendingFeedbackPreview[] {
   if (!raw) return [];
   try {
@@ -55,7 +79,7 @@ export function pendingFeedbackPreviewsToSlides(rows: StoredPendingFeedbackPrevi
       id: r.redisId,
       rating: r.rating,
       quote: r.quote,
-      attribution: r.attribution,
+      attribution: normalizeStoredPendingAttribution(r.attribution),
     }));
 }
 
@@ -78,7 +102,7 @@ export function appendPendingFeedbackPreview(fields: {
     submittedAt: now,
     rating: fields.rating,
     quote: fields.message,
-    attribution: `— ${fields.storeName}`,
+    attribution: maskStoreNameForPendingFeedbackCarousel(fields.storeName),
   };
   const next = rows.filter((r) => r.redisId !== fields.redisId);
   next.push(entry);
