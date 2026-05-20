@@ -1,4 +1,5 @@
 import crypto from "node:crypto";
+/** Redis uses `getRedis()` from `@/lib/apiKeyStore` only — same singleton as client keys (one Upstash REST database). */
 import { getRedis } from "@/lib/apiKeyStore";
 
 /** Record JSON lives at `${FIT_ROOM_SUBSCRIPTIONS_FEEDBACK_KEY_PREFIX}<uuid>` */

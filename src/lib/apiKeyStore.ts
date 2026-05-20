@@ -92,20 +92,31 @@ async function getRecordForMutation(id: string): Promise<{
 
 let redisSingleton: Redis | null = null;
 
-/** @internal Shared Upstash client for `apiKeyStore` and `tryOnAnalytics`. */
+/** Uses one Upstash REST database for the app: prefer `UPSTASH_*` pair, else Vercel `KV_REST_*` pair (never mix URL from one and token from the other). */
+function resolveUpstashRestEnv(): { url: string; token: string } {
+  const upstashUrl = process.env.UPSTASH_REDIS_REST_URL?.trim();
+  const upstashToken = process.env.UPSTASH_REDIS_REST_TOKEN?.trim();
+  if (upstashUrl && upstashToken) {
+    return { url: upstashUrl, token: upstashToken };
+  }
+
+  const kvUrl = process.env.KV_REST_API_URL?.trim();
+  const kvToken = process.env.KV_REST_API_TOKEN?.trim();
+  if (kvUrl && kvToken) {
+    return { url: kvUrl, token: kvToken };
+  }
+
+  throw new Error(
+    "Missing Redis env vars. Set UPSTASH_REDIS_REST_URL and UPSTASH_REDIS_REST_TOKEN, or KV_REST_API_URL and KV_REST_API_TOKEN (complete pair — same database, read/write token).",
+  );
+}
+
+/** @internal Shared Upstash client for `apiKeyStore` and every other Redis consumer (feedback, retailer auth, etc.). */
 export function getRedis() {
   if (redisSingleton) return redisSingleton;
 
-  const url = process.env.KV_REST_API_URL;
-  const token = process.env.KV_REST_API_TOKEN;
+  const { url, token } = resolveUpstashRestEnv();
 
-  if (!url || !token) {
-    throw new Error(
-      "Missing Redis env vars. Set KV_REST_API_URL and KV_REST_API_TOKEN.",
-    );
-  }
-
-  // Prefer write token since admin needs writes. (Read-only token is optional and unused here.)
   // Default Upstash SDK behavior batches concurrent commands into one HTTP pipeline and maps
   // replies by arrival order — overlapping writes from parallel requests can mis-map results/errors.
   redisSingleton = new Redis({ url, token, enableAutoPipelining: false });
