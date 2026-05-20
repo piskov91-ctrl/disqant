@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { useCallback, useState } from "react";
 
 const inputClass =
-  "mt-2 block w-full rounded-xl border border-zinc-600/80 bg-zinc-950/80 px-4 py-3 text-sm text-zinc-100 shadow-inner shadow-black/20 outline-none transition placeholder:text-zinc-600 focus:border-violet-500/60 focus:ring-1 focus:ring-violet-500/30";
+  "mt-2 block w-full rounded-xl border border-zinc-600/80 bg-zinc-950/80 px-4 py-3 text-sm text-zinc-100 shadow-inner shadow-black/20 outline-none transition placeholder:text-zinc-600 focus:border-[#C6A77D]/60 focus:ring-1 focus:ring-[#C6A77D]/30";
 
 export type ProfileInitialUser = {
   firstName?: string;

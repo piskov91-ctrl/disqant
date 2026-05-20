@@ -16,7 +16,7 @@ export default function ContactPage() {
       <main className="pt-[var(--site-header-height)]">
         <section className="border-b border-surface-border bg-white py-14">
           <div className="mx-auto max-w-6xl px-6">
-            <p className="mb-4 inline-flex items-center gap-2 rounded-full border border-surface-border bg-surface-raised px-4 py-1.5 text-xs font-medium uppercase tracking-wider text-zinc-600">
+            <p className="mb-4 inline-flex items-center gap-2 rounded-full border border-surface-border bg-surface-raised px-4 py-1.5 text-xs font-medium uppercase tracking-wider text-[#C6A77D]">
               Contact
             </p>
             <h1 className="text-balance text-4xl font-semibold tracking-tight text-zinc-900 md:text-5xl">

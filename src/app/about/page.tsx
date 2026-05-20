@@ -16,7 +16,7 @@ export default function AboutPage() {
       <main className="pt-[var(--site-header-height)]">
         <section className="border-b border-surface-border bg-white py-14 md:py-16">
           <div className="mx-auto max-w-6xl px-6">
-            <p className="mb-4 inline-flex items-center gap-2 rounded-full border border-surface-border bg-surface-raised px-4 py-1.5 text-xs font-medium uppercase tracking-wider text-zinc-600">
+            <p className="mb-4 inline-flex items-center gap-2 rounded-full border border-surface-border bg-surface-raised px-4 py-1.5 text-xs font-medium uppercase tracking-wider text-[#C6A77D]">
               About Wear Me
             </p>
             <h1 className="max-w-3xl text-balance text-4xl font-semibold tracking-tight text-zinc-900 md:text-5xl">
@@ -27,7 +27,7 @@ export default function AboutPage() {
 
         <section className="border-b border-surface-border bg-surface-muted/40 py-14 md:py-16">
           <div className="mx-auto max-w-6xl px-6">
-            <h2 className="text-xl font-semibold tracking-tight text-zinc-900 md:text-2xl">What is Wear Me?</h2>
+            <h2 className="text-xl font-semibold tracking-tight text-[#C6A77D] md:text-2xl">What is Wear Me?</h2>
             <div className="mt-5 max-w-3xl space-y-4 text-base leading-relaxed text-zinc-700 md:text-lg">
               <p>
                 Wear Me is a virtual try-on button that lives on your product pages. A shopper sees something they
@@ -41,7 +41,7 @@ export default function AboutPage() {
 
         <section className="border-b border-surface-border bg-white py-14 md:py-16">
           <div className="mx-auto max-w-6xl px-6">
-            <h2 className="text-xl font-semibold tracking-tight text-zinc-900 md:text-2xl">
+            <h2 className="text-xl font-semibold tracking-tight text-[#C6A77D] md:text-2xl">
               Why it matters for your store
             </h2>
             <div className="mt-5 max-w-3xl space-y-4 text-base leading-relaxed text-zinc-700 md:text-lg">
@@ -56,7 +56,7 @@ export default function AboutPage() {
 
         <section className="border-b border-surface-border bg-surface-muted/40 py-14 md:py-16">
           <div className="mx-auto max-w-6xl px-6">
-            <h2 className="text-xl font-semibold tracking-tight text-zinc-900 md:text-2xl">
+            <h2 className="text-xl font-semibold tracking-tight text-[#C6A77D] md:text-2xl">
               One line of code. That is genuinely it.
             </h2>
             <div className="mt-5 max-w-3xl space-y-4 text-base leading-relaxed text-zinc-700 md:text-lg">
@@ -71,7 +71,7 @@ export default function AboutPage() {
 
         <section className="border-b border-surface-border bg-white py-14 md:py-16">
           <div className="mx-auto max-w-6xl px-6">
-            <h2 className="text-xl font-semibold tracking-tight text-zinc-900 md:text-2xl">
+            <h2 className="text-xl font-semibold tracking-tight text-[#C6A77D] md:text-2xl">
               Built for stores like yours
             </h2>
             <div className="mt-5 max-w-3xl space-y-4 text-base leading-relaxed text-zinc-700 md:text-lg">

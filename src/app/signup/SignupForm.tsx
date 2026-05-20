@@ -9,7 +9,7 @@ import {
 } from "@/lib/retailerPasswordPolicy";
 
 const inputClass =
-  "mt-2 block w-full rounded-xl border border-zinc-600/80 bg-zinc-950/80 px-4 py-3 text-sm text-zinc-100 shadow-inner shadow-black/20 outline-none transition placeholder:text-zinc-600 focus:border-violet-500/60 focus:ring-1 focus:ring-violet-500/30";
+  "mt-2 block w-full rounded-xl border border-zinc-600/80 bg-zinc-950/80 px-4 py-3 text-sm text-zinc-100 shadow-inner shadow-black/20 outline-none transition placeholder:text-zinc-600 focus:border-[#C6A77D]/60 focus:ring-1 focus:ring-[#C6A77D]/30";
 
 function validateWebsiteIfPresent(raw: string): string | null {
   const t = raw.trim();
@@ -247,7 +247,7 @@ export function SignupForm() {
               type="checkbox"
               checked={agreeTerms}
               onChange={(e) => setAgreeTerms(e.target.checked)}
-              className="mt-1 h-4 w-4 shrink-0 rounded border-zinc-500 bg-zinc-900 text-violet-500 focus:ring-violet-500/40"
+              className="mt-1 h-4 w-4 shrink-0 rounded border-zinc-500 bg-zinc-900 accent-[#C6A77D] focus:ring-[#C6A77D]/40"
             />
             <span>
               I agree to the{" "}
@@ -255,7 +255,7 @@ export function SignupForm() {
                 href="/terms"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="font-medium text-violet-300 underline-offset-2 hover:underline"
+                className="font-medium text-[#d4bc94] underline-offset-2 hover:text-[#e8dcc8] hover:underline"
               >
                 Terms &amp; Conditions
               </Link>
@@ -267,7 +267,7 @@ export function SignupForm() {
               type="checkbox"
               checked={agreePrivacy}
               onChange={(e) => setAgreePrivacy(e.target.checked)}
-              className="mt-1 h-4 w-4 shrink-0 rounded border-zinc-500 bg-zinc-900 text-violet-500 focus:ring-violet-500/40"
+              className="mt-1 h-4 w-4 shrink-0 rounded border-zinc-500 bg-zinc-900 accent-[#C6A77D] focus:ring-[#C6A77D]/40"
             />
             <span>
               I agree to the{" "}
@@ -275,7 +275,7 @@ export function SignupForm() {
                 href="/privacy"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="font-medium text-violet-300 underline-offset-2 hover:underline"
+                className="font-medium text-[#d4bc94] underline-offset-2 hover:text-[#e8dcc8] hover:underline"
               >
                 Privacy Policy
               </Link>

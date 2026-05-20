@@ -72,11 +72,7 @@ export function Testimonials({
         {hideCuratedTestimonials ? null : (
           <>
             {/* Curated (always shown when hideCuratedTestimonials is false) */}
-            <h2
-              className={`text-center text-sm font-semibold uppercase tracking-widest ${
-                isDark ? "text-[#C6A77D]" : "text-accent"
-              }`}
-            >
+            <h2 className="text-center text-sm font-semibold uppercase tracking-widest text-[#C6A77D]">
               What retailers say
             </h2>
             <p
@@ -127,9 +123,7 @@ export function Testimonials({
           >
             <h3
               id="subscriber-reviews-heading"
-              className={`text-center text-xs font-semibold uppercase tracking-[0.2em] ${
-                isDark ? "text-[#d4bc94]" : "text-zinc-500"
-              }`}
+              className="text-center text-xs font-semibold uppercase tracking-[0.2em] text-[#C6A77D]"
             >
               Subscriber reviews
             </h3>

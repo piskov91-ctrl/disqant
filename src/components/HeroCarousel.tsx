@@ -15,7 +15,7 @@ export function HeroCarousel() {
       />
 
       <div className="relative mx-auto max-w-6xl px-6">
-        <p className="mb-5 inline-flex items-center gap-2 rounded-full border border-surface-border bg-surface-raised px-4 py-1.5 text-xs font-medium uppercase tracking-wider text-zinc-600">
+        <p className="mb-5 inline-flex items-center gap-2 rounded-full border border-surface-border bg-surface-raised px-4 py-1.5 text-xs font-medium uppercase tracking-wider text-[#C6A77D]">
           <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(52,211,153,0.55)]" />
           Virtual try-on for retailers
         </p>

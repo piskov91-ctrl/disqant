@@ -16,10 +16,10 @@ const config: Config = {
           border: "rgba(15, 23, 42, 0.1)",
         },
         accent: {
-          DEFAULT: "#7c3aed",
-          pink: "#ec4899",
-          muted: "#9333ea",
-          glow: "rgba(124, 58, 237, 0.28)",
+          DEFAULT: "#C6A77D",
+          pink: "#e8d4bc",
+          muted: "#a68958",
+          glow: "rgba(198, 167, 125, 0.35)",
         },
       },
       fontFamily: {
@@ -30,18 +30,18 @@ const config: Config = {
         "grid-fade":
           "linear-gradient(to bottom, transparent 0%, #ffffff 100%), linear-gradient(rgba(15,23,42,0.06) 1px, transparent 1px), linear-gradient(90deg, rgba(15,23,42,0.06) 1px, transparent 1px)",
         "hero-glow":
-          "radial-gradient(ellipse 80% 50% at 50% -20%, rgba(124, 58, 237, 0.14), transparent), radial-gradient(ellipse 60% 40% at 100% 0%, rgba(236, 72, 153, 0.1), transparent)",
+          "radial-gradient(ellipse 80% 50% at 50% -20%, rgba(198, 167, 125, 0.14), transparent), radial-gradient(ellipse 60% 40% at 100% 0%, rgba(232, 212, 188, 0.12), transparent)",
         "accent-gradient":
-          "linear-gradient(135deg, #7c3aed 0%, #ec4899 55%, #ec4899 100%)",
+          "linear-gradient(135deg, #a68958 0%, #C6A77D 55%, #e8d4bc 100%)",
         "accent-gradient-hover":
-          "linear-gradient(135deg, #6d28d9 0%, #db2777 55%, #db2777 100%)",
+          "linear-gradient(135deg, #957d4e 0%, #b89363 55%, #dcc29f 100%)",
       },
       backgroundSize: {
         grid: "64px 64px",
       },
       boxShadow: {
-        "accent-glow": "0 0 48px -12px rgba(124, 58, 237, 0.35)",
-        "accent-card": "0 0 60px -20px rgba(124, 58, 237, 0.2)",
+        "accent-glow": "0 0 48px -12px rgba(198, 167, 125, 0.38)",
+        "accent-card": "0 0 60px -20px rgba(198, 167, 125, 0.22)",
       },
       keyframes: {
         "hero-arrow-x": {

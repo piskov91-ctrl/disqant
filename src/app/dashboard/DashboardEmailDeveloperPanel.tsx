@@ -57,7 +57,7 @@ export function DashboardEmailDeveloperPanel() {
               setError(null);
               setSent(false);
             }}
-            className="inline-flex h-11 shrink-0 items-center justify-center rounded-full border border-violet-500/35 bg-violet-950/40 px-5 text-sm font-semibold text-violet-100 transition hover:border-violet-400/50 hover:bg-violet-900/35"
+            className="inline-flex h-11 shrink-0 items-center justify-center rounded-full border border-[#c6a77d]/45 bg-[#c6a77d]/12 px-5 text-sm font-semibold text-[#f5efe6] transition hover:border-[#d4bc94]/55 hover:bg-[#c6a77d]/22"
           >
             Email to developer
           </button>

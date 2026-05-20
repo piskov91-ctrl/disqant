@@ -1504,7 +1504,7 @@ export default function AdminClient() {
               <button
                 type="button"
                 onClick={() => setAnalyticsInsightsOpen(true)}
-                className="inline-flex h-11 items-center justify-center rounded-full border border-violet-500/40 bg-violet-950/50 px-5 text-sm font-semibold text-violet-100 transition hover:border-violet-400/55 hover:bg-violet-900/40"
+                className="inline-flex h-11 items-center justify-center rounded-full border border-[#c6a77d]/45 bg-[#c6a77d]/12 px-5 text-sm font-semibold text-[#f5efe6] transition hover:border-[#d4bc94]/55 hover:bg-[#c6a77d]/22"
               >
                 Analytics
               </button>
@@ -2528,7 +2528,7 @@ export default function AdminClient() {
                         </div>
                         <div className="mt-2 h-3 overflow-hidden rounded-full bg-zinc-800">
                           <div
-                            className="h-full rounded-full bg-gradient-to-r from-violet-500 to-fuchsia-500"
+                            className="h-full rounded-full bg-gradient-to-r from-[#a68958] to-[#e8d4bc]"
                             style={{
                               width:
                                 analytics.tryOnsTotal > 0

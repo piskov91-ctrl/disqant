@@ -140,7 +140,7 @@ export function ContactFaq() {
       className="scroll-mt-[calc(var(--site-header-height)+1rem)] rounded-2xl border border-[#c6a77d]/35 bg-black/15 p-6 shadow-lg shadow-black/20 backdrop-blur-md md:p-8"
       aria-labelledby={`${baseId}-faq-heading`}
     >
-      <h2 id={`${baseId}-faq-heading`} className="text-lg font-semibold tracking-tight text-zinc-50 md:text-xl">
+      <h2 id={`${baseId}-faq-heading`} className="text-lg font-semibold tracking-tight text-[#C6A77D] md:text-xl">
         Frequently asked questions
       </h2>
       <p className="mt-2 text-sm leading-relaxed text-zinc-400">
@@ -166,7 +166,7 @@ export function ContactFaq() {
                 <div className="min-w-0 flex-1">
                   <h3
                     id={`${baseId}-cat-${category.id}`}
-                    className="text-base font-semibold tracking-tight text-zinc-50 md:text-lg"
+                    className="text-base font-semibold tracking-tight text-[#d4bc94] md:text-lg"
                   >
                     {category.title}
                   </h3>

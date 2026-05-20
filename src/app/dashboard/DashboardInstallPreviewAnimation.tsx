@@ -137,7 +137,7 @@ export function DashboardInstallPreviewAnimation() {
                     : "pointer-events-none translate-y-2 scale-95 opacity-0"
                 }`}
               >
-                <span className="inline-flex rounded-full bg-gradient-to-r from-[#7c3aed] to-[#ec4899] p-px shadow-lg shadow-violet-950/40">
+                <span className="inline-flex rounded-full bg-gradient-to-r from-[#a68958] to-[#e8d4bc] p-px shadow-lg shadow-black/35">
                   <span className="inline-flex h-9 items-center rounded-full bg-zinc-950/90 px-5 text-xs font-semibold text-zinc-100">
                     Try it on
                   </span>

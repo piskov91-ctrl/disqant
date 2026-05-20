@@ -163,14 +163,14 @@
       + "flex-direction:column;gap:10px;z-index:4;background:rgba(255,255,255,.62);backdrop-filter:blur(8px);}"
       + ".dq-processing.is-on{display:flex;}"
       + ".dq-spin{width:34px;height:34px;border-radius:999px;border:3px solid rgba(15,15,20,.14);"
-      + "border-top-color:#7c3aed;animation:dqspin 1s linear infinite;}"
+      + "border-top-color:#c6a77d;animation:dqspin 1s linear infinite;}"
       + "@keyframes dqspin{to{transform:rotate(360deg);}}"
       + ".dq-processing-text{font:900 13px/1.25 system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;color:#0f0f14;"
       + "text-align:center;max-width:420px;padding:0 14px;}"
       + ".dq-progress{position:absolute;left:12px;right:12px;bottom:12px;z-index:5;height:10px;"
       + "border-radius:999px;background:rgba(15,15,20,.10);overflow:hidden;display:none;}"
       + ".dq-progress.is-on{display:block;}"
-      + ".dq-progress>span{display:block;height:100%;width:0%;background:linear-gradient(135deg,#7c3aed,#ec4899);"
+      + ".dq-progress>span{display:block;height:100%;width:0%;background:linear-gradient(135deg,#a68958,#c6a77d,#e8d4bc);"
       + "transition:width .12s ease;}"
 
       // Controls

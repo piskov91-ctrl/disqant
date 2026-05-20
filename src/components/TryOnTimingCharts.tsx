@@ -45,7 +45,7 @@ export function TryOnTimingCharts({
   const titleCls = isAdmin ? "text-base font-semibold text-zinc-100" : "text-lg font-semibold text-zinc-50";
   const descCls = "mt-1 text-sm text-zinc-400";
   const trackCls = isAdmin ? "rounded-sm bg-zinc-800" : "rounded-sm border border-white/10 bg-zinc-950/50";
-  const barCls = "rounded-sm bg-gradient-to-t from-[#7c3aed] to-[#ec4899]";
+  const barCls = "rounded-sm bg-gradient-to-t from-[#8b7355] to-[#d4bc94]";
   const tickCls = isAdmin ? "text-[10px] text-zinc-600" : "text-[10px] text-zinc-500";
 
   const totalTryOns = hours.reduce((s, n) => s + n, 0);

@@ -70,7 +70,7 @@ export default function ProductPage() {
 
             <ol className="mt-14 grid gap-6 md:grid-cols-2">
               <li className="flex gap-4 rounded-2xl border border-surface-border bg-white p-7 shadow-sm">
-                <div className="inline-flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-[#7c3aed] to-[#ec4899] text-white shadow-accent-glow">
+                <div className="inline-flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-[#8b7355] to-[#c6a77d] text-white shadow-accent-glow">
                   <Code2 className="h-6 w-6" aria-hidden />
                 </div>
                 <div>
@@ -92,7 +92,7 @@ export default function ProductPage() {
               </li>
 
               <li className="flex gap-4 rounded-2xl border border-surface-border bg-white p-7 shadow-sm">
-                <div className="inline-flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-[#7c3aed] to-[#ec4899] text-white shadow-accent-glow">
+                <div className="inline-flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-[#8b7355] to-[#c6a77d] text-white shadow-accent-glow">
                   <Laptop2 className="h-6 w-6" aria-hidden />
                 </div>
                 <div>
@@ -115,7 +115,7 @@ export default function ProductPage() {
               </li>
 
               <li className="flex gap-4 rounded-2xl border border-surface-border bg-white p-7 shadow-sm">
-                <div className="inline-flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-[#7c3aed] to-[#ec4899] text-white shadow-accent-glow">
+                <div className="inline-flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-[#8b7355] to-[#c6a77d] text-white shadow-accent-glow">
                   <Camera className="h-6 w-6" aria-hidden />
                 </div>
                 <div>
@@ -136,7 +136,7 @@ export default function ProductPage() {
               </li>
 
               <li className="flex gap-4 rounded-2xl border border-surface-border bg-white p-7 shadow-sm">
-                <div className="inline-flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-[#7c3aed] to-[#ec4899] text-white shadow-accent-glow">
+                <div className="inline-flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-[#8b7355] to-[#c6a77d] text-white shadow-accent-glow">
                   <Sparkles className="h-6 w-6" aria-hidden />
                 </div>
                 <div>

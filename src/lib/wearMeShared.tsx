@@ -58,7 +58,7 @@ export const DEMO_WEAR_MODAL_CSS =
   ".dq-empty span{font:600 12px/1.3 system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;}" +
   ".dq-processing{position:absolute;inset:0;display:none;align-items:center;justify-content:center;flex-direction:column;gap:10px;z-index:4;background:rgba(255,255,255,.62);backdrop-filter:blur(8px);}" +
   ".dq-processing.is-on{display:flex;}" +
-  ".dq-spin{width:34px;height:34px;border-radius:999px;border:3px solid rgba(15,15,20,.14);border-top-color:#7c3aed;animation:dqspin 1s linear infinite;}" +
+  ".dq-spin{width:34px;height:34px;border-radius:999px;border:3px solid rgba(15,15,20,.14);border-top-color:#c6a77d;animation:dqspin 1s linear infinite;}" +
   "@keyframes dqspin{to{transform:rotate(360deg);}}" +
   ".dq-processing-inner{display:flex;flex-direction:column;align-items:center;gap:14px;min-height:4.5rem;justify-content:center;}" +
   ".dq-processing-text{font:900 14px/1.35 system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;color:#0f0f14;text-align:center;max-width:420px;padding:0 16px;}" +
@@ -66,7 +66,7 @@ export const DEMO_WEAR_MODAL_CSS =
   "@keyframes dq-msg-in{0%{opacity:0;transform:translateY(8px) scale(.99)}100%{opacity:1;transform:translateY(0) scale(1)}}" +
   ".dq-progress{position:absolute;left:12px;right:12px;bottom:12px;z-index:5;height:10px;border-radius:999px;background:rgba(15,15,20,.10);overflow:hidden;display:none;}" +
   ".dq-progress.is-on{display:block;}" +
-  ".dq-progress>span{display:block;height:100%;width:0%;background:linear-gradient(135deg,#7c3aed,#c084fc 45%,#ec4899 100%);background-size:200% 100%;transition:width .12s ease;position:relative;animation:dq-bar-pulse 1.9s ease-in-out infinite;}" +
+  ".dq-progress>span{display:block;height:100%;width:0%;background:linear-gradient(135deg,#a68958,#c6a77d 45%,#e8d4bc 100%);background-size:200% 100%;transition:width .12s ease;position:relative;animation:dq-bar-pulse 1.9s ease-in-out infinite;}" +
   "@keyframes dq-bar-pulse{0%,100%{background-position:0% 50%;filter:brightness(1)}50%{background-position:100% 50%;filter:brightness(1.12)}}" +
   ".dq-row{display:flex;gap:10px;flex-wrap:wrap;}" +
   ".dq-choice{flex:1;min-width:160px;display:flex;align-items:center;gap:10px;justify-content:center;padding:12px 12px;border-radius:16px;border:1px solid rgba(15,15,20,.10);background:#fff;color:#0f0f14;cursor:pointer;box-shadow:0 10px 26px rgba(0,0,0,.06);font:900 12px/1 system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;transition:transform .16s ease, box-shadow .16s ease;}" +

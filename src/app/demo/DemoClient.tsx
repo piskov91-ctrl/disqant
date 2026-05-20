@@ -867,7 +867,7 @@ export default function DemoClient() {
               <button
                 type="button"
                 onClick={() => setShowUnavailableModal(false)}
-                className="inline-flex h-10 items-center justify-center rounded-full bg-gradient-to-r from-[#7c3aed] to-[#ec4899] px-5 text-sm font-semibold text-white shadow-accent-glow transition hover:opacity-[0.96]"
+                className="inline-flex h-10 items-center justify-center rounded-full bg-gradient-to-r from-[#C6A77D] to-[#e8d4bc] px-5 text-sm font-semibold text-[#2C241F] shadow-accent-glow transition hover:opacity-[0.96]"
               >
                 OK
               </button>

@@ -110,7 +110,7 @@ export default async function UsagePage(props: UsagePageProps) {
                     </div>
                     <div className="mt-3 h-3 w-full overflow-hidden rounded-full border border-white/10 bg-zinc-950/50">
                       <div
-                        className="h-full rounded-full bg-gradient-to-r from-[#7c3aed] to-[#ec4899]"
+                        className="h-full rounded-full bg-gradient-to-r from-[#a68958] to-[#e8d4bc]"
                         style={{ width: `${pct}%` }}
                       />
                     </div>
