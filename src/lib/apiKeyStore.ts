@@ -106,7 +106,9 @@ export function getRedis() {
   }
 
   // Prefer write token since admin needs writes. (Read-only token is optional and unused here.)
-  redisSingleton = new Redis({ url, token });
+  // Default Upstash SDK behavior batches concurrent commands into one HTTP pipeline and maps
+  // replies by arrival order — overlapping writes from parallel requests can mis-map results/errors.
+  redisSingleton = new Redis({ url, token, enableAutoPipelining: false });
   return redisSingleton;
 }
 

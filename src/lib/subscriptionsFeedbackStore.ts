@@ -171,9 +171,16 @@ export async function recordPendingSubscriptionsFeedback(fields: {
     status: "pending",
   };
 
-  await redis.set(recordKey(id), JSON.stringify(row));
-  await redis.lpush(PENDING_INDEX, id);
-  await redis.ltrim(PENDING_INDEX, 0, SUBSCRIPTIONS_FEEDBACK_INDEX_MAX - 1);
+  const key = recordKey(id);
+  const payload = JSON.stringify(row);
+
+  /** MULTI keeps record + pending index consistent in one Redis transaction over REST (`multi-exec`). */
+  await redis
+    .multi()
+    .set(key, payload)
+    .lpush(PENDING_INDEX, id)
+    .ltrim(PENDING_INDEX, 0, SUBSCRIPTIONS_FEEDBACK_INDEX_MAX - 1)
+    .exec();
 
   await redis.lpush(LEGACY_INDEX, id).catch(() => undefined);
   await redis.ltrim(LEGACY_INDEX, 0, SUBSCRIPTIONS_FEEDBACK_INDEX_MAX - 1).catch(() => undefined);
