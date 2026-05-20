@@ -3,6 +3,7 @@ import crypto from "node:crypto";
  * Redis: use `getRedis()` from `@/lib/apiKeyStore` only — one shared Upstash singleton for the whole app (do not call `new Redis()` here).
  * Feedback keys live under `fit-room:subscriptionsFeedback:`; client keys under `fit-room:clientKeys:*` — same DB, disjoint prefixes.
  */
+import type { TestimonialSlide } from "@/data/marketingTestimonialSlides";
 import { getRedis } from "@/lib/apiKeyStore";
 
 /** Record JSON lives at `${FIT_ROOM_SUBSCRIPTIONS_FEEDBACK_KEY_PREFIX}<uuid>` */
@@ -285,6 +286,16 @@ export async function listApprovedSubscriptionsFeedback(limit = 80): Promise<Sub
   const redis = getRedis();
   const ids = ((await redis.lrange(APPROVED_INDEX, 0, cap - 1)) as string[]) ?? [];
   return hydrateApprovedByIds(ids);
+}
+
+/** Slides for marketing carousels (home + subscriptions) — approved Redis reviews, permanent until an admin deletes the record. */
+export function mapApprovedSubscriptionsFeedbackToSlides(records: SubscriptionsFeedbackRecord[]): TestimonialSlide[] {
+  return records.map((r) => ({
+    id: r.id,
+    rating: r.rating,
+    quote: r.message,
+    attribution: `— ${r.storeName}`,
+  }));
 }
 
 export async function approveSubscriptionsFeedback(id: string): Promise<void> {

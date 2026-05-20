@@ -1,8 +1,18 @@
 import { Footer } from "@/components/Footer";
 import { Header } from "@/components/Header";
 import { MarketingTestimonialsWithPendingFeedback } from "@/components/MarketingTestimonialsWithPendingFeedback";
+import {
+  listApprovedSubscriptionsFeedback,
+  mapApprovedSubscriptionsFeedbackToSlides,
+} from "@/lib/subscriptionsFeedbackStore";
 
-export default function Home() {
+/** Approved merchant reviews come from Redis — same source as the subscriptions page carousel. */
+export const dynamic = "force-dynamic";
+
+export default async function Home() {
+  const approvedRows = await listApprovedSubscriptionsFeedback(80).catch(() => []);
+  const approvedSubscriberSlides = mapApprovedSubscriptionsFeedbackToSlides(approvedRows);
+
   return (
     <>
       <Header />
@@ -76,7 +86,7 @@ export default function Home() {
             </div>
           </div>
         </section>
-        <MarketingTestimonialsWithPendingFeedback />
+        <MarketingTestimonialsWithPendingFeedback subscriberSlides={approvedSubscriberSlides} />
       </main>
       <Footer />
     </>

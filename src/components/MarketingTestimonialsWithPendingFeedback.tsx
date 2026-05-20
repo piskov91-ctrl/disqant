@@ -9,19 +9,20 @@ import {
 } from "@/data/marketingTestimonialSlides";
 import {
   readPendingFeedbackPreviewSlides,
+  stripPendingPreviewsWhoseIdsAreApproved,
   SUBSCRIPTIONS_PENDING_FEEDBACK_EVENT,
   SUBSCRIPTIONS_PENDING_FEEDBACK_STORAGE_KEY,
 } from "@/lib/subscriptionsPendingFeedbackPreview";
 
 type MarketingTestimonialsWithPendingFeedbackProps = {
   tone?: TestimonialsSlideshowTone;
-  /** Subscriptions only — Redis-approved merchant slides appended to the same carousel as curated quotes. */
+  /** Server-loaded Redis-approved slides (home + subscriptions). Merged into the carousel after pending preview + marketing quotes. */
   subscriberSlides?: readonly TestimonialSlide[];
 };
 
 /**
- * When subscription feedback previews exist (localStorage TTL), prepends them to the marketing carousel
- * on this page and subscriptions. Same storage key / event as {@link SubscriptionsFeedbackSection}.
+ * Prepends short-lived pending previews (localStorage) ahead of marketing quotes when present; merges **subscriberSlides**
+ * from Redis (approved by admin) at the end via {@link Testimonials} so they stay permanently alongside hardcoded quotes.
  */
 export function MarketingTestimonialsWithPendingFeedback({
   tone = "light",
@@ -34,6 +35,12 @@ export function MarketingTestimonialsWithPendingFeedback({
   const refreshPending = useCallback(() => {
     setPendingSlides(readPendingFeedbackPreviewSlides());
   }, []);
+
+  useEffect(() => {
+    const ids = subscriberSlides?.map((s) => s.id) ?? [];
+    stripPendingPreviewsWhoseIdsAreApproved(ids);
+    refreshPending();
+  }, [subscriberSlides, refreshPending]);
 
   useEffect(() => {
     refreshPending();
@@ -53,10 +60,20 @@ export function MarketingTestimonialsWithPendingFeedback({
     };
   }, [refreshPending]);
 
+  const approvedIdSet = useMemo(
+    () => new Set((subscriberSlides ?? []).map((s) => s.id)),
+    [subscriberSlides],
+  );
+
+  const pendingWithoutApprovedDupes = useMemo(
+    () => pendingSlides.filter((s) => !approvedIdSet.has(s.id)),
+    [pendingSlides, approvedIdSet],
+  );
+
   const marketingCarouselSlides = useMemo(() => {
-    if (pendingSlides.length === 0) return undefined;
-    return [...pendingSlides, ...MARKETING_TESTIMONIAL_SLIDES];
-  }, [pendingSlides]);
+    if (pendingWithoutApprovedDupes.length === 0) return undefined;
+    return [...pendingWithoutApprovedDupes, ...MARKETING_TESTIMONIAL_SLIDES];
+  }, [pendingWithoutApprovedDupes]);
 
   return (
     <Testimonials

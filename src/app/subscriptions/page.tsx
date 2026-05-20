@@ -4,8 +4,10 @@ import { Footer } from "@/components/Footer";
 import { Header } from "@/components/Header";
 import { WhatYouNeedToDoSteps } from "@/components/WhatYouNeedToDoSteps";
 import { Pricing } from "@/components/Pricing";
-import type { TestimonialSlide } from "@/components/TestimonialsSlideshow";
-import { listApprovedSubscriptionsFeedback } from "@/lib/subscriptionsFeedbackStore";
+import {
+  listApprovedSubscriptionsFeedback,
+  mapApprovedSubscriptionsFeedbackToSlides,
+} from "@/lib/subscriptionsFeedbackStore";
 import { getRetailerSessionUser } from "@/lib/retailerAuth";
 import { SubscriptionsFeedbackSection } from "./SubscriptionsFeedbackSection";
 import { SubscriptionsSubscriberTestimonials } from "./SubscriptionsSubscriberTestimonials";
@@ -27,12 +29,7 @@ export default async function SubscriptionsPage(props: PageProps) {
   const retailerUser = await getRetailerSessionUser();
 
   const approvedRows = await listApprovedSubscriptionsFeedback(80).catch(() => []);
-  const subscriberSlides: TestimonialSlide[] = approvedRows.map((r) => ({
-    id: r.id,
-    rating: r.rating,
-    quote: r.message,
-    attribution: `— ${r.storeName}`,
-  }));
+  const subscriberSlides = mapApprovedSubscriptionsFeedbackToSlides(approvedRows);
 
   let checkoutBanner: ReactNode = null;
   if (q.checkout === "success") {

@@ -108,3 +108,15 @@ export function appendPendingFeedbackPreview(fields: {
   next.push(entry);
   window.localStorage.setItem(SUBSCRIPTIONS_PENDING_FEEDBACK_STORAGE_KEY, JSON.stringify(next));
 }
+
+/** Once a submission is approved in Redis, drop its local preview so the carousel only shows the permanent server copy. */
+export function stripPendingPreviewsWhoseIdsAreApproved(approvedRedisIds: readonly string[]): void {
+  if (typeof window === "undefined") return;
+  const approved = new Set(approvedRedisIds.filter(Boolean));
+  if (approved.size === 0) return;
+  const rows = pruneStoredPendingFeedbackPreviews();
+  const filtered = rows.filter((r) => !approved.has(r.redisId));
+  if (filtered.length === rows.length) return;
+  window.localStorage.setItem(SUBSCRIPTIONS_PENDING_FEEDBACK_STORAGE_KEY, JSON.stringify(filtered));
+  window.dispatchEvent(new Event(SUBSCRIPTIONS_PENDING_FEEDBACK_EVENT));
+}
