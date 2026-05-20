@@ -113,7 +113,7 @@ export function HeaderNav({ initialNavUser }: HeaderNavProps) {
           Subscriptions
         </Link>
         <Link href="/demo" className={desktopNavLinkClass("/demo")}>
-          Demo
+          Try It Free
         </Link>
         <Link href="/about" className={`${desktopNavLinkClass("/about")} nav-about-us-highlight`}>
           About Us
@@ -196,7 +196,7 @@ export function HeaderNav({ initialNavUser }: HeaderNavProps) {
                 Subscriptions
               </Link>
               <Link href="/demo" className={mobileNavLinkClass("/demo")} onClick={() => setOpen(false)}>
-                Demo
+                Try It Free
               </Link>
               <Link href="/about" className={`${mobileNavLinkClass("/about")} nav-about-us-highlight`} onClick={() => setOpen(false)}>
                 About Us

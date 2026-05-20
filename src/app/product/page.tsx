@@ -435,7 +435,7 @@ export default function ProductPage() {
                     Ready to add virtual try-on to your store?
                   </h2>
                   <p className="mt-3 max-w-xl text-sm leading-relaxed text-zinc-600 md:text-base">
-                    Try the demo and picture it on your product pages. It&apos;s the quickest way to see if it feels
+                    Try It Free and picture it on your product pages. It&apos;s the quickest way to see if it feels
                     right for your brand.
                   </p>
                   <p className="mt-4 max-w-xl text-sm leading-relaxed text-zinc-600 md:text-base">

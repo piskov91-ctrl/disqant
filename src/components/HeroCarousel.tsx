@@ -6,7 +6,7 @@ export function HeroCarousel() {
   return (
     <section
       className="relative overflow-hidden pt-28 pb-16 md:pt-36 md:pb-24"
-      aria-label="Product demo video"
+      aria-label="Product Try It Free preview video"
     >
       <div className="pointer-events-none absolute inset-0 bg-hero-glow" />
       <div
@@ -24,12 +24,12 @@ export function HeroCarousel() {
           See it on you before you buy it
         </h1>
         <p className="mt-4 max-w-2xl text-lg leading-relaxed text-zinc-600 md:text-xl">
-          A short demo of the try-on flow—pick a product, upload a photo, and see the result.
+          A quick Try It Free preview of the try-on flow—pick a product, upload a photo, and see the result.
         </p>
 
         <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:items-center">
           <Link href="/demo" className="wear-me-btn text-center sm:inline-flex">
-            Try the demo
+            Try It Free
           </Link>
           <a
             href="#subscriptions"

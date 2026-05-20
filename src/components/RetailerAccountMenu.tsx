@@ -69,7 +69,7 @@ export function RetailerAccountMenu({ user }: RetailerAccountMenuProps) {
         className="flex max-w-[14rem] items-center gap-2 rounded-full border border-surface-border bg-white py-1.5 pl-1.5 pr-2 text-left shadow-sm transition hover:border-zinc-300 hover:bg-surface-raised"
       >
         <span
-          className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-accent/15 text-xs font-semibold text-accent"
+          className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#C6A77D] text-xs font-semibold text-[#2C241F]"
           aria-hidden
         >
           {userInitials(user)}

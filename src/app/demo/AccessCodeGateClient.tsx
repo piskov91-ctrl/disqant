@@ -55,7 +55,7 @@ export default function AccessCodeGateClient() {
         disabled={loading || code.trim().length === 0}
         className="btn-accent-gradient w-full disabled:cursor-not-allowed disabled:opacity-60"
       >
-        {loading ? "Checking…" : "Unlock demo"}
+        {loading ? "Checking…" : "Unlock Try It Free"}
       </button>
     </form>
   );

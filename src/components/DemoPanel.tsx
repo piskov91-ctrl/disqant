@@ -24,7 +24,7 @@ export function DemoPanel() {
         <div className="grid gap-12 lg:grid-cols-2 lg:items-center">
           <div>
             <h2 className="text-3xl font-semibold tracking-tight text-zinc-900 md:text-4xl">
-              See the demo in seconds
+              See Try It Free in seconds
             </h2>
             <p className="mt-4 text-zinc-600">
               Upload a portrait and a garment—Fit Room returns a studio-quality composite you can
@@ -66,7 +66,7 @@ export function DemoPanel() {
                   </div>
                 ) : (
                   <>
-                    <p className="text-sm text-zinc-500">Interactive demo placeholder</p>
+                    <p className="text-sm text-zinc-500">Interactive Try It Free placeholder</p>
                     <button
                       type="button"
                       onClick={handleTry}
@@ -83,7 +83,7 @@ export function DemoPanel() {
                   onClick={() => setDone(false)}
                   className="mt-4 w-full rounded-lg border border-surface-border py-2 text-sm text-zinc-600 transition hover:bg-surface-raised hover:text-zinc-900"
                 >
-                  Reset demo
+                  Reset Try It Free
                 </button>
               )}
             </div>

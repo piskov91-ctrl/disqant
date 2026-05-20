@@ -32,7 +32,7 @@ export default function Home() {
                 </p>
 
                 <form action="/demo" className="mt-8 block w-fit sm:mt-10">
-                  <button type="submit" className="wear-me-3d-final" aria-label="Wear Me — try the demo">
+                  <button type="submit" className="wear-me-3d-final" aria-label="Wear Me — Try It Free">
                     <div className="brushed-surface">
                       <div className="monogram-frame">
                         <svg viewBox="0 0 100 100" className="intertwined-wm">
@@ -68,7 +68,7 @@ export default function Home() {
                   playsInline
                   preload="auto"
                   controls={false}
-                  aria-label="Wear Me virtual try-on demo video"
+                  aria-label="Wear Me virtual try-on preview video"
                 >
                   <source src="/demo-video.mp4" type="video/mp4" />
                 </video>

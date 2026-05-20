@@ -879,7 +879,7 @@ export default function DemoClient() {
       <main className="relative z-10 mx-auto max-w-5xl px-6 pb-12 pt-[var(--site-header-height)] md:pb-16">
         <div className="min-w-0">
           <h1 className="text-balance text-3xl font-semibold tracking-tight text-[#F5EDE4] md:text-4xl">
-            Virtual try-on demo
+            Try It Free
           </h1>
           <p className="mt-4 text-[#F5EDE4]/75">
             Tap <span className="font-semibold text-[#F5EDE4]">Wear Me</span> on a sample product, then upload your

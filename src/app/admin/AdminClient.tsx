@@ -2484,16 +2484,16 @@ export default function AdminClient() {
                   <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
                     <div className="rounded-2xl border border-zinc-800 bg-zinc-900/60 p-6">
                       <p className="text-xs font-semibold uppercase tracking-wider text-zinc-500">
-                        Demo visits (today)
+                        Try It Free visits (today)
                       </p>
                       <p className="mt-3 text-3xl font-semibold tabular-nums text-zinc-100">
                         {analytics.demoVisitsToday.toLocaleString()}
                       </p>
-                      <p className="mt-2 text-xs text-zinc-500">UTC day · /demo page loads</p>
+                      <p className="mt-2 text-xs text-zinc-500">UTC day · Try It Free page loads (/demo)</p>
                     </div>
                     <div className="rounded-2xl border border-zinc-800 bg-zinc-900/60 p-6">
                       <p className="text-xs font-semibold uppercase tracking-wider text-zinc-500">
-                        Demo visits (this month)
+                        Try It Free visits (this month)
                       </p>
                       <p className="mt-3 text-3xl font-semibold tabular-nums text-zinc-100">
                         {analytics.demoVisitsThisMonth.toLocaleString()}
@@ -2512,9 +2512,9 @@ export default function AdminClient() {
                   </div>
 
                   <div className="rounded-2xl border border-zinc-800 bg-zinc-900/60 p-6 md:p-8">
-                    <h2 className="text-base font-semibold text-zinc-100">Retailer vs demo / visitor</h2>
+                    <h2 className="text-base font-semibold text-zinc-100">Retailer vs Try It Free / visitor</h2>
                     <p className="mt-1 text-sm text-zinc-400">
-                      Split by whether the request included a client API key (embedded widget) or used the demo
+                      Split by whether the request included a client API key (embedded widget) or used Try It Free
                       fallback path.
                     </p>
 
@@ -2540,7 +2540,7 @@ export default function AdminClient() {
                       </div>
                       <div>
                         <div className="flex items-baseline justify-between gap-2">
-                          <span className="text-sm font-medium text-zinc-300">Demo / visitor (no key)</span>
+                          <span className="text-sm font-medium text-zinc-300">Try It Free / visitor (no key)</span>
                           <span className="tabular-nums text-sm text-zinc-500">
                             {analytics.tryOnsVisitor.toLocaleString()} ({tryOnBreakdownPct.visitor}%)
                           </span>
@@ -2609,9 +2609,9 @@ export default function AdminClient() {
 
                   <div className="rounded-2xl border border-zinc-800 bg-zinc-900/60 p-0 overflow-hidden">
                     <div className="border-b border-zinc-800 px-6 py-5 md:px-8">
-                      <h2 className="text-base font-semibold text-zinc-100">Demo visitors</h2>
+                      <h2 className="text-base font-semibold text-zinc-100">Try It Free visitors</h2>
                       <p className="mt-1 text-sm text-zinc-400">
-                        /demo page loads and try-ons without a client API key. Session cookie when available; otherwise
+                        Try It Free page loads (/demo) and try-ons without a client API key. Session cookie when available; otherwise
                         IP only. Up to 250 most recently active rows.
                       </p>
                     </div>
@@ -2630,7 +2630,7 @@ export default function AdminClient() {
                           {analytics.demoVisitors.length === 0 ? (
                             <tr>
                               <td colSpan={5} className="px-6 py-8 text-zinc-500 md:px-8">
-                                No demo visitor activity recorded yet.
+                                No Try It Free visitor activity recorded yet.
                               </td>
                             </tr>
                           ) : (

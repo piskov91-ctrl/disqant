@@ -35,7 +35,7 @@ const FAQ_CATEGORIES: readonly FaqCategory[] = [
               href="/demo"
               className="font-semibold text-[#d4bc94] underline decoration-[#c6a77d]/50 underline-offset-2 hover:text-[#e8dcc8] hover:decoration-[#c6a77d]"
             >
-              demo page
+              Try It Free page
             </Link>{" "}
             anytime—no signup required.
           </>

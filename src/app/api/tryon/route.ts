@@ -174,7 +174,7 @@ export async function POST(req: Request) {
   }
   if (!effectiveClientApiKey) {
     return Response.json(
-      { error: "Demo is not configured. Set DEMO_API_KEY for this environment." },
+      { error: "Try It Free is not configured. Set DEMO_API_KEY for this environment." },
       { status: 503 },
     );
   }
