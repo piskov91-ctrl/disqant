@@ -315,3 +315,14 @@ export async function rejectSubscriptionsFeedback(id: string): Promise<void> {
   await redis.lrem(PENDING_INDEX, 0, cleaned);
   await redis.del(recordKey(cleaned));
 }
+
+/** Removes a review regardless of status (pending or approved): both indexes + record key. */
+export async function deleteSubscriptionsFeedback(id: string): Promise<void> {
+  const cleaned = id.trim();
+  if (!cleaned.length) throw new Error("Missing id.");
+
+  const redis = getRedis();
+  await redis.lrem(PENDING_INDEX, 0, cleaned);
+  await redis.lrem(APPROVED_INDEX, 0, cleaned);
+  await redis.del(recordKey(cleaned));
+}

@@ -165,7 +165,7 @@ type ContactInquiryRow = {
   message: string;
 };
 
-type SubscriptionsPendingReviewRow = {
+type SubscriptionReviewRow = {
   id: string;
   createdAt: string;
   rating: number;
@@ -173,6 +173,118 @@ type SubscriptionsPendingReviewRow = {
   storeName: string;
   status: "pending" | "approved";
 };
+
+function formatSubscriptionsReviewUtc(createdAt: string): string {
+  if (!Number.isFinite(Date.parse(createdAt))) return "—";
+  return new Date(createdAt).toLocaleString("en-GB", {
+    timeZone: "UTC",
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+}
+
+type SubscriptionReviewCardProps = {
+  row: SubscriptionReviewRow;
+  busy: boolean;
+  loading: boolean;
+  variant: "pending" | "approved";
+  onDelete: () => void;
+  onApprove?: () => void;
+  onReject?: () => void;
+};
+
+function SubscriptionReviewCard({
+  row,
+  busy,
+  loading,
+  variant,
+  onApprove,
+  onReject,
+  onDelete,
+}: SubscriptionReviewCardProps) {
+  const r = Math.round(Math.min(5, Math.max(1, row.rating)));
+  const when = formatSubscriptionsReviewUtc(row.createdAt);
+  const statusLabel = variant === "pending" ? "Pending moderation" : "Approved · live on subscriptions page";
+
+  return (
+    <li className="rounded-xl border border-zinc-800 bg-zinc-950/40 px-4 py-4 md:px-5 md:py-5">
+      <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between lg:gap-6">
+        <div className="min-w-0 flex-1 space-y-3">
+          <div>
+            <p className="text-[10px] font-semibold uppercase tracking-wider text-zinc-500">Store name</p>
+            <p className="mt-1 text-base font-semibold text-zinc-100">{row.storeName}</p>
+            <p className="mt-1 font-mono text-[10px] text-zinc-600" title="Redis record id">
+              {row.id}
+            </p>
+          </div>
+          <div>
+            <p className="text-[10px] font-semibold uppercase tracking-wider text-zinc-500">Date</p>
+            <p className="mt-1 text-sm text-zinc-300">
+              {when} UTC
+            </p>
+            <p className="mt-0.5 text-xs text-zinc-600">Status: {statusLabel}</p>
+          </div>
+          <div>
+            <p className="text-[10px] font-semibold uppercase tracking-wider text-zinc-500">Star rating</p>
+            <div className="mt-1 flex flex-wrap items-center gap-2">
+              <span className="text-lg tracking-tight text-amber-300" aria-hidden>
+                {"★".repeat(r)}
+                {"☆".repeat(5 - r)}
+              </span>
+              <span className="text-sm tabular-nums text-zinc-400" aria-label={`${r} out of 5 stars`}>
+                {r} / 5
+              </span>
+            </div>
+          </div>
+          <div>
+            <p className="text-[10px] font-semibold uppercase tracking-wider text-zinc-500">Comment</p>
+            <p className="mt-2 whitespace-pre-wrap text-sm leading-relaxed text-zinc-200">{row.message}</p>
+          </div>
+        </div>
+        <div className="flex shrink-0 flex-row flex-wrap items-center gap-2 lg:flex-col lg:items-stretch lg:pt-7">
+          {variant === "pending" ? (
+            <>
+              <button
+                type="button"
+                disabled={busy || loading}
+                onClick={() => {
+                  onApprove?.();
+                }}
+                className="inline-flex min-h-[2.5rem] flex-1 items-center justify-center rounded-lg border border-emerald-700/65 bg-emerald-950/50 px-4 text-xs font-semibold uppercase tracking-wide text-emerald-100 transition hover:border-emerald-500/65 hover:bg-emerald-950/85 disabled:cursor-not-allowed disabled:opacity-45 lg:flex-none"
+                title="Set status to approved in Redis — visible on Subscriptions page"
+              >
+                Approve
+              </button>
+              <button
+                type="button"
+                disabled={busy || loading}
+                onClick={() => {
+                  onReject?.();
+                }}
+                className="inline-flex min-h-[2.5rem] flex-1 items-center justify-center rounded-lg border border-rose-800/65 bg-rose-950/40 px-4 text-xs font-semibold uppercase tracking-wide text-rose-100 transition hover:border-rose-600/65 hover:bg-rose-950/85 disabled:cursor-not-allowed disabled:opacity-45 lg:flex-none"
+                title="Decline — removes this submission from Redis"
+              >
+                Reject
+              </button>
+            </>
+          ) : null}
+          <button
+            type="button"
+            disabled={busy || loading}
+            onClick={onDelete}
+            className="inline-flex min-h-[2.5rem] flex-1 items-center justify-center rounded-lg border border-zinc-600 bg-zinc-900/70 px-4 text-xs font-semibold uppercase tracking-wide text-zinc-100 transition hover:border-zinc-500 hover:bg-zinc-800 disabled:cursor-not-allowed disabled:opacity-45 lg:flex-none"
+            title="Remove this record from Redis (pending or approved)"
+          >
+            Delete
+          </button>
+        </div>
+      </div>
+    </li>
+  );
+}
 
 const CREDIT_PLANS = [
   {
@@ -342,7 +454,8 @@ export default function AdminClient() {
   const [contactInquiriesError, setContactInquiriesError] = useState<string | null>(null);
 
   const [reviewsPendingBadge, setReviewsPendingBadge] = useState(0);
-  const [subscriptionReviewsPending, setSubscriptionReviewsPending] = useState<SubscriptionsPendingReviewRow[]>([]);
+  const [subscriptionReviewsPending, setSubscriptionReviewsPending] = useState<SubscriptionReviewRow[]>([]);
+  const [subscriptionReviewsApproved, setSubscriptionReviewsApproved] = useState<SubscriptionReviewRow[]>([]);
   const [subscriptionReviewsLoading, setSubscriptionReviewsLoading] = useState(false);
   const [subscriptionReviewsError, setSubscriptionReviewsError] = useState<string | null>(null);
   const [subscriptionModerationBusyId, setSubscriptionModerationBusyId] = useState<string | null>(null);
@@ -613,26 +726,30 @@ export default function AdminClient() {
     }
   }
 
-  async function loadSubscriptionReviewsPendingList() {
+  async function loadSubscriptionReviews() {
     setSubscriptionReviewsLoading(true);
     setSubscriptionReviewsError(null);
     try {
       const res = await fetch("/api/admin/subscriptions-reviews");
       const data = (await res.json()) as {
-        pending?: SubscriptionsPendingReviewRow[];
+        pending?: SubscriptionReviewRow[];
+        approved?: SubscriptionReviewRow[];
         error?: string;
       };
       if (!res.ok) {
         if (data.error === "Unauthorized.") window.location.reload();
-        setSubscriptionReviewsError(data.error || "Could not load pending reviews.");
+        setSubscriptionReviewsError(data.error || "Could not load reviews.");
         setSubscriptionReviewsPending([]);
+        setSubscriptionReviewsApproved([]);
         return;
       }
       setSubscriptionReviewsPending(Array.isArray(data.pending) ? data.pending : []);
+      setSubscriptionReviewsApproved(Array.isArray(data.approved) ? data.approved : []);
       void loadSubscriptionReviewsBadge();
     } catch (e) {
-      setSubscriptionReviewsError(e instanceof Error ? e.message : "Could not load pending reviews.");
+      setSubscriptionReviewsError(e instanceof Error ? e.message : "Could not load reviews.");
       setSubscriptionReviewsPending([]);
+      setSubscriptionReviewsApproved([]);
     } finally {
       setSubscriptionReviewsLoading(false);
     }
@@ -656,7 +773,8 @@ export default function AdminClient() {
         body: JSON.stringify({ action, id }),
       });
       const data = (await res.json()) as {
-        pending?: SubscriptionsPendingReviewRow[];
+        pending?: SubscriptionReviewRow[];
+        approved?: SubscriptionReviewRow[];
         unreadCount?: number;
         error?: string;
       };
@@ -666,6 +784,7 @@ export default function AdminClient() {
         return;
       }
       setSubscriptionReviewsPending(Array.isArray(data.pending) ? data.pending : []);
+      setSubscriptionReviewsApproved(Array.isArray(data.approved) ? data.approved : []);
       if (typeof data.unreadCount === "number" && Number.isFinite(data.unreadCount)) {
         setReviewsPendingBadge(Math.max(0, Math.floor(data.unreadCount)));
       } else {
@@ -673,6 +792,45 @@ export default function AdminClient() {
       }
     } catch (e) {
       setSubscriptionReviewsError(e instanceof Error ? e.message : "Could not apply moderation.");
+    } finally {
+      setSubscriptionModerationBusyId(null);
+    }
+  }
+
+  async function deleteSubscriptionReview(id: string) {
+    const ok = window.confirm(
+      "Permanently delete this review from Redis? This removes it whether it is pending or approved.",
+    );
+    if (!ok) return;
+
+    setSubscriptionModerationBusyId(id);
+    setSubscriptionReviewsError(null);
+    try {
+      const res = await fetch("/api/admin/subscriptions-reviews", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "delete", id }),
+      });
+      const data = (await res.json()) as {
+        pending?: SubscriptionReviewRow[];
+        approved?: SubscriptionReviewRow[];
+        unreadCount?: number;
+        error?: string;
+      };
+      if (!res.ok) {
+        if (data.error === "Unauthorized.") window.location.reload();
+        setSubscriptionReviewsError(data.error || "Could not delete review.");
+        return;
+      }
+      setSubscriptionReviewsPending(Array.isArray(data.pending) ? data.pending : []);
+      setSubscriptionReviewsApproved(Array.isArray(data.approved) ? data.approved : []);
+      if (typeof data.unreadCount === "number" && Number.isFinite(data.unreadCount)) {
+        setReviewsPendingBadge(Math.max(0, Math.floor(data.unreadCount)));
+      } else {
+        void loadSubscriptionReviewsBadge();
+      }
+    } catch (e) {
+      setSubscriptionReviewsError(e instanceof Error ? e.message : "Could not delete review.");
     } finally {
       setSubscriptionModerationBusyId(null);
     }
@@ -775,7 +933,7 @@ export default function AdminClient() {
     if (activeTab === "recovery") void loadRecovery();
     if (activeTab === "topUps") void loadTopUps();
     if (activeTab === "contact") void loadContactInquiries();
-    if (activeTab === "reviews") void loadSubscriptionReviewsPendingList();
+    if (activeTab === "reviews") void loadSubscriptionReviews();
   }, [activeTab]); // eslint-disable-line react-hooks/exhaustive-deps -- loaders are not memoised; tab key is intentional.
 
   useEffect(() => {
@@ -987,7 +1145,7 @@ export default function AdminClient() {
     else if (activeTab === "analytics") void loadAnalytics();
     else if (activeTab === "topUps") void loadTopUps();
     else if (activeTab === "contact") void loadContactInquiries();
-    else if (activeTab === "reviews") void loadSubscriptionReviewsPendingList();
+    else if (activeTab === "reviews") void loadSubscriptionReviews();
     else void loadRecovery();
   }
 
@@ -2179,12 +2337,13 @@ export default function AdminClient() {
             <section className="mt-8 w-full overflow-hidden rounded-2xl border border-zinc-800 bg-zinc-900/60 p-6 shadow-sm md:p-8">
               <h2 className="text-base font-semibold text-zinc-100">Reviews</h2>
               <p className="mt-1 text-sm text-zinc-400">
-                Pending merchant feedback from the Subscriptions page — saved only to Redis (no outbound email).
+                Merchant feedback from the Subscriptions page — Redis only (no outbound email).
                 Opening this tab clears the amber <strong className="font-medium text-zinc-300">unread badge</strong> for
-                items already visible in the queue. The badge increments again when submissions arrive after your last visit
-                here. <strong className="font-medium text-zinc-300">Approve</strong> sets{' '}
-                <span className="font-mono text-zinc-500">status: approved</span> so a review appears on the public site;
-                reject deletes the record from Redis.
+                pending items loaded here; new submissions increment the badge again.{" "}
+                <strong className="font-medium text-zinc-300">Approve</strong> moves a row to the approved index (shown on the
+                public subscriptions page). <strong className="font-medium text-zinc-300">Reject</strong> removes pending
+                rows. <strong className="font-medium text-zinc-300">Delete</strong> removes any row whether pending or
+                approved.
               </p>
               {subscriptionReviewsError ? (
                 <div className="mt-6 rounded-xl border border-red-900/60 bg-red-950/40 px-4 py-3 text-sm text-red-200">
@@ -2192,95 +2351,68 @@ export default function AdminClient() {
                 </div>
               ) : null}
               {subscriptionReviewsLoading ? (
-                <div className="mt-8 text-sm text-zinc-500">Loading pending reviews…</div>
-              ) : subscriptionReviewsPending.length === 0 ? (
-                <div className="mt-8 text-sm text-zinc-500">No pending submissions.</div>
+                <div className="mt-8 text-sm text-zinc-500">Loading reviews…</div>
               ) : (
-                <ul className="mt-6 space-y-4">
-                  {subscriptionReviewsPending.map((row) => {
-                    const busy = subscriptionModerationBusyId === row.id;
-                    const r = Math.round(Math.min(5, Math.max(1, row.rating)));
-                    const when = Number.isFinite(Date.parse(row.createdAt))
-                      ? new Date(row.createdAt).toLocaleString("en-GB", {
-                          timeZone: "UTC",
-                          day: "numeric",
-                          month: "short",
-                          year: "numeric",
-                          hour: "2-digit",
-                          minute: "2-digit",
-                        })
-                      : "—";
-                    return (
-                      <li
-                        key={row.id}
-                        className="rounded-xl border border-zinc-800 bg-zinc-950/40 px-4 py-4 md:px-5 md:py-5"
-                      >
-                        <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between lg:gap-6">
-                          <div className="min-w-0 flex-1 space-y-3">
-                            <div>
-                              <p className="text-[10px] font-semibold uppercase tracking-wider text-zinc-500">
-                                Store name
-                              </p>
-                              <p className="mt-1 text-base font-semibold text-zinc-100">{row.storeName}</p>
-                              <p className="mt-1 font-mono text-[10px] text-zinc-600" title="Redis record id">
-                                {row.id}
-                              </p>
-                            </div>
-                            <div>
-                              <p className="text-[10px] font-semibold uppercase tracking-wider text-zinc-500">Date</p>
-                              <p className="mt-1 text-sm text-zinc-300">{when} UTC</p>
-                              <p className="mt-0.5 text-xs text-zinc-600">Status: pending moderation</p>
-                            </div>
-                            <div>
-                              <p className="text-[10px] font-semibold uppercase tracking-wider text-zinc-500">
-                                Star rating
-                              </p>
-                              <div className="mt-1 flex flex-wrap items-center gap-2">
-                                <span className="text-lg tracking-tight text-amber-300" aria-hidden>
-                                  {"★".repeat(r)}
-                                  {"☆".repeat(5 - r)}
-                                </span>
-                                <span className="text-sm tabular-nums text-zinc-400" aria-label={`${r} out of 5 stars`}>
-                                  {r} / 5
-                                </span>
-                              </div>
-                            </div>
-                            <div>
-                              <p className="text-[10px] font-semibold uppercase tracking-wider text-zinc-500">Comment</p>
-                              <p className="mt-2 whitespace-pre-wrap text-sm leading-relaxed text-zinc-200">
-                                {row.message}
-                              </p>
-                            </div>
-                          </div>
-                          <div className="flex shrink-0 flex-row flex-wrap items-center gap-2 lg:flex-col lg:items-stretch lg:pt-7">
-                            <button
-                              type="button"
-                              disabled={busy || subscriptionReviewsLoading}
-                              onClick={() => void moderateSubscriptionReview(row.id, "approve")}
-                              className="inline-flex min-h-[2.5rem] flex-1 items-center justify-center rounded-lg border border-emerald-700/65 bg-emerald-950/50 px-4 text-xs font-semibold uppercase tracking-wide text-emerald-100 transition hover:border-emerald-500/65 hover:bg-emerald-950/85 disabled:cursor-not-allowed disabled:opacity-45 lg:flex-none"
-                              title="Set status to approved in Redis — visible on Subscriptions page"
-                            >
-                              Approve
-                            </button>
-                            <button
-                              type="button"
-                              disabled={busy || subscriptionReviewsLoading}
-                              onClick={() => void moderateSubscriptionReview(row.id, "reject")}
-                              className="inline-flex min-h-[2.5rem] flex-1 items-center justify-center rounded-lg border border-rose-800/65 bg-rose-950/40 px-4 text-xs font-semibold uppercase tracking-wide text-rose-100 transition hover:border-rose-600/65 hover:bg-rose-950/85 disabled:cursor-not-allowed disabled:opacity-45 lg:flex-none"
-                              title="Delete this review record from Redis"
-                            >
-                              Reject
-                            </button>
-                          </div>
-                        </div>
-                      </li>
-                    );
-                  })}
-                </ul>
+                <div className="mt-8 space-y-10">
+                  <div>
+                    <h3 className="text-sm font-semibold uppercase tracking-wider text-amber-200/85">
+                      Pending reviews
+                    </h3>
+                    <p className="mt-1 text-xs text-zinc-500">Awaiting Approve or Reject.</p>
+                    {subscriptionReviewsPending.length === 0 ? (
+                      <p className="mt-4 text-sm text-zinc-500">No pending submissions.</p>
+                    ) : (
+                      <ul className="mt-4 space-y-4">
+                        {subscriptionReviewsPending.map((row) => {
+                          const busy = subscriptionModerationBusyId === row.id;
+                          return (
+                            <SubscriptionReviewCard
+                              key={row.id}
+                              row={row}
+                              busy={busy}
+                              loading={subscriptionReviewsLoading}
+                              variant="pending"
+                              onApprove={() => void moderateSubscriptionReview(row.id, "approve")}
+                              onReject={() => void moderateSubscriptionReview(row.id, "reject")}
+                              onDelete={() => void deleteSubscriptionReview(row.id)}
+                            />
+                          );
+                        })}
+                      </ul>
+                    )}
+                  </div>
+                  <div>
+                    <h3 className="text-sm font-semibold uppercase tracking-wider text-emerald-200/80">
+                      Approved reviews
+                    </h3>
+                    <p className="mt-1 text-xs text-zinc-500">Shown on the Subscriptions testimonials strip.</p>
+                    {subscriptionReviewsApproved.length === 0 ? (
+                      <p className="mt-4 text-sm text-zinc-500">No approved reviews yet.</p>
+                    ) : (
+                      <ul className="mt-4 space-y-4">
+                        {subscriptionReviewsApproved.map((row) => {
+                          const busy = subscriptionModerationBusyId === row.id;
+                          return (
+                            <SubscriptionReviewCard
+                              key={row.id}
+                              row={row}
+                              busy={busy}
+                              loading={subscriptionReviewsLoading}
+                              variant="approved"
+                              onDelete={() => void deleteSubscriptionReview(row.id)}
+                            />
+                          );
+                        })}
+                      </ul>
+                    )}
+                  </div>
+                </div>
               )}
               <p className="mt-6 text-xs text-zinc-600">
-                Approved: <span className="font-mono text-zinc-400">fit-room:subscriptionsFeedback:approved:index</span>.
-                Pending: <span className="font-mono text-zinc-400">fit-room:subscriptionsFeedback:pending:index</span>.
+                Approved index:{" "}
+                <span className="font-mono text-zinc-400">fit-room:subscriptionsFeedback:approved:index</span>.
+                Pending index:{" "}
+                <span className="font-mono text-zinc-400">fit-room:subscriptionsFeedback:pending:index</span>.
                 Last viewed (badge baseline):{" "}
                 <span className="font-mono text-zinc-400">fit-room:subscriptionsFeedback:adminReviewsLastSeenAt</span>.
               </p>

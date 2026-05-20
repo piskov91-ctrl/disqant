@@ -2,7 +2,9 @@ import { cookies } from "next/headers";
 import { ADMIN_AUTH_COOKIE, isAdminAuthorizedCookieValue } from "@/lib/adminAuth";
 import {
   approveSubscriptionsFeedback,
+  deleteSubscriptionsFeedback,
   getUnreadPendingSubscriptionsFeedbackCount,
+  listApprovedSubscriptionsFeedback,
   listPendingSubscriptionsFeedback,
   rejectSubscriptionsFeedback,
   touchAdminSubscriptionsReviewsSeenAt,
@@ -38,12 +40,16 @@ export async function GET(req: Request) {
       return Response.json({ unreadCount });
     }
 
-    const pending = await listPendingSubscriptionsFeedback(200);
-    console.log("[fit-room][admin-reviews][GET] loaded pending rows for admin Reviews tab", {
-      hydratedCount: pending.length,
+    const [pending, approved] = await Promise.all([
+      listPendingSubscriptionsFeedback(200),
+      listApprovedSubscriptionsFeedback(200),
+    ]);
+    console.log("[fit-room][admin-reviews][GET] loaded rows for admin Reviews tab", {
+      pendingCount: pending.length,
+      approvedCount: approved.length,
     });
     await touchAdminSubscriptionsReviewsSeenAt();
-    return Response.json({ pending: sanitize(pending) });
+    return Response.json({ pending: sanitize(pending), approved: sanitize(approved) });
   } catch (e) {
     return Response.json(
       {
@@ -73,24 +79,30 @@ export async function POST(req: Request) {
   const action = typeof b.action === "string" ? b.action.trim().toLowerCase() : "";
   const id = typeof b.id === "string" ? b.id.trim() : "";
 
-  if (!id.length || (action !== "approve" && action !== "reject")) {
-    return Response.json({ error: "Expected { action: \"approve\"|\"reject\", id }." }, { status: 400 });
+  if (!id.length || (action !== "approve" && action !== "reject" && action !== "delete")) {
+    return Response.json({ error: "Expected { action: \"approve\"|\"reject\"|\"delete\", id }." }, { status: 400 });
   }
 
   try {
     if (action === "approve") {
       await approveSubscriptionsFeedback(id);
-    } else {
+    } else if (action === "reject") {
       await rejectSubscriptionsFeedback(id);
+    } else {
+      await deleteSubscriptionsFeedback(id);
     }
 
-    const pending = await listPendingSubscriptionsFeedback(200);
+    const [pending, approved] = await Promise.all([
+      listPendingSubscriptionsFeedback(200),
+      listApprovedSubscriptionsFeedback(200),
+    ]);
     const unreadCount = await getUnreadPendingSubscriptionsFeedbackCount();
 
     return Response.json({
       ok: true,
       unreadCount,
       pending: sanitize(pending),
+      approved: sanitize(approved),
     });
   } catch (e) {
     return Response.json({ error: e instanceof Error ? e.message : "Action failed." }, { status: 400 });
