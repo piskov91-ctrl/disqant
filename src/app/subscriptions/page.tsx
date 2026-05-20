@@ -37,7 +37,7 @@ export default async function SubscriptionsPage(props: PageProps) {
   let checkoutBanner: ReactNode = null;
   if (q.checkout === "success") {
     checkoutBanner = (
-      <div className="mx-auto mt-10 max-w-2xl rounded-2xl border border-emerald-800/70 bg-emerald-950/40 px-5 py-4 text-sm leading-relaxed text-emerald-100 md:mt-14">
+      <div className="mx-auto max-w-2xl rounded-2xl border border-emerald-800/70 bg-emerald-950/40 px-5 py-4 text-sm leading-relaxed text-emerald-100">
         <p className="font-semibold text-emerald-50">Payment successful</p>
         <p className="mt-2 text-emerald-100/90">
           Your subscription is confirmed. Try-on quota and dashboard access are updated shortly after Stripe notifies
@@ -47,7 +47,7 @@ export default async function SubscriptionsPage(props: PageProps) {
     );
   } else if (q.checkout === "cancelled") {
     checkoutBanner = (
-      <div className="mx-auto mt-10 max-w-2xl rounded-2xl border border-zinc-700 bg-zinc-900/60 px-5 py-4 text-sm leading-relaxed text-zinc-200 md:mt-14">
+      <div className="mx-auto max-w-2xl rounded-2xl border border-zinc-700 bg-zinc-900/60 px-5 py-4 text-sm leading-relaxed text-zinc-200">
         Checkout was cancelled—no charges were made. You can choose a plan again whenever you&apos;re ready.
       </div>
     );
@@ -57,14 +57,8 @@ export default async function SubscriptionsPage(props: PageProps) {
     <>
       <Header />
       <main className="relative min-h-dvh pt-[var(--site-header-height)]">
-        <div className="mx-auto max-w-6xl px-6 py-14 text-center md:py-20">
-          <h1 className="text-balance text-3xl font-semibold tracking-tight text-[#F5EDE4] md:text-4xl">
-            Subscriptions
-          </h1>
-          {checkoutBanner}
-        </div>
         <section
-          className="border-t border-white/10 bg-transparent py-5 md:py-6"
+          className="bg-transparent py-10 md:py-14"
           aria-labelledby="what-you-need-to-do-heading"
         >
           <div className="mx-auto max-w-6xl px-6">
@@ -73,6 +67,11 @@ export default async function SubscriptionsPage(props: PageProps) {
             </div>
           </div>
         </section>
+        {checkoutBanner ? (
+          <div className="mx-auto max-w-6xl px-6 pb-2 md:pb-4">
+            {checkoutBanner}
+          </div>
+        ) : null}
         <Pricing sectionId="" />
         <SubscriptionsSubscriberTestimonials initialSubscriberSlides={subscriberSlides} />
         {retailerUser ? <SubscriptionsFeedbackSection /> : null}

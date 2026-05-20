@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { CheckCircle2, ClipboardPaste, Code2 } from "lucide-react";
 
 const setupCards = [
@@ -16,36 +17,45 @@ const setupCards = [
 ] as const;
 
 /**
- * Compact intro strip for Subscriptions: small cards, tight spacing (brief lead-in to pricing).
+ * Lead-in for Subscriptions: quick setup steps (sits where the page hero was).
  */
 export function WhatYouNeedToDoSteps() {
   return (
     <>
-      <h2
+      <h1
         id="what-you-need-to-do-heading"
-        className="text-center text-xs font-semibold uppercase tracking-[0.2em] text-[#C6A77D] md:text-left"
+        className="text-center text-sm font-semibold uppercase tracking-[0.18em] text-[#C6A77D] md:text-left md:text-base"
       >
         What you need to do
-      </h2>
-      <p className="mt-1.5 text-center text-xs leading-relaxed text-[#F5EDE4]/72 md:mx-0 md:text-left">
+      </h1>
+      <p className="mt-2 text-center text-sm leading-relaxed text-[#F5EDE4]/75 md:mx-0 md:text-left">
         Nothing complicated. No app to download, no software to install.
       </p>
       <ul
-        className="mt-3 grid grid-cols-1 gap-2 sm:grid-cols-3 sm:gap-2"
+        className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-3 sm:gap-3"
         aria-label="Setup steps"
       >
         {setupCards.map(({ Icon, text }) => (
           <li
             key={text}
-            className="flex flex-col rounded-lg border border-white/20 bg-white/95 p-2.5 shadow-sm shadow-black/20 backdrop-blur-[2px]"
+            className="flex flex-col rounded-xl border border-white/20 bg-white/95 p-3 shadow-sm shadow-black/20 backdrop-blur-[2px]"
           >
-            <div className="mb-1.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-gradient-to-br from-[#8b7355] to-[#c6a77d] text-white shadow-sm">
-              <Icon className="h-3.5 w-3.5" strokeWidth={2.25} aria-hidden />
+            <div className="mb-2 flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-[#8b7355] to-[#c6a77d] text-white shadow-sm">
+              <Icon className="h-4 w-4" strokeWidth={2.25} aria-hidden />
             </div>
-            <p className="text-[11px] font-medium leading-tight text-zinc-800">{text}</p>
+            <p className="text-xs font-medium leading-snug text-zinc-800">{text}</p>
           </li>
         ))}
       </ul>
+      <p className="mt-4 text-center text-xs leading-relaxed text-[#F5EDE4]/65 md:text-left">
+        Want to learn more about how it works?{" "}
+        <Link
+          href="/about"
+          className="font-medium text-[#C6A77D] underline decoration-[#C6A77D]/60 underline-offset-[3px] transition hover:text-[#d4b896] hover:decoration-[#d4b896]"
+        >
+          Visit our About Us page
+        </Link>
+      </p>
     </>
   );
 }
