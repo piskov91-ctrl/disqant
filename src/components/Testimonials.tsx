@@ -15,6 +15,11 @@ type TestimonialsProps = {
    * (Subscriptions page uses this; home/stories omit it).
    */
   subscriberSlides?: readonly TestimonialSlide[];
+  /**
+   * Full slide list for the top “What retailers say” carousel. When omitted, uses default marketing testimonials only.
+   * Subscriptions passes merged slides so new feedback appears in the same slideshow as hardcoded quotes.
+   */
+  marketingCarouselSlides?: readonly TestimonialSlide[];
   /** Override curated subheading (“Real results…”). */
   subheading?: string;
   /** Override curated footnote. */
@@ -29,12 +34,27 @@ type TestimonialsProps = {
 export function Testimonials({
   tone = "light",
   subscriberSlides,
+  marketingCarouselSlides,
   subheading,
   footnote,
   hideCuratedTestimonials = false,
 }: TestimonialsProps) {
   const isDark = tone === "dark";
   const curatedReviewCount = TESTIMONIAL_REVIEWS.length;
+
+  const marketingStats =
+    marketingCarouselSlides && marketingCarouselSlides.length > 0
+      ? {
+          count: marketingCarouselSlides.length,
+          avg:
+            Math.round(
+              (marketingCarouselSlides.reduce((acc, s) => acc + s.rating, 0) / marketingCarouselSlides.length) * 10,
+            ) / 10,
+        }
+      : {
+          count: curatedReviewCount,
+          avg: DISPLAY_AVERAGE_OUT_OF_FIVE,
+        };
 
   const effectiveCuratedFootnote =
     footnote ??
@@ -87,10 +107,10 @@ export function Testimonials({
               <span className={`font-semibold ${isDark ? "text-amber-400" : "text-amber-500"}`} aria-hidden>
                 ★
               </span>
-              <span className="font-semibold">{DISPLAY_AVERAGE_OUT_OF_FIVE.toFixed(1)} out of 5</span>
+              <span className="font-semibold">{marketingStats.avg.toFixed(1)} out of 5</span>
               <span className={`font-normal ${isDark ? "text-[#F5EDE4]/85" : "text-zinc-600"}`}>from</span>
               <span className={`font-semibold ${isDark ? "text-[#F5EDE4]" : "text-zinc-900"}`}>
-                {curatedReviewCount}
+                {marketingStats.count}
               </span>
               <span className={`font-normal ${isDark ? "text-[#F5EDE4]/85" : "text-zinc-600"}`}>reviews</span>
             </p>
@@ -104,7 +124,14 @@ export function Testimonials({
             </p>
 
             <div className="mt-10 md:mt-12">
-              <TestimonialsSlideshow tone={tone} />
+              <TestimonialsSlideshow
+                tone={tone}
+                slides={
+                  marketingCarouselSlides && marketingCarouselSlides.length > 0
+                    ? marketingCarouselSlides
+                    : undefined
+                }
+              />
             </div>
           </>
         )}

@@ -47,7 +47,7 @@ function Stars({ rating, filledClass, emptyClass }: { rating: number; filledClas
   );
 }
 
-const CURATED_SLIDES: TestimonialSlide[] = TESTIMONIAL_REVIEWS.map((r, i) => ({
+export const MARKETING_TESTIMONIAL_SLIDES: readonly TestimonialSlide[] = TESTIMONIAL_REVIEWS.map((r, i) => ({
   id: `curated-${r.attribution}-${i}`,
   rating: r.rating,
   quote: r.quote,
@@ -67,7 +67,7 @@ export function TestimonialsSlideshow({
   const prefersReducedMotion = usePrefersReducedMotion();
   /** Reset carousel when slide identities change */
   const slideKey = slides?.length ? slides.map((s) => s.id).join("|") : "curated";
-  const resolvedSlides = slides?.length ? slides : CURATED_SLIDES;
+  const resolvedSlides = slides?.length ? slides : MARKETING_TESTIMONIAL_SLIDES;
 
   const [index, setIndex] = useState(0);
   useEffect(() => {

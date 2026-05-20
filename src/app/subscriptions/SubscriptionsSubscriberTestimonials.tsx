@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Testimonials } from "@/components/Testimonials";
-import type { TestimonialSlide } from "@/components/TestimonialsSlideshow";
+import { MARKETING_TESTIMONIAL_SLIDES, type TestimonialSlide } from "@/components/TestimonialsSlideshow";
 import {
   readPendingFeedbackPreviewSlides,
   SUBSCRIPTIONS_PENDING_FEEDBACK_EVENT,
@@ -40,11 +40,16 @@ export function SubscriptionsSubscriberTestimonials({
     };
   }, [refreshPending]);
 
-  const mergedSlides = useMemo(() => {
-    const pendingIds = new Set(pendingSlides.map((s) => s.id));
-    const rest = initialSubscriberSlides.filter((s) => !pendingIds.has(s.id));
-    return [...pendingSlides, ...rest];
-  }, [initialSubscriberSlides, pendingSlides]);
+  const marketingCarouselSlides = useMemo(
+    () => [...pendingSlides, ...MARKETING_TESTIMONIAL_SLIDES],
+    [pendingSlides],
+  );
 
-  return <Testimonials tone="dark" subscriberSlides={mergedSlides} />;
+  return (
+    <Testimonials
+      tone="dark"
+      marketingCarouselSlides={marketingCarouselSlides}
+      subscriberSlides={initialSubscriberSlides}
+    />
+  );
 }
