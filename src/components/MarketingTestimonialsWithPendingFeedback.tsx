@@ -15,7 +15,7 @@ import {
 
 type MarketingTestimonialsWithPendingFeedbackProps = {
   tone?: TestimonialsSlideshowTone;
-  /** Subscriptions only — Redis-approved merchant slides rendered below the marketing carousel. */
+  /** Subscriptions only — Redis-approved merchant slides appended to the same carousel as curated quotes. */
   subscriberSlides?: readonly TestimonialSlide[];
 };
 

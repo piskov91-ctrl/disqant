@@ -1,5 +1,5 @@
-import { DISPLAY_AVERAGE_OUT_OF_FIVE } from "@/data/testimonialReviews";
 import {
+  MARKETING_TESTIMONIAL_SLIDES,
   TestimonialsSlideshow,
   type TestimonialSlide,
   type TestimonialsSlideshowTone,
@@ -8,13 +8,12 @@ import {
 type TestimonialsProps = {
   tone?: TestimonialsSlideshowTone;
   /**
-   * Optional approved merchant submissions rendered **below** the curated carousel
-   * (Subscriptions page uses this; home/stories omit it).
+   * Optional approved merchant submissions (e.g. Subscriptions). Merged into the same slideshow as curated quotes.
    */
   subscriberSlides?: readonly TestimonialSlide[];
   /**
-   * Full slide list for the top “What retailers say” carousel. When omitted, uses default marketing testimonials only.
-   * Subscriptions passes merged slides so new feedback appears in the same slideshow as hardcoded quotes.
+   * Full slide list for the curated portion of the carousel (pending preview + marketing). When omitted, uses default
+   * marketing testimonials. Subscriptions merges pending + marketing here; subscriber slides append after.
    */
   marketingCarouselSlides?: readonly TestimonialSlide[];
   /** Override curated subheading (“Real results…”). */
@@ -38,28 +37,30 @@ export function Testimonials({
 }: TestimonialsProps) {
   const isDark = tone === "dark";
 
-  const marketingAvg =
-    marketingCarouselSlides && marketingCarouselSlides.length > 0
-      ? Math.round(
-          (marketingCarouselSlides.reduce((acc, s) => acc + s.rating, 0) / marketingCarouselSlides.length) * 10,
-        ) / 10
-      : DISPLAY_AVERAGE_OUT_OF_FIVE;
+  const subscriberList = subscriberSlides ?? [];
+
+  const curatedSlides: TestimonialSlide[] = hideCuratedTestimonials
+    ? []
+    : marketingCarouselSlides && marketingCarouselSlides.length > 0
+      ? [...marketingCarouselSlides]
+      : [...MARKETING_TESTIMONIAL_SLIDES];
+
+  const allSlides: TestimonialSlide[] = [...curatedSlides, ...subscriberList];
+
+  if (allSlides.length === 0) {
+    return null;
+  }
+
+  const displayAvg =
+    Math.round((allSlides.reduce((acc, s) => acc + s.rating, 0) / allSlides.length) * 10) / 10;
+
+  const effectiveCuratedSubheading = subheading ?? "Real results from shops using Wear Me";
 
   const effectiveCuratedFootnote =
     footnote ??
-    "Store names are abbreviated for privacy. Reviews reflect feedback from merchants using Wear Me.";
-  const effectiveCuratedSubheading = subheading ?? "Real results from shops using Wear Me";
-
-  const subscriberList = subscriberSlides ?? [];
-  const hasSubscriberSlides = subscriberList.length > 0;
-  const subscriberAvg =
-    subscriberList.length > 0
-      ? Math.round((subscriberList.reduce((acc, r) => acc + r.rating, 0) / subscriberList.length) * 10) / 10
-      : 0;
-
-  if (hideCuratedTestimonials && !hasSubscriberSlides) {
-    return null;
-  }
+    (subscriberList.length > 0
+      ? "Curated quotes plus approved merchant submissions. Store names may be abbreviated for privacy."
+      : "Store names are abbreviated for privacy. Reviews reflect feedback from merchants using Wear Me.");
 
   return (
     <section
@@ -69,96 +70,39 @@ export function Testimonials({
       }`}
     >
       <div className="mx-auto max-w-6xl px-6">
-        {hideCuratedTestimonials ? null : (
-          <>
-            {/* Curated (always shown when hideCuratedTestimonials is false) */}
-            <h2 className="text-center text-sm font-semibold uppercase tracking-widest text-[#C6A77D]">
-              What retailers say
-            </h2>
-            <p
-              className={`mx-auto mt-3 max-w-2xl text-center text-3xl font-semibold tracking-tight md:text-4xl ${
-                isDark ? "text-[#F5EDE4]" : "text-zinc-900"
-              }`}
-            >
-              {effectiveCuratedSubheading}
-            </p>
+        <h2 className="text-center text-sm font-semibold uppercase tracking-widest text-[#C6A77D]">
+          What retailers say
+        </h2>
+        <p
+          className={`mx-auto mt-3 max-w-2xl text-center text-3xl font-semibold tracking-tight md:text-4xl ${
+            isDark ? "text-[#F5EDE4]" : "text-zinc-900"
+          }`}
+        >
+          {effectiveCuratedSubheading}
+        </p>
 
-            <p
-              className={`mx-auto mt-6 flex flex-wrap items-baseline justify-center gap-x-1.5 gap-y-1 text-center text-lg tabular-nums sm:text-xl ${
-                isDark ? "text-[#F5EDE4]" : "text-zinc-900"
-              }`}
-            >
-              <span className={`font-semibold ${isDark ? "text-amber-400" : "text-amber-500"}`} aria-hidden>
-                ★
-              </span>
-              <span className="font-semibold">{marketingAvg.toFixed(1)} out of 5</span>
-            </p>
+        <p
+          className={`mx-auto mt-6 flex flex-wrap items-baseline justify-center gap-x-1.5 gap-y-1 text-center text-lg tabular-nums sm:text-xl ${
+            isDark ? "text-[#F5EDE4]" : "text-zinc-900"
+          }`}
+        >
+          <span className={`font-semibold ${isDark ? "text-amber-400" : "text-amber-500"}`} aria-hidden>
+            ★
+          </span>
+          <span className="font-semibold">{displayAvg.toFixed(1)} out of 5</span>
+        </p>
 
-            <p
-              className={`mx-auto mt-5 max-w-lg text-center text-sm leading-relaxed ${
-                isDark ? "text-[#F5EDE4]/65" : "text-zinc-500"
-              }`}
-            >
-              {effectiveCuratedFootnote}
-            </p>
+        <p
+          className={`mx-auto mt-5 max-w-lg text-center text-sm leading-relaxed ${
+            isDark ? "text-[#F5EDE4]/65" : "text-zinc-500"
+          }`}
+        >
+          {effectiveCuratedFootnote}
+        </p>
 
-            <div className="mt-10 md:mt-12">
-              <TestimonialsSlideshow
-                tone={tone}
-                slides={
-                  marketingCarouselSlides && marketingCarouselSlides.length > 0
-                    ? marketingCarouselSlides
-                    : undefined
-                }
-              />
-            </div>
-          </>
-        )}
-
-        {/* Approved subscriber submissions (Subscriptions only — when Redis has approved rows) */}
-        {hasSubscriberSlides ? (
-          <div
-            className={`mt-16 md:mt-20 border-t pt-14 md:pt-16 ${isDark ? "border-[#C6A77D]/15" : "border-surface-border"}`}
-            aria-labelledby="subscriber-reviews-heading"
-          >
-            <h3
-              id="subscriber-reviews-heading"
-              className="text-center text-xs font-semibold uppercase tracking-[0.2em] text-[#C6A77D]"
-            >
-              Subscriber reviews
-            </h3>
-            <p
-              className={`mx-auto mt-3 max-w-2xl text-center text-2xl font-semibold tracking-tight md:text-3xl ${
-                isDark ? "text-[#F5EDE4]" : "text-zinc-900"
-              }`}
-            >
-              Verified feedback from merchants
-            </p>
-
-            <p
-              className={`mx-auto mt-6 flex flex-wrap items-baseline justify-center gap-x-1.5 gap-y-1 text-center text-lg tabular-nums sm:text-xl ${
-                isDark ? "text-[#F5EDE4]" : "text-zinc-900"
-              }`}
-            >
-              <span className={`font-semibold ${isDark ? "text-amber-400" : "text-amber-500"}`} aria-hidden>
-                ★
-              </span>
-              <span className="font-semibold">{subscriberAvg.toFixed(1)} out of 5</span>
-            </p>
-
-            <p
-              className={`mx-auto mt-5 max-w-lg text-center text-sm leading-relaxed ${
-                isDark ? "text-[#F5EDE4]/65" : "text-zinc-500"
-              }`}
-            >
-              Merchant-submitted reviews are approved before appearing here.
-            </p>
-
-            <div className="mt-10 md:mt-12">
-              <TestimonialsSlideshow tone={tone} slides={subscriberList} />
-            </div>
-          </div>
-        ) : null}
+        <div className="mt-10 md:mt-12">
+          <TestimonialsSlideshow tone={tone} slides={allSlides} />
+        </div>
       </div>
     </section>
   );
