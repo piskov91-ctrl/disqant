@@ -1,17 +1,13 @@
 "use client";
 
 import { Star } from "lucide-react";
-import { useCallback, useEffect, useId, useState } from "react";
+import { useCallback, useId, useState } from "react";
+import {
+  appendPendingFeedbackPreview,
+  SUBSCRIPTIONS_PENDING_FEEDBACK_EVENT,
+} from "@/lib/subscriptionsPendingFeedbackPreview";
 
 const GOLD = "#c6a77d";
-
-const SUCCESS_PREVIEW_MS = 60_000;
-
-type SubmissionPreview = {
-  storeName: string;
-  rating: number;
-  message: string;
-};
 
 export function SubscriptionsFeedbackSection() {
   const formId = useId();
@@ -20,16 +16,6 @@ export function SubscriptionsFeedbackSection() {
   const [message, setMessage] = useState("");
   const [status, setStatus] = useState<"idle" | "sending" | "success" | "error">("idle");
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
-  const [submissionPreview, setSubmissionPreview] = useState<SubmissionPreview | null>(null);
-
-  useEffect(() => {
-    if (!submissionPreview) return;
-    const id = window.setTimeout(() => {
-      setSubmissionPreview(null);
-      setStatus("idle");
-    }, SUCCESS_PREVIEW_MS);
-    return () => window.clearTimeout(id);
-  }, [submissionPreview]);
 
   const submit = useCallback(async () => {
     const storeTrim = storeName.trim();
@@ -58,17 +44,27 @@ export function SubscriptionsFeedbackSection() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ storeName: storeTrim, rating, message: trimmed }),
       });
-      const data = (await res.json()) as { ok?: boolean; error?: string };
+      const data = (await res.json()) as { ok?: boolean; error?: string; redisId?: string };
       if (!res.ok) {
         setErrorMsg(data.error || "Something went wrong. Please try again.");
         setStatus("error");
         return;
       }
-      setSubmissionPreview({
+      const redisId = typeof data.redisId === "string" ? data.redisId.trim() : "";
+      if (!redisId.length) {
+        setErrorMsg("Could not confirm your submission. Please try again.");
+        setStatus("error");
+        return;
+      }
+
+      appendPendingFeedbackPreview({
+        redisId,
         storeName: storeTrim,
         rating,
         message: trimmed,
       });
+      window.dispatchEvent(new Event(SUBSCRIPTIONS_PENDING_FEEDBACK_EVENT));
+
       setStatus("success");
       setMessage("");
       setRating(0);
@@ -114,7 +110,7 @@ export function SubscriptionsFeedbackSection() {
               className="mt-2 block w-full rounded-xl border border-[#c6a77d]/25 bg-black/55 px-4 py-3 text-sm text-[#f0ebe3] placeholder:text-zinc-600 focus:border-[#c6a77d]/55 focus:outline-none focus:ring-1 focus:ring-[#c6a77d]/35 disabled:opacity-55"
               onChange={(e) => {
                 setStoreName(e.target.value);
-                if (status === "error") setStatus("idle");
+                if (status === "error" || status === "success") setStatus("idle");
               }}
             />
           </div>
@@ -128,36 +124,39 @@ export function SubscriptionsFeedbackSection() {
                 {rating > 0 ? `Rating ${rating} out of 5 stars.` : ""}
               </p>
               <div className="flex justify-center gap-1.5">
-              {[1, 2, 3, 4, 5].map((value) => {
-                const filled = rating >= value;
-                return (
-                  <button
-                    key={value}
-                    type="button"
-                    aria-label={`Rate ${value} out of 5 stars`}
-                    onClick={() => {
-                      setRating(value);
-                      if (status === "error") setStatus("idle");
-                      setErrorMsg(null);
-                    }}
-                    className="rounded-lg p-1 transition hover:scale-110 hover:bg-[#c6a77d]/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#c6a77d]/50 focus-visible:ring-offset-2 focus-visible:ring-offset-[#0f0f10]"
-                  >
-                    <Star
-                      className="h-9 w-9 md:h-10 md:w-10"
-                      strokeWidth={1.4}
-                      style={{ color: GOLD }}
-                      fill={filled ? GOLD : "transparent"}
-                      aria-hidden
-                    />
-                  </button>
-                );
-              })}
-            </div>
+                {[1, 2, 3, 4, 5].map((value) => {
+                  const filled = rating >= value;
+                  return (
+                    <button
+                      key={value}
+                      type="button"
+                      aria-label={`Rate ${value} out of 5 stars`}
+                      onClick={() => {
+                        setRating(value);
+                        if (status === "error" || status === "success") setStatus("idle");
+                        setErrorMsg(null);
+                      }}
+                      className="rounded-lg p-1 transition hover:scale-110 hover:bg-[#c6a77d]/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#c6a77d]/50 focus-visible:ring-offset-2 focus-visible:ring-offset-[#0f0f10]"
+                    >
+                      <Star
+                        className="h-9 w-9 md:h-10 md:w-10"
+                        strokeWidth={1.4}
+                        style={{ color: GOLD }}
+                        fill={filled ? GOLD : "transparent"}
+                        aria-hidden
+                      />
+                    </button>
+                  );
+                })}
+              </div>
             </div>
           </fieldset>
 
           <div className="mt-8">
-            <label htmlFor={`${formId}-message`} className="text-[11px] font-semibold uppercase tracking-[0.22em] text-[#d4bc94]/90">
+            <label
+              htmlFor={`${formId}-message`}
+              className="text-[11px] font-semibold uppercase tracking-[0.22em] text-[#d4bc94]/90"
+            >
               Tell us about your experience
             </label>
             <textarea
@@ -170,7 +169,7 @@ export function SubscriptionsFeedbackSection() {
               className="mt-2 block w-full resize-y rounded-xl border border-[#c6a77d]/25 bg-black/55 px-4 py-3 text-sm leading-relaxed text-[#f0ebe3] placeholder:text-zinc-600 focus:border-[#c6a77d]/55 focus:outline-none focus:ring-1 focus:ring-[#c6a77d]/35 disabled:opacity-55"
               onChange={(e) => {
                 setMessage(e.target.value);
-                if (status === "error") setStatus("idle");
+                if (status === "error" || status === "success") setStatus("idle");
               }}
             />
           </div>
@@ -180,32 +179,10 @@ export function SubscriptionsFeedbackSection() {
               {errorMsg}
             </p>
           ) : null}
-          {status === "success" && submissionPreview ? (
-            <div className="mt-6 space-y-4" role="status" aria-live="polite">
-              <p className="text-center text-sm font-medium leading-relaxed text-[#c9e86c]">
-                Thank you for your feedback! We really appreciate it.
-              </p>
-              <div className="rounded-xl border border-[#c6a77d]/22 bg-black/40 px-4 py-4 text-[#f0ebe3]">
-                <div className="flex justify-center gap-1" aria-label={`${submissionPreview.rating} out of 5 stars`}>
-                  {[1, 2, 3, 4, 5].map((value) => (
-                    <Star
-                      key={value}
-                      className="h-7 w-7 md:h-8 md:w-8"
-                      strokeWidth={1.4}
-                      style={{ color: GOLD }}
-                      fill={submissionPreview.rating >= value ? GOLD : "transparent"}
-                      aria-hidden
-                    />
-                  ))}
-                </div>
-                <p className="mt-3 text-center text-xs font-semibold uppercase tracking-[0.18em] text-[#d4bc94]/90">
-                  {submissionPreview.storeName}
-                </p>
-                <blockquote className="mt-3 whitespace-pre-wrap text-center text-sm leading-relaxed text-[#f5efe6]/95">
-                  {submissionPreview.message}
-                </blockquote>
-              </div>
-            </div>
+          {status === "success" ? (
+            <p className="mt-4 text-center text-sm font-medium text-[#c9e86c]" role="status">
+              Thank you for your feedback!
+            </p>
           ) : null}
 
           <button

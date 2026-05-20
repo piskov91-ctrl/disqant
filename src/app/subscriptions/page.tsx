@@ -4,9 +4,9 @@ import { Footer } from "@/components/Footer";
 import { Header } from "@/components/Header";
 import { Pricing } from "@/components/Pricing";
 import type { TestimonialSlide } from "@/components/TestimonialsSlideshow";
-import { Testimonials } from "@/components/Testimonials";
 import { listApprovedSubscriptionsFeedback } from "@/lib/subscriptionsFeedbackStore";
 import { SubscriptionsFeedbackSection } from "./SubscriptionsFeedbackSection";
+import { SubscriptionsSubscriberTestimonials } from "./SubscriptionsSubscriberTestimonials";
 
 export const metadata: Metadata = {
   title: "Subscriptions",
@@ -67,7 +67,7 @@ export default async function SubscriptionsPage(props: PageProps) {
 
           <Testimonials tone="dark" subscriberSlides={subscriberSlides} />
         */}
-        <Testimonials tone="dark" subscriberSlides={subscriberSlides} hideCuratedTestimonials />
+        <SubscriptionsSubscriberTestimonials initialSubscriberSlides={subscriberSlides} />
         <SubscriptionsFeedbackSection />
       </main>
       <Footer />
