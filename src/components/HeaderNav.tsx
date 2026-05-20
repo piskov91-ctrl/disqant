@@ -123,7 +123,7 @@ export function HeaderNav({ initialNavUser }: HeaderNavProps) {
             href="/dashboard"
             className={`${desktopNavLinkClass("/dashboard")} shrink-0 whitespace-nowrap`}
           >
-            Overview
+            My Plan
           </Link>
         ) : null}
       </nav>
@@ -206,7 +206,7 @@ export function HeaderNav({ initialNavUser }: HeaderNavProps) {
                       className={`${mobileNavLinkClass("/dashboard")} whitespace-nowrap`}
                       onClick={() => setOpen(false)}
                     >
-                      Overview
+                      My Plan
                     </Link>
                   ) : null}
                   <Link href="/profile" className={mobileNavLinkClass("/profile")} onClick={() => setOpen(false)}>
