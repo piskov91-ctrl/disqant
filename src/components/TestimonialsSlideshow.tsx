@@ -29,7 +29,7 @@ function usePrefersReducedMotion(): boolean {
   return reduced;
 }
 
-export function Stars({ rating, filledClass, emptyClass }: { rating: number; filledClass: string; emptyClass: string }) {
+function Stars({ rating, filledClass, emptyClass }: { rating: number; filledClass: string; emptyClass: string }) {
   return (
     <div role="img" aria-label={`${rating} out of ${STAR_MAX} stars`} className="flex gap-0.5 text-lg leading-none">
       {Array.from({ length: STAR_MAX }, (_, i) =>

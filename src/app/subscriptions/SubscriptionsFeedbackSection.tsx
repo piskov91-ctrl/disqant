@@ -2,7 +2,6 @@
 
 import { Star } from "lucide-react";
 import { useCallback, useEffect, useId, useState } from "react";
-import { Stars } from "@/components/TestimonialsSlideshow";
 
 const GOLD = "#c6a77d";
 
@@ -85,7 +84,7 @@ export function SubscriptionsFeedbackSection() {
       aria-labelledby={`${formId}-heading`}
       className="border-t border-[#c6a77d]/20 bg-black/55 py-14 backdrop-blur-sm md:py-20"
     >
-      <div className="mx-auto max-w-3xl px-6">
+      <div className="mx-auto max-w-xl px-6">
         <h2
           id={`${formId}-heading`}
           className="text-center text-xl font-semibold tracking-tight text-[#f5efe6] md:text-2xl"
@@ -182,19 +181,30 @@ export function SubscriptionsFeedbackSection() {
             </p>
           ) : null}
           {status === "success" && submissionPreview ? (
-            <div className="mt-8 space-y-6" role="status" aria-live="polite">
-              <p className="text-center text-lg font-semibold tracking-tight text-[#F5EDE4] sm:text-xl">
-                Thank you for your feedback!
+            <div className="mt-6 space-y-4" role="status" aria-live="polite">
+              <p className="text-center text-sm font-medium leading-relaxed text-[#c9e86c]">
+                Thank you for your feedback! We really appreciate it.
               </p>
-              <article className="mx-auto min-h-[220px] max-w-3xl rounded-2xl border border-[#C6A77D]/20 bg-black/35 px-8 py-8 shadow-sm backdrop-blur-sm sm:min-h-[200px] sm:px-10 sm:py-10">
-                  <Stars rating={submissionPreview.rating} filledClass="text-amber-400" emptyClass="text-[#F5EDE4]/25" />
-                  <blockquote className="mt-5 text-pretty text-base leading-relaxed text-[#F5EDE4]/90 sm:text-lg">
-                    <p className="whitespace-pre-wrap">&ldquo;{submissionPreview.message}&rdquo;</p>
-                    <footer className="mt-6 text-sm font-medium not-italic text-[#F5EDE4]/60">
-                      — {submissionPreview.storeName}
-                    </footer>
-                  </blockquote>
-                </article>
+              <div className="rounded-xl border border-[#c6a77d]/22 bg-black/40 px-4 py-4 text-[#f0ebe3]">
+                <div className="flex justify-center gap-1" aria-label={`${submissionPreview.rating} out of 5 stars`}>
+                  {[1, 2, 3, 4, 5].map((value) => (
+                    <Star
+                      key={value}
+                      className="h-7 w-7 md:h-8 md:w-8"
+                      strokeWidth={1.4}
+                      style={{ color: GOLD }}
+                      fill={submissionPreview.rating >= value ? GOLD : "transparent"}
+                      aria-hidden
+                    />
+                  ))}
+                </div>
+                <p className="mt-3 text-center text-xs font-semibold uppercase tracking-[0.18em] text-[#d4bc94]/90">
+                  {submissionPreview.storeName}
+                </p>
+                <blockquote className="mt-3 whitespace-pre-wrap text-center text-sm leading-relaxed text-[#f5efe6]/95">
+                  {submissionPreview.message}
+                </blockquote>
+              </div>
             </div>
           ) : null}
 
