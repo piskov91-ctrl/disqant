@@ -45,7 +45,6 @@ export function Header() {
               height={1024}
               priority
               sizes="(max-width: 640px) 360px, (max-width: 767px) 420px, 720px"
-              style={{ height: "auto", maxHeight: "var(--site-header-height)", width: "auto" }}
               className="header-logo-lockup mt-10 block max-w-full"
             />
           </Link>
