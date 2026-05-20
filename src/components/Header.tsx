@@ -2,9 +2,19 @@ import Image from "next/image";
 import Link from "next/link";
 import { Suspense } from "react";
 import { HeaderNav } from "@/components/HeaderNav";
+import type { RetailerDisplayUser } from "@/lib/retailerDisplayName";
+import { getRetailerSessionUser } from "@/lib/retailerAuth";
 
-/** Renders with `usePathname()`; must be under Suspense in the App Router to avoid a client / static bailout and production “Application error” on prerender. */
-function HeaderNavSlot() {
+function sessionUserToNavDisplay(session: NonNullable<Awaited<ReturnType<typeof getRetailerSessionUser>>>): RetailerDisplayUser {
+  return {
+    email: session.email,
+    firstName: session.firstName,
+    lastName: session.lastName,
+  };
+}
+
+/** Renders `usePathname()`; must be under Suspense in the App Router to avoid a client / static bailout and production “Application error” on prerender. */
+function HeaderNavSlot({ initialNavUser }: { initialNavUser: RetailerDisplayUser | null }) {
   return (
     <Suspense
       fallback={
@@ -16,13 +26,16 @@ function HeaderNavSlot() {
       }
     >
       <div className="relative z-10 flex min-h-0 w-full min-w-0 justify-end justify-self-end">
-        <HeaderNav />
+        <HeaderNav initialNavUser={initialNavUser} />
       </div>
     </Suspense>
   );
 }
 
-export function Header() {
+export async function Header() {
+  const sessionUser = await getRetailerSessionUser();
+  const initialNavUser = sessionUser ? sessionUserToNavDisplay(sessionUser) : null;
+
   return (
     <header className="site-header fixed top-0 left-0 right-0 z-[60] overflow-visible border-b border-white/10 bg-transparent backdrop-blur-md">
       <div className="mx-auto grid h-[var(--site-header-height)] max-h-[var(--site-header-height)] min-h-[var(--site-header-height)] w-full max-w-6xl shrink-0 grid-cols-[auto_minmax(0,1fr)] items-center justify-items-stretch gap-x-6 overflow-visible pl-0 pr-4 md:gap-x-10 md:pr-5">
@@ -49,7 +62,7 @@ export function Header() {
             />
           </Link>
         </div>
-        <HeaderNavSlot />
+        <HeaderNavSlot initialNavUser={initialNavUser} />
       </div>
     </header>
   );

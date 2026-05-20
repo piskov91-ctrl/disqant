@@ -9,12 +9,27 @@ import { retailerSessionLabel, type RetailerDisplayUser } from "@/lib/retailerDi
 
 const navAuthBtnClass = "btn-accent-gradient hidden sm:inline-flex";
 
-export function HeaderNav() {
+export type HeaderNavProps = {
+  /** Server-rendered retailer snapshot so auth UI matches session on first paint (no Log In flicker). */
+  initialNavUser: RetailerDisplayUser | null;
+};
+
+export function HeaderNav({ initialNavUser }: HeaderNavProps) {
   const pathname = usePathname();
   const menuId = useId();
   const [open, setOpen] = useState(false);
-  const [retailerUser, setRetailerUser] = useState<RetailerDisplayUser | null | undefined>(undefined);
+  const initialNavKey =
+    initialNavUser === null
+      ? "__signed_out__"
+      : `${initialNavUser.email}\u0001${initialNavUser.firstName ?? ""}\u0001${initialNavUser.lastName ?? ""}`;
+
+  const [retailerUser, setRetailerUser] = useState<RetailerDisplayUser | null>(initialNavUser);
   const [mobileSigningOut, setMobileSigningOut] = useState(false);
+
+  /* When navigating, RSC can deliver a newer session snapshot before `/api/me` finishes. */
+  useEffect(() => {
+    setRetailerUser(initialNavUser);
+  }, [initialNavKey, initialNavUser]);
 
   useEffect(() => {
     let cancelled = false;
@@ -37,7 +52,7 @@ export function HeaderNav() {
     };
   }, [pathname]);
 
-  const loggedIn = Boolean(retailerUser);
+  const loggedIn = retailerUser !== null;
 
   function desktopNavLinkClass(href: string) {
     const active = pathname === href;

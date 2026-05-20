@@ -15,8 +15,6 @@ import {
   wearPresetIdFromHistoryState,
   wearTryOnPopCount,
 } from "@/app/demo/demoGarments";
-import { Footer } from "@/components/Footer";
-import { Header } from "@/components/Header";
 import {
   DEMO_WEAR_MODAL_CSS,
   DEMO_WEAR_MODAL_STYLE_ID,
@@ -29,6 +27,7 @@ import {
   formatTryOnApiError,
   type TryOnResponse,
 } from "@/lib/wearMeShared";
+import { Footer } from "@/components/Footer";
 
 export default function DemoClient() {
   const [selectedPresetId, setSelectedPresetId] = useState<GarmentPreset["id"]>(
@@ -876,7 +875,6 @@ export default function DemoClient() {
           </div>
         </div>
       )}
-      <Header />
 
       <main className="relative z-10 mx-auto max-w-5xl px-6 pb-12 pt-[var(--site-header-height)] md:pb-16">
         <div className="min-w-0">

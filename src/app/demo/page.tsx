@@ -1,5 +1,6 @@
 import { Suspense } from "react";
 import DemoClient from "./DemoClient";
+import { Header } from "@/components/Header";
 
 export const dynamic = "force-dynamic";
 
@@ -11,11 +12,13 @@ function DemoLoading() {
   );
 }
 
-export default function DemoPage() {
+export default async function DemoPage() {
   return (
-    <Suspense fallback={<DemoLoading />}>
-      <DemoClient />
-    </Suspense>
+    <>
+      <Header />
+      <Suspense fallback={<DemoLoading />}>
+        <DemoClient />
+      </Suspense>
+    </>
   );
 }
-
