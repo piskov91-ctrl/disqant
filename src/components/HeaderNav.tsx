@@ -106,8 +106,8 @@ export function HeaderNav({ initialNavUser }: HeaderNavProps) {
   return (
     <div className="flex min-w-0 items-center justify-end gap-2 sm:gap-3">
       <nav className="hidden items-center gap-4 md:flex md:gap-5" aria-label="Primary">
-        <Link href="/how-it-works" className={desktopNavLinkClass("/how-it-works")}>
-          How it works
+        <Link href="/" className={desktopNavLinkClass("/")}>
+          Home
         </Link>
         <Link href="/subscriptions" className={desktopNavLinkClass("/subscriptions")}>
           Subscriptions
@@ -189,8 +189,8 @@ export function HeaderNav({ initialNavUser }: HeaderNavProps) {
             </div>
 
             <nav className="flex flex-col gap-1" aria-label="Mobile">
-              <Link href="/how-it-works" className={mobileNavLinkClass("/how-it-works")} onClick={() => setOpen(false)}>
-                How it works
+              <Link href="/" className={mobileNavLinkClass("/")} onClick={() => setOpen(false)}>
+                Home
               </Link>
               <Link href="/subscriptions" className={mobileNavLinkClass("/subscriptions")} onClick={() => setOpen(false)}>
                 Subscriptions
