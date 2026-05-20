@@ -8,6 +8,9 @@ const APPROVED_INDEX = "fit-room:subscriptionsFeedback:approved:index";
 /** @deprecated Old flat index kept for diagnostics; new submissions also push here best-effort. */
 const LEGACY_INDEX = "fit-room:subscriptionsFeedback:index";
 
+/** Updated when admin successfully loads `/api/admin/subscriptions-reviews` (pending list); badge counts pending rows newer than this. */
+const ADMIN_REVIEWS_LAST_SEEN_AT = "fit-room:subscriptionsFeedback:adminReviewsLastSeenAt";
+
 export const SUBSCRIPTIONS_FEEDBACK_INDEX_MAX = 300;
 
 export type SubscriptionsFeedbackStatus = "pending" | "approved";
@@ -124,6 +127,36 @@ export async function getPendingSubscriptionsFeedbackCount(): Promise<number> {
   const redis = getRedis();
   const n = await redis.llen(PENDING_INDEX);
   return typeof n === "number" && Number.isFinite(n) ? Math.max(0, Math.floor(n)) : 0;
+}
+
+export async function getAdminSubscriptionsReviewsLastSeenAt(): Promise<string | null> {
+  const redis = getRedis();
+  const v = (await redis.get(ADMIN_REVIEWS_LAST_SEEN_AT)) as string | null;
+  const t = typeof v === "string" ? v.trim() : "";
+  return t.length > 0 ? t : null;
+}
+
+/** Call after admin pulls the pending list so badge reflects only submissions newer than this instant. */
+export async function touchAdminSubscriptionsReviewsSeenAt(isoTimestamp?: string): Promise<void> {
+  const redis = getRedis();
+  await redis.set(ADMIN_REVIEWS_LAST_SEEN_AT, isoTimestamp ?? new Date().toISOString());
+}
+
+/** Pending rows submitted after {@link getAdminSubscriptionsReviewsLastSeenAt} (unset → all pending are unread). */
+export async function getUnreadPendingSubscriptionsFeedbackCount(
+  limit = SUBSCRIPTIONS_FEEDBACK_INDEX_MAX,
+): Promise<number> {
+  const [pending, lastSeen] = await Promise.all([
+    listPendingSubscriptionsFeedback(Math.max(1, Math.min(limit, SUBSCRIPTIONS_FEEDBACK_INDEX_MAX))),
+    getAdminSubscriptionsReviewsLastSeenAt(),
+  ]);
+
+  if (!lastSeen || !Number.isFinite(Date.parse(lastSeen))) {
+    return pending.length;
+  }
+
+  const cutoff = Date.parse(lastSeen);
+  return pending.reduce((acc, r) => acc + (Date.parse(r.createdAt) > cutoff ? 1 : 0), 0);
 }
 
 export async function listPendingSubscriptionsFeedback(limit = 100): Promise<SubscriptionsFeedbackRecord[]> {

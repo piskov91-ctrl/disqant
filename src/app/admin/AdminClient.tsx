@@ -597,15 +597,15 @@ export default function AdminClient() {
   async function loadSubscriptionReviewsBadge() {
     try {
       const res = await fetch("/api/admin/subscriptions-reviews?badge=1");
-      const data = (await res.json()) as { pendingCount?: number; error?: string };
+      const data = (await res.json()) as { unreadCount?: number; error?: string };
       if (!res.ok) {
         if (data.error === "Unauthorized.") window.location.reload();
         setReviewsPendingBadge(0);
         return;
       }
       const u =
-        typeof data.pendingCount === "number" && Number.isFinite(data.pendingCount)
-          ? Math.max(0, Math.floor(data.pendingCount))
+        typeof data.unreadCount === "number" && Number.isFinite(data.unreadCount)
+          ? Math.max(0, Math.floor(data.unreadCount))
           : 0;
       setReviewsPendingBadge(u);
     } catch {
@@ -657,7 +657,7 @@ export default function AdminClient() {
       });
       const data = (await res.json()) as {
         pending?: SubscriptionsPendingReviewRow[];
-        pendingCount?: number;
+        unreadCount?: number;
         error?: string;
       };
       if (!res.ok) {
@@ -666,8 +666,8 @@ export default function AdminClient() {
         return;
       }
       setSubscriptionReviewsPending(Array.isArray(data.pending) ? data.pending : []);
-      if (typeof data.pendingCount === "number" && Number.isFinite(data.pendingCount)) {
-        setReviewsPendingBadge(Math.max(0, Math.floor(data.pendingCount)));
+      if (typeof data.unreadCount === "number" && Number.isFinite(data.unreadCount)) {
+        setReviewsPendingBadge(Math.max(0, Math.floor(data.unreadCount)));
       } else {
         void loadSubscriptionReviewsBadge();
       }
@@ -1606,8 +1606,8 @@ export default function AdminClient() {
               aria-selected={activeTab === "reviews"}
               aria-label={
                 reviewsPendingBadge > 0
-                  ? `Subscription reviews moderation, ${reviewsPendingBadge} pending`
-                  : "Subscription reviews moderation"
+                  ? `Reviews, ${reviewsPendingBadge} unread since last viewed`
+                  : "Reviews moderation"
               }
               onClick={() => setActiveTab("reviews")}
               className={`rounded-full px-5 py-2 text-sm font-semibold transition ${
@@ -2179,9 +2179,12 @@ export default function AdminClient() {
             <section className="mt-8 w-full overflow-hidden rounded-2xl border border-zinc-800 bg-zinc-900/60 p-6 shadow-sm md:p-8">
               <h2 className="text-base font-semibold text-zinc-100">Reviews</h2>
               <p className="mt-1 text-sm text-zinc-400">
-                Pending merchant feedback from the Subscriptions page. <strong className="font-medium text-zinc-300">Approve</strong> sets{' '}
-                <span className="font-mono text-zinc-500">status: approved</span> in Redis so it appears below the curated
-                testimonials on the site. <strong className="font-medium text-zinc-300">Reject</strong> deletes the record.
+                Pending merchant feedback from the Subscriptions page — saved only to Redis (no outbound email).
+                Opening this tab clears the amber <strong className="font-medium text-zinc-300">unread badge</strong> for
+                items already visible in the queue. The badge increments again when submissions arrive after your last visit
+                here. <strong className="font-medium text-zinc-300">Approve</strong> sets{' '}
+                <span className="font-mono text-zinc-500">status: approved</span> so a review appears on the public site;
+                reject deletes the record from Redis.
               </p>
               {subscriptionReviewsError ? (
                 <div className="mt-6 rounded-xl border border-red-900/60 bg-red-950/40 px-4 py-3 text-sm text-red-200">
@@ -2276,9 +2279,10 @@ export default function AdminClient() {
                 </ul>
               )}
               <p className="mt-6 text-xs text-zinc-600">
-                Approved records: <span className="font-mono text-zinc-400">fit-room:subscriptionsFeedback:approved:index</span>
-                . Pending queue:{" "}
-                <span className="font-mono text-zinc-400">fit-room:subscriptionsFeedback:pending:index</span>.
+                Approved: <span className="font-mono text-zinc-400">fit-room:subscriptionsFeedback:approved:index</span>.
+                Pending: <span className="font-mono text-zinc-400">fit-room:subscriptionsFeedback:pending:index</span>.
+                Last viewed (badge baseline):{" "}
+                <span className="font-mono text-zinc-400">fit-room:subscriptionsFeedback:adminReviewsLastSeenAt</span>.
               </p>
             </section>
           ) : activeTab === "topUps" ? (

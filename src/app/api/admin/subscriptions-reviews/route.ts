@@ -2,9 +2,10 @@ import { cookies } from "next/headers";
 import { ADMIN_AUTH_COOKIE, isAdminAuthorizedCookieValue } from "@/lib/adminAuth";
 import {
   approveSubscriptionsFeedback,
-  getPendingSubscriptionsFeedbackCount,
+  getUnreadPendingSubscriptionsFeedbackCount,
   listPendingSubscriptionsFeedback,
   rejectSubscriptionsFeedback,
+  touchAdminSubscriptionsReviewsSeenAt,
   type SubscriptionsFeedbackRecord,
 } from "@/lib/subscriptionsFeedbackStore";
 
@@ -33,11 +34,12 @@ export async function GET(req: Request) {
   try {
     const url = new URL(req.url);
     if (url.searchParams.get("badge") === "1") {
-      const pendingCount = await getPendingSubscriptionsFeedbackCount();
-      return Response.json({ pendingCount });
+      const unreadCount = await getUnreadPendingSubscriptionsFeedbackCount();
+      return Response.json({ unreadCount });
     }
 
     const pending = await listPendingSubscriptionsFeedback(200);
+    await touchAdminSubscriptionsReviewsSeenAt();
     return Response.json({ pending: sanitize(pending) });
   } catch (e) {
     return Response.json(
@@ -79,14 +81,12 @@ export async function POST(req: Request) {
       await rejectSubscriptionsFeedback(id);
     }
 
-    const [pendingCount, pending] = await Promise.all([
-      getPendingSubscriptionsFeedbackCount(),
-      listPendingSubscriptionsFeedback(200),
-    ]);
+    const pending = await listPendingSubscriptionsFeedback(200);
+    const unreadCount = await getUnreadPendingSubscriptionsFeedbackCount();
 
     return Response.json({
       ok: true,
-      pendingCount,
+      unreadCount,
       pending: sanitize(pending),
     });
   } catch (e) {
