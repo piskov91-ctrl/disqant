@@ -360,44 +360,42 @@ function RetailerDashboardShellInner({
       />
 
       <div className="mx-auto max-w-6xl px-6 pb-20 pt-8 md:pt-10">
-        <section className="relative isolate w-fit max-w-full [contain:layout]">
-          <div
-            className="inline-flex flex-wrap gap-1.5 rounded-full border border-[#c6a77d]/38 bg-black/60 p-1.5 shadow-[inset_0_1px_0_0_rgba(255,236,210,0.08)] backdrop-blur-md"
-            role="tablist"
-            aria-label="Dashboard sections"
+        <div
+          className="inline-flex flex-wrap gap-1.5 rounded-full border border-[#c6a77d]/38 bg-black/60 p-1.5 shadow-[inset_0_1px_0_0_rgba(255,236,210,0.08)] backdrop-blur-md"
+          role="tablist"
+          aria-label="Dashboard sections"
+        >
+          <button
+            type="button"
+            role="tab"
+            aria-selected={tab === "overview"}
+            onClick={() => {
+              setTab("overview");
+              window.history.replaceState(null, "", "/dashboard?" + searchParamsStringForTab("overview"));
+            }}
+            className={`${tabBase} ${tab === "overview" ? tabActive : tabInactive}`}
           >
-            <button
-              type="button"
-              role="tab"
-              aria-selected={tab === "overview"}
-              onClick={() => {
-                setTab("overview");
-                window.history.replaceState(null, "", "/dashboard?" + searchParamsStringForTab("overview"));
-              }}
-              className={`${tabBase} ${tab === "overview" ? tabActive : tabInactive}`}
-            >
-              My Plan
-            </button>
-            <button
-              type="button"
-              role="tab"
-              aria-selected={tab === "getCode"}
-              onClick={() => selectTab("getCode")}
-              className={`${tabBase} ${tab === "getCode" ? tabActive : tabInactive}`}
-            >
-              Get Code
-            </button>
-            <button
-              type="button"
-              role="tab"
-              aria-selected={tab === "analytics"}
-              onClick={() => selectTab("analytics")}
-              className={`${tabBase} ${tab === "analytics" ? tabActive : tabInactive}`}
-            >
-              Analytics
-            </button>
-          </div>
-        </section>
+            My Plan
+          </button>
+          <button
+            type="button"
+            role="tab"
+            aria-selected={tab === "getCode"}
+            onClick={() => selectTab("getCode")}
+            className={`${tabBase} ${tab === "getCode" ? tabActive : tabInactive}`}
+          >
+            Get Code
+          </button>
+          <button
+            type="button"
+            role="tab"
+            aria-selected={tab === "analytics"}
+            onClick={() => selectTab("analytics")}
+            className={`${tabBase} ${tab === "analytics" ? tabActive : tabInactive}`}
+          >
+            Analytics
+          </button>
+        </div>
 
         {tab === "overview" ? (
           <div className="mt-10 space-y-10 md:space-y-14">
