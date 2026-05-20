@@ -27,13 +27,10 @@ export function Header() {
     <header className="site-header fixed top-0 left-0 right-0 z-[60] overflow-visible border-b border-white/10 bg-transparent backdrop-blur-md">
       <div className="mx-auto grid h-[var(--site-header-height)] max-h-[var(--site-header-height)] min-h-[var(--site-header-height)] w-full max-w-6xl shrink-0 grid-cols-[auto_minmax(0,1fr)] items-center justify-items-stretch gap-x-6 overflow-visible pl-0 pr-4 md:gap-x-10 md:pr-5">
         {/*
-          Shrink-wrapped link (`inline-block w-fit`) so the hit target is the logo lockup — a flex `<Link>` used to
-          stretch wide/tall and stole clicks meant for dashboard tabs.
-
-          `.header-logo-lockup` nominally sizes the asset tall in CSS (~294px). Confine layout + clicks to `--site-header-height`
-          with inline max-height and an overflow-hidden slot so we don’t cover page UI.
+          Use shrink-wrapped link (`inline-block w-fit`) so the hit target matches the logo image, not the whole
+          grid column. A flex `<Link>` previously stretched wide/tall and swallowed clicks meant for dashboard tabs.
         */}
-        <div className="relative z-0 ml-0 flex h-[var(--site-header-height)] min-h-0 min-w-0 shrink-0 items-center justify-self-start overflow-hidden py-0 pl-0 md:ml-[-270px]">
+        <div className="relative z-0 flex min-h-0 min-w-0 shrink-0 items-center justify-self-start ml-0 md:ml-[-270px] pl-0 py-0">
           <Link
             href="/"
             className="inline-block w-fit max-w-[min(360px,calc(100vw-9.75rem))] sm:max-w-[min(420px,calc(100vw-11rem))] md:max-w-[min(720px,calc(100vw-26rem))]"
@@ -45,8 +42,7 @@ export function Header() {
               height={1024}
               priority
               sizes="(max-width: 640px) 360px, (max-width: 767px) 420px, 720px"
-              style={{ height: "auto", maxHeight: "var(--site-header-height)" }}
-              className="header-logo-lockup mt-0 block max-w-full"
+              className="header-logo-lockup mt-10 block max-w-full"
             />
           </Link>
         </div>
