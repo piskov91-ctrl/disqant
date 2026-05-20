@@ -39,6 +39,28 @@ function recordKey(id: string) {
   return `${RECORD_PREFIX}${id}`;
 }
 
+/**
+ * Upstash REST returns deserialized JSON objects by default when reading values written via `set(key, object)`.
+ * Older rows were stored as `JSON.stringify`; accept plain strings too.
+ */
+function redisFeedbackValueToParsedRecord(raw: unknown): Record<string, unknown> | null {
+  if (raw == null) return null;
+  if (typeof raw === "object" && raw !== null && !Array.isArray(raw)) {
+    return raw as Record<string, unknown>;
+  }
+  if (typeof raw === "string") {
+    try {
+      const parsed = JSON.parse(raw) as unknown;
+      if (typeof parsed === "object" && parsed !== null && !Array.isArray(parsed)) {
+        return parsed as Record<string, unknown>;
+      }
+    } catch {
+      return null;
+    }
+  }
+  return null;
+}
+
 function coerceRecord(parsed: Record<string, unknown>, idFallback: string): SubscriptionsFeedbackRecord | null {
   const id = typeof parsed.id === "string" ? parsed.id : idFallback;
   const createdAt = typeof parsed.createdAt === "string" ? parsed.createdAt : "";
@@ -104,36 +126,29 @@ async function hydratePendingByIds(ids: string[]): Promise<SubscriptionsFeedback
   const redis = getRedis();
   const rows: SubscriptionsFeedbackRecord[] = [];
 
-  const rawList = await Promise.all(ids.map((did) => redis.get(recordKey(did)) as Promise<string | null>));
+  const rawList = await Promise.all(ids.map((did) => redis.get<SubscriptionsFeedbackRecord>(recordKey(did))));
 
   for (let i = 0; i < ids.length; i++) {
     const id = ids[i]!;
     const raw = rawList[i];
-    if (!raw || typeof raw !== "string") {
+    const parsed = redisFeedbackValueToParsedRecord(raw);
+    if (!parsed) {
       console.warn("[fit-room][subscriptions-feedback][hydrate] SKIP — no Redis value for indexed id", {
         id,
         recordKey: recordKey(id),
       });
       continue;
     }
-    try {
-      const parsed = JSON.parse(raw) as Record<string, unknown>;
-      const row = parsePendingIndexedJson(parsed, id);
-      if (!row || row.status !== "pending") {
-        console.warn("[fit-room][subscriptions-feedback][hydrate] SKIP — not a pending payload for indexed id", {
-          id,
-          parsedStatus: parsed.status,
-          resolved: !!row,
-        });
-        continue;
-      }
-      rows.push(row);
-    } catch {
-      console.warn("[fit-room][subscriptions-feedback][hydrate] SKIP — JSON parse failed", {
+    const row = parsePendingIndexedJson(parsed, id);
+    if (!row || row.status !== "pending") {
+      console.warn("[fit-room][subscriptions-feedback][hydrate] SKIP — not a pending payload for indexed id", {
         id,
-        rawSnippet: typeof raw === "string" ? raw.slice(0, 120) : raw,
+        parsedStatus: parsed.status,
+        resolved: !!row,
       });
+      continue;
     }
+    rows.push(row);
   }
   return rows;
 }
@@ -142,18 +157,14 @@ async function hydrateApprovedByIds(ids: string[]): Promise<SubscriptionsFeedbac
   if (ids.length === 0) return [];
   const redis = getRedis();
   const rows: SubscriptionsFeedbackRecord[] = [];
-  const rawList = await Promise.all(ids.map((did) => redis.get(recordKey(did)) as Promise<string | null>));
+  const rawList = await Promise.all(ids.map((did) => redis.get<SubscriptionsFeedbackRecord>(recordKey(did))));
 
   for (let i = 0; i < ids.length; i++) {
     const raw = rawList[i];
-    if (!raw || typeof raw !== "string") continue;
-    try {
-      const parsed = JSON.parse(raw) as Record<string, unknown>;
-      const row = coerceRecord(parsed, ids[i]!);
-      if (row && row.status === "approved") rows.push(row);
-    } catch {
-      /* skip */
-    }
+    const parsed = redisFeedbackValueToParsedRecord(raw);
+    if (!parsed) continue;
+    const row = coerceRecord(parsed, ids[i]!);
+    if (row && row.status === "approved") rows.push(row);
   }
   return rows;
 }
@@ -176,13 +187,15 @@ export async function recordPendingSubscriptionsFeedback(fields: {
   };
 
   const key = recordKey(id);
-  const payload = JSON.stringify(row);
 
   console.log("[feedback-debug] RECORD_PREFIX:", RECORD_PREFIX);
-  console.log("[feedback-debug] writing to key:", key, "payload length:", payload.length);
+  console.log("[feedback-debug] writing to key:", key, "(object row, Upstash-serialized)");
 
-  /** Upstash REST does not emulate classic MULTI/EXEC; use sequential commands (auto-pipelining disabled on `getRedis()`). */
-  await redis.set(key, payload);
+  /**
+   * Store plain object — `@upstash/redis` serializes consistently with typed GET deserialization (avoid manual JSON.stringify).
+   * Sequential commands; auto-pipelining disabled on `getRedis()`.
+   */
+  await redis.set(key, row);
   await redis.lpush(PENDING_INDEX, id);
   await redis.ltrim(PENDING_INDEX, 0, SUBSCRIPTIONS_FEEDBACK_INDEX_MAX - 1);
 
@@ -279,22 +292,16 @@ export async function approveSubscriptionsFeedback(id: string): Promise<void> {
   if (!cleaned.length) throw new Error("Missing id.");
 
   const redis = getRedis();
-  const raw = (await redis.get(recordKey(cleaned))) as string | null;
-  if (!raw) throw new Error("Review not found.");
-
-  let parsed: Record<string, unknown>;
-  try {
-    parsed = JSON.parse(raw) as Record<string, unknown>;
-  } catch {
-    throw new Error("Review data is unreadable.");
-  }
+  const raw = await redis.get<SubscriptionsFeedbackRecord>(recordKey(cleaned));
+  const parsed = redisFeedbackValueToParsedRecord(raw);
+  if (!parsed) throw new Error("Review not found.");
 
   const current = parsePendingIndexedJson(parsed, cleaned);
   if (!current) throw new Error("Review cannot be moderated.");
   if (current.status !== "pending") throw new Error("Only pending feedback can be approved.");
 
   const updated: SubscriptionsFeedbackRecord = { ...current, status: "approved" };
-  await redis.set(recordKey(cleaned), JSON.stringify(updated));
+  await redis.set(recordKey(cleaned), updated);
   await redis.lrem(PENDING_INDEX, 0, cleaned);
   await redis.lpush(APPROVED_INDEX, cleaned);
   await redis.ltrim(APPROVED_INDEX, 0, SUBSCRIPTIONS_FEEDBACK_INDEX_MAX - 1);
