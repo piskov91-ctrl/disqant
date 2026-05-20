@@ -174,6 +174,9 @@ export async function recordPendingSubscriptionsFeedback(fields: {
   const key = recordKey(id);
   const payload = JSON.stringify(row);
 
+  console.log("[feedback-debug] RECORD_PREFIX:", RECORD_PREFIX);
+  console.log("[feedback-debug] writing to key:", key, "payload length:", payload.length);
+
   /** Upstash REST does not emulate classic MULTI/EXEC; use sequential commands (auto-pipelining disabled on `getRedis()`). */
   await redis.set(key, payload);
   await redis.lpush(PENDING_INDEX, id);
