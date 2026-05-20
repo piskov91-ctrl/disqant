@@ -20,6 +20,10 @@ export async function POST(req: Request) {
 
   const storeNameRaw = typeof b.storeName === "string" ? b.storeName.trim() : "";
   if (storeNameRaw.length < MIN_STORE_LEN) {
+    console.warn("[fit-room][subscriptions-feedback] 400 — storeName missing or too short (required for moderation)", {
+      storeNameType: typeof b.storeName,
+      storeNameLenAfterTrim: storeNameRaw.length,
+    });
     return Response.json({ error: "Please enter your store name." }, { status: 400 });
   }
   if (storeNameRaw.length > MAX_STORE_LEN) {
@@ -41,15 +45,26 @@ export async function POST(req: Request) {
   }
 
   try {
+    console.log("[fit-room][subscriptions-feedback] POST validated — attempting Redis save", {
+      storeNameLen: storeNameRaw.length,
+      rating,
+      messageLen: messageRaw.length,
+      pendingIndex: "fit-room:subscriptionsFeedback:pending:index",
+      recordPrefix: "fit-room:subscriptionsFeedback:",
+    });
+
     const redisId = await recordPendingSubscriptionsFeedback({
       storeName: storeNameRaw,
       rating,
       message: messageRaw,
     });
+
+    console.log("[fit-room][subscriptions-feedback] Redis save OK — pending feedback queued", { redisId });
     return Response.json({ ok: true, redisId });
   } catch (storeErr: unknown) {
-    console.error("[fit-room][subscriptions-feedback] Redis record failed", {
+    console.error("[fit-room][subscriptions-feedback] Redis record failed — feedback NOT persisted", {
       message: storeErr instanceof Error ? storeErr.message : String(storeErr),
+      ...(storeErr instanceof Error && storeErr.stack ? { stack: storeErr.stack } : {}),
     });
     return Response.json({ error: "Could not save your feedback. Please try again shortly." }, { status: 503 });
   }

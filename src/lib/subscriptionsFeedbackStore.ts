@@ -63,14 +63,32 @@ async function hydratePendingByIds(ids: string[]): Promise<SubscriptionsFeedback
   const rawList = await Promise.all(ids.map((did) => redis.get(recordKey(did)) as Promise<string | null>));
 
   for (let i = 0; i < ids.length; i++) {
+    const id = ids[i]!;
     const raw = rawList[i];
-    if (!raw || typeof raw !== "string") continue;
+    if (!raw || typeof raw !== "string") {
+      console.warn("[fit-room][subscriptions-feedback][hydrate] SKIP — no Redis value for indexed id", {
+        id,
+        recordKey: recordKey(id),
+      });
+      continue;
+    }
     try {
       const parsed = JSON.parse(raw) as Record<string, unknown>;
-      const row = coerceRecord(parsed, ids[i]!);
-      if (row && row.status === "pending") rows.push(row);
+      const row = coerceRecord(parsed, id);
+      if (!row || row.status !== "pending") {
+        console.warn("[fit-room][subscriptions-feedback][hydrate] SKIP — coerce/status not pending", {
+          id,
+          parsedStatus: parsed.status,
+          coercedOk: !!row,
+        });
+        continue;
+      }
+      rows.push(row);
     } catch {
-      /* skip */
+      console.warn("[fit-room][subscriptions-feedback][hydrate] SKIP — JSON parse failed", {
+        id,
+        rawSnippet: typeof raw === "string" ? raw.slice(0, 120) : raw,
+      });
     }
   }
   return rows;
@@ -120,6 +138,20 @@ export async function recordPendingSubscriptionsFeedback(fields: {
   await redis.lpush(LEGACY_INDEX, id).catch(() => undefined);
   await redis.ltrim(LEGACY_INDEX, 0, SUBSCRIPTIONS_FEEDBACK_INDEX_MAX - 1).catch(() => undefined);
 
+  try {
+    const lenRaw = await redis.llen(PENDING_INDEX);
+    const pendingLen = typeof lenRaw === "number" && Number.isFinite(lenRaw) ? Math.floor(lenRaw) : NaN;
+    console.log("[fit-room][subscriptions-feedback][redis] write complete", {
+      id,
+      recordKey: recordKey(id),
+      pendingIndexLength: pendingLen,
+    });
+  } catch (diagErr: unknown) {
+    console.warn("[fit-room][subscriptions-feedback][redis] post-write llen diagnostics failed", {
+      message: diagErr instanceof Error ? diagErr.message : String(diagErr),
+    });
+  }
+
   return id;
 }
 
@@ -163,7 +195,25 @@ export async function listPendingSubscriptionsFeedback(limit = 100): Promise<Sub
   const cap = Math.max(1, Math.min(limit, SUBSCRIPTIONS_FEEDBACK_INDEX_MAX));
   const redis = getRedis();
   const ids = ((await redis.lrange(PENDING_INDEX, 0, cap - 1)) as string[]) ?? [];
-  return hydratePendingByIds(ids);
+  const hydrated = await hydratePendingByIds(ids);
+
+  if (ids.length !== hydrated.length) {
+    const kept = new Set(hydrated.map((r) => r.id));
+    const dropped = ids.filter((x) => !kept.has(x));
+    console.warn("[fit-room][subscriptions-feedback][listPending] hydrated fewer rows than pending index IDs", {
+      pendingIndexRawCount: ids.length,
+      hydratedCount: hydrated.length,
+      ghostOrDroppedIds: dropped.slice(0, 50),
+      droppedTruncated: dropped.length > 50,
+    });
+  } else if (process.env.NODE_ENV === "development" && ids.length > 0) {
+    console.log("[fit-room][subscriptions-feedback][listPending] hydrate OK", {
+      pendingIds: ids.length,
+      hydratedRows: hydrated.length,
+    });
+  }
+
+  return hydrated;
 }
 
 export async function listApprovedSubscriptionsFeedback(limit = 80): Promise<SubscriptionsFeedbackRecord[]> {

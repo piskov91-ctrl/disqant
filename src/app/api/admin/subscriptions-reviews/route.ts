@@ -39,6 +39,9 @@ export async function GET(req: Request) {
     }
 
     const pending = await listPendingSubscriptionsFeedback(200);
+    console.log("[fit-room][admin-reviews][GET] loaded pending rows for admin Reviews tab", {
+      hydratedCount: pending.length,
+    });
     await touchAdminSubscriptionsReviewsSeenAt();
     return Response.json({ pending: sanitize(pending) });
   } catch (e) {
