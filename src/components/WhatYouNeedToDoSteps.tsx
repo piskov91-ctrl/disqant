@@ -16,28 +16,33 @@ const setupCards = [
 ] as const;
 
 /**
- * Heading, intro line, and three setup cards (shared by How It Works and Subscriptions).
- * Parent layouts provide section chrome and width constraints.
+ * Compact intro strip for Subscriptions: small cards, tight spacing (brief lead-in to pricing).
  */
 export function WhatYouNeedToDoSteps() {
   return (
     <>
-      <h2 id="what-you-need-to-do-heading" className="text-lg font-semibold text-[#C6A77D]">
+      <h2
+        id="what-you-need-to-do-heading"
+        className="text-center text-sm font-semibold uppercase tracking-widest text-[#C6A77D] md:text-left"
+      >
         What you need to do
       </h2>
-      <p className="mt-3 text-base leading-relaxed text-zinc-600">
+      <p className="mt-2 text-center text-sm leading-relaxed text-zinc-600 md:mx-0 md:text-left">
         Nothing complicated. No app to download, no software to install.
       </p>
-      <ul className="mt-8 grid gap-5 sm:grid-cols-2 lg:grid-cols-3" aria-label="Setup steps">
+      <ul
+        className="mt-5 grid grid-cols-1 gap-3 sm:grid-cols-3 sm:gap-3"
+        aria-label="Setup steps"
+      >
         {setupCards.map(({ Icon, text }) => (
           <li
             key={text}
-            className="flex flex-col rounded-2xl border border-surface-border bg-white p-6 shadow-sm"
+            className="flex flex-col rounded-xl border border-surface-border bg-white p-3.5 shadow-sm"
           >
-            <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-[#8b7355] to-[#c6a77d] text-white shadow-accent-glow">
-              <Icon className="h-6 w-6" strokeWidth={1.75} aria-hidden />
+            <div className="mb-2 flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-[#8b7355] to-[#c6a77d] text-white shadow-sm">
+              <Icon className="h-4 w-4" strokeWidth={2} aria-hidden />
             </div>
-            <p className="text-sm font-medium leading-relaxed text-zinc-800">{text}</p>
+            <p className="text-xs font-medium leading-snug text-zinc-800">{text}</p>
           </li>
         ))}
       </ul>
