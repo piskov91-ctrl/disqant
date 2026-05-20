@@ -1,9 +1,17 @@
 "use client";
 
 import { Star } from "lucide-react";
-import { useCallback, useId, useState } from "react";
+import { useCallback, useEffect, useId, useState } from "react";
 
 const GOLD = "#c6a77d";
+
+const SUCCESS_PREVIEW_MS = 60_000;
+
+type SubmissionPreview = {
+  storeName: string;
+  rating: number;
+  message: string;
+};
 
 export function SubscriptionsFeedbackSection() {
   const formId = useId();
@@ -12,6 +20,16 @@ export function SubscriptionsFeedbackSection() {
   const [message, setMessage] = useState("");
   const [status, setStatus] = useState<"idle" | "sending" | "success" | "error">("idle");
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  const [submissionPreview, setSubmissionPreview] = useState<SubmissionPreview | null>(null);
+
+  useEffect(() => {
+    if (!submissionPreview) return;
+    const id = window.setTimeout(() => {
+      setSubmissionPreview(null);
+      setStatus("idle");
+    }, SUCCESS_PREVIEW_MS);
+    return () => window.clearTimeout(id);
+  }, [submissionPreview]);
 
   const submit = useCallback(async () => {
     const storeTrim = storeName.trim();
@@ -46,6 +64,11 @@ export function SubscriptionsFeedbackSection() {
         setStatus("error");
         return;
       }
+      setSubmissionPreview({
+        storeName: storeTrim,
+        rating,
+        message: trimmed,
+      });
       setStatus("success");
       setMessage("");
       setRating(0);
@@ -157,10 +180,32 @@ export function SubscriptionsFeedbackSection() {
               {errorMsg}
             </p>
           ) : null}
-          {status === "success" ? (
-            <p className="mt-4 text-sm font-medium text-[#c9e86c]" role="status">
-              Thanks — we received your review. After a quick moderation check it may appear on this page.
-            </p>
+          {status === "success" && submissionPreview ? (
+            <div className="mt-6 space-y-4" role="status" aria-live="polite">
+              <p className="text-center text-sm font-medium leading-relaxed text-[#c9e86c]">
+                Thank you for your feedback! We really appreciate it.
+              </p>
+              <div className="rounded-xl border border-[#c6a77d]/22 bg-black/40 px-4 py-4 text-[#f0ebe3]">
+                <div className="flex justify-center gap-1" aria-label={`${submissionPreview.rating} out of 5 stars`}>
+                  {[1, 2, 3, 4, 5].map((value) => (
+                    <Star
+                      key={value}
+                      className="h-7 w-7 md:h-8 md:w-8"
+                      strokeWidth={1.4}
+                      style={{ color: GOLD }}
+                      fill={submissionPreview.rating >= value ? GOLD : "transparent"}
+                      aria-hidden
+                    />
+                  ))}
+                </div>
+                <p className="mt-3 text-center text-xs font-semibold uppercase tracking-[0.18em] text-[#d4bc94]/90">
+                  {submissionPreview.storeName}
+                </p>
+                <blockquote className="mt-3 whitespace-pre-wrap text-center text-sm leading-relaxed text-[#f5efe6]/95">
+                  {submissionPreview.message}
+                </blockquote>
+              </div>
+            </div>
           ) : null}
 
           <button
