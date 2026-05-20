@@ -1,3 +1,4 @@
+import { revalidatePath } from "next/cache";
 import { cookies } from "next/headers";
 import { ADMIN_AUTH_COOKIE, isAdminAuthorizedCookieValue } from "@/lib/adminAuth";
 import {
@@ -97,6 +98,8 @@ export async function POST(req: Request) {
       listApprovedSubscriptionsFeedback(200),
     ]);
     const unreadCount = await getUnreadPendingSubscriptionsFeedbackCount();
+
+    revalidatePath("/subscriptions");
 
     return Response.json({
       ok: true,

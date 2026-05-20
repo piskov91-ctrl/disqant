@@ -13,6 +13,9 @@ export const metadata: Metadata = {
   description: "Choose a Wear Me plan for your store.",
 };
 
+/** Approved testimonials come from Redis — never serve a cached page with stale moderator deletes. */
+export const dynamic = "force-dynamic";
+
 type PageProps = {
   searchParams: Promise<{ checkout?: string }>;
 };
