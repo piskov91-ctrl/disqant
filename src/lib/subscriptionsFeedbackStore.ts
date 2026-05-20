@@ -1,8 +1,14 @@
 import crypto from "node:crypto";
 import { getRedis } from "@/lib/apiKeyStore";
 
-const RECORD_PREFIX = "fit-room:subscriptionsFeedback:";
-const PENDING_INDEX = "fit-room:subscriptionsFeedback:pending:index";
+/** Record JSON lives at `${FIT_ROOM_SUBSCRIPTIONS_FEEDBACK_KEY_PREFIX}<uuid>` */
+export const FIT_ROOM_SUBSCRIPTIONS_FEEDBACK_KEY_PREFIX = "fit-room:subscriptionsFeedback:" as const;
+/** Redis list IDs (newest first) for moderation queue consumed by `/api/admin/subscriptions-reviews`. */
+export const FIT_ROOM_SUBSCRIPTIONS_FEEDBACK_PENDING_LIST_KEY =
+  "fit-room:subscriptionsFeedback:pending:index" as const;
+
+const RECORD_PREFIX = FIT_ROOM_SUBSCRIPTIONS_FEEDBACK_KEY_PREFIX;
+const PENDING_INDEX = FIT_ROOM_SUBSCRIPTIONS_FEEDBACK_PENDING_LIST_KEY;
 const APPROVED_INDEX = "fit-room:subscriptionsFeedback:approved:index";
 
 /** @deprecated Old flat index kept for diagnostics; new submissions also push here best-effort. */
@@ -55,6 +61,40 @@ function coerceRecord(parsed: Record<string, unknown>, idFallback: string): Subs
   return { id, createdAt, rating: Math.round(rating), message, storeName, status };
 }
 
+/**
+ * IDs in {@link FIT_ROOM_SUBSCRIPTIONS_FEEDBACK_PENDING_LIST_KEY} must resolve from JSON at
+ * {@link FIT_ROOM_SUBSCRIPTIONS_FEEDBACK_KEY_PREFIX}`<id>` — tolerate older blobs missing `status` / `storeName`.
+ */
+function parsePendingIndexedJson(parsed: Record<string, unknown>, indexId: string): SubscriptionsFeedbackRecord | null {
+  if (parsed.status === "approved") return null;
+
+  const strict = coerceRecord(parsed, indexId);
+  if (strict?.status === "pending") return strict;
+
+  const st = parsed.status;
+  if (st !== undefined && st !== null && st !== "" && st !== "pending") return null;
+
+  const id = typeof parsed.id === "string" ? parsed.id : indexId;
+  const createdAt = typeof parsed.createdAt === "string" ? parsed.createdAt : "";
+  const ratingRaw = parsed.rating;
+  const rating = typeof ratingRaw === "number" ? ratingRaw : Number(ratingRaw);
+  const message = typeof parsed.message === "string" ? parsed.message : "";
+  const rawStore = typeof parsed.storeName === "string" ? parsed.storeName.trim() : "";
+  const storeName = rawStore.length >= 2 ? rawStore : "(legacy submission — no store name)";
+
+  if (!createdAt.length || !Number.isFinite(Date.parse(createdAt))) return null;
+  if (!Number.isFinite(rating) || rating < 1 || rating > 5) return null;
+
+  return {
+    id,
+    createdAt,
+    rating: Math.round(rating),
+    message,
+    storeName,
+    status: "pending",
+  };
+}
+
 async function hydratePendingByIds(ids: string[]): Promise<SubscriptionsFeedbackRecord[]> {
   if (ids.length === 0) return [];
   const redis = getRedis();
@@ -74,12 +114,12 @@ async function hydratePendingByIds(ids: string[]): Promise<SubscriptionsFeedback
     }
     try {
       const parsed = JSON.parse(raw) as Record<string, unknown>;
-      const row = coerceRecord(parsed, id);
+      const row = parsePendingIndexedJson(parsed, id);
       if (!row || row.status !== "pending") {
-        console.warn("[fit-room][subscriptions-feedback][hydrate] SKIP — coerce/status not pending", {
+        console.warn("[fit-room][subscriptions-feedback][hydrate] SKIP — not a pending payload for indexed id", {
           id,
           parsedStatus: parsed.status,
-          coercedOk: !!row,
+          resolved: !!row,
         });
         continue;
       }
@@ -238,7 +278,7 @@ export async function approveSubscriptionsFeedback(id: string): Promise<void> {
     throw new Error("Review data is unreadable.");
   }
 
-  const current = coerceRecord(parsed, cleaned);
+  const current = parsePendingIndexedJson(parsed, cleaned);
   if (!current) throw new Error("Review cannot be moderated.");
   if (current.status !== "pending") throw new Error("Only pending feedback can be approved.");
 
