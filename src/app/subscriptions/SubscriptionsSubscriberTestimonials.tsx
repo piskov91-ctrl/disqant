@@ -46,5 +46,5 @@ export function SubscriptionsSubscriberTestimonials({
     return [...pendingSlides, ...rest];
   }, [initialSubscriberSlides, pendingSlides]);
 
-  return <Testimonials tone="dark" subscriberSlides={mergedSlides} hideCuratedTestimonials />;
+  return <Testimonials tone="dark" subscriberSlides={mergedSlides} />;
 }

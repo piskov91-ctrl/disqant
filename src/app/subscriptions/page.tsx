@@ -61,12 +61,6 @@ export default async function SubscriptionsPage(props: PageProps) {
           {checkoutBanner}
         </div>
         <Pricing sectionId="" />
-        {/*
-          TEMP (subscriptions / feedback QA): curated marketing carousel from TESTIMONIAL_REVIEWS is hidden via
-          hideCuratedTestimonials — restore visible curated block by removing that prop:
-
-          <Testimonials tone="dark" subscriberSlides={subscriberSlides} />
-        */}
         <SubscriptionsSubscriberTestimonials initialSubscriberSlides={subscriberSlides} />
         <SubscriptionsFeedbackSection />
       </main>
