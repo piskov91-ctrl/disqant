@@ -30,10 +30,8 @@ export function Header() {
           Shrink-wrapped link (`inline-block w-fit`) so the hit target is the logo lockup — a flex `<Link>` used to
           stretch wide/tall and stole clicks meant for dashboard tabs.
 
-          `.header-logo-lockup` sets a nominal height (~294px) in a `--site-header-height` (108px) bar plus old `mt-*`
-          on the `<Image>`; spills overlapped page content horizontally (large lockup + `md:-ml-[270px]`) and vertically
-          so “My Plan” could receive the click under the inflated box. Clamp with inline max-height + an overflow-hidden
-          slot confined to the bar height.
+          `.header-logo-lockup` nominally sizes the asset tall in CSS (~294px). Confine layout + clicks to `--site-header-height`
+          with inline max-height (width stays auto from aspect ratio) and an overflow-hidden slot so we don’t cover page UI.
         */}
         <div className="relative z-0 ml-0 flex h-[var(--site-header-height)] min-h-0 min-w-0 shrink-0 items-center justify-self-start overflow-hidden py-0 pl-0 md:ml-[-270px]">
           <Link
@@ -47,7 +45,7 @@ export function Header() {
               height={1024}
               priority
               sizes="(max-width: 640px) 360px, (max-width: 767px) 420px, 720px"
-              style={{ height: "auto", maxHeight: "var(--site-header-height)" }}
+              style={{ width: "auto", height: "auto", maxHeight: "var(--site-header-height)" }}
               className="header-logo-lockup mt-0 block max-w-full"
             />
           </Link>
