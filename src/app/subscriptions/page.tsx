@@ -21,7 +21,7 @@ export default async function SubscriptionsPage(props: PageProps) {
   const q = await props.searchParams;
 
   const approvedRows = await listApprovedSubscriptionsFeedback(80).catch(() => []);
-  const merchantSlides: TestimonialSlide[] = approvedRows.map((r) => ({
+  const subscriberSlides: TestimonialSlide[] = approvedRows.map((r) => ({
     id: r.id,
     rating: r.rating,
     quote: r.message,
@@ -61,7 +61,7 @@ export default async function SubscriptionsPage(props: PageProps) {
           {checkoutBanner}
         </div>
         <Pricing sectionId="" />
-        <Testimonials tone="dark" merchantSlides={merchantSlides} />
+        <Testimonials tone="dark" subscriberSlides={subscriberSlides} />
         <SubscriptionsFeedbackSection />
       </main>
       <Footer />
