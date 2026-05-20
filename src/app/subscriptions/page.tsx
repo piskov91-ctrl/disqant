@@ -64,7 +64,7 @@ export default async function SubscriptionsPage(props: PageProps) {
           {checkoutBanner}
         </div>
         <section
-          className="border-t border-surface-border bg-surface-muted/30 py-8 md:py-9"
+          className="border-t border-white/10 bg-transparent py-5 md:py-6"
           aria-labelledby="what-you-need-to-do-heading"
         >
           <div className="mx-auto max-w-6xl px-6">
