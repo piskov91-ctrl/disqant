@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { AboutInstallPlatformGuide } from "@/app/about/AboutInstallPlatformGuide";
 import { Footer } from "@/components/Footer";
 import { Header } from "@/components/Header";
 
@@ -68,6 +69,8 @@ export default function AboutPage() {
             </div>
           </div>
         </section>
+
+        <AboutInstallPlatformGuide />
 
         <section className="border-b border-surface-border bg-white py-14 md:py-16">
           <div className="mx-auto max-w-6xl px-6">
