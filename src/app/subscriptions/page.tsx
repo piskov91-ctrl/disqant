@@ -3,6 +3,7 @@ import type { ReactNode } from "react";
 import { Footer } from "@/components/Footer";
 import { Header } from "@/components/Header";
 import { Pricing } from "@/components/Pricing";
+import { SubscriptionsFeedbackSection } from "./SubscriptionsFeedbackSection";
 
 export const metadata: Metadata = {
   title: "Subscriptions",
@@ -49,6 +50,7 @@ export default async function SubscriptionsPage(props: PageProps) {
           {checkoutBanner}
         </div>
         <Pricing sectionId="" />
+        <SubscriptionsFeedbackSection />
       </main>
       <Footer />
     </>
