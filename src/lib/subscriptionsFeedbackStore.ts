@@ -1,5 +1,8 @@
 import crypto from "node:crypto";
-/** Redis uses `getRedis()` from `@/lib/apiKeyStore` only — same singleton as client keys (one Upstash REST database). */
+/**
+ * Redis: use `getRedis()` from `@/lib/apiKeyStore` only — one shared Upstash singleton for the whole app (do not call `new Redis()` here).
+ * Feedback keys live under `fit-room:subscriptionsFeedback:`; client keys under `fit-room:clientKeys:*` — same DB, disjoint prefixes.
+ */
 import { getRedis } from "@/lib/apiKeyStore";
 
 /** Record JSON lives at `${FIT_ROOM_SUBSCRIPTIONS_FEEDBACK_KEY_PREFIX}<uuid>` */
