@@ -3,8 +3,8 @@
 @tailwind utilities;
 
 :root {
-  /** Fixed header row; keep `padding-top` on main content aligned to this height. Logo is scaled within this strip. */
-  --site-header-height: 160px;
+  /** Slim fixed header row; keep `padding-top` on main content aligned to this height. Logo size is scaled separately. */
+  --site-header-height: 108px;
 
   --foreground: #fafafa;
   --muted: #a1a1aa;
