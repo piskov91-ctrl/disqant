@@ -5,7 +5,7 @@ import { TESTIMONIAL_REVIEWS } from "@/data/testimonialReviews";
 
 export type TestimonialsSlideshowTone = "light" | "dark";
 
-const INTERVAL_MS = 7000;
+const INTERVAL_MS = 3000;
 const STAR_MAX = 5;
 
 function usePrefersReducedMotion(): boolean {

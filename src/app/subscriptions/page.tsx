@@ -50,8 +50,8 @@ export default async function SubscriptionsPage(props: PageProps) {
           </p>
           {checkoutBanner}
         </div>
-        <Testimonials tone="dark" />
         <Pricing sectionId="" />
+        <Testimonials tone="dark" />
         <SubscriptionsFeedbackSection />
       </main>
       <Footer />
