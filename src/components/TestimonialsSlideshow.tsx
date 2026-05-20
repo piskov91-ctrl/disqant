@@ -1,16 +1,15 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { TESTIMONIAL_REVIEWS } from "@/data/testimonialReviews";
+import {
+  MARKETING_TESTIMONIAL_SLIDES,
+  type TestimonialSlide,
+} from "@/data/marketingTestimonialSlides";
+
+export type { TestimonialSlide };
+export { MARKETING_TESTIMONIAL_SLIDES };
 
 export type TestimonialsSlideshowTone = "light" | "dark";
-
-export type TestimonialSlide = {
-  id: string;
-  rating: number;
-  quote: string;
-  attribution: string;
-};
 
 const INTERVAL_MS = 3000;
 const STAR_MAX = 5;
@@ -46,13 +45,6 @@ function Stars({ rating, filledClass, emptyClass }: { rating: number; filledClas
     </div>
   );
 }
-
-export const MARKETING_TESTIMONIAL_SLIDES: readonly TestimonialSlide[] = TESTIMONIAL_REVIEWS.map((r, i) => ({
-  id: `curated-${r.attribution}-${i}`,
-  rating: r.rating,
-  quote: r.quote,
-  attribution: r.attribution,
-}));
 
 export function TestimonialsSlideshow({
   tone = "light",

@@ -2,11 +2,11 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Testimonials } from "@/components/Testimonials";
+import type { TestimonialsSlideshowTone } from "@/components/TestimonialsSlideshow";
 import {
   MARKETING_TESTIMONIAL_SLIDES,
   type TestimonialSlide,
-  type TestimonialsSlideshowTone,
-} from "@/components/TestimonialsSlideshow";
+} from "@/data/marketingTestimonialSlides";
 import {
   readPendingFeedbackPreviewSlides,
   SUBSCRIPTIONS_PENDING_FEEDBACK_EVENT,

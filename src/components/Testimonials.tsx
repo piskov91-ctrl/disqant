@@ -1,9 +1,5 @@
-import {
-  MARKETING_TESTIMONIAL_SLIDES,
-  TestimonialsSlideshow,
-  type TestimonialSlide,
-  type TestimonialsSlideshowTone,
-} from "@/components/TestimonialsSlideshow";
+import { TestimonialsSlideshow, type TestimonialsSlideshowTone } from "@/components/TestimonialsSlideshow";
+import { MARKETING_TESTIMONIAL_SLIDES, type TestimonialSlide } from "@/data/marketingTestimonialSlides";
 
 type TestimonialsProps = {
   tone?: TestimonialsSlideshowTone;
