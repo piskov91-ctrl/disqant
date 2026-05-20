@@ -105,11 +105,14 @@ export function HeaderNav({ initialNavUser }: HeaderNavProps) {
 
   return (
     <div className="flex min-w-0 items-center justify-end gap-2 sm:gap-3">
-      <nav className="hidden items-center gap-8 lg:gap-10 md:flex" aria-label="Primary">
+      <nav className="hidden items-center gap-4 md:flex md:gap-5" aria-label="Primary">
         <Link href="/how-it-works" className={desktopNavLinkClass("/how-it-works")}>
           How it works
         </Link>
-        <Link href="/about" className={desktopNavLinkClass("/about")}>
+        <Link
+          href="/about"
+          className={`${desktopNavLinkClass("/about")} motion-safe:animate-header-about-glow motion-reduce:animate-none`}
+        >
           About
         </Link>
         <Link href="/pricing" className={desktopNavLinkClass("/pricing")}>
@@ -192,7 +195,11 @@ export function HeaderNav({ initialNavUser }: HeaderNavProps) {
               <Link href="/how-it-works" className={mobileNavLinkClass("/how-it-works")} onClick={() => setOpen(false)}>
                 How it works
               </Link>
-              <Link href="/about" className={mobileNavLinkClass("/about")} onClick={() => setOpen(false)}>
+              <Link
+                href="/about"
+                className={`${mobileNavLinkClass("/about")} motion-safe:animate-header-about-glow motion-reduce:animate-none`}
+                onClick={() => setOpen(false)}
+              >
                 About
               </Link>
               <Link href="/pricing" className={mobileNavLinkClass("/pricing")} onClick={() => setOpen(false)}>
