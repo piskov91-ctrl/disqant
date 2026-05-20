@@ -5,6 +5,9 @@ export type TestimonialReview = {
   attribution: string;
 };
 
+/** Headline average shown above the carousel. */
+export const DISPLAY_AVERAGE_OUT_OF_FIVE = 4.8;
+
 export const TESTIMONIAL_REVIEWS: readonly TestimonialReview[] = [
   {
     rating: 5,
@@ -47,7 +50,7 @@ export const TESTIMONIAL_REVIEWS: readonly TestimonialReview[] = [
     attribution: "— H**** Boutique",
   },
   {
-    rating: 5,
+    rating: 4,
     quote: "Customers come back more often now. Once they discover the try-on they use it every visit.",
     attribution: "— T**** London",
   },
@@ -64,7 +67,7 @@ export const TESTIMONIAL_REVIEWS: readonly TestimonialReview[] = [
     attribution: "— L**** Store",
   },
   {
-    rating: 5,
+    rating: 4,
     quote:
       "Returns were costing us a fortune. Since adding Wear Me they are down noticeably and our average order value has gone up.",
     attribution: "— T**** Fashion",
