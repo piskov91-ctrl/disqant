@@ -1,6 +1,6 @@
 import { Footer } from "@/components/Footer";
 import { Header } from "@/components/Header";
-import { Testimonials } from "@/components/Testimonials";
+import { MarketingTestimonialsWithPendingFeedback } from "@/components/MarketingTestimonialsWithPendingFeedback";
 
 export default function Home() {
   return (
@@ -76,7 +76,7 @@ export default function Home() {
             </div>
           </div>
         </section>
-        <Testimonials />
+        <MarketingTestimonialsWithPendingFeedback />
       </main>
       <Footer />
     </>
