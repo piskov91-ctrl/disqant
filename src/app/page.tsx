@@ -47,7 +47,7 @@ export default async function Home() {
                     href="/about"
                     className="inline-flex min-h-[40px] items-center justify-center rounded-full border border-white/35 bg-white/5 px-5 py-2.5 text-center text-sm font-medium text-zinc-100 backdrop-blur-sm transition hover:border-white/50 hover:bg-white/10 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white/60 sm:min-h-[44px] sm:px-6 sm:text-[0.9375rem]"
                   >
-                    How it works
+                    About Us
                   </Link>
                 </div>
               </div>
