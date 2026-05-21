@@ -114,13 +114,13 @@ export async function POST(req: Request, ctx: { params: Promise<{ id: string }> 
   } catch (e) {
     const hintFilename = wearMeGuidePdfFilename(platform);
     console.error(
-      `[fit-room][admin] missing Wear Me PDF for platform="${platform}" (expected public/guides/${hintFilename}).`,
+      `[fit-room][admin] missing Wear Me PDF for platform="${platform}" (expected public/${hintFilename}).`,
       e instanceof Error ? e.message : String(e),
     );
     return NextResponse.json(
       {
         error:
-          "Integration guide PDF is missing on this server (see public/guides). Ask an engineer to add the Wear Me guides.",
+          "Integration guide PDF is missing on this server (add files under `/public`). Ask an engineer to deploy the Wear Me guides.",
       },
       { status: 503 },
     );

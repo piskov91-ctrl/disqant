@@ -1,13 +1,13 @@
-# Wear Me PDF guides for integration emails
+# Wear Me integration PDFs
 
-Attachments are named and loaded from `/public/guides/`:
+Files are loaded from **`/public/`** at the site root (`/fitroom-….pdf`). Expected names:
 
-| Filename | Platform |
+| Platform | Filename |
 | --- | --- |
-| `fitroom-shopify-guide.pdf` | Shopify |
-| `fitroom-wordpress-guide.pdf` | WordPress |
-| `fitroom-wix-guide.pdf` | Wix |
-| `fitroom-squarespace-guide.pdf` | Squarespace |
-| `fitroom-custom-guide.pdf` | Custom / retailer “email developer” |
+| Shopify | `fitroom-shopify-simple.pdf` |
+| WordPress | `fitroom-wordpress-guide.pdf` |
+| Wix | `fitroom-wix-guide.pdf` |
+| Squarespace | `fitroom-squarespace-guide.pdf` |
+| Custom (retailer “email developer”) | `fitroom-custom-guide.pdf` |
 
-Replace these files with your final branded PDFs; attachment filenames stay as above so inboxes show the correct guide name.
+Older copies under `guides/` may still exist for reference—they are **not** used by send-email routes.

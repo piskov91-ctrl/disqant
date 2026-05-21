@@ -83,7 +83,7 @@ export async function POST(req: Request) {
     attachment = await readWearMeGuidePdfFile("custom");
   } catch (e) {
     console.error(
-      "[fit-room][retailer] missing integration PDF (custom): public/guides/wear-me-custom.pdf",
+      "[fit-room][retailer] missing integration PDF (custom): public/fitroom-custom-guide.pdf",
       e instanceof Error ? e.message : String(e),
     );
     return NextResponse.json(
