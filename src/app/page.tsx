@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { Playfair_Display } from "next/font/google";
 
 import { Footer } from "@/components/Footer";
 import { Header } from "@/components/Header";
@@ -7,6 +8,14 @@ import {
   listApprovedSubscriptionsFeedback,
   mapApprovedSubscriptionsFeedbackToSlides,
 } from "@/lib/subscriptionsFeedbackStore";
+
+/** Editorial serif for hero headline + description — home route only (see layout `font-sans`). */
+const playfairHero = Playfair_Display({
+  subsets: ["latin"],
+  display: "swap",
+  weight: ["400", "600"],
+  style: ["normal", "italic"],
+});
 
 /** Approved merchant reviews come from Redis — same source as the subscriptions page carousel. */
 export const dynamic = "force-dynamic";
@@ -26,7 +35,9 @@ export default async function Home() {
           <div className="relative z-10 mx-auto max-w-6xl px-4 py-12 sm:px-6 sm:py-16 md:py-20 lg:py-24 xl:py-28">
             <div className="grid grid-cols-1 items-center gap-10 md:grid-cols-2 md:gap-10 lg:gap-14 xl:gap-16">
               <div className="order-1 flex min-w-0 flex-col justify-center">
-                <h1 className="max-w-[min(100%,34rem)] text-balance font-serif text-4xl font-normal leading-[1.12] tracking-tight text-[#C6A77D] antialiased sm:text-5xl sm:leading-[1.1] md:text-[2.875rem] md:leading-[1.08] lg:text-6xl lg:leading-[1.06] xl:text-[3.5rem]">
+                <h1
+                  className={`${playfairHero.className} max-w-[min(100%,34rem)] text-balance text-4xl font-normal italic leading-[1.12] tracking-tight text-[#C6A77D] sm:text-5xl sm:leading-[1.1] md:text-[2.875rem] md:leading-[1.08] lg:text-6xl lg:leading-[1.06] xl:text-[3.5rem]`}
+                >
                   Give your shoppers a virtual fitting room.
                 </h1>
 
@@ -34,7 +45,9 @@ export default async function Home() {
                   The UK&apos;s first virtual try-on for online fashion stores.
                 </h2>
 
-                <p className="mt-6 max-w-[36rem] text-pretty font-sans text-base font-normal leading-[1.75] text-zinc-300 sm:mt-8 sm:text-lg sm:leading-[1.72]">
+                <p
+                  className={`${playfairHero.className} mt-6 max-w-[36rem] text-pretty text-base font-normal not-italic leading-[1.75] text-zinc-300 sm:mt-8 sm:text-lg sm:leading-[1.72]`}
+                >
                   Your customers see how your clothes, shoes, jewellery and eyewear look on them — before they
                   order. Fewer returns, more confident buyers. One line of code. Works on any website.
                 </p>
