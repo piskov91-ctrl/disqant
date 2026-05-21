@@ -22,7 +22,7 @@ export default function PrivacyPage() {
               Privacy &amp; Cookies
             </h1>
             <p className="mt-4 text-sm text-zinc-500">
-              Last updated: 26 April 2026 &middot; Fit Room is operated from the United Kingdom.
+              Last updated: 20 May 2026 &middot; Fit Room is operated from the United Kingdom.
             </p>
           </div>
         </section>
@@ -245,7 +245,35 @@ export default function PrivacyPage() {
             </div>
 
             <div>
-              <h2 className="text-lg font-semibold text-zinc-900">11. Changes to this policy</h2>
+              <h2 className="text-lg font-semibold text-zinc-900">11. Subscription try-on allowances (notice)</h2>
+              <p className="mt-3">
+                So you understand how usage limits work alongside our processing of account and billing data:
+              </p>
+              <ul className="mt-3 list-inside list-disc space-y-2 pl-1">
+                <li>
+                  Monthly try-on allowances included in your subscription do not roll over; unused try-ons expire at the
+                  end of each billing cycle.
+                </li>
+                <li>
+                  Top-up try-ons are one-time purchases valid for the current billing cycle only and expire at the next
+                  monthly billing-cycle reset.
+                </li>
+                <li>
+                  Fit Room is not liable for unused try-ons or top-ups that expire or are forfeited at a billing-cycle
+                  reset. Contractual limits are set out in our{" "}
+                  <a
+                    className="font-medium text-zinc-900 underline decoration-zinc-300 underline-offset-2 hover:decoration-zinc-500"
+                    href="/terms"
+                  >
+                    Terms &amp; Conditions
+                  </a>
+                  .
+                </li>
+              </ul>
+            </div>
+
+            <div>
+              <h2 className="text-lg font-semibold text-zinc-900">12. Changes to this policy</h2>
               <p className="mt-3">
                 We may update this Privacy &amp; Cookies policy from time to time. The &quot;Last updated&quot; date at the top will
                 change, and we will take further steps (such as email or a notice in the app) for material changes

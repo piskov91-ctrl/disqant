@@ -22,7 +22,7 @@ export default function TermsPage() {
               Terms &amp; Conditions
             </h1>
             <p className="mt-4 text-sm text-zinc-500">
-              Last updated: 26 April 2026 &middot; Governing law: England and Wales.
+              Last updated: 20 May 2026 &middot; Governing law: England and Wales.
             </p>
           </div>
         </section>
@@ -65,6 +65,16 @@ export default function TermsPage() {
                 applicable taxes, which you are responsible for where applicable. We may offer fair-use, free tiers, or
                 trials; we may end or change free allocations with notice. Failure to pay may result in suspension of the
                 Service.
+              </p>
+              <p className="mt-3">
+                <span className="text-zinc-900">Monthly try-on allowances.</span> Allowances included in your subscription
+                are allocated per billing cycle and do not roll over: unused try-ons expire at the end of each billing
+                cycle and cannot be recovered, banked, or credited against future cycles.
+              </p>
+              <p className="mt-3">
+                <span className="text-zinc-900">Top-up try-ons.</span> Top-up try-ons are one-time purchases valid only for
+                the billing cycle in which they are purchased. Unused top-up try-ons expire at the next monthly billing-cycle
+                reset and do not carry forward.
               </p>
             </div>
 
@@ -137,6 +147,11 @@ export default function TermsPage() {
                 plan, to fifty British pounds); and (b) we are not liable for any indirect, consequential, or punitive
                 damages, or loss of profit, data, or goodwill, even if advised of the possibility. These limits do not
                 apply to liability that cannot be limited under applicable law.
+              </p>
+              <p className="mt-3">
+                Without limiting the foregoing, to the fullest extent permitted by applicable law we are not liable for
+                unused subscription try-ons or unused top-up try-ons that expire or are forfeited at a billing-cycle reset,
+                including where they expire as described in section 3.
               </p>
             </div>
 
