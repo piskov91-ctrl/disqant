@@ -25,7 +25,13 @@ const plans: Plan[] = [
     description: "Perfect for independent boutiques and small online stores",
     price: "£149",
     period: "/month",
-    features: ["300 try-ons", "Email support", "Easy integration"],
+    features: [
+      "300 try-ons — enough to make a real difference",
+      "Wear Me on every product page, automatically",
+      "See which items your shoppers try on most",
+      "Email support whenever you need it",
+      "Live on your store in under 10 minutes",
+    ],
     highlighted: false,
     stripePlan: "starter",
   },
@@ -34,7 +40,14 @@ const plans: Plan[] = [
     description: "Ideal for growing fashion brands ready to scale",
     price: "£299",
     period: "/month",
-    features: ["600 try-ons", "Priority support"],
+    features: [
+      "600 try-ons — double the confidence, double the sales",
+      "Wear Me on every product page, automatically",
+      "Full analytics — know your bestsellers before they sell out",
+      "Priority support — we pick up faster",
+      "Live on your store in under 10 minutes",
+      "Top up anytime if you need more",
+    ],
     highlighted: true,
     stripePlan: "growth",
   },
@@ -43,7 +56,15 @@ const plans: Plan[] = [
     description: "Built for established retailers with a high-volume catalogue",
     price: "£599",
     period: "/month",
-    features: ["1,200 try-ons", "Dedicated support"],
+    features: [
+      "1200 try-ons — for stores that mean business",
+      "Wear Me on every product page, automatically",
+      "Advanced analytics — see exactly what your customers love",
+      "Dedicated support — your own point of contact",
+      "Live on your store in under 10 minutes",
+      "Top up anytime if you need more",
+      "Custom integration help if needed",
+    ],
     highlighted: false,
     stripePlan: "pro",
   },
@@ -52,7 +73,12 @@ const plans: Plan[] = [
     description: "For large retailers, chains and platforms. Custom setup and dedicated support included",
     price: null,
     period: null,
-    features: ["Unlimited try-ons", "Custom integration"],
+    features: [
+      "Unlimited try-ons — no cap, no worries",
+      "Everything in Premium",
+      "Custom pricing and contract",
+      "Dedicated account manager",
+    ],
     highlighted: false,
     href: "/contact",
     contactOnly: true,
@@ -120,8 +146,8 @@ export function Pricing({ sectionId = "subscriptions" }: PricingProps) {
                 )}
 
                 <ul className="mt-6 flex-1 space-y-3 text-sm text-[#F5EDE4]/85">
-                  {plan.features.map((f) => (
-                    <li key={f} className="flex gap-2">
+                  {plan.features.map((f, i) => (
+                    <li key={`${plan.name}-${i}`} className="flex gap-2">
                       <span className="shrink-0 text-[#C6A77D]" aria-hidden>
                         ✓
                       </span>
