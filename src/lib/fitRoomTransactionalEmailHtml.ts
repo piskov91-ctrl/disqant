@@ -158,6 +158,21 @@ export function transactionalParagraph(textPlain: string): string {
   return `<p style="${P}">${transactionalEscapeHtml(textPlain)}</p>`;
 }
 
+/**
+ * Multiple paragraphs separated by blank lines (admin/customer letters); single newlines become `<br />`.
+ */
+export function transactionalFormattedLetterBody(bodyPlain: string): string {
+  const trimmed = bodyPlain.trim();
+  if (!trimmed) return "";
+  return trimmed
+    .split(/\n{2,}/)
+    .map((chunk) => {
+      const inner = transactionalEscapeHtml(chunk.trim()).replace(/\n/g, "<br />\n");
+      return `<p style="${P}">${inner}</p>`;
+    })
+    .join("");
+}
+
 /** Gold fill CTA. */
 export function transactionalCtaHtml(href: string, label: string): string {
   const eh = transactionalEscapeHtml(href);

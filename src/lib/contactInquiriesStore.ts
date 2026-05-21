@@ -106,6 +106,19 @@ export async function listContactInquiries(limit: number): Promise<ContactInquir
   return out;
 }
 
+export async function getContactInquiryById(id: string): Promise<ContactInquiryRecord | null> {
+  const trimmed = id.trim();
+  if (!trimmed) return null;
+  const redis = getRedis();
+  const raw = await redis.get(recordKey(trimmed));
+  if (raw == null) return null;
+  try {
+    return JSON.parse(String(raw)) as ContactInquiryRecord;
+  } catch {
+    return null;
+  }
+}
+
 async function syncUnreadCountFromIndex(): Promise<number> {
   const redis = getRedis();
   const ids = (await redis.lrange(INDEX_KEY, 0, CONTACT_INQUIRIES_INDEX_MAX - 1)) as string[] | null;

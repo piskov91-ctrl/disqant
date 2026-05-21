@@ -464,6 +464,11 @@ export default function AdminClient() {
   const [contactInquiriesLoading, setContactInquiriesLoading] = useState(false);
   const [contactInquiriesError, setContactInquiriesError] = useState<string | null>(null);
 
+  const [contactReplyModalInquiry, setContactReplyModalInquiry] = useState<ContactInquiryRow | null>(null);
+  const [contactReplyBody, setContactReplyBody] = useState("");
+  const [contactReplyBusy, setContactReplyBusy] = useState(false);
+  const [contactReplyError, setContactReplyError] = useState<string | null>(null);
+
   const [reviewsPendingBadge, setReviewsPendingBadge] = useState(0);
   const [subscriptionReviewsPending, setSubscriptionReviewsPending] = useState<SubscriptionReviewRow[]>([]);
   const [subscriptionReviewsApproved, setSubscriptionReviewsApproved] = useState<SubscriptionReviewRow[]>([]);
@@ -719,6 +724,43 @@ export default function AdminClient() {
       setContactInquiries([]);
     } finally {
       setContactInquiriesLoading(false);
+    }
+  }
+
+  function closeContactReplyModal() {
+    setContactReplyModalInquiry(null);
+    setContactReplyBody("");
+    setContactReplyError(null);
+    setContactReplyBusy(false);
+  }
+
+  async function submitContactReply() {
+    const target = contactReplyModalInquiry;
+    if (!target) return;
+    const msg = contactReplyBody.trim();
+    if (!msg) {
+      setContactReplyError("Enter your reply before sending.");
+      return;
+    }
+    setContactReplyBusy(true);
+    setContactReplyError(null);
+    try {
+      const res = await fetch("/api/admin/contact-inquiries/reply", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id: target.id, message: msg }),
+      });
+      const data = (await res.json()) as { ok?: boolean; error?: string };
+      if (!res.ok) {
+        if (data.error === "Unauthorized.") window.location.reload();
+        setContactReplyError(data.error || "Could not send reply.");
+        return;
+      }
+      closeContactReplyModal();
+    } catch (e) {
+      setContactReplyError(e instanceof Error ? e.message : "Network error.");
+    } finally {
+      setContactReplyBusy(false);
     }
   }
 
@@ -1474,6 +1516,84 @@ export default function AdminClient() {
           </div>
         </div>
       )}
+      {contactReplyModalInquiry ? (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm sm:p-6"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="contact-reply-modal-title"
+        >
+          <div className="max-h-[90dvh] w-full max-w-lg overflow-y-auto rounded-2xl border border-zinc-700 bg-zinc-900 p-6 shadow-xl">
+            <div className="flex items-start justify-between gap-4">
+              <div className="min-w-0">
+                <p id="contact-reply-modal-title" className="text-base font-semibold text-zinc-100">
+                  Reply by email
+                </p>
+                <p className="mt-1 text-sm text-zinc-400">
+                  Sends through Resend with the branded Fit Room HTML layout (
+                  <span className="text-zinc-300">support@fit-room.com</span> by default).
+                </p>
+                <p className="mt-2 text-xs text-zinc-500">
+                  To:{" "}
+                  <span className="font-medium text-zinc-300">{contactReplyModalInquiry.email}</span>
+                  {" · "}
+                  {contactReplyModalInquiry.name}
+                </p>
+              </div>
+              <button
+                type="button"
+                disabled={contactReplyBusy}
+                onClick={closeContactReplyModal}
+                className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-zinc-600 bg-zinc-800 text-zinc-200 transition hover:border-zinc-500 hover:bg-zinc-700 disabled:opacity-45"
+                aria-label="Close"
+              >
+                ✕
+              </button>
+            </div>
+
+            <label htmlFor="contact-reply-body" className="mt-5 block text-sm font-medium text-zinc-200">
+              Message
+            </label>
+            <textarea
+              id="contact-reply-body"
+              value={contactReplyBody}
+              onChange={(e) => setContactReplyBody(e.target.value)}
+              disabled={contactReplyBusy}
+              rows={8}
+              placeholder="Write your reply…"
+              className="mt-2 block w-full resize-y rounded-xl border border-zinc-700 bg-zinc-950 px-4 py-3 text-sm leading-relaxed text-zinc-100 outline-none placeholder:text-zinc-600 focus:border-accent/60 disabled:opacity-55"
+            />
+            <p className="mt-2 text-[11px] text-zinc-500">
+              Blank lines start a new paragraph. Line breaks inside a paragraph are preserved.
+            </p>
+
+            {contactReplyError ? (
+              <div className="mt-4 rounded-xl border border-red-900/60 bg-red-950/40 px-4 py-3 text-sm text-red-200">
+                {contactReplyError}
+              </div>
+            ) : null}
+
+            <div className="mt-6 flex flex-wrap justify-end gap-3">
+              <button
+                type="button"
+                disabled={contactReplyBusy}
+                onClick={closeContactReplyModal}
+                className="inline-flex h-11 items-center justify-center rounded-full border border-zinc-600 bg-zinc-800 px-6 text-sm font-semibold text-zinc-100 transition hover:border-zinc-500 hover:bg-zinc-700 disabled:opacity-45"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                disabled={contactReplyBusy}
+                onClick={() => void submitContactReply()}
+                className="btn-accent-gradient inline-flex h-11 min-w-[7rem] items-center justify-center rounded-full px-6 text-sm font-semibold disabled:cursor-not-allowed disabled:opacity-45"
+              >
+                {contactReplyBusy ? "Sending…" : "Send email"}
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
       <AnalyticsInsightsModal
         open={analyticsInsightsOpen}
         onClose={() => setAnalyticsInsightsOpen(false)}
@@ -2440,9 +2560,23 @@ export default function AdminClient() {
                         key={inq.id}
                         className="rounded-xl border border-zinc-800 bg-zinc-950/40 px-4 py-4 md:px-5"
                       >
-                        <div className="min-w-0">
-                          <span className="font-semibold text-zinc-100">{inq.name}</span>
-                          <p className="mt-1 text-xs text-zinc-500">{when} UTC</p>
+                        <div className="flex flex-wrap items-start justify-between gap-3">
+                          <div className="min-w-0">
+                            <span className="font-semibold text-zinc-100">{inq.name}</span>
+                            <p className="mt-1 text-xs text-zinc-500">{when} UTC</p>
+                          </div>
+                          <button
+                            type="button"
+                            disabled={contactReplyBusy || Boolean(contactReplyModalInquiry)}
+                            onClick={() => {
+                              setContactReplyModalInquiry(inq);
+                              setContactReplyBody("");
+                              setContactReplyError(null);
+                            }}
+                            className="inline-flex shrink-0 items-center justify-center rounded-lg border border-sky-800/75 bg-sky-950/50 px-3 py-1.5 text-xs font-semibold uppercase tracking-wide text-sky-200 transition hover:border-sky-600/85 hover:bg-sky-950/90 disabled:cursor-not-allowed disabled:opacity-40"
+                          >
+                            Reply
+                          </button>
                         </div>
                         <div className="mt-3 grid gap-2 text-sm text-zinc-300 md:grid-cols-2">
                           <div>
