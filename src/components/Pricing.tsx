@@ -1,5 +1,5 @@
-import Link from "next/link";
 import type { SubscriptionPlanKey } from "@/lib/subscriptionPlans";
+import { EnterpriseQuoteButton } from "@/components/EnterpriseQuoteModal";
 import { StripeSubscribeButton } from "@/components/StripeSubscribeButton";
 
 type Plan = {
@@ -80,9 +80,8 @@ const plans: Plan[] = [
       "Dedicated account manager",
     ],
     highlighted: false,
-    href: "/contact",
     contactOnly: true,
-    subtitle: "Contact us",
+    subtitle: "Custom quote",
   },
 ];
 
@@ -111,8 +110,7 @@ export function Pricing({ sectionId = "subscriptions" }: PricingProps) {
         <div className="mt-14 grid gap-6 sm:grid-cols-2 xl:grid-cols-4">
           {plans.map((plan) => {
             const isContact = Boolean(plan.contactOnly);
-            const ctaLabel =
-              isContact ? "Contact us" : plan.stripePlan ? "Subscribe" : "Get Started";
+            const ctaLabel = plan.stripePlan ? "Subscribe" : "Get Started";
 
             return (
               <article
@@ -157,9 +155,7 @@ export function Pricing({ sectionId = "subscriptions" }: PricingProps) {
                 </ul>
 
                 {isContact ? (
-                  <Link href={plan.href ?? "/contact"} className="btn-accent-gradient mt-8 w-full">
-                    {ctaLabel}
-                  </Link>
+                  <EnterpriseQuoteButton className="btn-accent-gradient mt-8 w-full" />
                 ) : plan.stripePlan ? (
                   <StripeSubscribeButton
                     planKey={plan.stripePlan}
