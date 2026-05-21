@@ -6,6 +6,7 @@ import { ChevronDown } from "lucide-react";
 import { Footer } from "@/components/Footer";
 import { AnalyticsInsightsModal } from "@/components/AnalyticsInsightsModal";
 import { AdminWearMeClient } from "@/app/admin/AdminWearMeClient";
+import AdminIntegrationGuide from "@/app/admin/AdminIntegrationGuide";
 import { getNextMonthlyResetUtcDateForDisplay } from "@/lib/billingCycle";
 import { storedOrDerivedBasePlanLimit, totalTryOnsUsed, clientTryOnFullyBlocked } from "@/lib/clientTryOnBuckets";
 import { tryOnUsageFillStyle } from "@/lib/tryOnUsageBarStyle";
@@ -126,6 +127,7 @@ type AdminTab =
   | "topUps"
   | "analytics"
   | "wearMe"
+  | "integration"
   | "recovery";
 
 type AdminFashnCredits = {
@@ -1146,7 +1148,7 @@ export default function AdminClient() {
     else if (activeTab === "topUps") void loadTopUps();
     else if (activeTab === "contact") void loadContactInquiries();
     else if (activeTab === "reviews") void loadSubscriptionReviews();
-    else void loadRecovery();
+    else if (activeTab === "recovery") void loadRecovery();
   }
 
   const tabBusy =
@@ -1714,7 +1716,7 @@ export default function AdminClient() {
           </section>
 
           <div
-            className="mt-6 inline-flex rounded-full border border-zinc-800 bg-zinc-900/80 p-1"
+            className="mt-6 flex flex-wrap gap-2 rounded-full border border-zinc-800 bg-zinc-900/80 p-1"
             role="tablist"
             aria-label="Admin sections"
           >
@@ -1825,6 +1827,19 @@ export default function AdminClient() {
               }`}
             >
               Wear Me
+            </button>
+            <button
+              type="button"
+              role="tab"
+              aria-selected={activeTab === "integration"}
+              onClick={() => setActiveTab("integration")}
+              className={`rounded-full px-5 py-2 text-sm font-semibold transition ${
+                activeTab === "integration"
+                  ? "bg-zinc-800 text-zinc-100 shadow-sm"
+                  : "text-zinc-500 hover:text-zinc-300"
+              }`}
+            >
+              Integration Guide
             </button>
             <button
               type="button"
@@ -2600,6 +2615,8 @@ export default function AdminClient() {
                 </div>
               )}
             </section>
+          ) : activeTab === "integration" ? (
+            <AdminIntegrationGuide />
           ) : (
             <section className="mt-8 w-full space-y-6">
               {analyticsError ? (
