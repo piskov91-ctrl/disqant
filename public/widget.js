@@ -93,7 +93,7 @@
       + "opacity:0;transition:opacity .18s ease;}"
       + ".dq-backdrop.dq-open{opacity:1;}"
       + ".dq-backdrop.dq-dismiss-locked{cursor:default;-webkit-user-select:none;user-select:none;}"
-      + ".dq-modal{width:min(720px,100%);min-height:0;max-height:calc(100vh - 28px);max-height:min(90vh,calc(100dvh - 28px));background:#fff;"
+      + ".dq-modal{position:relative;width:min(720px,100%);min-height:0;max-height:calc(100vh - 28px);max-height:min(90vh,calc(100dvh - 28px));background:#fff;"
       + "border:1px solid rgba(15,15,20,.08);border-radius:20px;overflow:hidden;"
       + "box-shadow:0 30px 80px rgba(0,0,0,.30);"
       + "display:flex;flex-direction:column;"
@@ -103,16 +103,15 @@
       + ".dq-backdrop.dq-closing{opacity:0;}"
       + ".dq-backdrop.dq-closing .dq-modal{transform:translateY(10px) scale(.985);opacity:0;}"
 
-      // Scroll shell (sticky header lives inside so close stays visible while scrolling)
-      + ".dq-scroll{flex:1 1 0%;min-height:0;display:flex;flex-direction:column;"
-      + "overflow-x:hidden;overflow-y:auto;-webkit-overflow-scrolling:touch;"
-      + "overscroll-behavior:contain;touch-action:pan-y;}"
+      // Close button pinned to modal corner (above scrolling body)
+      + ".dq-modal-close{position:absolute;top:max(10px, env(safe-area-inset-top, 0px));"
+      + "right:max(10px, env(safe-area-inset-right, 0px));z-index:50;}"
 
       // Header
-      + ".dq-head{display:flex;align-items:center;justify-content:space-between;"
+      + ".dq-head{display:flex;align-items:center;justify-content:flex-start;flex-shrink:0;"
       + "padding:12px 12px;padding-left:max(12px, env(safe-area-inset-left, 0px));"
-      + "padding-right:max(12px, env(safe-area-inset-right, 0px));padding-top:max(12px, env(safe-area-inset-top, 0px));"
-      + "border-bottom:1px solid rgba(15,15,20,.08);background:#fff;position:sticky;top:0;z-index:20;flex-shrink:0;}"
+      + "padding-right:max(56px,calc(60px + env(safe-area-inset-right, 0px)));padding-top:max(12px, env(safe-area-inset-top, 0px));"
+      + "border-bottom:1px solid rgba(15,15,20,.08);background:#fff;}"
       + ".dq-head-title{font:900 13px/1 system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;"
       + "letter-spacing:.25px;color:#0f0f14;}"
       + ".dq-x{appearance:none;display:inline-flex;align-items:center;justify-content:center;"
@@ -123,8 +122,9 @@
       + ".dq-x:active{transform:translateY(0);}"
 
       // Body
-      + ".dq-body{flex:1 1 auto;min-height:0;padding:12px;display:flex;flex-direction:column;gap:12px;"
-      + "overflow-x:hidden;}"
+      + ".dq-body{flex:1 1 0%;min-height:0;padding:12px;display:flex;flex-direction:column;gap:12px;"
+      + "overflow-x:hidden;overflow-y:auto;-webkit-overflow-scrolling:touch;"
+      + "overscroll-behavior:contain;touch-action:pan-y;}"
       + ".dq-stage{position:relative;width:100%;height:min(72vh,560px);"
       + "border-radius:18px;border:1px solid rgba(15,15,20,.10);"
       + "background:linear-gradient(180deg,#ffffff,#fbfbfd);"
@@ -208,7 +208,7 @@
       + ".dq-save:hover{transform:translateY(-1px);box-shadow:0 14px 30px rgba(0,0,0,.09);}"
 
       // Branding
-      + ".dq-brand{flex-shrink:0;margin-top:auto;padding:12px 12px;"
+      + ".dq-brand{flex-shrink:0;padding:12px 12px;"
       + "padding-bottom:max(12px, env(safe-area-inset-bottom, 0px));border-top:1px solid rgba(15,15,20,.08);"
       + "display:flex;align-items:center;justify-content:flex-start;background:#fff;}"
       + ".dq-brand span{font:900 12px/1 system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;color:#0f0f14;letter-spacing:.25px;}"
@@ -360,13 +360,12 @@
     headTitle.textContent = "Try On";
 
     var close = document.createElement("button");
-    close.className = "dq-x";
+    close.className = "dq-x dq-modal-close";
     close.type = "button";
     close.setAttribute("aria-label", "Close");
     close.textContent = "✕";
 
     head.appendChild(headTitle);
-    head.appendChild(close);
 
     var body = document.createElement("div");
     body.className = "dq-body";
@@ -380,12 +379,10 @@
     brand.appendChild(brandName);
     brand.appendChild(brandSub);
 
-    var scroll = document.createElement("div");
-    scroll.className = "dq-scroll";
-    scroll.appendChild(head);
-    scroll.appendChild(body);
-    scroll.appendChild(brand);
-    modal.appendChild(scroll);
+    modal.appendChild(close);
+    modal.appendChild(head);
+    modal.appendChild(body);
+    modal.appendChild(brand);
     backdrop.appendChild(modal);
 
     function onKeyDown(e) {
