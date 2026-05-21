@@ -1,5 +1,6 @@
 import { Resend } from "resend";
 import { recordEnterpriseQuote } from "@/lib/enterpriseQuoteInquiriesStore";
+import { resolveWebsiteFormEmailFrom } from "@/lib/fitRoomEmail";
 import { incrementOutboundEmailSentCounters } from "@/lib/fitRoomEmailSentCounters";
 import {
   transactionalParagraph,
@@ -10,23 +11,6 @@ import {
 export const runtime = "nodejs";
 
 const TO_EMAIL = (process.env.CONTACT_TO ?? "support@fit-room.com").trim();
-const CONTACT_FORM_FROM_DEFAULT = "Fit Room <website@fit-room.com>";
-
-function extractBareEmail(fromHeaderStyle: string): string {
-  const t = fromHeaderStyle.trim();
-  const m = t.match(/<([^>]+)>/);
-  return (m ? m[1] : t).trim().toLowerCase();
-}
-
-function resolveContactFormFrom(): string {
-  const explicit = process.env.CONTACT_FORM_FROM?.trim();
-  if (explicit) return explicit;
-  const fallback = CONTACT_FORM_FROM_DEFAULT;
-  if (extractBareEmail(fallback) === extractBareEmail(TO_EMAIL)) {
-    return "Fit Room <noreply@fit-room.com>";
-  }
-  return fallback;
-}
 
 const VISITOR_SET = new Set(["under-10k", "10k-50k", "50k-100k", "100k-500k", "500k-plus"]);
 const VISITOR_LABEL: Record<string, string> = {
@@ -61,7 +45,7 @@ function normalizeWebsiteInput(raw: string) {
 }
 
 export async function POST(req: Request) {
-  const apiKey = process.env.RESEND_API_KEY;
+  const apiKey = process.env.RESEND_API_KEY?.trim();
   if (!apiKey) {
     return Response.json(
       { error: "Email is not configured. Set RESEND_API_KEY for this environment." },
@@ -146,10 +130,7 @@ export async function POST(req: Request) {
       ) + transactionalSnippetBlock(text),
   });
 
-  let from = resolveContactFormFrom();
-  if (extractBareEmail(from) === extractBareEmail(TO_EMAIL)) {
-    from = CONTACT_FORM_FROM_DEFAULT;
-  }
+  const from = resolveWebsiteFormEmailFrom();
 
   const resend = new Resend(apiKey);
   const { error } = await resend.emails.send({

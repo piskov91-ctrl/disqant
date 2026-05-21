@@ -6,7 +6,7 @@ export type FitRoomEmailAttachment =
   | { filename: string; content: Uint8Array }
   | { filename: string; content: string };
 
-/** Default sender for Fit Room transactional mail (verify fit-room.com in Resend). */
+/** Default sender header for Fit Room (verify domain in Resend). Display name “Fit Room”, mailbox {@code support@fit-room.com}. */
 const DEFAULT_FROM = "Fit Room <support@fit-room.com>";
 
 /** Truncate long strings for readable server logs (HTML can be several KB). */
@@ -70,11 +70,22 @@ export function isFitRoomEmailConfigured(): boolean {
 }
 
 /**
- * Verified `from` for Resend. Optional `FIT_ROOM_EMAIL_FROM` overrides the default (Fit Room plus support@fit-room.com).
+ * `from` header for transactional mail (signup, dashboards, quotas, install instructions, etc.).
+ * Optional `FIT_ROOM_EMAIL_FROM` env overrides (full RFC string, e.g. `Fit Room <support@fit-room.com>`).
  */
 export function resolveFitRoomEmailFrom(): string {
   const fromEnv = process.env.FIT_ROOM_EMAIL_FROM?.trim();
   return fromEnv || DEFAULT_FROM;
+}
+
+/**
+ * Staff notifications from website flows (`/api/contact`, `/api/enterprise-quote`).
+ * Optional `CONTACT_FORM_FROM` overrides; otherwise identical to {@link resolveFitRoomEmailFrom}.
+ */
+export function resolveWebsiteFormEmailFrom(): string {
+  const contactFormExplicit = process.env.CONTACT_FORM_FROM?.trim();
+  if (contactFormExplicit) return contactFormExplicit;
+  return resolveFitRoomEmailFrom();
 }
 
 export async function sendFitRoomPlainTextMail(params: {

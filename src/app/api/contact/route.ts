@@ -1,5 +1,5 @@
 import { Resend } from "resend";
-import { sendFitRoomMail } from "@/lib/fitRoomEmail";
+import { resolveWebsiteFormEmailFrom, sendFitRoomMail } from "@/lib/fitRoomEmail";
 import { incrementOutboundEmailSentCounters } from "@/lib/fitRoomEmailSentCounters";
 import { recordContactInquiry } from "@/lib/contactInquiriesStore";
 import {
@@ -9,29 +9,6 @@ import {
 } from "@/lib/fitRoomTransactionalEmailHtml";
 
 const TO_EMAIL = (process.env.CONTACT_TO ?? "support@fit-room.com").trim();
-
-/**
- * Outbound sender for the contact form — must not be the same mailbox as {@link TO_EMAIL}.
- * Sending From support@ → To support@ often never reaches external forwarding (Hostinger → Gmail);
- * Resend still accepts the API call, so it looks "logged" only.
- */
-const CONTACT_FORM_FROM_DEFAULT = "Fit Room <website@fit-room.com>";
-
-function extractBareEmail(fromHeaderStyle: string): string {
-  const t = fromHeaderStyle.trim();
-  const m = t.match(/<([^>]+)>/);
-  return (m ? m[1] : t).trim().toLowerCase();
-}
-
-function resolveContactFormFrom(): string {
-  const explicit = process.env.CONTACT_FORM_FROM?.trim();
-  if (explicit) return explicit;
-  const fallback = CONTACT_FORM_FROM_DEFAULT;
-  if (extractBareEmail(fallback) === extractBareEmail(TO_EMAIL)) {
-    return "Fit Room <noreply@fit-room.com>";
-  }
-  return fallback;
-}
 
 const VISITOR_OPTIONS = new Set(["under-10k", "10k-50k", "50k-100k", "100k-plus"]);
 
@@ -191,10 +168,7 @@ export async function POST(req: Request) {
       ) + transactionalSnippetBlock(text),
   });
 
-  let from = resolveContactFormFrom();
-  if (extractBareEmail(from) === extractBareEmail(TO_EMAIL)) {
-    from = CONTACT_FORM_FROM_DEFAULT;
-  }
+  const from = resolveWebsiteFormEmailFrom();
 
   console.log("[fit-room][contact-api] sending staff notification via Resend", {
     inquiryId,
