@@ -4,6 +4,8 @@ import { StripeSubscribeButton } from "@/components/StripeSubscribeButton";
 
 type Plan = {
   name: string;
+  /** Marketing line under tier name — subscriptions page copy. */
+  description: string;
   price: string | null;
   period: string | null;
   features: readonly string[];
@@ -19,36 +21,35 @@ type Plan = {
 
 const plans: Plan[] = [
   {
-    name: "Starter",
+    name: "Boutique",
+    description: "Perfect for independent boutiques and small online stores",
     price: "£149",
     period: "/month",
-    features: [
-      "300 try-ons",
-      "For small stores",
-      "Email support",
-      "Easy integration",
-    ],
+    features: ["300 try-ons", "Email support", "Easy integration"],
     highlighted: false,
     stripePlan: "starter",
   },
   {
-    name: "Growth",
+    name: "Studio",
+    description: "Ideal for growing fashion brands ready to scale",
     price: "£299",
     period: "/month",
-    features: ["600 try-ons", "For growing stores", "Priority support"],
+    features: ["600 try-ons", "Priority support"],
     highlighted: true,
     stripePlan: "growth",
   },
   {
-    name: "Pro",
+    name: "Premium",
+    description: "Built for established retailers with a high-volume catalogue",
     price: "£599",
     period: "/month",
-    features: ["1,200 try-ons", "For large stores", "Dedicated support"],
+    features: ["1,200 try-ons", "Dedicated support"],
     highlighted: false,
     stripePlan: "pro",
   },
   {
     name: "Enterprise",
+    description: "For large retailers, chains and platforms. Custom setup and dedicated support included",
     price: null,
     period: null,
     features: ["Unlimited try-ons", "Custom integration"],
@@ -103,6 +104,7 @@ export function Pricing({ sectionId = "subscriptions" }: PricingProps) {
                 )}
 
                 <h3 className="text-lg font-semibold text-[#F5EDE4]">{plan.name}</h3>
+                <p className="mt-3 text-sm leading-relaxed text-[#F5EDE4]/70">{plan.description}</p>
 
                 {isContact ? (
                   <p className="mt-6 min-h-[3.5rem] text-2xl font-semibold tracking-tight text-[#F5EDE4]">
