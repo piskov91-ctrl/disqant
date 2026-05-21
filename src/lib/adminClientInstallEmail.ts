@@ -1,6 +1,14 @@
 /**
- * Clipboard-ready onboarding emails sent from admin (Clients tab). Plain text only.
+ * Onboarding emails from admin (Clients tab): clipboard (`buildAdminClientInstallClipboardText`)
+ * or sent multipart mail (`buildAdminClientInstallPlainEmailBody` + HTML).
  */
+
+import {
+  transactionalEscapeHtml,
+  transactionalParagraph,
+  transactionalSnippetBlock,
+  wrapFitRoomTransactionalHtml,
+} from "@/lib/fitRoomTransactionalEmailHtml";
 
 export type AdminClientInstallPlatform = "shopify" | "wordpress" | "wix" | "squarespace" | "custom";
 
@@ -12,7 +20,7 @@ export const ADMIN_CLIENT_INSTALL_EMAIL_PLATFORMS: readonly {
   { id: "wordpress", label: "WordPress" },
   { id: "wix", label: "Wix" },
   { id: "squarespace", label: "Squarespace" },
-  { id: "custom", label: "Custom / Other" },
+  { id: "custom", label: "Custom" },
 ];
 
 function sanitizeStoreLabel(name: string): string {
@@ -165,6 +173,86 @@ export function buildAdminClientInstallClipboardText(opts: {
   widgetSnippet: string;
 }): string {
   const subject = subjectFor(opts.platform, opts.storeName);
-  const body = buildBody(opts);
+  const body = buildAdminClientInstallPlainEmailBody(opts);
   return `Subject: ${subject}\n\n${body}`;
+}
+
+/** Subject for the sent install email (no "Subject:" prefix). */
+export function buildAdminClientInstallEmailSubject(platform: AdminClientInstallPlatform, storeName: string): string {
+  return subjectFor(platform, storeName);
+}
+
+/** Plain multipart body matching the clipboard copy (sans subject line). */
+export function buildAdminClientInstallPlainEmailBody(opts: {
+  platform: AdminClientInstallPlatform;
+  storeName: string;
+  widgetSnippet: string;
+}): string {
+  return buildBody(opts);
+}
+
+const sectionHeadingHtml = (text: string) =>
+  `<h2 style="margin:22px 0 12px;font-family:Georgia,'Times New Roman',serif;font-size:17px;font-weight:600;line-height:1.3;color:#C6A77D;">${transactionalEscapeHtml(text)}</h2>`;
+
+/** Fit Room transactional HTML counterpart to {@link buildAdminClientInstallPlainEmailBody}. */
+export function buildAdminClientInstallEmailHtml(opts: {
+  platform: AdminClientInstallPlatform;
+  storeName: string;
+  widgetSnippet: string;
+  emailSubjectLine: string;
+}): string {
+  const who = sanitizeStoreLabel(opts.storeName);
+  const platformLabel = platformFriendlyName(opts.platform);
+  const steps = numberedSteps(opts.platform);
+
+  const signOff =
+    transactionalParagraph(opts.platform === "custom" ? "Thanks for letting us nerd out alongside you." : "Cheering you on.") +
+    transactionalParagraph(opts.platform === "custom" ? "Fit Room" : "The Fit Room team");
+
+  let innerHtml: string;
+
+  if (opts.platform === "custom") {
+    innerHtml =
+      transactionalParagraph(`Hi ${who},`) +
+      transactionalParagraph(
+        `We've lined up Wear Me virtual try-on so shoppers can audition pieces on-photo before committing. Sharing the snippet and context below—sometimes it's quickest to lob this straight across to whoever tinkers behind the scenes.`,
+      ) +
+      sectionHeadingHtml(`What devs usually need (${platformLabel === "your stack" ? "custom setups" : platformLabel})`) +
+      transactionalSnippetBlock(steps) +
+      transactionalParagraph("Paste once, leave it untouched afterwards:") +
+      transactionalSnippetBlock(opts.widgetSnippet) +
+      transactionalParagraph(
+        "When it's behaving, PDP galleries should tuck a discreet Wear Me control beside hero imagery—it's unobtrusive until someone taps.",
+      ) +
+      transactionalParagraph(
+        "If fingerprints get smudgy (CSP, consent gating, headless quirks), punt the thread back—we'll riff with them until calm waters.",
+      ) +
+      signOff;
+  } else {
+    innerHtml =
+      transactionalParagraph(`Hi ${who},`) +
+      transactionalParagraph(
+        `Your Wear Me snippet is humming on our servers—whatever's left is a five-minute housekeeping moment inside ${platformLabel}.`,
+      ) +
+      sectionHeadingHtml(`${platformLabel} walkthrough`) +
+      transactionalSnippetBlock(steps) +
+      transactionalParagraph("Paste this intact (one line—please don't tweak the key tucked inside):") +
+      transactionalSnippetBlock(opts.widgetSnippet) +
+      transactionalParagraph(
+        "Post-save, skim a PDP in quiet browsing mode; you ought to glimpse Wear Me perched near product photography. If vibes feel off—cache, staged themes, unpublished edits—shoot a reply and we'll chase it.",
+      ) +
+      signOff;
+  }
+
+  const preheader =
+    opts.platform === "custom"
+      ? "Wear Me snippet and dev notes inside."
+      : `Quick ${platformFriendlyName(opts.platform)} steps for Wear Me virtual try-on.`;
+
+  return wrapFitRoomTransactionalHtml({
+    documentTitle: opts.emailSubjectLine.slice(0, 72),
+    preheader,
+    heading: opts.platform === "custom" ? "Wear Me — dev hand-off" : `Wear Me on ${platformLabel}`,
+    innerHtml,
+  });
 }

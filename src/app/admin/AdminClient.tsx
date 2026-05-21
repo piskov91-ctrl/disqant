@@ -13,7 +13,6 @@ import { tryOnUsageFillStyle } from "@/lib/tryOnUsageBarStyle";
 import {
   ADMIN_CLIENT_INSTALL_EMAIL_PLATFORMS,
   type AdminClientInstallPlatform,
-  buildAdminClientInstallClipboardText,
 } from "@/lib/adminClientInstallEmail";
 
 type KeyRecord = {
@@ -34,6 +33,11 @@ type KeyRecord = {
   usageNinetyNinePctEmailSentForLimit?: number;
   createdAt: string;
 };
+
+function isBareContactEmail(email: string | undefined): boolean {
+  const t = email?.trim() ?? "";
+  return t.length > 0 && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(t);
+}
 
 function formatKeyCreatedUtc(iso: string): string {
   const d = new Date(iso);
@@ -467,8 +471,9 @@ export default function AdminClient() {
   const [subscriptionReviewsError, setSubscriptionReviewsError] = useState<string | null>(null);
   const [subscriptionModerationBusyId, setSubscriptionModerationBusyId] = useState<string | null>(null);
 
-  const [copyEmailMenuClientId, setCopyEmailMenuClientId] = useState<string | null>(null);
-  const [copyEmailFlashId, setCopyEmailFlashId] = useState<string | null>(null);
+  const [sendInstallMenuClientId, setSendInstallMenuClientId] = useState<string | null>(null);
+  const [sendInstallBusyClientId, setSendInstallBusyClientId] = useState<string | null>(null);
+  const [sendInstallResult, setSendInstallResult] = useState<{ clientId: string; toEmail: string } | null>(null);
 
   type QuotaEmailPreviewPayload = {
     subject: string;
@@ -947,14 +952,14 @@ export default function AdminClient() {
   }, [activeTab]); // eslint-disable-line react-hooks/exhaustive-deps -- loaders are not memoised; tab key is intentional.
 
   useEffect(() => {
-    if (copyEmailMenuClientId === null) return undefined;
+    if (sendInstallMenuClientId === null) return undefined;
     const onDocDown = (e: MouseEvent) => {
       const el = e.target;
-      if (el instanceof Element && el.closest("[data-admin-copy-email-root]")) return;
-      setCopyEmailMenuClientId(null);
+      if (el instanceof Element && el.closest("[data-admin-send-install-email-root]")) return;
+      setSendInstallMenuClientId(null);
     };
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") setCopyEmailMenuClientId(null);
+      if (e.key === "Escape") setSendInstallMenuClientId(null);
     };
     document.addEventListener("mousedown", onDocDown, true);
     document.addEventListener("keydown", onKey);
@@ -962,7 +967,13 @@ export default function AdminClient() {
       document.removeEventListener("mousedown", onDocDown, true);
       document.removeEventListener("keydown", onKey);
     };
-  }, [copyEmailMenuClientId]);
+  }, [sendInstallMenuClientId]);
+
+  useEffect(() => {
+    if (sendInstallResult === null) return undefined;
+    const t = window.setTimeout(() => setSendInstallResult(null), 6200);
+    return () => clearTimeout(t);
+  }, [sendInstallResult]);
 
   useEffect(() => {
     if (!quotaPreviewOpen) return;
@@ -1099,31 +1110,36 @@ export default function AdminClient() {
     }
   }
 
-  async function copyClientInstallEmail(rec: KeyRecord, platform: AdminClientInstallPlatform) {
-    const snippet = buildWidgetSnippet(rec.key);
-    const text = buildAdminClientInstallClipboardText({
-      platform,
-      storeName: rec.clientName,
-      widgetSnippet: snippet,
-    });
-    try {
-      await navigator.clipboard.writeText(text);
-    } catch {
-      const ta = document.createElement("textarea");
-      ta.value = text;
-      ta.style.position = "fixed";
-      ta.style.left = "-9999px";
-      document.body.appendChild(ta);
-      ta.focus();
-      ta.select();
-      document.execCommand("copy");
-      document.body.removeChild(ta);
+  async function sendClientInstallGuideEmail(rec: KeyRecord, platform: AdminClientInstallPlatform) {
+    const contact = rec.contactEmail?.trim() ?? "";
+    if (!isBareContactEmail(contact)) {
+      setError("Add a valid contact email for this client (Edit) before sending.");
+      setSendInstallMenuClientId(null);
+      return;
     }
-    setCopyEmailMenuClientId(null);
-    setCopyEmailFlashId(rec.id);
-    window.setTimeout(() => {
-      setCopyEmailFlashId((cur) => (cur === rec.id ? null : cur));
-    }, 2200);
+    setError(null);
+    setSendInstallMenuClientId(null);
+    setSendInstallBusyClientId(rec.id);
+    try {
+      const res = await fetch(`/api/admin/keys/${encodeURIComponent(rec.id)}/send-install-email`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ platform }),
+      });
+      const data = (await res.json()) as { ok?: boolean; sentTo?: string; error?: string };
+      if (!res.ok) {
+        if (data.error === "Unauthorized.") window.location.reload();
+        setError(data.error ?? "Failed to send install email.");
+        return;
+      }
+      if (typeof data.sentTo === "string") {
+        setSendInstallResult({ clientId: rec.id, toEmail: data.sentTo });
+      }
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Failed to send install email.");
+    } finally {
+      setSendInstallBusyClientId(null);
+    }
   }
 
   async function copyRawKey(apiKey: string) {
@@ -2123,50 +2139,68 @@ export default function AdminClient() {
                               </button>
                             </div>
                             <div className="text-center">
-                              <div
-                                className="relative inline-flex flex-col items-center"
-                                data-admin-copy-email-root
-                              >
-                                <button
-                                  type="button"
-                                  aria-expanded={copyEmailMenuClientId === k.id}
-                                  aria-haspopup="listbox"
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    setCopyEmailMenuClientId((cur) => (cur === k.id ? null : k.id));
-                                  }}
-                                  className={`inline-flex h-9 min-w-[7.25rem] items-center justify-center rounded-full border px-3 text-sm font-semibold transition hover:border-[#c6a77d]/50 hover:bg-zinc-800 ${
-                                    copyEmailFlashId === k.id
-                                      ? "border-emerald-700/65 bg-emerald-950/50 text-emerald-100"
-                                      : copyEmailMenuClientId === k.id
-                                        ? "border-[#c6a77d]/60 bg-[#2c241f]/85 text-[#e8dcc8]"
-                                        : "border-zinc-600 bg-zinc-800 text-zinc-100 hover:border-zinc-500"
-                                  }`}
-                                >
-                                  {copyEmailFlashId === k.id ? "Copied" : "Copy Email"}
-                                </button>
-                                {copyEmailMenuClientId === k.id ? (
-                                  <div
-                                    className="absolute right-0 top-full z-[60] mt-1 min-w-[12.5rem] rounded-xl border border-zinc-600/90 bg-zinc-900 py-1.5 shadow-2xl shadow-black/55 ring-1 ring-[#C6A77D]/20"
-                                    role="listbox"
-                                    aria-label={`Email template platform for ${k.clientName}`}
-                                  >
-                                    {ADMIN_CLIENT_INSTALL_EMAIL_PLATFORMS.map(({ id: pid, label }) => (
-                                      <button
-                                        key={pid}
-                                        type="button"
-                                        role="option"
-                                        className="block w-full px-4 py-2.5 text-left text-sm text-zinc-100 transition hover:bg-zinc-800 hover:text-[#e8dcc8]"
-                                        onClick={(e) => {
-                                          e.preventDefault();
-                                          void copyClientInstallEmail(k, pid);
-                                        }}
-                                      >
-                                        {label}
-                                      </button>
-                                    ))}
+                              <div data-admin-send-install-email-root className="inline-flex justify-center">
+                                {sendInstallResult?.clientId === k.id ? (
+                                  <div className="flex min-h-9 items-center justify-center px-1">
+                                    <p
+                                      className="max-w-[14rem] break-words text-center text-xs font-semibold leading-snug text-emerald-300"
+                                      title={sendInstallResult.toEmail}
+                                    >
+                                      Email sent to {sendInstallResult.toEmail}
+                                    </p>
                                   </div>
-                                ) : null}
+                                ) : (
+                                  <div className="relative inline-flex flex-col items-center gap-1">
+                                    <button
+                                      type="button"
+                                      disabled={sendInstallBusyClientId === k.id || !isBareContactEmail(k.contactEmail)}
+                                      aria-expanded={sendInstallMenuClientId === k.id}
+                                      aria-haspopup="listbox"
+                                      title={
+                                        isBareContactEmail(k.contactEmail)
+                                          ? undefined
+                                          : "Add a contact email via Edit to send."
+                                      }
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        if (sendInstallBusyClientId === k.id) return;
+                                        setSendInstallMenuClientId((cur) => (cur === k.id ? null : k.id));
+                                      }}
+                                      className={`inline-flex h-9 min-w-[8.75rem] max-w-[14rem] items-center justify-center rounded-full border px-3 text-center text-sm font-semibold transition enabled:hover:border-[#c6a77d]/50 enabled:hover:bg-zinc-800 disabled:cursor-not-allowed disabled:border-zinc-700 disabled:bg-zinc-900 disabled:text-zinc-500 ${
+                                        sendInstallMenuClientId === k.id
+                                          ? "border-[#c6a77d]/60 bg-[#2c241f]/85 text-[#e8dcc8]"
+                                          : "border-zinc-600 bg-zinc-800 text-zinc-100 hover:border-zinc-500"
+                                      }`}
+                                    >
+                                      <span className="truncate px-0.5">
+                                        {sendInstallBusyClientId === k.id ? "Sending…" : "Send Email"}
+                                      </span>
+                                    </button>
+                                    {sendInstallMenuClientId === k.id ? (
+                                      <div
+                                        className="absolute right-0 top-full z-[60] mt-1 min-w-[12.5rem] rounded-xl border border-zinc-600/90 bg-zinc-900 py-1.5 shadow-2xl shadow-black/55 ring-1 ring-[#C6A77D]/20"
+                                        role="listbox"
+                                        aria-label={`Install guide platform for ${k.clientName}`}
+                                      >
+                                        {ADMIN_CLIENT_INSTALL_EMAIL_PLATFORMS.map(({ id: pid, label }) => (
+                                          <button
+                                            key={pid}
+                                            type="button"
+                                            role="option"
+                                            disabled={sendInstallBusyClientId === k.id}
+                                            className="block w-full px-4 py-2.5 text-left text-sm text-zinc-100 transition hover:bg-zinc-800 hover:text-[#e8dcc8] disabled:pointer-events-none disabled:text-zinc-600"
+                                            onClick={(e) => {
+                                              e.preventDefault();
+                                              void sendClientInstallGuideEmail(k, pid);
+                                            }}
+                                          >
+                                            {label}
+                                          </button>
+                                        ))}
+                                      </div>
+                                    ) : null}
+                                  </div>
+                                )}
                               </div>
                             </div>
                             <div className="text-center">
