@@ -189,6 +189,23 @@ export type RetailerUser = {
 
 export type RetailerPublic = Omit<RetailerUser, "passwordSalt" | "passwordHash" | "stripeSubscriptionId" | "stripeCustomerId">;
 
+/**
+ * One-time try-on top-ups require a live Fit Room Stripe subscription: no cancellation requested,
+ * and (when set after cancel) billing access has not elapsed.
+ */
+export function retailerEligibleForTryOnTopUps(
+  user: Pick<RetailerUser, "stripeSubscriptionId" | "subscriptionCanceledAt" | "subscriptionAccessUntil">,
+): boolean {
+  if (!user.stripeSubscriptionId?.trim()) return false;
+  if (user.subscriptionCanceledAt?.trim()) return false;
+  const untilRaw = user.subscriptionAccessUntil?.trim();
+  if (untilRaw) {
+    const endMs = Date.parse(untilRaw);
+    if (Number.isFinite(endMs) && endMs <= Date.now()) return false;
+  }
+  return true;
+}
+
 export function toPublicRetailer(u: RetailerUser): RetailerPublic {
   const {
     passwordSalt: _s,

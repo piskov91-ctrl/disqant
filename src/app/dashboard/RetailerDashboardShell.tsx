@@ -104,6 +104,8 @@ export type RetailerDashboardShellProps = {
   websiteUrl: string | null;
   planSummary: RetailerPlanSummary;
   subscriptionBilling: DashboardSubscriptionBillingProps;
+  /** Fixed packs require a renewing Fit Room Stripe subscription (not cancelled). */
+  topUpEligible: boolean;
   apiKey: string;
   /** Subscription bucket usage (`usageCount`). */
   initialPlanUsed: number;
@@ -144,6 +146,7 @@ function RetailerDashboardShellInner({
   websiteUrl,
   planSummary,
   subscriptionBilling,
+  topUpEligible,
   apiKey,
   initialPlanUsed,
   initialBasePlanLimit,
@@ -659,12 +662,36 @@ function RetailerDashboardShellInner({
                     </div>
                   ) : (
                     <p className="text-sm text-zinc-600">
-                      No top-up bucket yet—add try-ons below whenever you need extra capacity beyond your plan.
+                      {topUpEligible ? (
+                        <>
+                          No top-up bucket yet—add try-ons below whenever you need extra capacity beyond your plan.
+                        </>
+                      ) : (
+                        <>
+                          With an active Fit Room plan you can purchase extra try-ons as one-off bundles anytime from this
+                          page.
+                        </>
+                      )}
                     </p>
                   )}
                 </div>
 
-                <DashboardTopUpPanel />
+                {topUpEligible ? (
+                  <DashboardTopUpPanel />
+                ) : (
+                  <section className="rounded-3xl border border-zinc-600/35 bg-black/38 p-7 shadow-inner shadow-black/40 backdrop-blur-xl md:p-9">
+                    <p className="text-[11px] font-semibold uppercase tracking-[0.26em] text-zinc-500">Try-on top-ups</p>
+                    <p className="mt-4 max-w-xl text-sm leading-relaxed text-zinc-400">
+                      Top-ups are available with an active Fit Room plan. Subscribe to unlock additional try-ons anytime.
+                    </p>
+                    <Link
+                      href="/subscriptions"
+                      className="mt-6 inline-flex w-fit items-center rounded-full border border-[#c6a77d]/45 bg-[#c6a77d]/12 px-5 py-2.5 text-sm font-semibold text-[#f0e6d8] transition hover:border-[#d4bc94]/55 hover:bg-[#c6a77d]/22"
+                    >
+                      View subscriptions
+                    </Link>
+                  </section>
+                )}
               </div>
             </div>
           </div>

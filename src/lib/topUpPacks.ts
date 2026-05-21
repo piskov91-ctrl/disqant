@@ -1,8 +1,8 @@
 /** Value for Stripe Checkout Session `metadata.checkout_kind` (webhook routing). */
 export const STRIPE_TOP_UP_CHECKOUT_KIND = "top_up" as const;
 
-/** £0.55 per try-on — same unit rate as the smallest fixed pack (100 × £0.55 = £55). */
-export const TOP_UP_CUSTOM_PENCE_PER_TRY_ON = 55 as const;
+/** £0.40 per try-on — fixed packs use the same unit rate (100 × £0.40 = £40). */
+export const TOP_UP_CUSTOM_PENCE_PER_TRY_ON = 40 as const;
 
 export const TOP_UP_CUSTOM_MIN_TRY_ONS = 50 as const;
 
@@ -42,9 +42,9 @@ export type TopUpPack = {
 };
 
 export const TOP_UP_PACKS: readonly TopUpPack[] = [
-  { id: "100", tryOns: 100, amountGbpPence: 5500, label: "100 try-ons — £55" },
-  { id: "300", tryOns: 300, amountGbpPence: 15500, label: "300 try-ons — £155" },
-  { id: "500", tryOns: 500, amountGbpPence: 24500, label: "500 try-ons — £245" },
+  { id: "100", tryOns: 100, amountGbpPence: 4000, label: "100 try-ons — £40" },
+  { id: "300", tryOns: 300, amountGbpPence: 12000, label: "300 try-ons — £120" },
+  { id: "500", tryOns: 500, amountGbpPence: 20000, label: "500 try-ons — £200" },
 ] as const;
 
 const byId: Record<TopUpPackId, TopUpPack> = {

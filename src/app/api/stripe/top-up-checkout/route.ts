@@ -1,5 +1,5 @@
 import { getStripe, checkoutSiteOrigin } from "@/lib/stripeServer";
-import { getRetailerSessionUser } from "@/lib/retailerAuth";
+import { getRetailerSessionUser, retailerEligibleForTryOnTopUps } from "@/lib/retailerAuth";
 import {
   STRIPE_TOP_UP_CHECKOUT_KIND,
   TOP_UP_CUSTOM_MAX_TRY_ONS,
@@ -8,7 +8,13 @@ import {
   getTopUpPackById,
   parseCustomTopUpTryOns,
   parseTopUpPackId,
+  TOP_UP_CUSTOM_PENCE_PER_TRY_ON,
 } from "@/lib/topUpPacks";
+
+const CUSTOM_TOP_UP_STRIPE_RATE_LABEL = new Intl.NumberFormat("en-GB", {
+  style: "currency",
+  currency: "GBP",
+}).format(TOP_UP_CUSTOM_PENCE_PER_TRY_ON / 100);
 
 export const runtime = "nodejs";
 
@@ -44,6 +50,16 @@ export async function POST(req: Request) {
     return Response.json({ error: "Unauthorized." }, { status: 401 });
   }
 
+  if (!retailerEligibleForTryOnTopUps(user)) {
+    return Response.json(
+      {
+        error:
+          "Top-ups are available with an active Fit Room subscription. Subscribe on the Plans page to purchase extra try-ons.",
+      },
+      { status: 403 },
+    );
+  }
+
   const clientId = user.clientId?.trim() || "";
   if (!clientId) {
     return Response.json({ error: "No API key is linked to this account yet." }, { status: 400 });
@@ -69,8 +85,7 @@ export async function POST(req: Request) {
               unit_amount: amountPence,
               product_data: {
                 name: `Try-on top-up: ${customTryOns.toLocaleString()} try-ons`,
-                description:
-                  "One-time purchase at £0.55 per try-on. Added to your account until fully used (not cleared by monthly plan resets).",
+                description: `One-time purchase at ${CUSTOM_TOP_UP_STRIPE_RATE_LABEL} per try-on. Added to your account until fully used (not cleared by monthly plan resets).`,
               },
             },
           },

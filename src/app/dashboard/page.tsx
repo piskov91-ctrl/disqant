@@ -5,7 +5,7 @@ import { Footer } from "@/components/Footer";
 import { Header } from "@/components/Header";
 import { getClientKeyRecordById } from "@/lib/apiKeyStore";
 import { retailerWelcomeGreetingName } from "@/lib/retailerDisplayName";
-import { getRetailerSessionUser } from "@/lib/retailerAuth";
+import { getRetailerSessionUser, retailerEligibleForTryOnTopUps } from "@/lib/retailerAuth";
 import { storedOrDerivedBasePlanLimit } from "@/lib/clientTryOnBuckets";
 import { getNextMonthlyResetUtcDateForDisplay, resolveBillingAnchorDay } from "@/lib/billingCycle";
 import { retailerDashboardPlanFromBaseLimit } from "@/lib/subscriptionPlans";
@@ -168,6 +168,8 @@ export default async function DashboardPage() {
     cancellationReasonLabel: cancellationReasonLabelFromStored(user.cancellationReason),
   };
 
+  const topUpEligible = retailerEligibleForTryOnTopUps(user);
+
   return (
     <>
       <Header />
@@ -178,6 +180,7 @@ export default async function DashboardPage() {
           websiteUrl={user.websiteUrl?.trim() ? user.websiteUrl.trim() : null}
           planSummary={planSummary}
           subscriptionBilling={subscriptionBilling}
+          topUpEligible={topUpEligible}
           apiKey={client.key}
           initialPlanUsed={client.usageCount}
           initialBasePlanLimit={planCap}
