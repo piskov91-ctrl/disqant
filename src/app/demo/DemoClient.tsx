@@ -657,6 +657,12 @@ export default function DemoClient() {
     return openCatalogDef.presetIds.map((id) => PRESET_BY_ID[id]!);
   }, [openCatalogDef]);
 
+  /** Single-line overview below category cards (middot-separated titles). */
+  const demoCatalogTitlesOverview = useMemo(
+    () => DEMO_CATALOG.map((c) => c.title).join(" · "),
+    [],
+  );
+
   useEffect(() => {
     if (!openCatalogDef) return;
     if (!openCatalogDef.presetIds.includes(selectedPresetId)) {
@@ -950,6 +956,12 @@ export default function DemoClient() {
                   );
                 })}
               </ul>
+              <p
+                className="mt-5 text-center text-xs leading-snug text-[#F5EDE4]/55 md:text-sm"
+                aria-hidden="true"
+              >
+                {demoCatalogTitlesOverview}
+              </p>
             </>
           ) : (
             <>
