@@ -14,9 +14,9 @@ export type MonthlyBillingCycleFields = {
   usageLimit?: number;
   /** Baseline cap restored on monthly billing reset (client keys). */
   basePlanLimit?: number;
-  /** Purchased top-up capacity this cycle. Cleared on monthly reset with `topUpUsageCount`. */
+  /** Purchased top-up capacity (persists across monthly resets until fully consumed). */
   topUpLimit?: number;
-  /** Try-ons consumed from top-up capacity this cycle. Cleared on monthly reset. */
+  /** Try-ons consumed from the top-up pool (persists across monthly resets). */
   topUpUsageCount?: number;
 };
 
@@ -108,7 +108,8 @@ function peekNextDueAutoBillingResetUtc<T extends MonthlyBillingCycleFields>(rec
 }
 
 /**
- * Limit to apply on monthly billing reset: `basePlanLimit` when that baseline is stored (drops top-ups).
+ * Subscription-only cap after monthly reset (baseline plan try-ons). When set, combined `usageLimit` becomes
+ * this value plus any persisted `topUpLimit`.
  * Returns `undefined` when `basePlanLimit` is absent or invalid → caller keeps existing `usageLimit`.
  */
 export function billingRestoredUsageLimit<T extends MonthlyBillingCycleFields>(cur: T): number | undefined {
@@ -128,9 +129,13 @@ export type MonthlyBillingResetAppliedEvent = {
 };
 
 /**
- * Zero `usageCount`, `topUpUsageCount`, and `topUpLimit` for each missed monthly boundary up to "today" (UTC),
- * updating `lastAutoBillingResetYyyymmdd` each time. When `basePlanLimit` is set, sets `usageLimit` to that baseline;
- * otherwise `usageLimit` is unchanged (legacy keys). Does not change `basePlanLimit`.
+ * Zero **subscription** try-on usage (`usageCount`) for each missed monthly boundary up to "today" (UTC),
+ * updating `lastAutoBillingResetYyyymmdd` each time. Top-up purchased capacity (`topUpLimit`) and consumption
+ * (`topUpUsageCount`) are unchanged — top-ups remain until fully used.
+ *
+ * When `basePlanLimit` is set, sets `usageLimit` to `basePlanLimit + topUpLimit`; otherwise `usageLimit` is unchanged
+ * (legacy keys). Does not change `basePlanLimit`.
+ *
  * Returns one event per reset applied (for admin billing history).
  */
 export function applyAllDueMonthlyUsageResetsWithEvents<T extends MonthlyBillingCycleFields>(
@@ -147,14 +152,13 @@ export function applyAllDueMonthlyUsageResetsWithEvents<T extends MonthlyBilling
     const prevSub = Math.floor(cur.usageCount);
     const prevTop = Math.floor((cur as { topUpUsageCount?: number }).topUpUsageCount ?? 0);
     const previousTryOns = prevSub + prevTop;
-    const restored = billingRestoredUsageLimit(cur);
+    const restoredBase = billingRestoredUsageLimit(cur);
+    const topLim = Math.floor((cur as MonthlyBillingCycleFields).topUpLimit ?? 0);
     const next: T = {
       ...cur,
       usageCount: 0,
-      topUpUsageCount: 0,
-      topUpLimit: 0,
       lastAutoBillingResetYyyymmdd: yyyymmddUtc(due),
-      ...(restored !== undefined ? { usageLimit: restored } : null),
+      ...(restoredBase !== undefined ? { usageLimit: restoredBase + topLim } : null),
     } as T;
     const w = next as T & {
       usageSeventyFivePctEmailSentForLimit?: number;
@@ -171,8 +175,8 @@ export function applyAllDueMonthlyUsageResetsWithEvents<T extends MonthlyBilling
 }
 
 /**
- * Zero `usageCount` for each missed monthly boundary up to "today" (UTC), updating
- * `lastAutoBillingResetYyyymmdd` each time. When `basePlanLimit` is set, restores `usageLimit` from it.
+ * Zero subscription `usageCount` for each missed monthly boundary up to "today" (UTC). Top-up buckets persist.
+ * When `basePlanLimit` is set, restores `usageLimit` to `basePlanLimit + topUpLimit`.
  */
 export function applyAllDueMonthlyUsageResets<T extends MonthlyBillingCycleFields>(rec: T, now: Date): T {
   return applyAllDueMonthlyUsageResetsWithEvents(rec, now).rec;

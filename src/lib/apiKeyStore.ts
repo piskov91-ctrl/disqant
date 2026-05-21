@@ -27,15 +27,15 @@ export type ClientApiKeyRecord = {
   fashnApiKey: string;
   usageLimit: number;
   /**
-   * Subscription or admin baseline try-on cap (subscription bucket). Monthly billing reset sets `usageLimit` to this and clears top-ups.
-   * Omitted on older records → reset keeps current `usageLimit`.
+   * Subscription or admin baseline try-on cap (subscription bucket). Monthly billing reset zeros subscription usage and
+   * restores combined `usageLimit` to `basePlanLimit + topUpLimit`; top-up buckets are not cleared.
    */
   basePlanLimit?: number;
-  /** Try-ons consumed from the subscription bucket this cycle (`usageCount` ≤ plan cap). */
+  /** Try-ons consumed from the subscription bucket (`usageCount` ≤ plan cap). Reset to 0 each billing cycle. */
   usageCount: number;
-  /** Purchased top-up capacity this billing cycle. Cleared on monthly reset. */
+  /** Purchased top-up pool size (persists across monthly billing resets until fully consumed). */
   topUpLimit?: number;
-  /** Try-ons consumed from the top-up bucket this cycle. Cleared on monthly reset. */
+  /** Try-ons consumed from the top-up pool (persists across monthly billing resets). */
   topUpUsageCount?: number;
   /**
    * UTC calendar day-of-month (1–31) for automatic monthly `usageCount` reset.
@@ -589,7 +589,7 @@ export async function resetUsage(id: string) {
   return next;
 }
 
-/** Add try-on quota to an existing client (e.g. after a one-time top-up payment). */
+/** Add try-on quota to an existing client (e.g. after a one-time top-up payment). Top-ups accumulate until fully used. */
 export async function incrementClientTryOnLimit(id: string, delta: number, meta?: TopUpPurchaseMeta) {
   const redis = getRedis();
   if (!id) throw new Error("Key id is required.");
@@ -644,7 +644,7 @@ export async function updateClientKey(params: {
   contactEmail?: string;
   /** Subscription (monthly plan) try-on cap. */
   monthlyPlanLimit: number;
-  /** Purchased top-up capacity this cycle; usage counts are unchanged. */
+  /** Purchased top-up capacity; subscription usage counters are unchanged. */
   topUpLimit: number;
   fashnApiKey?: string;
 }) {

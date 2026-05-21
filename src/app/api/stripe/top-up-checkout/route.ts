@@ -70,7 +70,7 @@ export async function POST(req: Request) {
               product_data: {
                 name: `Try-on top-up: ${customTryOns.toLocaleString()} try-ons`,
                 description:
-                  "One-time purchase at £0.55 per try-on. Try-ons are added to your current monthly allowance.",
+                  "One-time purchase at £0.55 per try-on. Added to your account until fully used (not cleared by monthly plan resets).",
               },
             },
           },
@@ -112,7 +112,7 @@ export async function POST(req: Request) {
             unit_amount: pack.amountGbpPence,
             product_data: {
               name: `Try-on top-up: ${pack.tryOns} try-ons`,
-              description: "One-time purchase. Try-ons are added to your current monthly allowance.",
+              description: "One-time purchase. Added to your account until fully used (not cleared by monthly plan resets).",
             },
           },
         },

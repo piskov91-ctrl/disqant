@@ -255,11 +255,11 @@ export default function PrivacyPage() {
                   end of each billing cycle.
                 </li>
                 <li>
-                  Top-up try-ons are one-time purchases valid for the current billing cycle only and expire at the next
-                  monthly billing-cycle reset.
+                  Top-up try-ons are one-time purchases that add to a separate pool on your account; they do not expire at
+                  monthly billing resets and remain until fully consumed.
                 </li>
                 <li>
-                  Fit Room is not liable for unused try-ons or top-ups that expire or are forfeited at a billing-cycle
+                  Fit Room is not liable for unused subscription try-ons that expire or are forfeited at a billing-cycle
                   reset. Contractual limits are set out in our{" "}
                   <a
                     className="font-medium text-zinc-900 underline decoration-zinc-300 underline-offset-2 hover:decoration-zinc-500"

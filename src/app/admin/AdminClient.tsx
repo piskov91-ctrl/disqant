@@ -1484,7 +1484,8 @@ export default function AdminClient() {
                   className="mt-3 block w-full rounded-xl border border-zinc-700 bg-zinc-950 px-4 py-3 text-sm text-zinc-100 outline-none transition focus:border-accent/60"
                 />
                 <p className="mt-2 text-xs text-zinc-500">
-                  Purchased add-on capacity this billing cycle. Total cap = monthly plan + top-up. Try-ons already
+                  Purchased top-up pool (try-ons persist across billing resets until used). Total cap = monthly plan +
+                  top-up. Try-ons already
                   used in each bucket stay as-is.
                 </p>
               </div>
@@ -2421,8 +2422,8 @@ export default function AdminClient() {
             <section className="mt-8 w-full overflow-hidden rounded-2xl border border-zinc-800 bg-zinc-900/60 p-6 shadow-sm md:p-8">
               <h2 className="text-base font-semibold text-zinc-100">Top-up purchases</h2>
               <p className="mt-1 text-sm text-zinc-400">
-                Stripe checkouts that added try-ons. Monthly billing reset clears purchased add-ons for clients with a
-                stored plan baseline; combined usage (
+                Stripe checkouts that added try-ons. Monthly billing resets subscription usage only; purchased top-ups stay
+                on the account until consumed. Combined usage (
                 <span className="font-medium text-zinc-300">usageCount</span> vs{" "}
                 <span className="font-medium text-zinc-300">usageLimit</span>) blocks try-ons at the cap.
               </p>

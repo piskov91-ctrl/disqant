@@ -497,7 +497,9 @@ function RetailerDashboardShellInner({
                         <span className="font-medium text-zinc-500">
                           {utcCalendarDayOrdinal(displayPlanSummary.billingAnchorDayUtc)}
                         </span>{" "}
-                        of each month (UTC). Shorter months use the last calendar day when needed.
+                        of each month (UTC). Shorter months use the last calendar day when needed. Your{" "}
+                        <span className="font-medium text-zinc-500">included plan try-ons</span> refresh on this schedule;
+                        purchased top-ups carry forward until fully used.
                       </dd>
                     </div>
                   </dl>

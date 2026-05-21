@@ -72,9 +72,9 @@ export default function TermsPage() {
                 cycle and cannot be recovered, banked, or credited against future cycles.
               </p>
               <p className="mt-3">
-                <span className="text-zinc-900">Top-up try-ons.</span> Top-up try-ons are one-time purchases valid only for
-                the billing cycle in which they are purchased. Unused top-up try-ons expire at the next monthly billing-cycle
-                reset and do not carry forward.
+                <span className="text-zinc-900">Top-up try-ons.</span> Top-ups are one-time purchases that add try-ons to a
+                separate pool on your account. They do not expire at monthly billing resets and remain available until fully
+                consumed, alongside your renewing subscription allowance.
               </p>
             </div>
 
@@ -150,8 +150,7 @@ export default function TermsPage() {
               </p>
               <p className="mt-3">
                 Without limiting the foregoing, to the fullest extent permitted by applicable law we are not liable for
-                unused subscription try-ons or unused top-up try-ons that expire or are forfeited at a billing-cycle reset,
-                including where they expire as described in section 3.
+                unused subscription try-ons that expire or are forfeited at a billing-cycle reset as described in section 3.
               </p>
             </div>
 

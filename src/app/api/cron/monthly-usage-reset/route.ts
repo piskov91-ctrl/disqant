@@ -5,7 +5,7 @@ export const dynamic = "force-dynamic";
 
 /**
  * Vercel Cron: daily at 00:00 UTC (see root `vercel.json`).
- * Applies monthly `usageCount` reset for clients whose billing anchor falls on today (UTC),
+ * Applies monthly subscription usage reset (`usageCount` only; top-up buckets persist) for clients whose billing anchor
  * including end-of-month handling for anchors like 31 in shorter months.
  *
  * Set `CRON_SECRET` in Vercel project env; the cron request must send

@@ -103,8 +103,8 @@ export function DashboardTopUpPanel() {
           <p className="text-[11px] font-semibold uppercase tracking-[0.26em] text-[#f0e6d8]/90">Top up</p>
           <h3 className="mt-3 text-lg font-semibold tracking-tight text-zinc-50">Add more try-ons</h3>
           <p className="mt-2 max-w-xl text-sm leading-relaxed text-zinc-400">
-            One-time purchases extend your existing allowance on the same API key—available the moment checkout
-            completes.
+            One-time purchases extend your allowance on the same API key immediately after checkout. Top-ups carry forward
+            across monthly billing resets until you use them; only your included plan try-ons refresh each cycle.
           </p>
         </div>
       </div>
