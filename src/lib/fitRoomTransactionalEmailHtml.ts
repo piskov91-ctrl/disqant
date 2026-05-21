@@ -24,23 +24,26 @@ export function transactionalEscapeHtml(s: string): string {
     .replace(/"/g, "&quot;");
 }
 
-/** Body copy sits on white — dark, readable typography. */
+/** Main content column: Fit Room dark panel + cream body copy. */
+const BODY_BG = "#2C241F";
+const BODY_TEXT = "#F5EDE4";
+
 const P =
-  'margin:0 0 16px;font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;font-size:16px;line-height:1.62;color:#1f2937;';
+  `margin:0 0 16px;font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;font-size:16px;line-height:1.62;color:${BODY_TEXT};`;
 
 const mutedFooter = "#9ca3af";
 const footerLinkGold = "#C6A77D";
 
 /**
- * Responsive outer frame: dark surrounds, `#2C241F` branded header strip with `/logo.png`
- * (`alt="Fit Room"`), slim dark accent bar, **white** main column, centred footer row.
+ * Responsive outer frame: dark surrounds, branded header with `/logo.png`, accent bar,
+ * main column on **`#2C241F`** with cream copy **`#F5EDE4`**, centred footer.
  */
 export function wrapFitRoomTransactionalHtml(params: {
   /** Shown as <title>; keep short. */
   documentTitle?: string;
   /** Hidden inbox preview snippet. */
   preheader?: string;
-  /** Optional headline inside white body (readable dark text). */
+  /** Optional headline inside body (cream text). */
   heading?: string;
   innerHtml: string;
 }): string {
@@ -53,7 +56,7 @@ export function wrapFitRoomTransactionalHtml(params: {
   const headingBlock = params.heading
     ? `<tr>
          <td style="padding:0 0 20px;mso-padding-alt:0 0 20px 0;">
-           <p style="margin:0;font-family:Georgia,'Times New Roman',Times,serif;font-size:22px;font-weight:600;line-height:1.3;color:#111827;mso-line-height-rule:exactly;">
+           <p style="margin:0;font-family:Georgia,'Times New Roman',Times,serif;font-size:22px;font-weight:600;line-height:1.3;color:${BODY_TEXT};mso-line-height-rule:exactly;">
              ${transactionalEscapeHtml(params.heading)}
            </p>
          </td>
@@ -91,7 +94,7 @@ export function wrapFitRoomTransactionalHtml(params: {
 <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="width:100%;background-color:#1a1a1a;">
   <tr>
     <td align="center" class="fr-email-wrap-pad" style="padding:24px 14px;background-color:#1a1a1a;">
-      <table role="presentation" cellspacing="0" cellpadding="0" border="0" align="center" width="600" class="fr-shell" style="max-width:600px;width:100%;border-radius:14px 14px 10px 10px;overflow:hidden;background-color:#ffffff;">
+      <table role="presentation" cellspacing="0" cellpadding="0" border="0" align="center" width="600" class="fr-shell" style="max-width:600px;width:100%;border-radius:14px 14px 10px 10px;overflow:hidden;background-color:${BODY_BG};">
 
         <tr>
           <td bgcolor="#2C241F" valign="middle" align="center" class="fr-header-cell" width="600" style="width:600px;background-color:#2C241F;padding:22px 20px 24px;line-height:normal;text-align:center;vertical-align:middle;mso-padding-alt:22px 20px 24px;font-size:16px;">
@@ -119,11 +122,11 @@ export function wrapFitRoomTransactionalHtml(params: {
         </tr>
 
         <tr>
-          <td bgcolor="#ffffff" style="padding:36px 32px 38px;background-color:#ffffff;mso-padding-alt:36px 32px 38px;" class="fr-email-body-inner">
+          <td bgcolor="${BODY_BG}" style="padding:36px 32px 38px;background-color:${BODY_BG};border-left:1px solid rgba(198,167,125,0.22);border-right:1px solid rgba(198,167,125,0.22);mso-padding-alt:36px 32px 38px;" class="fr-email-body-inner">
             <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="width:100%;">
               ${headingBlock}
               <tr>
-                <td style="padding:0;font-family:system-ui,-apple-system,sans-serif;color:#1f2937;mso-padding-alt:0;">
+                <td style="padding:0;font-family:system-ui,-apple-system,sans-serif;color:${BODY_TEXT};mso-padding-alt:0;">
                   ${params.innerHtml}
                 </td>
               </tr>
@@ -150,12 +153,12 @@ export function wrapFitRoomTransactionalHtml(params: {
 </html>`;
 }
 
-/** Styled paragraph for white inner column. */
+/** Styled paragraph for dark brand content column. */
 export function transactionalParagraph(textPlain: string): string {
   return `<p style="${P}">${transactionalEscapeHtml(textPlain)}</p>`;
 }
 
-/** Gold fill CTA (works on white content area). */
+/** Gold fill CTA. */
 export function transactionalCtaHtml(href: string, label: string): string {
   const eh = transactionalEscapeHtml(href);
   const el = transactionalEscapeHtml(label);
@@ -168,7 +171,7 @@ export function transactionalCtaHtml(href: string, label: string): string {
 </table>`;
 }
 
-/** Inline code block on light gray (white column). */
+/** Code / snippet strip on darker inset panel. */
 export function transactionalSnippetBlock(snippetPlain: string): string {
-  return `<pre style="margin:14px 0 22px;padding:14px 16px;background-color:#f3f4f6;border:1px solid #e5e7eb;border-radius:10px;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:12px;line-height:1.55;color:#374151;overflow:auto;white-space:pre-wrap;word-break:break-word;mso-margin-top-alt:14px;mso-margin-bottom-alt:22px;">${transactionalEscapeHtml(snippetPlain)}</pre>`;
+  return `<pre style="margin:14px 0 22px;padding:14px 16px;background-color:#1a1715;border:1px solid rgba(198,167,125,0.4);border-radius:10px;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:12px;line-height:1.55;color:#F5EDE4;overflow:auto;white-space:pre-wrap;word-break:break-word;mso-margin-top-alt:14px;mso-margin-bottom-alt:22px;">${transactionalEscapeHtml(snippetPlain)}</pre>`;
 }

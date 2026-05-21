@@ -20,6 +20,8 @@ export function buildWearMeIntegrationPlainEmailBody(storeLabel: string, snippet
     "",
     "Your unique Wear Me code is:",
     "",
+    "Step 1: Copy the code below by clicking on it and pressing Ctrl+C (Windows) or Cmd+C (Mac)",
+    "",
     snippet,
     "",
     "Once it is added to your site, open any product page and the Wear Me button will appear on your product images automatically.",
@@ -45,6 +47,9 @@ export function buildWearMeIntegrationEmailHtml(opts: {
       "Don't worry — this is much simpler than it sounds. I have attached a short guide that walks you through it step by step. Most people have it done in under 5 minutes. No coding knowledge needed — just copy and paste.",
     ) +
     transactionalParagraph("Your unique Wear Me code is:") +
+    transactionalParagraph(
+      "Step 1: Copy the code below by clicking on it and pressing Ctrl+C (Windows) or Cmd+C (Mac)",
+    ) +
     transactionalSnippetBlock(opts.snippet.trim()) +
     transactionalParagraph(
       "Once it is added to your site, open any product page and the Wear Me button will appear on your product images automatically.",

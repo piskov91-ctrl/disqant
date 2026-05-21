@@ -1,11 +1,14 @@
 import { readFile } from "node:fs/promises";
 import path from "node:path";
 
-/** Matches filenames in `/public/guides/wear-me-{slug}.pdf`. */
+/**
+ * Public folder PDFs: `/public/guides/fitroom-{platform}-guide.pdf`
+ * e.g. `fitroom-shopify-guide.pdf`, `fitroom-custom-guide.pdf`.
+ */
 export type WearMePdfPlatformSlug = "shopify" | "wordpress" | "wix" | "squarespace" | "custom";
 
 export function wearMeGuidePdfFilename(platform: WearMePdfPlatformSlug): string {
-  return `wear-me-${platform}.pdf`;
+  return `fitroom-${platform}-guide.pdf`;
 }
 
 export async function readWearMeGuidePdfFile(
