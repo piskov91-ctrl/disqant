@@ -10,6 +10,11 @@ import AdminIntegrationGuide from "@/app/admin/AdminIntegrationGuide";
 import { getNextMonthlyResetUtcDateForDisplay } from "@/lib/billingCycle";
 import { storedOrDerivedBasePlanLimit, totalTryOnsUsed, clientTryOnFullyBlocked } from "@/lib/clientTryOnBuckets";
 import { tryOnUsageFillStyle } from "@/lib/tryOnUsageBarStyle";
+import {
+  ADMIN_CLIENT_INSTALL_EMAIL_PLATFORMS,
+  type AdminClientInstallPlatform,
+  buildAdminClientInstallClipboardText,
+} from "@/lib/adminClientInstallEmail";
 
 type KeyRecord = {
   id: string;
@@ -461,6 +466,9 @@ export default function AdminClient() {
   const [subscriptionReviewsLoading, setSubscriptionReviewsLoading] = useState(false);
   const [subscriptionReviewsError, setSubscriptionReviewsError] = useState<string | null>(null);
   const [subscriptionModerationBusyId, setSubscriptionModerationBusyId] = useState<string | null>(null);
+
+  const [copyEmailMenuClientId, setCopyEmailMenuClientId] = useState<string | null>(null);
+  const [copyEmailFlashId, setCopyEmailFlashId] = useState<string | null>(null);
 
   type QuotaEmailPreviewPayload = {
     subject: string;
@@ -939,6 +947,24 @@ export default function AdminClient() {
   }, [activeTab]); // eslint-disable-line react-hooks/exhaustive-deps -- loaders are not memoised; tab key is intentional.
 
   useEffect(() => {
+    if (copyEmailMenuClientId === null) return undefined;
+    const onDocDown = (e: MouseEvent) => {
+      const el = e.target;
+      if (el instanceof Element && el.closest("[data-admin-copy-email-root]")) return;
+      setCopyEmailMenuClientId(null);
+    };
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setCopyEmailMenuClientId(null);
+    };
+    document.addEventListener("mousedown", onDocDown, true);
+    document.addEventListener("keydown", onKey);
+    return () => {
+      document.removeEventListener("mousedown", onDocDown, true);
+      document.removeEventListener("keydown", onKey);
+    };
+  }, [copyEmailMenuClientId]);
+
+  useEffect(() => {
     if (!quotaPreviewOpen) return;
     const onKey = (e: KeyboardEvent) => {
       if (e.key === "Escape") setQuotaPreviewOpen(false);
@@ -1051,9 +1077,13 @@ export default function AdminClient() {
     }
   }
 
-  async function copyWidgetCode(apiKey: string) {
+  function buildWidgetSnippet(apiKey: string): string {
     const origin = window.location.origin;
-    const snippet = `<script async src=\"${origin}/widget.js\" data-fit-room-key=\"${apiKey}\"></script>`;
+    return `<script async src="${origin}/widget.js" data-fit-room-key="${apiKey}"></script>`;
+  }
+
+  async function copyWidgetCode(apiKey: string) {
+    const snippet = buildWidgetSnippet(apiKey);
     try {
       await navigator.clipboard.writeText(snippet);
     } catch {
@@ -1067,6 +1097,33 @@ export default function AdminClient() {
       document.execCommand("copy");
       document.body.removeChild(ta);
     }
+  }
+
+  async function copyClientInstallEmail(rec: KeyRecord, platform: AdminClientInstallPlatform) {
+    const snippet = buildWidgetSnippet(rec.key);
+    const text = buildAdminClientInstallClipboardText({
+      platform,
+      storeName: rec.clientName,
+      widgetSnippet: snippet,
+    });
+    try {
+      await navigator.clipboard.writeText(text);
+    } catch {
+      const ta = document.createElement("textarea");
+      ta.value = text;
+      ta.style.position = "fixed";
+      ta.style.left = "-9999px";
+      document.body.appendChild(ta);
+      ta.focus();
+      ta.select();
+      document.execCommand("copy");
+      document.body.removeChild(ta);
+    }
+    setCopyEmailMenuClientId(null);
+    setCopyEmailFlashId(rec.id);
+    window.setTimeout(() => {
+      setCopyEmailFlashId((cur) => (cur === rec.id ? null : cur));
+    }, 2200);
   }
 
   async function copyRawKey(apiKey: string) {
@@ -1945,7 +2002,7 @@ export default function AdminClient() {
                   <div className="px-6 py-10 text-sm text-zinc-500 md:px-8">No clients yet.</div>
                 ) : (
                   <div className="w-full overflow-x-auto">
-                    <div className="grid min-w-[72rem] w-full grid-cols-[minmax(0,1.2fr)_minmax(0,0.62fr)_minmax(0,0.72fr)_minmax(0,0.72fr)_minmax(0,1.35fr)_minmax(0,0.58fr)_minmax(0,0.52fr)_minmax(0,0.62fr)_minmax(0,0.5fr)_minmax(0,0.52fr)_minmax(0,0.62fr)] gap-2 border-b border-zinc-800 px-4 py-3 text-xs font-semibold uppercase tracking-wider text-zinc-500 md:px-6">
+                    <div className="grid min-w-[80rem] w-full grid-cols-[minmax(0,1.2fr)_minmax(0,0.62fr)_minmax(0,0.72fr)_minmax(0,0.72fr)_minmax(0,1.35fr)_minmax(0,0.58fr)_minmax(0,0.52fr)_minmax(0,0.54fr)_minmax(0,0.62fr)_minmax(0,0.5fr)_minmax(0,0.52fr)_minmax(0,0.62fr)] gap-2 border-b border-zinc-800 px-4 py-3 text-xs font-semibold uppercase tracking-wider text-zinc-500 md:px-6">
                       <div>Client Name</div>
                       <div>API Key</div>
                       <div title="Key record created (UTC)">Created</div>
@@ -1953,6 +2010,9 @@ export default function AdminClient() {
                       <div title="Subscription plan vs purchased top-up usage">Plan / Top Up</div>
                       <div>Status</div>
                       <div className="text-center">EDIT</div>
+                      <div className="text-center">
+                        EMAIL
+                      </div>
                       <div className="text-center">COPY</div>
                       <div className="text-center">COPY KEY</div>
                       <div className="text-center">RESET</div>
@@ -1974,7 +2034,7 @@ export default function AdminClient() {
 
                       return (
                         <div key={k.id}>
-                          <div className="grid min-w-[72rem] w-full grid-cols-[minmax(0,1.2fr)_minmax(0,0.62fr)_minmax(0,0.72fr)_minmax(0,0.72fr)_minmax(0,1.35fr)_minmax(0,0.58fr)_minmax(0,0.52fr)_minmax(0,0.62fr)_minmax(0,0.5fr)_minmax(0,0.52fr)_minmax(0,0.62fr)] items-center gap-2 border-b border-zinc-800 px-4 py-4 text-base md:px-6">
+                          <div className="grid min-w-[80rem] w-full grid-cols-[minmax(0,1.2fr)_minmax(0,0.62fr)_minmax(0,0.72fr)_minmax(0,0.72fr)_minmax(0,1.35fr)_minmax(0,0.58fr)_minmax(0,0.52fr)_minmax(0,0.54fr)_minmax(0,0.62fr)_minmax(0,0.5fr)_minmax(0,0.52fr)_minmax(0,0.62fr)] items-center gap-2 border-b border-zinc-800 px-4 py-4 text-base md:px-6">
                             <div className="min-w-0">
                               <div className="flex min-w-0 items-start justify-between gap-2">
                                 <div className="min-w-0 flex-1">
@@ -2063,6 +2123,53 @@ export default function AdminClient() {
                               </button>
                             </div>
                             <div className="text-center">
+                              <div
+                                className="relative inline-flex flex-col items-center"
+                                data-admin-copy-email-root
+                              >
+                                <button
+                                  type="button"
+                                  aria-expanded={copyEmailMenuClientId === k.id}
+                                  aria-haspopup="listbox"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    setCopyEmailMenuClientId((cur) => (cur === k.id ? null : k.id));
+                                  }}
+                                  className={`inline-flex h-9 min-w-[7.25rem] items-center justify-center rounded-full border px-3 text-sm font-semibold transition hover:border-[#c6a77d]/50 hover:bg-zinc-800 ${
+                                    copyEmailFlashId === k.id
+                                      ? "border-emerald-700/65 bg-emerald-950/50 text-emerald-100"
+                                      : copyEmailMenuClientId === k.id
+                                        ? "border-[#c6a77d]/60 bg-[#2c241f]/85 text-[#e8dcc8]"
+                                        : "border-zinc-600 bg-zinc-800 text-zinc-100 hover:border-zinc-500"
+                                  }`}
+                                >
+                                  {copyEmailFlashId === k.id ? "Copied" : "Copy Email"}
+                                </button>
+                                {copyEmailMenuClientId === k.id ? (
+                                  <div
+                                    className="absolute right-0 top-full z-[60] mt-1 min-w-[12.5rem] rounded-xl border border-zinc-600/90 bg-zinc-900 py-1.5 shadow-2xl shadow-black/55 ring-1 ring-[#C6A77D]/20"
+                                    role="listbox"
+                                    aria-label={`Email template platform for ${k.clientName}`}
+                                  >
+                                    {ADMIN_CLIENT_INSTALL_EMAIL_PLATFORMS.map(({ id: pid, label }) => (
+                                      <button
+                                        key={pid}
+                                        type="button"
+                                        role="option"
+                                        className="block w-full px-4 py-2.5 text-left text-sm text-zinc-100 transition hover:bg-zinc-800 hover:text-[#e8dcc8]"
+                                        onClick={(e) => {
+                                          e.preventDefault();
+                                          void copyClientInstallEmail(k, pid);
+                                        }}
+                                      >
+                                        {label}
+                                      </button>
+                                    ))}
+                                  </div>
+                                ) : null}
+                              </div>
+                            </div>
+                            <div className="text-center">
                               <button
                                 type="button"
                                 onClick={() => void copyWidgetCode(k.key)}
@@ -2105,7 +2212,7 @@ export default function AdminClient() {
                           </div>
 
                           {historyOpen ? (
-                            <div className="min-w-[72rem] w-full border-b border-zinc-800 bg-zinc-950/55 px-4 py-5 md:px-6">
+                            <div className="min-w-[80rem] w-full border-b border-zinc-800 bg-zinc-950/55 px-4 py-5 md:px-6">
                               {billingHistoryLoadingId === k.id ? (
                                 <p className="text-sm text-zinc-400">Loading billing history…</p>
                               ) : billingHistoryErrorId === k.id ? (
