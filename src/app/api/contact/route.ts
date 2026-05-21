@@ -1,6 +1,12 @@
 import { Resend } from "resend";
+import { sendFitRoomMail } from "@/lib/fitRoomEmail";
 import { incrementOutboundEmailSentCounters } from "@/lib/fitRoomEmailSentCounters";
 import { recordContactInquiry } from "@/lib/contactInquiriesStore";
+import {
+  transactionalParagraph,
+  transactionalSnippetBlock,
+  wrapFitRoomTransactionalHtml,
+} from "@/lib/fitRoomTransactionalEmailHtml";
 
 const TO_EMAIL = (process.env.CONTACT_TO ?? "support@fit-room.com").trim();
 
@@ -108,18 +114,19 @@ export async function POST(req: Request) {
     message,
   ].join("\n");
 
-  const html = `
-  <h2>Contact form — Fit Room</h2>
-  <p><strong>Name</strong><br/>${escapeHtml(name)}</p>
-  <p><strong>Email</strong><br/><a href="mailto:${escapeHtml(email)}">${escapeHtml(email)}</a></p>
-  <p><strong>Store name</strong><br/>${escapeHtml(company)}</p>
-  <p><strong>Website</strong><br/>${escapeHtml(websiteLine)}</p>
-  <p><strong>Monthly visitors</strong><br/>${escapeHtml(visitorsLabel)}</p>
-  <p><strong>Message</strong></p>
-  <pre style="font-family:system-ui,Segoe UI,sans-serif;white-space:pre-wrap;">${escapeHtml(
-    message,
-  )}</pre>
-  `;
+  const firstNameBubble = name.split(/\s+/).find(Boolean);
+  const preheaderSnippet =
+    message.length > 120 ? `${message.slice(0, 117).trim()}…` : message;
+
+  const staffHtml = wrapFitRoomTransactionalHtml({
+    documentTitle: "Website contact",
+    preheader: preheaderSnippet,
+    heading: "New contact form submission",
+    innerHtml:
+      transactionalParagraph(
+        `${name} from ${company} reached out via the Fit Room contact form — reply routing already points back to ${email}.`,
+      ) + transactionalSnippetBlock(text),
+  });
 
   let from = resolveContactFormFrom();
   if (extractBareEmail(from) === extractBareEmail(TO_EMAIL)) {
@@ -133,7 +140,7 @@ export async function POST(req: Request) {
     replyTo: email,
     subject: `Contact: ${name} — ${company}`,
     text,
-    html,
+    html: staffHtml,
   });
 
   if (error) {
@@ -163,14 +170,42 @@ export async function POST(req: Request) {
     });
   });
 
-  return Response.json({ ok: true, id: data?.id ?? null });
-}
+  const confirmationHeading = firstNameBubble ? `Thanks, ${firstNameBubble}` : "Thanks for writing";
 
-function escapeHtml(s: string) {
-  return s
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;")
-    .replace(/'/g, "&#39;");
+  void sendFitRoomMail({
+    to: email,
+    subject: "We tucked your Fit Room note away",
+    text: [
+      `Hi ${name},`,
+      "",
+      "We're grateful you slid a note beneath our door — a real teammate will read yours shortly.",
+      "",
+      "Spam gremlins exist, so whitelist support@fit-room.com if replies feel shy.",
+      "",
+      "Warmly,",
+      "The Fit Room team",
+    ].join("\n"),
+    html: wrapFitRoomTransactionalHtml({
+      documentTitle: "Message received",
+      preheader: "Your contact form ping landed safely.",
+      heading: confirmationHeading,
+      innerHtml:
+        transactionalParagraph(`Hi ${name},`) +
+        transactionalParagraph(
+          "Your message didn't vanish — it zipped straight behind the Fit Room inbox curtain so someone thoughtful can chew on it shortly.",
+        ) +
+        transactionalParagraph(
+          "Give us a weekday moment; if an answer feels tardy check spam buckets or poke support@fit-room.com manually and it'll still reach us.",
+        ) +
+        transactionalParagraph("Warmly,") +
+        transactionalParagraph("The Fit Room team"),
+    }),
+  }).catch((confirmationErr: unknown) => {
+    console.error("[fit-room][contact-form] visitor confirmation email failed", {
+      message: confirmationErr instanceof Error ? confirmationErr.message : String(confirmationErr),
+      toEmail: email,
+    });
+  });
+
+  return Response.json({ ok: true, id: data?.id ?? null });
 }

@@ -1,7 +1,23 @@
 import type { ClientApiKeyRecord } from "@/lib/apiKeyStore";
 import { totalTryOnsUsed } from "@/lib/clientTryOnBuckets";
 import { isFitRoomEmailConfigured, sendFitRoomMail } from "@/lib/fitRoomEmail";
+import {
+  transactionalCtaHtml,
+  transactionalParagraph,
+  wrapFitRoomTransactionalHtml,
+} from "@/lib/fitRoomTransactionalEmailHtml";
 import { listRetailersLinkedToClientId } from "@/lib/retailerAuth";
+
+export type TryOnQuotaEmailTone = "runningLow" | "atMonthlyCap";
+
+/** For admin previews: `tone=cap|atMonthlyCap` selects the heavier copy variant. */
+export function parseTryOnQuotaEmailToneParam(raw: string | null): TryOnQuotaEmailTone {
+  const t = raw?.trim().toLowerCase();
+  if (t === "cap" || t === "atcap" || t === "full" || t === "limit") {
+    return "atMonthlyCap";
+  }
+  return "runningLow";
+}
 
 function formatPct(pct: number): string {
   if (!Number.isFinite(pct)) return "0%";
@@ -9,18 +25,8 @@ function formatPct(pct: number): string {
   return Number.isInteger(rounded1) ? `${rounded1.toFixed(0)}%` : `${rounded1.toFixed(1)}%`;
 }
 
-export const TRY_ON_QUOTA_NEAR_LIMIT_EMAIL_SUBJECT_PREFIX = "Fit Room try-ons: " as const;
-
 /** Upgrade CTA for quota emails (HTML button + plain-text fallback). */
 export const FIT_ROOM_TRY_ON_QUOTA_UPGRADE_URL = "https://fit-room.com/subscriptions" as const;
-
-function escapeHtml(text: string): string {
-  return text
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;");
-}
 
 async function resolveQuotaNoticeRecipients(client: ClientApiKeyRecord): Promise<{
   emailTargets: string[];
@@ -44,76 +50,109 @@ async function resolveQuotaNoticeRecipients(client: ClientApiKeyRecord): Promise
   return { emailTargets: merged, storeName };
 }
 
-function buildQuotaPlainText(storeName: string, used: number, limit: number, upgradeUrl: string) {
+function quotaPlainToneCopy(tone: TryOnQuotaEmailTone, upgradeUrl: string): {
+  preheader: string;
+  paragraphLines: string[];
+} {
+  if (tone === "atMonthlyCap") {
+    return {
+      preheader: "You've used your allotment for this billing month.",
+      paragraphLines: [
+        "You've used every try-on in your allowance for this month. Anything new waits until your counter resets, unless you notch the plan up a tier.",
+        "No drama — bumping the limit is fast, and you can always sit tight instead if you'd rather.",
+        `If it's useful, here's the billing page:${"\n"}${upgradeUrl}`,
+        "Reply anytime if you want a steer on what's sensible for your traffic. We read everything ourselves.",
+      ],
+    };
+  }
+  return {
+    preheader: "You're making good progress on your monthly try-on allowance.",
+    paragraphLines: [
+      "Thought we'd drop you a polite note early. Things are ticking along nicely, and we'd rather you hear from us before the meter runs dry.",
+      "You've still got runway, so nothing pauses tonight — we just didn't want surprises later in the month.",
+      `When you have two minutes:${"\n"}${upgradeUrl}`,
+      "Hit reply if you'd rather chat it through live; it's the same inbox as this message.",
+    ],
+  };
+}
+
+function buildQuotaPlainText(storeName: string, used: number, limit: number, upgradeUrl: string, tone: TryOnQuotaEmailTone) {
   const pct = formatPct((used / Math.max(1, limit)) * 100);
+  const { paragraphLines } = quotaPlainToneCopy(tone, upgradeUrl);
   return [
     `Hi ${storeName},`,
     "",
-    `Just a quick heads-up — you've used ${used} out of your ${limit} monthly try-ons (${pct} of your plan).`,
+    `By the numbers: ${used} of ${limit} try-ons this billing month (${pct}).`,
     "",
-    "Your customers are clearly loving the virtual try-on experience! To make sure they never miss out, you might want to consider upgrading before you hit the limit. It only takes a minute and your store will stay live without any interruption.",
-    "",
-    "Upgrade your plan:",
-    upgradeUrl,
-    "",
-    "If you have any questions, just reply to this email — we're always happy to help.",
-    "",
-    "Warm regards,",
-    "The Fit Room Team",
+    ...paragraphLines.flatMap((p) => [p, ""]),
+    "Warmly,",
+    "The Fit Room team",
   ].join("\n");
 }
 
-function buildQuotaHtml(storeName: string, used: number, limit: number, upgradeUrl: string) {
-  const safeName = escapeHtml(storeName);
-  const escapedUrl = escapeHtml(upgradeUrl);
-  const pct = escapeHtml(formatPct((used / Math.max(1, limit)) * 100));
-  const paragraphStyle = "margin:0 0 16px;font-size:15px;line-height:1.6;color:#3f3f46;";
-  return `<!DOCTYPE html>
-<html lang="en">
-<head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Fit Room try-ons update</title>
-</head>
-<body style="margin:0;padding:24px;font-family:ui-sans-serif,system-ui,-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;background-color:#fafafa;color:#3f3f46;">
-  <p style="${paragraphStyle}">Hi ${safeName},</p>
-  <p style="${paragraphStyle}">Just a quick heads-up — you've used ${used} out of your ${limit} monthly try-ons (${pct} of your plan).</p>
-  <p style="${paragraphStyle}">Your customers are clearly loving the virtual try-on experience! To make sure they never miss out, you might want to consider upgrading before you hit the limit. It only takes a minute and your store will stay live without any interruption.</p>
-  <table role="presentation" cellspacing="0" cellpadding="0" border="0" style="margin:24px 0;">
-    <tr>
-      <td align="left" style="border-radius:10px;background-color:#18181b;">
-        <a href="${escapedUrl}" style="display:inline-block;padding:14px 28px;font-size:15px;font-weight:600;color:#fafafa;text-decoration:none;border-radius:10px;line-height:1.2;">Upgrade My Plan</a>
-      </td>
-    </tr>
-  </table>
-  <p style="${paragraphStyle}">If you have any questions, just reply to this email — we're always happy to help.</p>
-  <p style="margin:24px 0 0;font-size:15px;line-height:1.6;color:#3f3f46;">Warm regards,<br>The Fit Room Team</p>
-</body>
-</html>`;
+function buildQuotaHtml(storeName: string, used: number, limit: number, upgradeUrl: string, tone: TryOnQuotaEmailTone) {
+  const pct = formatPct((used / Math.max(1, limit)) * 100);
+  const { preheader } = quotaPlainToneCopy(tone, upgradeUrl);
+  const heading = tone === "atMonthlyCap" ? "You've hit your monthly allowance" : "You're getting closer to your cap";
+  const inner =
+    transactionalParagraph(`Hi ${storeName},`) +
+    transactionalParagraph(
+      `By the numbers you've used ${used} of ${limit} try-ons this month (${pct} of your allotment). That's the busy kind of month we're hoping you have.`,
+    ) +
+    (tone === "atMonthlyCap"
+      ? transactionalParagraph(
+          "You've reached the ceiling on this tier for now. Sessions will politely wait until things reset unless you give the quota a bump — whichever feels right.",
+        )
+      : transactionalParagraph(
+          "There's still elbow room today. We're only writing because nobody likes scrambling on the last afternoon of the month.",
+        )) +
+    transactionalParagraph("If you'd like uninterrupted flow while traffic grows:") +
+    transactionalCtaHtml(upgradeUrl, "Open subscription options") +
+    transactionalParagraph("Otherwise do nothing — we just appreciate you letting us sit in your inbox.") +
+    transactionalParagraph("Warmly,") +
+    transactionalParagraph("The Fit Room team");
+
+  return wrapFitRoomTransactionalHtml({
+    documentTitle: "Try-on usage",
+    preheader,
+    heading,
+    innerHtml: inner,
+  });
 }
 
 export function getTryOnQuotaUpgradePlanUrl(): string {
   return FIT_ROOM_TRY_ON_QUOTA_UPGRADE_URL;
 }
 
-/** Plain-text part of the multipart usage reminder (75% or 99%). */
+export function buildTryOnQuotaUsageEmailSubject(params: { tone: TryOnQuotaEmailTone }): string {
+  if (params.tone === "atMonthlyCap") {
+    return "Fit Room — you're at your monthly try-on allowance";
+  }
+  return "Fit Room — gentle nudge before you tap out on try-ons";
+}
+
+/** Plain-text part of the usage reminder (`runningLow`: ~75% trigger, `atMonthlyCap`: ~99%). */
 export function buildTryOnQuotaUsageEmailBody(params: {
   storeName: string;
   used: number;
   limit: number;
+  tone?: TryOnQuotaEmailTone;
 }): string {
+  const tone = params.tone ?? "runningLow";
   const upgradeUrl = FIT_ROOM_TRY_ON_QUOTA_UPGRADE_URL;
-  return buildQuotaPlainText(params.storeName, params.used, params.limit, upgradeUrl);
+  return buildQuotaPlainText(params.storeName, params.used, params.limit, upgradeUrl, tone);
 }
 
-/** HTML part of the multipart usage reminder (75% or 99%). */
+/** HTML part of the multipart usage reminder. */
 export function buildTryOnQuotaUsageEmailHtml(params: {
   storeName: string;
   used: number;
   limit: number;
+  tone?: TryOnQuotaEmailTone;
 }): string {
+  const tone = params.tone ?? "runningLow";
   const upgradeUrl = FIT_ROOM_TRY_ON_QUOTA_UPGRADE_URL;
-  return buildQuotaHtml(params.storeName, params.used, params.limit, upgradeUrl);
+  return buildQuotaHtml(params.storeName, params.used, params.limit, upgradeUrl, tone);
 }
 
 /** Smallest usage count ≥ 75% of `limit`, capped at `limit` (whole try-ons only). */
@@ -122,12 +161,7 @@ export function sampleTryOnUsageCountAtLeastSeventyFivePercent(limit: number): n
   return Math.min(Math.ceil((limit * 3) / 4), limit);
 }
 
-function buildUsageSubject(used: number, limit: number): string {
-  const pct = formatPct((used / Math.max(1, limit)) * 100);
-  return `${TRY_ON_QUOTA_NEAR_LIMIT_EMAIL_SUBJECT_PREFIX}${pct} used`;
-}
-
-/** Fire-and-forget: usage warning on first cross of 75%. */
+/** Fire-and-forget: usage heads-up around 75%. */
 export function sendTryOnUsageSeventyFivePctNoticeAsync(params: {
   client: ClientApiKeyRecord;
 }) {
@@ -155,12 +189,11 @@ export function sendTryOnUsageSeventyFivePctNoticeAsync(params: {
         recipientCount: emailTargets.length,
       });
 
-      const bodyParams = {
-        storeName,
-        used: totalTryOnsUsed(client),
-        limit: client.usageLimit,
-      };
-      const subject = buildUsageSubject(bodyParams.used, bodyParams.limit);
+      const used = totalTryOnsUsed(client);
+      const limit = client.usageLimit;
+      const tone: TryOnQuotaEmailTone = "runningLow";
+      const subject = buildTryOnQuotaUsageEmailSubject({ tone });
+      const bodyParams = { storeName, used, limit, tone };
       const text = buildTryOnQuotaUsageEmailBody(bodyParams);
       const html = buildTryOnQuotaUsageEmailHtml(bodyParams);
 
@@ -184,7 +217,7 @@ export function sendTryOnUsageSeventyFivePctNoticeAsync(params: {
   })();
 }
 
-/** Fire-and-forget: usage warning on first reach of 99% (about to hit the limit). */
+/** Fire-and-forget: usage alert right before hitting the ceiling (~99%). */
 export function sendTryOnUsageNinetyNinePctNoticeAsync(params: { client: ClientApiKeyRecord }) {
   const resendConfigured = isFitRoomEmailConfigured();
   console.log("[fit-room][email-debug] sendTryOnUsageNinetyNinePctNoticeAsync", {
@@ -208,8 +241,11 @@ export function sendTryOnUsageNinetyNinePctNoticeAsync(params: { client: ClientA
         return;
       }
 
-      const bodyParams = { storeName, used: totalTryOnsUsed(client), limit: client.usageLimit };
-      const subject = buildUsageSubject(bodyParams.used, bodyParams.limit);
+      const used = totalTryOnsUsed(client);
+      const limit = client.usageLimit;
+      const tone: TryOnQuotaEmailTone = "atMonthlyCap";
+      const subject = buildTryOnQuotaUsageEmailSubject({ tone });
+      const bodyParams = { storeName, used, limit, tone };
       const text = buildTryOnQuotaUsageEmailBody(bodyParams);
       const html = buildTryOnQuotaUsageEmailHtml(bodyParams);
 

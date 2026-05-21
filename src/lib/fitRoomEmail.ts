@@ -55,23 +55,30 @@ export function resolveFitRoomEmailFrom(): string {
   return fromEnv || DEFAULT_FROM;
 }
 
-export async function sendFitRoomPlainTextMail(params: { to: string; subject: string; text: string }) {
+export async function sendFitRoomPlainTextMail(params: { to: string; subject: string; text: string; html?: string }) {
   const from = resolveFitRoomEmailFrom();
   console.log("[fit-room][email-debug] sendFitRoomPlainTextMail payload (before Resend)", {
     from,
     to: params.to,
     subject: params.subject,
     textBody: params.text,
+    htmlAttached: Boolean(params.html?.trim()),
+    htmlCharCount: params.html?.length ?? 0,
   });
   const resend = new Resend(requireResendApiKey());
   let loggedFailure = false;
   try {
-    const { data, error } = await resend.emails.send({
+    const payload: Parameters<typeof resend.emails.send>[0] = {
       from,
       to: params.to,
       subject: params.subject,
       text: params.text,
-    });
+    };
+    const htmlBody = params.html?.trim();
+    if (htmlBody) {
+      payload.html = htmlBody;
+    }
+    const { data, error } = await resend.emails.send(payload);
     if (error) {
       logFitRoomMailSendFailure(
         "sendFitRoomPlainTextMail",

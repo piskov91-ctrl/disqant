@@ -5,6 +5,11 @@ import {
 } from "@/lib/retailerAuth";
 import { checkoutSiteOrigin } from "@/lib/stripeServer";
 import { isFitRoomEmailConfigured, sendFitRoomMail } from "@/lib/fitRoomEmail";
+import {
+  transactionalCtaHtml,
+  transactionalParagraph,
+  wrapFitRoomTransactionalHtml,
+} from "@/lib/fitRoomTransactionalEmailHtml";
 
 export const runtime = "nodejs";
 
@@ -40,28 +45,41 @@ export async function POST(req: Request) {
       const origin = checkoutSiteOrigin(req);
       const resetUrl = `${origin}/reset-password?token=${encodeURIComponent(token)}`;
       const greeting = user.firstName?.trim() || "there";
+      const text = [
+        `Hi ${greeting},`,
+        "",
+        "Someone asked to reset your Fit Room retailer password. Totally normal if Chrome forgot it for you.",
+        "",
+        "Use this link within the hour — we keep it sharp on purpose:",
+        resetUrl,
+        "",
+        "If you've never tapped \"forgot password\", ignore everything here. Nothing changes otherwise.",
+        "",
+        "Warmly,",
+        "The Fit Room team",
+      ].join("\n");
+      const html = wrapFitRoomTransactionalHtml({
+        documentTitle: "Reset password",
+        preheader: "Link expires in an hour.",
+        heading: "Let's reset access",
+        innerHtml:
+          transactionalParagraph(`Hi ${greeting},`) +
+          transactionalParagraph(
+            "We spotted a retailer password reset for your inbox. Happens when memory fails or someone hands off the laptop.",
+          ) +
+          transactionalParagraph("Grab a fresh passphrase while the invitation is alive (one hour):") +
+          transactionalCtaHtml(resetUrl, "Choose a new password") +
+          transactionalParagraph(
+            "Didn't poke that button yourself? Toss this mail in the junk folder — the old password stubbornly refuses to budge.",
+          ) +
+          transactionalParagraph("Warmly,") +
+          transactionalParagraph("The Fit Room team"),
+      });
       await sendFitRoomMail({
         to: user.email,
         subject: "Reset your Fit Room password",
-        text: [
-          `Hi ${greeting},`,
-          "",
-          "We received a request to reset the password for your Fit Room retailer account.",
-          "",
-          `Open this link (valid for 1 hour):`,
-          resetUrl,
-          "",
-          "If you did not request this, you can ignore this email. Your password will stay the same.",
-          "",
-          "— The Fit Room Team",
-        ].join("\n"),
-        html: `
-<p>Hi ${escapeHtml(greeting)},</p>
-<p>We received a request to reset the password for your Fit Room retailer account.</p>
-<p><a href="${escapeHtml(resetUrl)}">Choose a new password</a> <span style="color:#666">(link valid for 1 hour)</span></p>
-<p style="font-size:13px;color:#666">If you did not request this, you can ignore this email.</p>
-<p>— The Fit Room Team</p>
-`.trim(),
+        text,
+        html,
       });
     } catch (e) {
       console.error("[retailer] forgot-password email failed", e);
@@ -73,12 +91,4 @@ export async function POST(req: Request) {
     message:
       "If an account exists for that email, we sent a password reset link. Check your inbox (and spam) shortly.",
   });
-}
-
-function escapeHtml(s: string): string {
-  return s
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;");
 }

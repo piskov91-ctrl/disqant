@@ -6,6 +6,7 @@ import {
   toPublicRetailer,
 } from "@/lib/retailerAuth";
 import { isFitRoomEmailConfigured, sendFitRoomPlainTextMail } from "@/lib/fitRoomEmail";
+import { transactionalParagraph, wrapFitRoomTransactionalHtml } from "@/lib/fitRoomTransactionalEmailHtml";
 
 export const runtime = "nodejs";
 
@@ -61,21 +62,41 @@ export async function POST(req: Request) {
     if (isFitRoomEmailConfigured()) {
       const greeting = user.firstName?.trim() || "there";
       const store = user.storeName?.trim() || user.companyName?.trim() || "your store";
+      const text = [
+        `Hi ${greeting},`,
+        "",
+        "Welcome to Fit Room — we're glad you're inside.",
+        "",
+        `We've spun up retailer access for ${store}. Flip on a subscription when you're ready so try-on quota and your embed key go live.`,
+        "",
+        "If anything in checkout feels fiddly, reply here — we'd rather unblock you than leave you prowling FAQs.",
+        "",
+        "Warmly,",
+        "The Fit Room team",
+      ].join("\n");
+      const html = wrapFitRoomTransactionalHtml({
+        documentTitle: "Welcome to Fit Room",
+        preheader: `Retail access for ${store} is waiting on you.`,
+        heading: "You're in — welcome aboard",
+        innerHtml:
+          transactionalParagraph(`Hi ${greeting},`) +
+          transactionalParagraph(
+            `Welcome aboard. Having ${store} in Fit Room already makes our week better — genuinely.`,
+          ) +
+          transactionalParagraph(
+            "Your cupboard is unpacked: pick whichever subscription suits you next so shopper try-ons activate and your embed snippet unlocks quietly in the dashboard.",
+          ) +
+          transactionalParagraph(
+            "Need a sounding board during setup? Send a note straight to this address and one of us will answer without the corporate script.",
+          ) +
+          transactionalParagraph("Warmly,") +
+          transactionalParagraph("The Fit Room team"),
+      });
       void sendFitRoomPlainTextMail({
         to: user.email,
         subject: "Welcome to Fit Room",
-        text: [
-          `Hi ${greeting},`,
-          "",
-          "Welcome to Fit Room — we’re excited to have you.",
-          "",
-          `Your account for ${store} is ready. Next, choose a subscription to activate your try-on quota and get your embed API key.`,
-          "",
-          "If you need a hand getting set up, just reply to this email — we’re happy to help.",
-          "",
-          "Warm regards,",
-          "The Fit Room Team",
-        ].join("\n"),
+        text,
+        html,
       }).catch(() => {});
     }
 

@@ -3,10 +3,11 @@ import { ADMIN_AUTH_COOKIE, isAdminAuthorizedCookieValue } from "@/lib/adminAuth
 import { getClientKeyRecordById } from "@/lib/apiKeyStore";
 import { resolveFitRoomEmailFrom } from "@/lib/fitRoomEmail";
 import {
-  TRY_ON_QUOTA_NEAR_LIMIT_EMAIL_SUBJECT_PREFIX,
   buildTryOnQuotaUsageEmailBody,
   buildTryOnQuotaUsageEmailHtml,
+  buildTryOnQuotaUsageEmailSubject,
   getTryOnQuotaUpgradePlanUrl,
+  parseTryOnQuotaEmailToneParam,
   sampleTryOnUsageCountAtLeastSeventyFivePercent,
 } from "@/lib/usageTryOnQuotaEmail";
 import { listRetailersLinkedToClientId } from "@/lib/retailerAuth";
@@ -23,7 +24,9 @@ export async function GET(req: Request) {
     return Response.json({ error: "Unauthorized." }, { status: 401 });
   }
 
-  const clientId = new URL(req.url).searchParams.get("clientId")?.trim();
+  const url = new URL(req.url);
+  const clientId = url.searchParams.get("clientId")?.trim();
+  const tone = parseTryOnQuotaEmailToneParam(url.searchParams.get("tone"));
 
   let previewStoreLabel = "Example Boutique";
   let usageLimit = 1000;
@@ -42,15 +45,17 @@ export async function GET(req: Request) {
       "your store";
   }
 
-  const sampleUsed = sampleTryOnUsageCountAtLeastSeventyFivePercent(usageLimit);
+  const sampleUsed =
+    tone === "atMonthlyCap"
+      ? usageLimit
+      : sampleTryOnUsageCountAtLeastSeventyFivePercent(usageLimit);
   const previewParams = {
     storeName: previewStoreLabel,
     used: sampleUsed,
     limit: usageLimit,
+    tone,
   };
-  const pct = Math.round(((sampleUsed / Math.max(1, usageLimit)) * 100) * 10) / 10;
-  const pctLabel = Number.isInteger(pct) ? `${pct.toFixed(0)}%` : `${pct.toFixed(1)}%`;
-  const subject = `${TRY_ON_QUOTA_NEAR_LIMIT_EMAIL_SUBJECT_PREFIX}${pctLabel} used`;
+  const subject = buildTryOnQuotaUsageEmailSubject({ tone });
   const body = buildTryOnQuotaUsageEmailBody(previewParams);
   const html = buildTryOnQuotaUsageEmailHtml(previewParams);
 
@@ -64,6 +69,8 @@ export async function GET(req: Request) {
     sampleLimit: usageLimit,
     previewStoreLabel,
     caption:
-      "Uses illustrative counts at roughly 75% of the plan's try-on limit — multipart email (HTML + plain text) matches what linked retailers receive.",
+      tone === "atMonthlyCap"
+        ? "Preview at monthly cap counts — multipart email matches the ~99% alert customers receive."
+        : "Roughly 75%+ usage sample — multipart email matches the warming heads-up merchants receive.",
   });
 }

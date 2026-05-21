@@ -1,3 +1,10 @@
+import {
+  transactionalEscapeHtml,
+  transactionalParagraph,
+  transactionalSnippetBlock,
+  wrapFitRoomTransactionalHtml,
+} from "@/lib/fitRoomTransactionalEmailHtml";
+
 /**
  * Plain-text install steps for the "email developer" flow. Kept in sync with the dashboard Get Code guide.
  */
@@ -44,14 +51,6 @@ export const DEVELOPER_INSTALL_SECTIONS = [
   },
 ] as const;
 
-function escapeHtml(s: string): string {
-  return s
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;");
-}
-
 export function buildDeveloperInstallEmail(params: {
   snippet: string;
   dashboardUrl: string;
@@ -65,83 +64,62 @@ export function buildDeveloperInstallEmail(params: {
       `${sec.title}\n${sec.steps.map((s, i) => `${i + 1}. ${s}`).join("\n")}`,
   ).join("\n\n");
 
-  const text = `Hi there,
+  const text = `Hi,
 
-${label} has invited you to install the Fit Room virtual try-on widget on their website. It takes less than five minutes and only requires pasting one line of code.
+${label} wants you to add the Fit Room try-on snippet to their site. It's one paste, near the footer, and shouldn't eat your afternoon.
 
-Here is the code:
+The line to drop in:
+
 ${snippet}
 
-Full installation instructions are below.
+Platform cheatsheet:
 
 ${sectionsText}
 
-The store owner can always sign in to Fit Room and open Dashboard → Get Code to see the live snippet: ${dashboardUrl}
+If the store signs in themselves, Dashboard → Get Code always shows the freshest version: ${dashboardUrl}
 
-If you have any questions, reply to this email and we will help straight away.
+Anything weird in the markup? Reply straight to this email — humans answer.
 
-Thanks,
-The Fit Room Team
-
-support@fit-room.com
+Warmly,
+The Fit Room team
 `;
 
+  const h2Style =
+    'margin:28px 0 14px;font-family:Georgia,"Times New Roman",serif;font-size:17px;font-weight:600;line-height:1.3;color:#C6A77D;';
+  const olStyle =
+    'margin:0 0 0 1.1em;padding:0;font-family:system-ui,-apple-system,sans-serif;font-size:15px;line-height:1.65;color:#e8e8e8;';
+  const liStyle = "margin-bottom:10px;";
   const sectionsHtml = DEVELOPER_INSTALL_SECTIONS.map(
-    (sec) => `
-    <h2 style="margin:1.75em 0 0.6em;font-size:17px;font-weight:600;color:#1c1917;letter-spacing:-0.02em;">${escapeHtml(sec.title)}</h2>
-    <ol style="margin:0 0 0 1.25em;padding:0;color:#44403c;line-height:1.65;font-size:15px;">
-      ${sec.steps.map((s) => `<li style="margin-bottom:0.55em;">${escapeHtml(s)}</li>`).join("")}
-    </ol>`,
+    (sec) =>
+      `<h2 style="${h2Style}">${transactionalEscapeHtml(sec.title)}</h2>` +
+      `<ol style="${olStyle}">${sec.steps
+        .map((s) => `<li style="${liStyle}">${transactionalEscapeHtml(s)}</li>`)
+        .join("")}</ol>`,
   ).join("");
 
-  const html = `<!DOCTYPE html>
-<html>
-<body style="margin:0;font-family:Georgia,'Times New Roman',serif;background:#fafaf9;color:#292524;line-height:1.6;">
-  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#fafaf9;padding:32px 16px;">
-    <tr>
-      <td align="center">
-        <table role="presentation" width="100%" style="max-width:560px;background:#ffffff;border:1px solid #e7e5e4;border-radius:12px;box-shadow:0 4px 24px rgba(28,25,23,0.06);">
-          <tr>
-            <td style="padding:36px 40px 28px;">
-              <p style="margin:0 0 16px;font-size:16px;color:#292524;">Hi there,</p>
-              <p style="margin:0 0 16px;font-size:16px;color:#44403c;">
-                <strong style="color:#1c1917;">${escapeHtml(label)}</strong> has invited you to install the <strong style="color:#1c1917;">Fit Room</strong> virtual try-on widget on their website.
-                It takes less than five minutes and only requires pasting one line of code.
-              </p>
-              <p style="margin:0 0 8px;font-size:15px;font-weight:600;color:#1c1917;">Here is the code:</p>
-              <pre style="margin:0 0 20px;background:#f5f5f4;border:1px solid #e7e5e4;border-radius:8px;padding:14px 16px;overflow:auto;font-size:13px;font-family:ui-monospace,Courier,monospace;color:#1c1917;white-space:pre-wrap;word-break:break-all;line-height:1.5;">${escapeHtml(snippet)}</pre>
-              <p style="margin:0 0 8px;font-size:16px;color:#44403c;">Full installation instructions are below.</p>
-            </td>
-          </tr>
-          <tr>
-            <td style="padding:0 40px 28px;border-top:1px solid #f5f5f4;">
-              <p style="margin:24px 0 4px;font-size:13px;font-weight:600;text-transform:uppercase;letter-spacing:0.06em;color:#78716c;">Installation by platform</p>
-              ${sectionsHtml}
-            </td>
-          </tr>
-          <tr>
-            <td style="padding:0 40px 32px;">
-              <p style="margin:0 0 12px;font-size:14px;color:#57534e;">
-                The store owner can also open their <a href="${escapeHtml(dashboardUrl)}" style="color:#a16207;text-decoration:underline;">Fit Room dashboard</a> (Get Code tab) for the live snippet anytime.
-              </p>
-              <p style="margin:0 0 20px;font-size:16px;color:#44403c;">
-                If you have any questions, <strong>reply to this email</strong> and we will help straight away.
-              </p>
-              <p style="margin:0;font-size:16px;color:#292524;">Thanks,<br /><strong>The Fit Room Team</strong></p>
-              <p style="margin:12px 0 0;font-size:14px;color:#78716c;">
-                <a href="mailto:support@fit-room.com" style="color:#a16207;">support@fit-room.com</a>
-              </p>
-            </td>
-          </tr>
-        </table>
-      </td>
-    </tr>
-  </table>
-</body>
-</html>`;
+  const innerHtml =
+    transactionalParagraph("Hi,") +
+    transactionalParagraph(
+      `${label} asked us to ping you — they need Fit Room's try-on snippet tucked into their layout. One line near the closing body is usually plenty.`,
+    ) +
+    transactionalParagraph("Paste this wherever your stack loads global footer scripts:") +
+    transactionalSnippetBlock(snippet) +
+    transactionalParagraph("Below is how we normally walk folks through common platforms.") +
+    sectionsHtml +
+    transactionalParagraph(`The retailer can revisit Dashboard → Get Code whenever they need the live line (same URL you were sent:${" "}${dashboardUrl}).`) +
+    transactionalParagraph("If something in Liquid or injections complains, hit reply — we'll read the thread.") +
+    transactionalParagraph("Warmly,") +
+    transactionalParagraph("The Fit Room team");
+
+  const html = wrapFitRoomTransactionalHtml({
+    documentTitle: "Install Fit Room",
+    preheader: "One snippet, footer placement — install guide inside.",
+    heading: "You're set up with the snippet",
+    innerHtml: innerHtml,
+  });
 
   return {
-    subject: "Your Fit Room widget is ready to install",
+    subject: "Fit Room snippet — here's how to place it",
     text,
     html,
   };

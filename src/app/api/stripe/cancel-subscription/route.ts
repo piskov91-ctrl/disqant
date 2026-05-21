@@ -4,6 +4,11 @@ import {
 } from "@/lib/retailerAuth";
 import { isFitRoomEmailConfigured, sendFitRoomPlainTextMail } from "@/lib/fitRoomEmail";
 import {
+  transactionalParagraph,
+  transactionalSnippetBlock,
+  wrapFitRoomTransactionalHtml,
+} from "@/lib/fitRoomTransactionalEmailHtml";
+import {
   parseSubscriptionCancellationPayload,
   SUBSCRIPTION_CANCELLATION_REASON_LABELS,
 } from "@/lib/subscriptionCancellation";
@@ -87,16 +92,17 @@ export async function POST(req: Request): Promise<Response> {
   const clientLines = [
     `Hi,`,
     ``,
-    `We've received your request to cancel your Fit Room subscription for ${storeLabel}.`,
+    `Thank you for the straight story — we've recorded the Fit Room cancellation for ${storeLabel}.`,
     ``,
-    `Your plan stays active with full access until ${resetLine} (UTC), through the end of your current Stripe billing period. You will not be charged again for this subscription after that date.`,
+    `Stripe keeps your toolkit wide open through ${resetLine} (UTC, end of your current billing lap). Billing pauses afterward; nobody sneaks another charge on this subscription.`,
     ``,
-    `Reason you selected: ${reasonLabel}`,
-    parsed.comments ? `Additional comments: ${parsed.comments}` : null,
+    `Reason captured: ${reasonLabel}`,
+    parsed.comments ? `What you scribbled separately: ${parsed.comments}` : null,
     ``,
-    `Thank you for trying Fit Room.`,
+    `If you drift back someday, we'd love to host you again. Until then breathe easy.`,
     ``,
-    `— Fit Room`,
+    `Warmly,`,
+    `Fit Room`,
   ].filter(Boolean) as string[];
 
   const supportLines = [
@@ -116,19 +122,45 @@ export async function POST(req: Request): Promise<Response> {
 
   if (isFitRoomEmailConfigured()) {
     try {
+      const clientHtml = wrapFitRoomTransactionalHtml({
+        documentTitle: "Subscription cancelled",
+        preheader: `Access continues through ${resetLine} UTC.`,
+        heading: "Consider this confirmation",
+        innerHtml:
+          transactionalParagraph("Hi,") +
+          transactionalParagraph(`Thanks for the straight story — we've logged the Fit Room cancellation for ${storeLabel}.`) +
+          transactionalParagraph(
+            `Stripe keeps lights on until ${resetLine} (UTC — basically the runway of your billing lap). After that the subscription winds down cleanly; there's no phantom renewal.`,
+          ) +
+          transactionalParagraph(`Reason you chose: ${reasonLabel}.`) +
+          (parsed.comments ? transactionalSnippetBlock(parsed.comments) : "") +
+          transactionalParagraph(
+            `If Fit Room deserves another whirl later on, we'd be chuffed — for now tuck this mail away knowing everything's boxed up.`,
+          ) +
+          transactionalParagraph("Warmly,") +
+          transactionalParagraph("The Fit Room team"),
+      });
       await sendFitRoomPlainTextMail({
         to: user.email.trim(),
         subject: "Fit Room — subscription cancellation confirmed",
         text: clientLines.join("\n"),
+        html: clientHtml,
       });
     } catch (e) {
       console.error("[stripe] cancellation retailer confirmation email failed", e);
     }
     try {
+      const supportHtml = wrapFitRoomTransactionalHtml({
+        documentTitle: "[Internal] Cancellation",
+        preheader: `${storeLabel} · ${user.email}`,
+        heading: "Retailer cancelled",
+        innerHtml: transactionalSnippetBlock(supportLines.join("\n")),
+      });
       await sendFitRoomPlainTextMail({
         to: SUPPORT_INBOX,
         subject: `[Fit Room] Cancellation — ${storeLabel} (${user.email})`,
         text: supportLines.join("\n"),
+        html: supportHtml,
       });
     } catch (e) {
       console.error("[stripe] cancellation support notification email failed", e);
