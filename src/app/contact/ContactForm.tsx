@@ -31,19 +31,33 @@ export function ContactForm() {
     setError(null);
     setStatus("loading");
     try {
+      const bodyPayload = {
+        name: name.trim(),
+        email: email.trim(),
+        company: company.trim(),
+        websiteUrl: websiteUrl.trim(),
+        monthlyVisitors,
+        message: message.trim(),
+      };
+      console.log("[fit-room][contact-form-client] submitting", {
+        endpoint: "/api/contact",
+        nameLength: bodyPayload.name.length,
+        companyLength: bodyPayload.company.length,
+        monthlyVisitorsSelected: Boolean(bodyPayload.monthlyVisitors),
+      });
       const res = await fetch("/api/contact", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          name: name.trim(),
-          email: email.trim(),
-          company: company.trim(),
-          websiteUrl: websiteUrl.trim(),
-          monthlyVisitors,
-          message: message.trim(),
-        }),
+        body: JSON.stringify(bodyPayload),
       });
-      const data = (await res.json()) as { ok?: boolean; error?: string };
+      const data = (await res.json()) as { ok?: boolean; error?: string; inquiryId?: string; id?: string | null };
+      console.log("[fit-room][contact-form-client] response", {
+        ok: res.ok,
+        httpStatus: res.status,
+        hasError: Boolean(data.error),
+        resendStaffEmailId: data.id ?? null,
+        inquiryId: data.inquiryId ?? null,
+      });
       if (!res.ok) {
         setError(data.error || "Something went wrong.");
         setStatus("error");
