@@ -1,3 +1,5 @@
+import Link from "next/link";
+
 import { Footer } from "@/components/Footer";
 import { Header } from "@/components/Header";
 import { MarketingTestimonialsWithPendingFeedback } from "@/components/MarketingTestimonialsWithPendingFeedback";
@@ -25,48 +27,29 @@ export default async function Home() {
             <div className="grid grid-cols-1 items-center gap-10 md:grid-cols-2 md:gap-10 lg:gap-14 xl:gap-16">
               <div className="order-1 flex min-w-0 flex-col justify-center">
                 <h1 className="text-balance text-3xl font-semibold leading-[1.12] tracking-tight text-white sm:text-4xl md:text-[2.5rem] md:leading-[1.1] lg:text-5xl lg:leading-[1.08]">
-                  Your online fitting room
+                  Let your shoppers try before they buy.
                 </h1>
 
                 <p className="mt-8 max-w-[36rem] text-base leading-[1.65] text-zinc-200 sm:mt-10 sm:text-lg sm:leading-[1.7]">
-                  Shoppers try on clothes before they buy — reducing returns and boosting sales.
+                  Wear Me is the UK&apos;s first virtual try-on service for online fashion stores. Your customers
+                  see how your clothes, shoes, jewellery and eyewear look on them — before they order. No app, no
+                  3D models. One line of code and it works on any website.
                 </p>
 
-                <p className="mt-6 max-w-[36rem] text-base leading-[1.65] text-zinc-200 sm:mt-8 sm:text-lg sm:leading-[1.7]">
-                  Wear Me adds a virtual try-on button to your store in minutes. No app, no 3D models, just one
-                  line of code.
-                </p>
-
-                <p className="mt-6 max-w-[36rem] text-sm leading-relaxed text-zinc-300 sm:mt-8 sm:text-base">
-                  Trusted by fashion retailers worldwide.
-                </p>
-
-                <form action="/demo" className="mt-8 block w-fit sm:mt-10">
-                  <button type="submit" className="wear-me-3d-final" aria-label="Wear Me — Try It Free">
-                    <div className="brushed-surface">
-                      <div className="monogram-frame">
-                        <svg viewBox="0 0 100 100" className="intertwined-wm">
-                          <text x="10" y="72" style={{ fontFamily: "serif", fontSize: "65px", fontWeight: "bold" }}>
-                            W
-                          </text>
-                          <text
-                            x="36"
-                            y="72"
-                            style={{
-                              fontFamily: "serif",
-                              fontSize: "65px",
-                              fontWeight: "bold",
-                              opacity: 0.9,
-                            }}
-                          >
-                            M
-                          </text>
-                        </svg>
-                      </div>
-                      <span className="btn-text-luxury">WEAR ME</span>
-                    </div>
-                  </button>
-                </form>
+                <div className="mt-8 flex flex-wrap items-center gap-3 sm:mt-10 sm:gap-4">
+                  <Link
+                    href="/demo"
+                    className="wear-me-btn inline-flex min-h-[44px] items-center justify-center rounded-full px-7 py-3 text-center text-sm font-semibold sm:text-base"
+                  >
+                    Try it yourself
+                  </Link>
+                  <Link
+                    href="/about"
+                    className="inline-flex min-h-[40px] items-center justify-center rounded-full border border-white/35 bg-white/5 px-5 py-2.5 text-center text-sm font-medium text-zinc-100 backdrop-blur-sm transition hover:border-white/50 hover:bg-white/10 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white/60 sm:min-h-[44px] sm:px-6 sm:text-[0.9375rem]"
+                  >
+                    How it works
+                  </Link>
+                </div>
               </div>
 
               <div className="order-2 flex w-full min-w-0 justify-center md:justify-end">
