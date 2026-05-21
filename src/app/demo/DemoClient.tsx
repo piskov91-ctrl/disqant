@@ -696,20 +696,21 @@ export default function DemoClient() {
             aria-label="Try on"
             onPointerDown={(e) => e.stopPropagation()}
           >
-            <div className="dq-head">
-              <div className="dq-head-title">Try On</div>
-              <button
-                type="button"
-                className="dq-x"
-                aria-label="Close try-on"
-                title="Close"
-                onClick={() => closeWearModal()}
-              >
-                <X className="dq-x-icon" strokeWidth={2.5} aria-hidden />
-              </button>
-            </div>
+            <div className="dq-scroll">
+              <div className="dq-head">
+                <div className="dq-head-title">Try On</div>
+                <button
+                  type="button"
+                  className="dq-x"
+                  aria-label="Close try-on"
+                  title="Close"
+                  onClick={() => closeWearModal()}
+                >
+                  <X className="dq-x-icon" strokeWidth={2.5} aria-hidden />
+                </button>
+              </div>
 
-            <div className="dq-body">
+              <div className="dq-body">
               <div className="dq-stage">
                 {!wearHasPhoto && !wearProcessing ? (
                   <div className="dq-empty">
@@ -863,11 +864,12 @@ export default function DemoClient() {
                   {wearSaveLoading ? "Saving…" : "Download image"}
                 </button>
               ) : null}
-            </div>
+              </div>
 
-            <div className="dq-brand">
-              <span>Fit Room</span>
-              <small>virtual try-on</small>
+              <div className="dq-brand">
+                <span>Fit Room</span>
+                <small>virtual try-on</small>
+              </div>
             </div>
           </div>
         </div>
