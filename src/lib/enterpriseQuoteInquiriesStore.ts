@@ -8,6 +8,8 @@ export const ENTERPRISE_QUOTE_INDEX_MAX = 500;
 export type EnterpriseQuoteRecord = {
   id: string;
   createdAt: string;
+  /** Contact email (required for quoting / replies). */
+  email: string;
   storeName: string;
   /** Canonical https URL display */
   websiteUrl: string;

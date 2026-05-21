@@ -38,6 +38,9 @@ const VISITOR_LABEL: Record<string, string> = {
 };
 
 const PLATFORM_SET = new Set(["shopify", "wordpress", "wix", "squarespace", "other"]);
+/** Same lightweight check as `/api/contact`; keeps obvious garbage out of queue. */
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
 const PLATFORM_LABEL: Record<string, string> = {
   shopify: "Shopify",
   wordpress: "WordPress",
@@ -79,11 +82,14 @@ export async function POST(req: Request) {
 
   const b = body as Record<string, unknown>;
   const storeName = isNonEmptyString(b.storeName) ? b.storeName.trim() : null;
+  const emailRaw = isNonEmptyString(b.email) ? b.email.trim() : "";
+  const email = EMAIL_RE.test(emailRaw) ? emailRaw : null;
   const websiteUrlRaw = typeof b.websiteUrl === "string" ? b.websiteUrl : "";
   const monthlyVisitors = typeof b.monthlyVisitors === "string" ? b.monthlyVisitors : "";
   const platform = typeof b.platform === "string" ? b.platform : "";
 
   if (!storeName) return Response.json({ error: "Store name is required." }, { status: 400 });
+  if (!email) return Response.json({ error: "A valid email address is required." }, { status: 400 });
   if (!VISITOR_SET.has(monthlyVisitors)) {
     return Response.json({ error: "Please select monthly website visitors." }, { status: 400 });
   }
@@ -106,6 +112,7 @@ export async function POST(req: Request) {
   let quoteId: string;
   try {
     quoteId = await recordEnterpriseQuote({
+      email,
       storeName,
       websiteUrl,
       monthlyVisitors,
@@ -121,6 +128,7 @@ export async function POST(req: Request) {
   const text = [
     "[Enterprise quote request]",
     "",
+    `Email: ${email}`,
     `Store name: ${storeName}`,
     `Website: ${websiteUrl}`,
     `Monthly visitors: ${monthlyVisitorsLabel}`,
@@ -133,8 +141,9 @@ export async function POST(req: Request) {
     preheader: `${storeName} · ${monthlyVisitorsLabel}`,
     heading: "Enterprise quote request",
     innerHtml:
-      transactionalParagraph(`Submitted from pricing — ${storeName}.`) +
-      transactionalSnippetBlock(text),
+      transactionalParagraph(
+        `Submitted from pricing — ${storeName}. Reply in your mail client to reach them at ${email}.`,
+      ) + transactionalSnippetBlock(text),
   });
 
   let from = resolveContactFormFrom();
@@ -146,6 +155,7 @@ export async function POST(req: Request) {
   const { error } = await resend.emails.send({
     from,
     to: [TO_EMAIL],
+    replyTo: email,
     subject: `Enterprise quote: ${storeName}`,
     text,
     html: staffHtml,

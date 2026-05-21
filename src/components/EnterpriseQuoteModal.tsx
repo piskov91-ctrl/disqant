@@ -26,6 +26,7 @@ type EnterpriseQuoteModalProps = {
 export function EnterpriseQuoteModal({ open, onClose }: EnterpriseQuoteModalProps) {
   const titleId = useId();
   const [storeName, setStoreName] = useState("");
+  const [email, setEmail] = useState("");
   const [websiteUrl, setWebsiteUrl] = useState("");
   const [monthlyVisitors, setMonthlyVisitors] = useState<(typeof MONTHLY_VISITORS)[number]["value"]>("under-10k");
   const [platform, setPlatform] = useState<(typeof PLATFORMS)[number]["value"]>("shopify");
@@ -35,6 +36,7 @@ export function EnterpriseQuoteModal({ open, onClose }: EnterpriseQuoteModalProp
 
   const reset = useCallback(() => {
     setStoreName("");
+    setEmail("");
     setWebsiteUrl("");
     setMonthlyVisitors("under-10k");
     setPlatform("shopify");
@@ -74,6 +76,7 @@ export function EnterpriseQuoteModal({ open, onClose }: EnterpriseQuoteModalProp
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           storeName: storeName.trim(),
+          email: email.trim(),
           websiteUrl: websiteUrl.trim(),
           monthlyVisitors,
           platform,
@@ -166,6 +169,23 @@ export function EnterpriseQuoteModal({ open, onClose }: EnterpriseQuoteModalProp
                   onChange={(e) => setStoreName(e.target.value)}
                   className="mt-1.5 w-full rounded-xl border border-[#C6A77D]/20 bg-[#14110e] px-4 py-3 text-sm text-[#F5EDE4] outline-none ring-0 transition placeholder:text-zinc-600 focus:border-[#C6A77D]/50"
                   placeholder="Your store name"
+                />
+              </div>
+
+              <div>
+                <label htmlFor="eq-email" className="block text-sm font-medium text-[#F5EDE4]/85">
+                  Email <span className="text-red-400">*</span>
+                </label>
+                <input
+                  id="eq-email"
+                  name="email"
+                  type="email"
+                  required
+                  autoComplete="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  className="mt-1.5 w-full rounded-xl border border-[#C6A77D]/20 bg-[#14110e] px-4 py-3 text-sm text-[#F5EDE4] outline-none transition placeholder:text-zinc-600 focus:border-[#C6A77D]/50"
+                  placeholder="you@company.com"
                 />
               </div>
 
