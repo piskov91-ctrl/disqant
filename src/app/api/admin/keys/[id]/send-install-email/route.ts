@@ -10,6 +10,7 @@ import {
 import { ADMIN_AUTH_COOKIE, isAdminAuthorizedCookieValue } from "@/lib/adminAuth";
 import { getClientKeyRecordById } from "@/lib/apiKeyStore";
 import { isFitRoomEmailConfigured, sendFitRoomMail } from "@/lib/fitRoomEmail";
+import { readWearMeGuidePdfFile, wearMeGuidePdfFilename } from "@/lib/wearMeGuidePdf";
 
 export const runtime = "nodejs";
 
@@ -107,8 +108,32 @@ export async function POST(req: Request, ctx: { params: Promise<{ id: string }> 
     emailSubjectLine: subject,
   });
 
+  let attachment: { filename: string; buffer: Buffer };
   try {
-    await sendFitRoomMail({ to: sentTo, subject, text, html });
+    attachment = await readWearMeGuidePdfFile(platform);
+  } catch (e) {
+    const hintFilename = wearMeGuidePdfFilename(platform);
+    console.error(
+      `[fit-room][admin] missing Wear Me PDF for platform="${platform}" (expected public/guides/${hintFilename}).`,
+      e instanceof Error ? e.message : String(e),
+    );
+    return NextResponse.json(
+      {
+        error:
+          "Integration guide PDF is missing on this server (see public/guides). Ask an engineer to add the Wear Me guides.",
+      },
+      { status: 503 },
+    );
+  }
+
+  try {
+    await sendFitRoomMail({
+      to: sentTo,
+      subject,
+      text,
+      html,
+      attachments: [{ filename: attachment.filename, content: attachment.buffer }],
+    });
   } catch (e) {
     console.error("[admin] send-install-email failed", {
       clientId,

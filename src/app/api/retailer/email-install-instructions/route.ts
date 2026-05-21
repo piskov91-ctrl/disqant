@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { getClientKeyRecordById } from "@/lib/apiKeyStore";
 import { buildDeveloperInstallEmail } from "@/lib/retailerDeveloperInstallEmail";
 import { isFitRoomEmailConfigured, sendFitRoomMail } from "@/lib/fitRoomEmail";
+import { readWearMeGuidePdfFile } from "@/lib/wearMeGuidePdf";
 import { getRetailerSessionUser } from "@/lib/retailerAuth";
 
 export const runtime = "nodejs";
@@ -70,17 +71,37 @@ export async function POST(req: Request) {
   }
 
   const snippet = `<script async src="${origin}/widget.js" data-fit-room-key="${client.key}"></script>`;
-  const dashboardUrl = `${origin}/dashboard`;
   const storeLabel = client.clientName?.trim() || "Store";
 
   const { subject, text, html } = buildDeveloperInstallEmail({
     snippet,
-    dashboardUrl,
     storeLabel,
   });
 
+  let attachment: { filename: string; buffer: Buffer };
   try {
-    await sendFitRoomMail({ to: email, subject, text, html });
+    attachment = await readWearMeGuidePdfFile("custom");
+  } catch (e) {
+    console.error(
+      "[fit-room][retailer] missing integration PDF (custom): public/guides/wear-me-custom.pdf",
+      e instanceof Error ? e.message : String(e),
+    );
+    return NextResponse.json(
+      {
+        error: "Wear Me PDF guide is not available on this server yet. Please email support@fit-room.com.",
+      },
+      { status: 503 },
+    );
+  }
+
+  try {
+    await sendFitRoomMail({
+      to: email,
+      subject,
+      text,
+      html,
+      attachments: [{ filename: attachment.filename, content: attachment.buffer }],
+    });
   } catch (e) {
     return NextResponse.json(
       { error: e instanceof Error ? e.message : "Could not send email." },

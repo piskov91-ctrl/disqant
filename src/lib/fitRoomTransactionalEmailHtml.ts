@@ -1,8 +1,8 @@
-/** Shared transactional email shell — Fit Room dark luxury brand. */
+/** Shared transactional email shell — Fit Room responsive brand layout. */
 
 const DEFAULT_ORIGIN = "https://fit-room.com";
 
-/** Public site links (Terms, Privacy, logo target). Prefer NEXT_PUBLIC_SITE_URL in production. */
+/** Public logo + asset URLs. Prefer NEXT_PUBLIC_SITE_URL in production. */
 export function fitRoomMarketingOrigin(): string {
   const raw = process.env.NEXT_PUBLIC_SITE_URL?.trim();
   if (raw && /^https?:\/\//i.test(raw)) {
@@ -24,41 +24,44 @@ export function transactionalEscapeHtml(s: string): string {
     .replace(/"/g, "&quot;");
 }
 
+/** Body copy sits on white — dark, readable typography. */
 const P =
-  'margin:0 0 18px;font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;font-size:15px;line-height:1.65;color:#f0f0f0;';
-const muted = "#a3a3a3";
+  'margin:0 0 16px;font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;font-size:16px;line-height:1.62;color:#1f2937;';
+
+const mutedFooter = "#9ca3af";
+const footerLinkGold = "#C6A77D";
 
 /**
- * Wrapper for all transactional mail: dark background (#1a1a1a), gold wordmark fallback,
- * gold accents, readable body, branded footer + Terms/Privacy.
+ * Responsive outer frame: dark surrounds, `#2C241F` branded header strip with `/logo.png`
+ * (`alt="Fit Room"`), slim dark accent bar, **white** main column, centred footer row.
  */
 export function wrapFitRoomTransactionalHtml(params: {
   /** Shown as <title>; keep short. */
   documentTitle?: string;
-  /** Hidden inbox preview snippet (often first line intent). Max ~90 chars ideally. */
+  /** Hidden inbox preview snippet. */
   preheader?: string;
-  /** Optional gold headline inside the card. */
+  /** Optional headline inside white body (readable dark text). */
   heading?: string;
-  /** Already-escaped semantic HTML fragments (paragraphs, lists, HRs, CTAs). */
   innerHtml: string;
 }): string {
   const origin = fitRoomMarketingOrigin();
-  const termsUrl = `${origin}/terms`;
-  const privacyUrl = `${origin}/privacy`;
+  const logoUrl = `${origin}/logo.png`;
   const title = transactionalEscapeHtml(params.documentTitle ?? "Fit Room");
   const preRaw = params.preheader?.trim() ?? "";
   const preEscaped = transactionalEscapeHtml(preRaw);
+
   const headingBlock = params.heading
-    ? `<h1 style="margin:0 0 22px;font-family:Georgia,'Times New Roman',serif;font-size:22px;font-weight:600;line-height:1.25;color:#C6A77D;">
-         ${transactionalEscapeHtml(params.heading)}
-       </h1>`
+    ? `<tr>
+         <td style="padding:0 0 20px;mso-padding-alt:0 0 20px 0;">
+           <p style="margin:0;font-family:Georgia,'Times New Roman',Times,serif;font-size:22px;font-weight:600;line-height:1.3;color:#111827;mso-line-height-rule:exactly;">
+             ${transactionalEscapeHtml(params.heading)}
+           </p>
+         </td>
+       </tr>`
     : "";
 
-  /* Apple Mail / Gmail preheader spacer trick */
   const preSpacer =
     "&nbsp;&#8204;&nbsp;&#8204;&nbsp;&#8204;&nbsp;&#8204;&nbsp;&#8204;&nbsp;&#8204;&nbsp;&#8204;&nbsp;&#8204;";
-
-  const linkGold = "color:#C6A77D;text-decoration:underline;text-underline-offset:2px;";
 
   return `<!DOCTYPE html>
 <html lang="en">
@@ -66,55 +69,79 @@ export function wrapFitRoomTransactionalHtml(params: {
 <meta charset="utf-8"/>
 <meta http-equiv="x-ua-compatible" content="ie=edge"/>
 <meta name="viewport" content="width=device-width,initial-scale=1"/>
+<meta name="color-scheme" content="dark light"/>
+<meta name="supported-color-schemes" content="dark light"/>
 <title>${title}</title>
+<style type="text/css">
+  html, body { margin: 0 !important; padding: 0 !important; width: 100% !important; }
+  img { border: 0; outline: none; text-decoration: none; height: auto; line-height: 100%; vertical-align: bottom; display: inline-block; -ms-interpolation-mode: bicubic; }
+  table { border-collapse: collapse !important; mso-table-lspace: 0pt; mso-table-rspace: 0pt; }
+  a { color: inherit; text-decoration: none; font-weight: 600; }
+  @media screen and (max-width: 620px) {
+    .fr-email-wrap-pad { padding-left: 10px !important; padding-right: 10px !important; padding-top: 14px !important; padding-bottom: 18px !important; }
+    .fr-email-body-inner { padding: 28px 20px !important; }
+    .fr-header-cell { padding: 18px 16px !important; }
+    .fr-shell { width: 100% !important; max-width: 100% !important; }
+    .fr-logo-img { width: auto !important; max-width: 72% !important; max-height: 48px !important; height: auto !important; min-width: 120px !important; }
+  }
+</style>
 </head>
-<body style="margin:0;padding:0;background-color:#1a1a1a;">
-<div style="display:none;overflow:hidden;line-height:1px;opacity:0;max-height:0;max-width:0">${preEscaped}</div>
-<table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="background-color:#1a1a1a;">
+<body style="margin:0;padding:0;background-color:#1a1a1a;color:#fafafa;-webkit-font-smoothing:antialiased;">
+<div style="display:none;overflow:hidden;line-height:1px;max-height:0;max-width:0;opacity:0;mso-hide:all">${preEscaped}</div>
+<table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="width:100%;background-color:#1a1a1a;">
   <tr>
-    <td align="center" style="padding:32px 16px;">
-      <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="640" style="max-width:640px;width:100%;">
+    <td align="center" class="fr-email-wrap-pad" style="padding:24px 14px;background-color:#1a1a1a;">
+      <table role="presentation" cellspacing="0" cellpadding="0" border="0" align="center" width="600" class="fr-shell" style="max-width:600px;width:100%;border-radius:14px 14px 10px 10px;overflow:hidden;background-color:#ffffff;">
 
-        <!-- Wordmark -->
         <tr>
-          <td align="center" style="padding:4px 0 20px;">
-            <a href="${transactionalEscapeHtml(origin)}" target="_blank" rel="noopener noreferrer" style="text-decoration:none;display:inline-block;">
-              <span style="font-family:Georgia,'Times New Roman',Times,serif;font-size:26px;font-weight:600;line-height:1.2;color:#C6A77D;letter-spacing:0.02em;">Fit Room</span>
-            </a>
+          <td bgcolor="#2C241F" valign="middle" align="center" class="fr-header-cell" width="600" style="width:600px;background-color:#2C241F;padding:22px 20px 24px;line-height:normal;text-align:center;vertical-align:middle;mso-padding-alt:22px 20px 24px;font-size:16px;">
+            <table role="presentation" cellspacing="0" cellpadding="0" border="0" align="center" style="margin:0 auto;">
+              <tr>
+                <td align="center" style="padding:0;line-height:normal;">
+                  <img
+                    src="${transactionalEscapeHtml(logoUrl)}"
+                    alt="Fit Room"
+                    width="168"
+                    class="fr-logo-img"
+                    style="display:block;height:auto;max-height:54px;width:168px;max-width:88%;margin:0 auto;color:#C6A77D;"
+                  />
+                  <p style="margin:10px 0 0;line-height:1.35;color:#C6A77D;font-family:Georgia,'Times New Roman',serif;font-size:21px;font-weight:600;display:block;mso-hide:all;mso-margin-top-alt:10px;" class="fr-wordmark-alt">
+                    Fit Room
+                  </p>
+                </td>
+              </tr>
+            </table>
           </td>
         </tr>
 
-        <!-- Divider -->
         <tr>
-          <td style="padding:0 0 24px;">
-            <div style="height:2px;line-height:2px;background:linear-gradient(90deg,rgba(198,167,125,0),#C6A77D,#C6A77D,rgba(198,167,125,0));border-radius:1px;"></div>
-          </td>
+          <td bgcolor="#111827" valign="middle" align="center" height="10" width="600" style="width:600px;background-color:#111827;padding:0;height:10px;line-height:10px;font-size:10px;mso-height-source:exactly;border-bottom:3px solid #C6A77D;"></td>
         </tr>
 
-        <!-- Main card -->
         <tr>
-          <td style="padding:36px 32px 34px;background-color:#252525;border:1px solid #333333;border-radius:16px;border-top:3px solid #C6A77D;">
-            ${headingBlock}
-            ${params.innerHtml}
+          <td bgcolor="#ffffff" style="padding:36px 32px 38px;background-color:#ffffff;mso-padding-alt:36px 32px 38px;" class="fr-email-body-inner">
+            <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="width:100%;">
+              ${headingBlock}
+              <tr>
+                <td style="padding:0;font-family:system-ui,-apple-system,sans-serif;color:#1f2937;mso-padding-alt:0;">
+                  ${params.innerHtml}
+                </td>
+              </tr>
+            </table>
           </td>
         </tr>
+      </table>
 
-        <!-- Footer -->
+      <table role="presentation" cellspacing="0" cellpadding="0" border="0" align="center" width="600" style="width:100%;max-width:600px;">
         <tr>
-          <td align="center" style="padding:28px 12px 8px;font-family:system-ui,-apple-system,sans-serif;">
-            <p style="margin:0 0 10px;font-size:13px;line-height:1.6;color:${muted};">
-              Fit Room Ltd &nbsp;·&nbsp; London, UK &nbsp;·&nbsp;
-              <a href="mailto:support@fit-room.com" style="${linkGold}">support@fit-room.com</a>
+          <td align="center" style="padding:22px 10px 8px;mso-padding-alt:22px 10px 8px;font-family:system-ui,-apple-system,sans-serif;font-size:13px;line-height:1.65;color:${mutedFooter};">
+            <p style="margin:0;line-height:1.65;mso-margin-top-alt:0;mso-margin-bottom-alt:8px;color:${mutedFooter};">
+              Fit Room Ltd &nbsp;|&nbsp; London, UK &nbsp;|&nbsp;
+              <a href="mailto:support@fit-room.com" style="color:${footerLinkGold};text-decoration:none;font-weight:600;mso-padding-alt:0;">support@fit-room.com</a>
             </p>
-            <p style="margin:0;font-size:12px;line-height:1.6;color:${muted};">
-              <a href="${transactionalEscapeHtml(termsUrl)}" style="${linkGold}">Terms</a>
-              <span aria-hidden="true" style="color:#525252">&nbsp;&nbsp;·&nbsp;&nbsp;</span>
-              <a href="${transactionalEscapeHtml(privacyUrl)}" style="${linkGold}">Privacy</a>
-            </p>
-            <div style="height:12px;line-height:12px;">${preRaw ? `<span style="font-size:0">${preSpacer}</span>` : ""}</div>
+            ${preRaw ? `<div style="height:8px;line-height:8px;font-size:8px;mso-hide:all;"><span style="font-size:0;line-height:0;mso-hide:all;">${preSpacer}</span></div>` : ""}
           </td>
         </tr>
-
       </table>
     </td>
   </tr>
@@ -123,25 +150,25 @@ export function wrapFitRoomTransactionalHtml(params: {
 </html>`;
 }
 
-/** Styled paragraph helper for transactional inner fragments. */
+/** Styled paragraph for white inner column. */
 export function transactionalParagraph(textPlain: string): string {
   return `<p style="${P}">${transactionalEscapeHtml(textPlain)}</p>`;
 }
 
-/** Solid gold fill CTA compatible with Gmail/Outlook quirks. */
+/** Gold fill CTA (works on white content area). */
 export function transactionalCtaHtml(href: string, label: string): string {
   const eh = transactionalEscapeHtml(href);
   const el = transactionalEscapeHtml(label);
-  return `<table role="presentation" cellspacing="0" cellpadding="0" border="0" style="margin:8px 0 24px;">
+  return `<table role="presentation" cellspacing="0" cellpadding="0" border="0" style="margin:10px auto 26px;mso-margin-top-alt:10px;mso-margin-bottom-alt:26px;">
   <tr>
-    <td style="border-radius:10px;background-color:#C6A77D;mso-padding-alt:14px 28px;">
-      <a href="${eh}" style="display:inline-block;padding:14px 28px;font-family:system-ui,sans-serif;font-size:15px;font-weight:600;color:#201a17;text-decoration:none;border-radius:10px;line-height:1.25;">${el}</a>
+    <td align="left" bgcolor="#C6A77D" style="border-radius:10px;background-color:#C6A77D;mso-padding-alt:14px 28px;">
+      <a href="${eh}" target="_blank" rel="noopener noreferrer" style="display:inline-block;padding:14px 28px;font-family:system-ui,-apple-system,sans-serif;font-size:15px;font-weight:700;color:#1c1510;text-decoration:none;border-radius:10px;line-height:1.25;mso-line-height-rule:exactly;">${el}</a>
     </td>
   </tr>
 </table>`;
 }
 
-/** Inline code / snippet strip on charcoal. */
+/** Inline code block on light gray (white column). */
 export function transactionalSnippetBlock(snippetPlain: string): string {
-  return `<pre style="margin:14px 0 22px;padding:14px 16px;background-color:#171717;border:1px solid rgba(198,167,125,0.35);border-radius:10px;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:12px;line-height:1.5;color:#e4e4e7;overflow:auto;white-space:pre-wrap;word-break:break-word;">${transactionalEscapeHtml(snippetPlain)}</pre>`;
+  return `<pre style="margin:14px 0 22px;padding:14px 16px;background-color:#f3f4f6;border:1px solid #e5e7eb;border-radius:10px;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:12px;line-height:1.55;color:#374151;overflow:auto;white-space:pre-wrap;word-break:break-word;mso-margin-top-alt:14px;mso-margin-bottom-alt:22px;">${transactionalEscapeHtml(snippetPlain)}</pre>`;
 }

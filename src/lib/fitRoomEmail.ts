@@ -1,5 +1,11 @@
 import { Resend } from "resend";
 
+/** Attachments for Resend — `content` is raw bytes (`Buffer`), or a **base64** string (decoded here). */
+export type FitRoomEmailAttachment =
+  | { filename: string; content: Buffer }
+  | { filename: string; content: Uint8Array }
+  | { filename: string; content: string };
+
 /** Default sender for Fit Room transactional mail (verify fit-room.com in Resend). */
 const DEFAULT_FROM = "Fit Room <support@fit-room.com>";
 
@@ -7,6 +13,22 @@ const DEFAULT_FROM = "Fit Room <support@fit-room.com>";
 function previewForLog(content: string, maxChars: number): string {
   if (content.length <= maxChars) return content;
   return `${content.slice(0, maxChars)}… [truncated, ${content.length} chars total]`;
+}
+
+function attachmentContentToBuffer(content: FitRoomEmailAttachment["content"]): Buffer {
+  if (Buffer.isBuffer(content)) return content;
+  if (typeof content === "string") return Buffer.from(content, "base64");
+  return Buffer.from(content);
+}
+
+function normalizeFitRoomAttachments(
+  list: readonly FitRoomEmailAttachment[] | undefined,
+): { filename: string; content: Buffer }[] | undefined {
+  if (!list?.length) return undefined;
+  return list.map((a) => ({
+    filename: a.filename,
+    content: attachmentContentToBuffer(a.content),
+  }));
 }
 
 function logFitRoomMailSendFailure(
@@ -55,8 +77,15 @@ export function resolveFitRoomEmailFrom(): string {
   return fromEnv || DEFAULT_FROM;
 }
 
-export async function sendFitRoomPlainTextMail(params: { to: string; subject: string; text: string; html?: string }) {
+export async function sendFitRoomPlainTextMail(params: {
+  to: string;
+  subject: string;
+  text: string;
+  html?: string;
+  attachments?: readonly FitRoomEmailAttachment[];
+}) {
   const from = resolveFitRoomEmailFrom();
+  const attachmentNames = params.attachments?.map((a) => a.filename) ?? [];
   console.log("[fit-room][email-debug] sendFitRoomPlainTextMail payload (before Resend)", {
     from,
     to: params.to,
@@ -64,6 +93,8 @@ export async function sendFitRoomPlainTextMail(params: { to: string; subject: st
     textBody: params.text,
     htmlAttached: Boolean(params.html?.trim()),
     htmlCharCount: params.html?.length ?? 0,
+    attachmentCount: attachmentNames.length,
+    attachmentFilenames: attachmentNames,
   });
   const resend = new Resend(requireResendApiKey());
   let loggedFailure = false;
@@ -77,6 +108,10 @@ export async function sendFitRoomPlainTextMail(params: { to: string; subject: st
     const htmlBody = params.html?.trim();
     if (htmlBody) {
       payload.html = htmlBody;
+    }
+    const atts = normalizeFitRoomAttachments(params.attachments);
+    if (atts?.length) {
+      payload.attachments = atts;
     }
     const { data, error } = await resend.emails.send(payload);
     if (error) {
@@ -116,8 +151,15 @@ export async function sendFitRoomPlainTextMail(params: { to: string; subject: st
 }
 
 /** Multipart alternative: clients that support HTML show the rich body; others fall back to `text`. */
-export async function sendFitRoomMail(params: { to: string; subject: string; text: string; html: string }) {
+export async function sendFitRoomMail(params: {
+  to: string;
+  subject: string;
+  text: string;
+  html: string;
+  attachments?: readonly FitRoomEmailAttachment[];
+}) {
   const from = resolveFitRoomEmailFrom();
+  const attachmentNames = params.attachments?.map((a) => a.filename) ?? [];
   console.log("[fit-room][email-debug] sendFitRoomMail payload (before Resend)", {
     from,
     to: params.to,
@@ -125,18 +167,25 @@ export async function sendFitRoomMail(params: { to: string; subject: string; tex
     textBody: params.text,
     htmlCharCount: params.html.length,
     htmlPreview: previewForLog(params.html, 1200),
+    attachmentCount: attachmentNames.length,
+    attachmentFilenames: attachmentNames,
   });
 
   const resend = new Resend(requireResendApiKey());
   let loggedFailure = false;
   try {
-    const { data, error } = await resend.emails.send({
+    const payload: Parameters<typeof resend.emails.send>[0] = {
       from,
       to: params.to,
       subject: params.subject,
       text: params.text,
       html: params.html,
-    });
+    };
+    const atts = normalizeFitRoomAttachments(params.attachments);
+    if (atts?.length) {
+      payload.attachments = atts;
+    }
+    const { data, error } = await resend.emails.send(payload);
     if (error) {
       logFitRoomMailSendFailure("sendFitRoomMail", { from, to: params.to, subject: params.subject }, error);
       loggedFailure = true;
