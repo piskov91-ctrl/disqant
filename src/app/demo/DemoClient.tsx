@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
-import { ChevronLeft, SwitchCamera } from "lucide-react";
+import { ChevronLeft, SwitchCamera, X } from "lucide-react";
 import {
   DEMO_CATALOG,
   GARMENT_PRESETS,
@@ -311,14 +311,22 @@ export default function DemoClient() {
     }, 220);
   }, [clearWearProgressTimer, stopWearStream]);
 
+  /** Try-on API in flight — backdrop / Escape must not dismiss (only explicit Close control). */
+  const wearTryOnDismissLocked = wearProcessing;
+
   useEffect(() => {
     if (!wearOpen) return;
     function onKeyDown(e: KeyboardEvent) {
-      if (e.key === "Escape") closeWearModal();
+      if (e.key !== "Escape") return;
+      if (wearTryOnDismissLocked) {
+        e.preventDefault();
+        return;
+      }
+      closeWearModal();
     }
     document.addEventListener("keydown", onKeyDown);
     return () => document.removeEventListener("keydown", onKeyDown);
-  }, [wearOpen, closeWearModal]);
+  }, [wearOpen, wearTryOnDismissLocked, closeWearModal]);
 
   const openWearMe = useCallback(
     (preset: GarmentPreset) => {
@@ -665,16 +673,34 @@ export default function DemoClient() {
       {wearOpen && (
         <div
           role="presentation"
-          className={`dq-backdrop${wearBackdropOpen && !wearClosing ? " dq-open" : ""}${wearClosing ? " dq-closing" : ""}`}
-          onMouseDown={(e) => {
-            if (e.target === e.currentTarget) closeWearModal();
+          className={`dq-backdrop${wearBackdropOpen && !wearClosing ? " dq-open" : ""}${wearClosing ? " dq-closing" : ""}${wearTryOnDismissLocked ? " dq-dismiss-locked" : ""}`}
+          style={wearTryOnDismissLocked ? { touchAction: "none" as const } : undefined}
+          onPointerDown={(e) => {
+            if (e.target !== e.currentTarget) return;
+            if (wearTryOnDismissLocked) {
+              e.preventDefault();
+              return;
+            }
+            closeWearModal();
           }}
         >
-          <div className="dq-modal" role="dialog" aria-modal="true" aria-label="Try on">
+          <div
+            className="dq-modal"
+            role="dialog"
+            aria-modal="true"
+            aria-label="Try on"
+            onPointerDown={(e) => e.stopPropagation()}
+          >
             <div className="dq-head">
               <div className="dq-head-title">Try On</div>
-              <button type="button" className="dq-x" aria-label="Close" onClick={closeWearModal}>
-                ✕
+              <button
+                type="button"
+                className="dq-x"
+                aria-label="Close try-on"
+                title="Close"
+                onClick={() => closeWearModal()}
+              >
+                <X className="dq-x-icon" strokeWidth={2.5} aria-hidden />
               </button>
             </div>
 
