@@ -27,7 +27,7 @@ export default async function Home() {
             <div className="grid grid-cols-1 items-center gap-10 md:grid-cols-2 md:gap-10 lg:gap-14 xl:gap-16">
               <div className="order-1 flex min-w-0 flex-col justify-center">
                 <h1 className="max-w-[min(100%,34rem)] text-balance font-serif text-4xl font-normal leading-[1.12] tracking-tight text-[#C6A77D] antialiased sm:text-5xl sm:leading-[1.1] md:text-[2.875rem] md:leading-[1.08] lg:text-6xl lg:leading-[1.06] xl:text-[3.5rem]">
-                  Give your shoppers a fitting room.
+                  Give your shoppers a virtual fitting room.
                 </h1>
 
                 <h2 className="mt-6 max-w-[40rem] text-pretty font-sans text-lg font-light leading-relaxed text-zinc-200/95 sm:mt-7 sm:text-xl sm:leading-[1.55]">
