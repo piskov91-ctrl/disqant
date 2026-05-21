@@ -53,11 +53,13 @@ export async function POST(req: Request) {
   const stripe = getStripe();
 
   try {
+    const stripeCustomerId = user.stripeCustomerId?.trim() || "";
+
     if (customTryOns != null) {
       const amountPence = customTopUpAmountGbpPence(customTryOns);
       const session = await stripe.checkout.sessions.create({
         mode: "payment",
-        customer_email: user.email,
+        ...(stripeCustomerId ? { customer: stripeCustomerId } : { customer_email: user.email }),
         client_reference_id: user.id,
         line_items: [
           {
@@ -100,7 +102,7 @@ export async function POST(req: Request) {
     const pack = getTopUpPackById(packId);
     const session = await stripe.checkout.sessions.create({
       mode: "payment",
-      customer_email: user.email,
+      ...(stripeCustomerId ? { customer: stripeCustomerId } : { customer_email: user.email }),
       client_reference_id: user.id,
       line_items: [
         {

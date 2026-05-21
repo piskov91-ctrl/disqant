@@ -1,11 +1,12 @@
-import { getStripe } from "@/lib/stripeServer";
-import { SUBSCRIPTION_PLANS, parseSubscriptionPlanKey } from "@/lib/subscriptionPlans";
+import { checkoutSiteOrigin, getStripe } from "@/lib/stripeServer";
+import {
+  SUBSCRIPTION_PLANS,
+  parseSubscriptionPlanKey,
+  stripeCatalogSubscriptionPriceId,
+} from "@/lib/subscriptionPlans";
 import { getRetailerSessionUser } from "@/lib/retailerAuth";
 
 export const runtime = "nodejs";
-
-const STRIPE_SUCCESS_URL = "https://fit-room.com/subscriptions?checkout=success" as const;
-const STRIPE_CANCEL_URL = "https://fit-room.com/subscriptions?checkout=cancelled" as const;
 
 async function createCheckoutSessionUrl(params: { req: Request; planKey: keyof typeof SUBSCRIPTION_PLANS }) {
   const user = await getRetailerSessionUser();
@@ -13,26 +14,33 @@ async function createCheckoutSessionUrl(params: { req: Request; planKey: keyof t
 
   const def = SUBSCRIPTION_PLANS[params.planKey];
   const stripe = getStripe();
+  const origin = checkoutSiteOrigin(params.req);
+
+  /** Exactly one recurring line — base subscription plan only (never bundle top-ups here). */
+  const catalogPriceId = stripeCatalogSubscriptionPriceId(params.planKey);
+  const subscriptionLineItems = catalogPriceId
+    ? [{ price: catalogPriceId, quantity: 1 as const }]
+    : [
+        {
+          quantity: 1 as const,
+          price_data: {
+            currency: "gbp" as const,
+            unit_amount: def.amountGbpPence,
+            recurring: { interval: "month" as const },
+            product_data: {
+              name: def.name,
+            },
+          },
+        },
+      ];
 
   const session = await stripe.checkout.sessions.create({
     mode: "subscription",
     customer_email: user.email,
     client_reference_id: user.id,
-    line_items: [
-      {
-        quantity: 1,
-        price_data: {
-          currency: "gbp",
-          unit_amount: def.amountGbpPence,
-          recurring: { interval: "month" },
-          product_data: {
-            name: def.name,
-          },
-        },
-      },
-    ],
-    success_url: STRIPE_SUCCESS_URL,
-    cancel_url: STRIPE_CANCEL_URL,
+    line_items: subscriptionLineItems,
+    success_url: `${origin}/subscriptions?checkout=success`,
+    cancel_url: `${origin}/subscriptions?checkout=cancelled`,
     metadata: {
       retailer_user_id: user.id,
       plan: params.planKey,

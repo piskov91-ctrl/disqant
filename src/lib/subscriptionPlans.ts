@@ -21,6 +21,21 @@ export const SUBSCRIPTION_PLANS = {
 
 export type SubscriptionPlanKey = keyof typeof SUBSCRIPTION_PLANS;
 
+/**
+ * Optional Stripe recurring Price IDs (Dashboard catalog). When set, subscription Checkout uses `{ price, quantity: 1 }`
+ * only — recurring invoices stay tied to that catalog price (base plan only). Top-ups remain separate `mode: payment`
+ * sessions and never attach as subscription items.
+ */
+export function stripeCatalogSubscriptionPriceId(planKey: SubscriptionPlanKey): string | undefined {
+  const raw =
+    planKey === "starter"
+      ? process.env.STRIPE_PRICE_SUBSCRIPTION_STARTER?.trim()
+      : planKey === "growth"
+        ? process.env.STRIPE_PRICE_SUBSCRIPTION_GROWTH?.trim()
+        : process.env.STRIPE_PRICE_SUBSCRIPTION_PRO?.trim();
+  return raw && raw.length > 0 ? raw : undefined;
+}
+
 export function parseSubscriptionPlanKey(raw: unknown): SubscriptionPlanKey | null {
   if (typeof raw !== "string") return null;
   const k = raw.trim().toLowerCase();
