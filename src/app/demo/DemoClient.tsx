@@ -680,7 +680,6 @@ export default function DemoClient() {
         <div
           role="presentation"
           className={`dq-backdrop${wearBackdropOpen && !wearClosing ? " dq-open" : ""}${wearClosing ? " dq-closing" : ""}${wearTryOnDismissLocked ? " dq-dismiss-locked" : ""}`}
-          style={wearTryOnDismissLocked ? { touchAction: "none" as const } : undefined}
           onPointerDown={(e) => {
             if (e.target !== e.currentTarget) return;
             if (wearTryOnDismissLocked) {
