@@ -5,6 +5,7 @@ import {
   Glasses,
   Shirt,
   Snowflake,
+  Sparkles,
   Waves,
   type LucideIcon,
 } from "lucide-react";
@@ -35,7 +36,13 @@ export type GarmentPreset = {
     | "bracelet"
     | "swim_men"
     | "swim_women"
-    | "eyeglasses";
+    | "eyeglasses"
+    | "beauty_lipstick"
+    | "beauty_foundation"
+    | "beauty_mascara"
+    | "beauty_eyeshadow_palette"
+    | "beauty_blush"
+    | "beauty_eyeliner";
   label: string;
   name: string;
   /** Hint for `/api/try-on` (echoed in JSON); sneakers use `bottoms` like other non-top apparel. */
@@ -260,6 +267,60 @@ export const GARMENT_PRESETS: GarmentPreset[] = [
     imageUrl:
       "https://images.unsplash.com/photo-1646084081219-1090f72a531c?auto=format&fit=crop&w=1400&q=80",
   },
+  {
+    id: "beauty_lipstick",
+    label: "Lipstick",
+    name: "Red lipstick bullet (flat lay, white surface)",
+    category: "tops",
+    // Evangeline Sarney — single tube + cap, white backdrop; no readable logos in-frame. https://unsplash.com/photos/red-lipstick-on-white-surface-NnsqpLjiA94
+    imageUrl:
+      "https://images.unsplash.com/photo-1625093742435-6fa192b6fb10?auto=format&fit=crop&w=1400&q=80",
+  },
+  {
+    id: "beauty_foundation",
+    label: "Foundation / concealer",
+    name: "Two neutral squeeze tubes (flat lay, white backdrop)",
+    category: "tops",
+    // Harper Sunday — minimalist white tubes; labels not brand-readable at crop size. https://unsplash.com/photos/two-white-labeled-soft-tubes-TZBLq6MDfxc
+    imageUrl:
+      "https://images.unsplash.com/photo-1566534268110-74c44e12e34d?auto=format&fit=crop&w=1400&q=80",
+  },
+  {
+    id: "beauty_mascara",
+    label: "Mascara",
+    name: "Mascara wand + tube (clean product shot)",
+    category: "tops",
+    // Harper Sunday — standard-license mascara close-up / tabletop still life (neutral studio surface). https://unsplash.com/photos/a-close-up-of-a-mascara-on-a-table-J1tz2GzoQZo
+    imageUrl:
+      "https://images.unsplash.com/photo-1688953228417-8ec4007eb532?auto=format&fit=crop&w=1400&q=80",
+  },
+  {
+    id: "beauty_eyeshadow_palette",
+    label: "Eyeshadow palette",
+    name: "Multi-pan eyeshadow palette (flat lay, white)",
+    category: "tops",
+    // Rashid Sadykov — palette pans + brushes overhead on bright white. https://unsplash.com/photos/o3QfkF-Qq4Y
+    imageUrl:
+      "https://images.unsplash.com/photo-1536507789696-9ced44de40bd?auto=format&fit=crop&w=1400&q=80",
+  },
+  {
+    id: "beauty_blush",
+    label: "Blush",
+    name: "Pressed powder compact with blush tones (studio flat lay)",
+    category: "tops",
+    // Anna Evans — single open compact on white/light tabletop; overhead product style. https://unsplash.com/photos/dxTR8BboRPA
+    imageUrl:
+      "https://images.unsplash.com/photo-1737014892220-4123c7e020a1?auto=format&fit=crop&w=1400&q=80",
+  },
+  {
+    id: "beauty_eyeliner",
+    label: "Eyeliner",
+    name: "Black eyeliner pencil (flat lay on white textile)",
+    category: "tops",
+    // Ashley Piszek — pencil liner product-style shot on white fabric; no logos. https://unsplash.com/photos/black-and-white-pen-on-white-textile-staVvCZgIpc
+    imageUrl:
+      "https://images.unsplash.com/photo-1631237535233-af19ef69f54d?auto=format&fit=crop&w=1400&q=80",
+  },
 ];
 
 export const PRESET_BY_ID = Object.fromEntries(GARMENT_PRESETS.map((p) => [p.id, p])) as Record<
@@ -269,7 +330,13 @@ export const PRESET_BY_ID = Object.fromEntries(GARMENT_PRESETS.map((p) => [p.id,
 
 export const PRESET_ID_SET = new Set<string>(GARMENT_PRESETS.map((p) => p.id));
 
-export type DemoCatalogId = "clothing" | "accessories" | "winter" | "swimwear" | "eyewear";
+export type DemoCatalogId =
+  | "clothing"
+  | "accessories"
+  | "beauty"
+  | "winter"
+  | "swimwear"
+  | "eyewear";
 
 export const DEMO_CATALOG: readonly {
   id: DemoCatalogId;
@@ -292,6 +359,20 @@ export const DEMO_CATALOG: readonly {
     line: "Necklace, earrings, bracelet, ankle bracelet, bags",
     Icon: Gem,
     presetIds: ["necklace", "earrings", "bracelet", "ankle_bracelet", "handbag_women", "mens_bag"],
+  },
+  {
+    id: "beauty",
+    title: "Beauty",
+    line: "Lipstick, base makeup, eyes & cheeks — flat lay presets",
+    Icon: Sparkles,
+    presetIds: [
+      "beauty_lipstick",
+      "beauty_foundation",
+      "beauty_mascara",
+      "beauty_eyeshadow_palette",
+      "beauty_blush",
+      "beauty_eyeliner",
+    ],
   },
   {
     id: "winter",
