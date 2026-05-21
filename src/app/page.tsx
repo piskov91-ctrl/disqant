@@ -27,13 +27,16 @@ export default async function Home() {
             <div className="grid grid-cols-1 items-center gap-10 md:grid-cols-2 md:gap-10 lg:gap-14 xl:gap-16">
               <div className="order-1 flex min-w-0 flex-col justify-center">
                 <h1 className="text-balance text-3xl font-semibold leading-[1.12] tracking-tight text-white sm:text-4xl md:text-[2.5rem] md:leading-[1.1] lg:text-5xl lg:leading-[1.08]">
-                  Let your shoppers try before they buy.
+                  Try before you buy.
                 </h1>
 
-                <p className="mt-8 max-w-[36rem] text-base leading-[1.65] text-zinc-200 sm:mt-10 sm:text-lg sm:leading-[1.7]">
-                  Wear Me is the UK&apos;s first virtual try-on service for online fashion stores. Your customers
-                  see how your clothes, shoes, jewellery and eyewear look on them — before they order. No app, no
-                  3D models. One line of code and it works on any website.
+                <h2 className="mt-5 max-w-[36rem] text-xl font-semibold leading-snug text-zinc-100 sm:mt-6 sm:text-2xl sm:leading-snug">
+                  The UK&apos;s first virtual try-on for fashion stores.
+                </h2>
+
+                <p className="mt-6 max-w-[36rem] text-base leading-[1.65] text-zinc-200 sm:mt-7 sm:text-lg sm:leading-[1.7]">
+                  Clothes, shoes, jewellery and eyewear — your customers see how it looks on them before they
+                  order. One line of code. Works on any website.
                 </p>
 
                 <div className="mt-8 flex flex-wrap items-center gap-3 sm:mt-10 sm:gap-4">
