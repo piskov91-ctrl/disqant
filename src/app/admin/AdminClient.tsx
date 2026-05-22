@@ -548,6 +548,51 @@ export default function AdminClient() {
     return { tryOns: n, credits, fashnCost, recommendedPrice, profit };
   }, [calcTryOnsInput]);
 
+  /** Separate from Credit Calculator modal — enterprise quoting with editable base tier + discount. */
+  const [enterpriseCalcBaseTryOns, setEnterpriseCalcBaseTryOns] = useState("2000");
+  const [enterpriseCalcBasePrice, setEnterpriseCalcBasePrice] = useState("1000");
+  const [enterpriseCalcExtraTryOns, setEnterpriseCalcExtraTryOns] = useState("0");
+  const [enterpriseCalcDiscountPct, setEnterpriseCalcDiscountPct] = useState("30");
+
+  const enterprisePriceCalc = useMemo(() => {
+    const baseTryOns = Number.parseInt(enterpriseCalcBaseTryOns.trim(), 10);
+    const basePrice = Number.parseFloat(enterpriseCalcBasePrice.trim());
+    const extraTryOns = Number.parseInt(enterpriseCalcExtraTryOns.trim(), 10);
+    const discountPct = Number.parseFloat(enterpriseCalcDiscountPct.trim());
+
+    if (!Number.isFinite(baseTryOns) || baseTryOns <= 0) return null;
+    if (!Number.isFinite(basePrice) || basePrice < 0) return null;
+    if (!Number.isFinite(extraTryOns) || extraTryOns < 0) return null;
+    if (!Number.isFinite(discountPct)) return null;
+
+    const marginalGbpPerTryOn = basePrice / baseTryOns;
+    const listPriceBeforeDiscount = basePrice + extraTryOns * marginalGbpPerTryOn;
+    const discountClamped = Math.min(100, Math.max(0, discountPct));
+    const totalPrice = listPriceBeforeDiscount * (1 - discountClamped / 100);
+
+    const totalTryOns = baseTryOns + extraTryOns;
+    const fashnCost = totalTryOns * FASHN_GBP_PER_TRYON;
+    const profit = totalPrice - fashnCost;
+
+    return {
+      baseTryOns,
+      basePrice,
+      extraTryOns,
+      totalTryOns,
+      marginalGbpPerTryOn,
+      listPriceBeforeDiscount,
+      discountUsedPct: discountClamped,
+      totalPrice,
+      fashnCost,
+      profit,
+    };
+  }, [
+    enterpriseCalcBaseTryOns,
+    enterpriseCalcBasePrice,
+    enterpriseCalcExtraTryOns,
+    enterpriseCalcDiscountPct,
+  ]);
+
   async function load() {
     setLoading(true);
     setError(null);
@@ -2966,120 +3011,236 @@ export default function AdminClient() {
               </p>
             </section>
           ) : activeTab === "enterprise" ? (
-            <section className="mt-8 w-full overflow-hidden rounded-2xl border border-zinc-800 bg-zinc-900/60 p-6 shadow-sm md:p-8">
-              <h2 className="text-base font-semibold text-zinc-100">Enterprise quote requests</h2>
-              <p className="mt-1 text-sm text-zinc-400">
-                From the Pricing page “Request a quote” flow (Redis). Opening this tab marks every listed submission as read
-                and clears the badge until new requests arrive.
-              </p>
-              {enterpriseQuotesError ? (
-                <div className="mt-6 rounded-xl border border-red-900/60 bg-red-950/40 px-4 py-3 text-sm text-red-200">
-                  {enterpriseQuotesError}
-                </div>
-              ) : null}
-              {enterpriseQuotesLoading ? (
-                <div className="mt-8 text-sm text-zinc-500">Loading submissions…</div>
-              ) : enterpriseQuotes.length === 0 ? (
-                <div className="mt-8 text-sm text-zinc-500">No enterprise quote requests yet.</div>
-              ) : (
-                <ul className="mt-6 space-y-4">
-                  {enterpriseQuotes.map((row) => {
-                    const when = Number.isFinite(Date.parse(row.createdAt))
-                      ? new Date(row.createdAt).toLocaleString("en-GB", {
-                          timeZone: "UTC",
-                          day: "numeric",
-                          month: "short",
-                          year: "numeric",
-                          hour: "2-digit",
-                          minute: "2-digit",
-                        })
-                      : "—";
-                    return (
-                      <li
-                        key={row.id}
-                        className="rounded-xl border border-zinc-800 bg-zinc-950/40 px-4 py-4 md:px-5"
-                      >
-                        <div className="flex flex-wrap items-start justify-between gap-3">
-                          <div className="min-w-0">
-                            <span className="font-semibold text-zinc-100">{row.storeName}</span>
-                            <p className="mt-1 text-xs text-zinc-500">{when} UTC</p>
-                          </div>
-                          <div className="flex shrink-0 flex-wrap gap-2">
-                            <button
-                              type="button"
-                              disabled={
-                                enterpriseReplyBusy ||
-                                Boolean(enterpriseReplyModalQuote) ||
-                                enterpriseQuoteDeleteBusyId !== null
-                              }
-                              onClick={() => {
-                                setEnterpriseReplyModalQuote(row);
-                                setEnterpriseReplyBody("");
-                                setEnterpriseReplyError(null);
-                              }}
-                              className="inline-flex shrink-0 items-center justify-center rounded-lg border border-sky-800/75 bg-sky-950/50 px-3 py-1.5 text-xs font-semibold uppercase tracking-wide text-sky-200 transition hover:border-sky-600/85 hover:bg-sky-950/90 disabled:cursor-not-allowed disabled:opacity-40"
-                            >
-                              Reply
-                            </button>
-                            <button
-                              type="button"
-                              disabled={
-                                enterpriseQuoteDeleteBusyId !== null ||
-                                enterpriseReplyBusy ||
-                                Boolean(enterpriseReplyModalQuote)
-                              }
-                              onClick={() => void deleteEnterpriseQuoteRow(row)}
-                              className="inline-flex shrink-0 items-center justify-center rounded-lg border border-red-900/65 bg-red-950/35 px-3 py-1.5 text-xs font-semibold uppercase tracking-wide text-red-200 transition hover:border-red-700/70 hover:bg-red-950/65 disabled:cursor-not-allowed disabled:opacity-40"
-                            >
-                              {enterpriseQuoteDeleteBusyId === row.id ? "Deleting…" : "Delete"}
-                            </button>
-                          </div>
-                        </div>
-                        <div className="mt-3 grid gap-2 text-sm text-zinc-300 md:grid-cols-2">
-                          <div>
-                            <span className="text-zinc-500">Email </span>
-                            {row.email ? (
-                              <a
-                                href={`mailto:${row.email}`}
-                                className="text-sky-400 underline-offset-2 hover:underline"
+            <>
+              <section className="mt-8 w-full overflow-hidden rounded-2xl border border-zinc-800 bg-zinc-900/60 p-6 shadow-sm md:p-8">
+                <h2 className="text-base font-semibold text-zinc-100">Enterprise quote requests</h2>
+                <p className="mt-1 text-sm text-zinc-400">
+                  From the Pricing page “Request a quote” flow (Redis). Opening this tab marks every listed submission as read
+                  and clears the badge until new requests arrive.
+                </p>
+                {enterpriseQuotesError ? (
+                  <div className="mt-6 rounded-xl border border-red-900/60 bg-red-950/40 px-4 py-3 text-sm text-red-200">
+                    {enterpriseQuotesError}
+                  </div>
+                ) : null}
+                {enterpriseQuotesLoading ? (
+                  <div className="mt-8 text-sm text-zinc-500">Loading submissions…</div>
+                ) : enterpriseQuotes.length === 0 ? (
+                  <div className="mt-8 text-sm text-zinc-500">No enterprise quote requests yet.</div>
+                ) : (
+                  <ul className="mt-6 space-y-4">
+                    {enterpriseQuotes.map((row) => {
+                      const when = Number.isFinite(Date.parse(row.createdAt))
+                        ? new Date(row.createdAt).toLocaleString("en-GB", {
+                            timeZone: "UTC",
+                            day: "numeric",
+                            month: "short",
+                            year: "numeric",
+                            hour: "2-digit",
+                            minute: "2-digit",
+                          })
+                        : "—";
+                      return (
+                        <li
+                          key={row.id}
+                          className="rounded-xl border border-zinc-800 bg-zinc-950/40 px-4 py-4 md:px-5"
+                        >
+                          <div className="flex flex-wrap items-start justify-between gap-3">
+                            <div className="min-w-0">
+                              <span className="font-semibold text-zinc-100">{row.storeName}</span>
+                              <p className="mt-1 text-xs text-zinc-500">{when} UTC</p>
+                            </div>
+                            <div className="flex shrink-0 flex-wrap gap-2">
+                              <button
+                                type="button"
+                                disabled={
+                                  enterpriseReplyBusy ||
+                                  Boolean(enterpriseReplyModalQuote) ||
+                                  enterpriseQuoteDeleteBusyId !== null
+                                }
+                                onClick={() => {
+                                  setEnterpriseReplyModalQuote(row);
+                                  setEnterpriseReplyBody("");
+                                  setEnterpriseReplyError(null);
+                                }}
+                                className="inline-flex shrink-0 items-center justify-center rounded-lg border border-sky-800/75 bg-sky-950/50 px-3 py-1.5 text-xs font-semibold uppercase tracking-wide text-sky-200 transition hover:border-sky-600/85 hover:bg-sky-950/90 disabled:cursor-not-allowed disabled:opacity-40"
                               >
-                                {row.email}
+                                Reply
+                              </button>
+                              <button
+                                type="button"
+                                disabled={
+                                  enterpriseQuoteDeleteBusyId !== null ||
+                                  enterpriseReplyBusy ||
+                                  Boolean(enterpriseReplyModalQuote)
+                                }
+                                onClick={() => void deleteEnterpriseQuoteRow(row)}
+                                className="inline-flex shrink-0 items-center justify-center rounded-lg border border-red-900/65 bg-red-950/35 px-3 py-1.5 text-xs font-semibold uppercase tracking-wide text-red-200 transition hover:border-red-700/70 hover:bg-red-950/65 disabled:cursor-not-allowed disabled:opacity-40"
+                              >
+                                {enterpriseQuoteDeleteBusyId === row.id ? "Deleting…" : "Delete"}
+                              </button>
+                            </div>
+                          </div>
+                          <div className="mt-3 grid gap-2 text-sm text-zinc-300 md:grid-cols-2">
+                            <div>
+                              <span className="text-zinc-500">Email </span>
+                              {row.email ? (
+                                <a
+                                  href={`mailto:${row.email}`}
+                                  className="text-sky-400 underline-offset-2 hover:underline"
+                                >
+                                  {row.email}
+                                </a>
+                              ) : (
+                                "—"
+                              )}
+                            </div>
+                            <div>
+                              <span className="text-zinc-500">Monthly visitors </span>
+                              {row.monthlyVisitorsLabel || row.monthlyVisitors || "—"}
+                            </div>
+                            <div>
+                              <span className="text-zinc-500">Platform </span>
+                              {row.platformLabel || row.platform || "—"}
+                            </div>
+                            <div className="md:col-span-2">
+                              <span className="text-zinc-500">Website </span>
+                              <a
+                                href={row.websiteUrl}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="break-all text-sky-400 underline-offset-2 hover:underline"
+                              >
+                                {row.websiteUrl}
                               </a>
-                            ) : (
-                              "—"
-                            )}
+                            </div>
                           </div>
-                          <div>
-                            <span className="text-zinc-500">Monthly visitors </span>
-                            {row.monthlyVisitorsLabel || row.monthlyVisitors || "—"}
-                          </div>
-                          <div>
-                            <span className="text-zinc-500">Platform </span>
-                            {row.platformLabel || row.platform || "—"}
-                          </div>
-                          <div className="md:col-span-2">
-                            <span className="text-zinc-500">Website </span>
-                            <a
-                              href={row.websiteUrl}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="break-all text-sky-400 underline-offset-2 hover:underline"
-                            >
-                              {row.websiteUrl}
-                            </a>
-                          </div>
-                        </div>
-                      </li>
-                    );
-                  })}
-                </ul>
-              )}
-              <p className="mt-6 text-xs text-zinc-600">
-                Redis keys: <span className="font-mono text-zinc-400">fit-room:enterpriseQuote:*</span>,{" "}
-                <span className="font-mono text-zinc-400">fit-room:enterpriseQuotes:index</span>,{" "}
-                <span className="font-mono text-zinc-400">fit-room:enterpriseQuotes:unreadCount</span>
-              </p>
-            </section>
+                        </li>
+                      );
+                    })}
+                  </ul>
+                )}
+                <p className="mt-6 text-xs text-zinc-600">
+                  Redis keys: <span className="font-mono text-zinc-400">fit-room:enterpriseQuote:*</span>,{" "}
+                  <span className="font-mono text-zinc-400">fit-room:enterpriseQuotes:index</span>,{" "}
+                  <span className="font-mono text-zinc-400">fit-room:enterpriseQuotes:unreadCount</span>
+                </p>
+              </section>
+
+              <section
+                className="mt-8 w-full overflow-hidden rounded-2xl border border-zinc-800 bg-zinc-900/60 p-6 shadow-sm md:p-8"
+                aria-label="Enterprise price calculator"
+              >
+                <h2 className="text-base font-semibold text-zinc-100">Enterprise price calculator</h2>
+                <p className="mt-1 text-sm text-zinc-400">
+                  Separate from the header <strong className="font-medium text-zinc-300">Credit Calculator</strong> (retail
+                  plans). Extra try-ons bill at your base marginal rate (£ ÷ included try-ons).{" "}
+                  <span className="text-zinc-500">
+                    Fashn cost matches the Credit Calculator assumptions (Starter linear rate: £34 ÷ 300 try-ons).
+                  </span>
+                </p>
+
+                <div className="mt-6 grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
+                  <div>
+                    <label htmlFor="enterprise-calc-base-tryons" className="block text-sm font-medium text-zinc-200">
+                      Base package — try-ons
+                    </label>
+                    <input
+                      id="enterprise-calc-base-tryons"
+                      value={enterpriseCalcBaseTryOns}
+                      onChange={(e) => setEnterpriseCalcBaseTryOns(e.target.value)}
+                      inputMode="numeric"
+                      className="mt-2 block w-full rounded-xl border border-zinc-700 bg-zinc-950 px-4 py-3 text-sm text-zinc-100 outline-none transition focus:border-accent/60"
+                    />
+                  </div>
+                  <div>
+                    <label htmlFor="enterprise-calc-base-price" className="block text-sm font-medium text-zinc-200">
+                      Base package — price (£)
+                    </label>
+                    <input
+                      id="enterprise-calc-base-price"
+                      value={enterpriseCalcBasePrice}
+                      onChange={(e) => setEnterpriseCalcBasePrice(e.target.value)}
+                      inputMode="decimal"
+                      className="mt-2 block w-full rounded-xl border border-zinc-700 bg-zinc-950 px-4 py-3 text-sm text-zinc-100 outline-none transition focus:border-accent/60"
+                    />
+                  </div>
+                  <div>
+                    <label htmlFor="enterprise-calc-extra" className="block text-sm font-medium text-zinc-200">
+                      Additional try-ons
+                    </label>
+                    <input
+                      id="enterprise-calc-extra"
+                      value={enterpriseCalcExtraTryOns}
+                      onChange={(e) => setEnterpriseCalcExtraTryOns(e.target.value)}
+                      inputMode="numeric"
+                      placeholder="0"
+                      className="mt-2 block w-full rounded-xl border border-zinc-700 bg-zinc-950 px-4 py-3 text-sm text-zinc-100 outline-none transition placeholder:text-zinc-600 focus:border-accent/60"
+                    />
+                  </div>
+                  <div>
+                    <label htmlFor="enterprise-calc-discount" className="block text-sm font-medium text-zinc-200">
+                      Discount (%)
+                    </label>
+                    <input
+                      id="enterprise-calc-discount"
+                      value={enterpriseCalcDiscountPct}
+                      onChange={(e) => setEnterpriseCalcDiscountPct(e.target.value)}
+                      inputMode="decimal"
+                      className="mt-2 block w-full rounded-xl border border-zinc-700 bg-zinc-950 px-4 py-3 text-sm text-zinc-100 outline-none transition focus:border-accent/60"
+                    />
+                  </div>
+                </div>
+
+                {enterprisePriceCalc ? (
+                  <>
+                    <p className="mt-5 text-xs text-zinc-500">
+                      Marginal rate {formatGbp(enterprisePriceCalc.marginalGbpPerTryOn)} per try-on ·{" "}
+                      {enterprisePriceCalc.totalTryOns.toLocaleString()} total try-ons
+                      {enterprisePriceCalc.discountUsedPct !==
+                      Number.parseFloat(enterpriseCalcDiscountPct.trim())
+                        ? " · discount clamped to 0–100%"
+                        : ""}
+                      {enterprisePriceCalc.listPriceBeforeDiscount > 0 &&
+                      enterprisePriceCalc.discountUsedPct > 0 ? (
+                        <>
+                          {" "}
+                          · list before discount {formatGbp(enterprisePriceCalc.listPriceBeforeDiscount)}
+                        </>
+                      ) : null}
+                    </p>
+                    <dl className="mt-4 grid gap-3 text-sm sm:grid-cols-3">
+                      <div className="rounded-lg border border-zinc-800 bg-zinc-950/40 px-4 py-4">
+                        <dt className="text-xs font-medium uppercase tracking-wide text-zinc-500">Total price</dt>
+                        <dd className="mt-1 tabular-nums text-lg font-semibold text-zinc-100">
+                          {formatGbp(enterprisePriceCalc.totalPrice)}
+                        </dd>
+                        <dd className="mt-2 text-[11px] leading-snug text-zinc-600">
+                          After {enterprisePriceCalc.discountUsedPct}% discount on list price.
+                        </dd>
+                      </div>
+                      <div className="rounded-lg border border-zinc-800 bg-zinc-950/40 px-4 py-4">
+                        <dt className="text-xs font-medium uppercase tracking-wide text-zinc-500">Fashn cost (est.)</dt>
+                        <dd className="mt-1 tabular-nums text-lg font-semibold text-zinc-100">
+                          {formatGbp(enterprisePriceCalc.fashnCost)}
+                        </dd>
+                      </div>
+                      <div className="rounded-lg border border-zinc-800 bg-zinc-950/40 px-4 py-4">
+                        <dt className="text-xs font-medium uppercase tracking-wide text-zinc-500">Profit</dt>
+                        <dd className="mt-1 tabular-nums text-lg font-semibold text-emerald-400/90">
+                          {formatGbp(enterprisePriceCalc.profit)}
+                        </dd>
+                      </div>
+                    </dl>
+                  </>
+                ) : (
+                  <p className="mt-6 text-sm text-zinc-500">
+                    Enter a positive integer for base try-ons, non‑negative prices and extras, and a valid discount
+                    percentage.
+                  </p>
+                )}
+              </section>
+            </>
           ) : activeTab === "reviews" ? (
             <section className="mt-8 w-full overflow-hidden rounded-2xl border border-zinc-800 bg-zinc-900/60 p-6 shadow-sm md:p-8">
               <h2 className="text-base font-semibold text-zinc-100">Reviews</h2>
