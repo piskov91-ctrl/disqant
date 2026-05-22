@@ -132,6 +132,7 @@ type AnalyticsSummary = {
 type AdminTab =
   | "clients"
   | "contact"
+  | "enterprise"
   | "reviews"
   | "topUps"
   | "analytics"
@@ -174,6 +175,20 @@ type ContactInquiryRow = {
   monthlyVisitors: string;
   monthlyVisitorsLabel: string;
   message: string;
+};
+
+/** Mirrors `/api/admin/enterprise-quotes`. */
+type EnterpriseQuoteRow = {
+  id: string;
+  createdAt: string;
+  read: boolean;
+  email: string;
+  storeName: string;
+  websiteUrl: string;
+  monthlyVisitors: string;
+  monthlyVisitorsLabel: string;
+  platform: string;
+  platformLabel: string;
 };
 
 type SubscriptionReviewRow = {
@@ -469,6 +484,16 @@ export default function AdminClient() {
   const [contactReplyBusy, setContactReplyBusy] = useState(false);
   const [contactReplyError, setContactReplyError] = useState<string | null>(null);
   const [contactInquiryDeleteBusyId, setContactInquiryDeleteBusyId] = useState<string | null>(null);
+
+  const [enterpriseQuotesUnread, setEnterpriseQuotesUnread] = useState(0);
+  const [enterpriseQuotes, setEnterpriseQuotes] = useState<EnterpriseQuoteRow[]>([]);
+  const [enterpriseQuotesLoading, setEnterpriseQuotesLoading] = useState(false);
+  const [enterpriseQuotesError, setEnterpriseQuotesError] = useState<string | null>(null);
+  const [enterpriseReplyModalQuote, setEnterpriseReplyModalQuote] = useState<EnterpriseQuoteRow | null>(null);
+  const [enterpriseReplyBody, setEnterpriseReplyBody] = useState("");
+  const [enterpriseReplyBusy, setEnterpriseReplyBusy] = useState(false);
+  const [enterpriseReplyError, setEnterpriseReplyError] = useState<string | null>(null);
+  const [enterpriseQuoteDeleteBusyId, setEnterpriseQuoteDeleteBusyId] = useState<string | null>(null);
 
   const [reviewsPendingBadge, setReviewsPendingBadge] = useState(0);
   const [subscriptionReviewsPending, setSubscriptionReviewsPending] = useState<SubscriptionReviewRow[]>([]);
@@ -813,6 +838,143 @@ export default function AdminClient() {
     }
   }
 
+  async function loadEnterpriseQuotesBadge() {
+    try {
+      const res = await fetch("/api/admin/enterprise-quotes?badge=1");
+      const data = (await res.json()) as { unreadCount?: number; error?: string };
+      if (!res.ok) {
+        if (data.error === "Unauthorized.") window.location.reload();
+        setEnterpriseQuotesUnread(0);
+        return;
+      }
+      const u =
+        typeof data.unreadCount === "number" && Number.isFinite(data.unreadCount)
+          ? Math.max(0, Math.floor(data.unreadCount))
+          : 0;
+      setEnterpriseQuotesUnread(u);
+    } catch {
+      setEnterpriseQuotesUnread(0);
+    }
+  }
+
+  async function loadEnterpriseQuotes() {
+    setEnterpriseQuotesLoading(true);
+    setEnterpriseQuotesError(null);
+    try {
+      const res = await fetch("/api/admin/enterprise-quotes", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ markAllRead: true }),
+      });
+      const data = (await res.json()) as {
+        unreadCount?: number;
+        quotes?: EnterpriseQuoteRow[];
+        error?: string;
+      };
+      if (!res.ok) {
+        if (data.error === "Unauthorized.") window.location.reload();
+        setEnterpriseQuotesError(data.error || "Failed to load enterprise quotes.");
+        setEnterpriseQuotes([]);
+        return;
+      }
+      const u =
+        typeof data.unreadCount === "number" && Number.isFinite(data.unreadCount)
+          ? Math.max(0, Math.floor(data.unreadCount))
+          : 0;
+      setEnterpriseQuotesUnread(u);
+      setEnterpriseQuotes(Array.isArray(data.quotes) ? data.quotes : []);
+    } catch (e) {
+      setEnterpriseQuotesError(e instanceof Error ? e.message : "Failed to load enterprise quotes.");
+      setEnterpriseQuotes([]);
+    } finally {
+      setEnterpriseQuotesLoading(false);
+    }
+  }
+
+  function closeEnterpriseReplyModal() {
+    setEnterpriseReplyModalQuote(null);
+    setEnterpriseReplyBody("");
+    setEnterpriseReplyError(null);
+    setEnterpriseReplyBusy(false);
+  }
+
+  async function submitEnterpriseReply() {
+    const target = enterpriseReplyModalQuote;
+    if (!target) return;
+    const msg = enterpriseReplyBody.trim();
+    if (!msg) {
+      setEnterpriseReplyError("Enter your reply before sending.");
+      return;
+    }
+    setEnterpriseReplyBusy(true);
+    setEnterpriseReplyError(null);
+    try {
+      const res = await fetch("/api/admin/enterprise-quotes/reply", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id: target.id, message: msg }),
+      });
+      const data = (await res.json()) as { ok?: boolean; error?: string };
+      if (!res.ok) {
+        if (data.error === "Unauthorized.") window.location.reload();
+        setEnterpriseReplyError(data.error || "Could not send reply.");
+        return;
+      }
+      closeEnterpriseReplyModal();
+    } catch (e) {
+      setEnterpriseReplyError(e instanceof Error ? e.message : "Network error.");
+    } finally {
+      setEnterpriseReplyBusy(false);
+    }
+  }
+
+  async function deleteEnterpriseQuoteRow(row: EnterpriseQuoteRow) {
+    const confirmed = window.confirm(
+      [
+        "Delete this enterprise quote submission from Redis?",
+        "",
+        `${row.storeName} · ${row.email}`,
+        "",
+        "This cannot be undone.",
+      ].join("\n"),
+    );
+    if (!confirmed) return;
+
+    setEnterpriseQuoteDeleteBusyId(row.id);
+    setEnterpriseQuotesError(null);
+    try {
+      const res = await fetch("/api/admin/enterprise-quotes", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ delete: true, id: row.id }),
+      });
+      const data = (await res.json()) as {
+        ok?: boolean;
+        error?: string;
+        unreadCount?: number;
+        quotes?: EnterpriseQuoteRow[];
+      };
+      if (!res.ok) {
+        if (data.error === "Unauthorized.") window.location.reload();
+        setEnterpriseQuotesError(data.error || "Could not delete submission.");
+        return;
+      }
+      const u =
+        typeof data.unreadCount === "number" && Number.isFinite(data.unreadCount)
+          ? Math.max(0, Math.floor(data.unreadCount))
+          : 0;
+      setEnterpriseQuotesUnread(u);
+      setEnterpriseQuotes(Array.isArray(data.quotes) ? data.quotes : []);
+      if (enterpriseReplyModalQuote?.id === row.id) {
+        closeEnterpriseReplyModal();
+      }
+    } catch (e) {
+      setEnterpriseQuotesError(e instanceof Error ? e.message : "Could not delete submission.");
+    } finally {
+      setEnterpriseQuoteDeleteBusyId(null);
+    }
+  }
+
   async function loadSubscriptionReviewsBadge() {
     try {
       const res = await fetch("/api/admin/subscriptions-reviews?badge=1");
@@ -1023,6 +1185,7 @@ export default function AdminClient() {
     void loadFashnCredits();
     void loadEmailSentStats();
     void loadContactInquiriesBadge();
+    void loadEnterpriseQuotesBadge();
     void loadSubscriptionReviewsBadge();
   }, []);
 
@@ -1039,6 +1202,7 @@ export default function AdminClient() {
     if (activeTab === "recovery") void loadRecovery();
     if (activeTab === "topUps") void loadTopUps();
     if (activeTab === "contact") void loadContactInquiries();
+    if (activeTab === "enterprise") void loadEnterpriseQuotes();
     if (activeTab === "reviews") void loadSubscriptionReviews();
   }, [activeTab]); // eslint-disable-line react-hooks/exhaustive-deps -- loaders are not memoised; tab key is intentional.
 
@@ -1306,11 +1470,13 @@ export default function AdminClient() {
     void loadFashnCredits();
     void loadEmailSentStats();
     void loadContactInquiriesBadge();
+    void loadEnterpriseQuotesBadge();
     void loadSubscriptionReviewsBadge();
     if (activeTab === "clients" || activeTab === "wearMe") void load();
     else if (activeTab === "analytics") void loadAnalytics();
     else if (activeTab === "topUps") void loadTopUps();
     else if (activeTab === "contact") void loadContactInquiries();
+    else if (activeTab === "enterprise") void loadEnterpriseQuotes();
     else if (activeTab === "reviews") void loadSubscriptionReviews();
     else if (activeTab === "recovery") void loadRecovery();
   }
@@ -1326,9 +1492,11 @@ export default function AdminClient() {
             ? topUpsLoading
             : activeTab === "contact"
               ? contactInquiriesLoading
-              : activeTab === "reviews"
-                ? subscriptionReviewsLoading
-                : false;
+              : activeTab === "enterprise"
+                ? enterpriseQuotesLoading
+                : activeTab === "reviews"
+                  ? subscriptionReviewsLoading
+                  : false;
 
   const wearMeKeyRecord = useMemo(
     () => keys.find((k) => k.id === wearMeKeyId) ?? null,
@@ -1638,6 +1806,84 @@ export default function AdminClient() {
                 className="btn-accent-gradient inline-flex h-11 min-w-[7rem] items-center justify-center rounded-full px-6 text-sm font-semibold disabled:cursor-not-allowed disabled:opacity-45"
               >
                 {contactReplyBusy ? "Sending…" : "Send email"}
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
+      {enterpriseReplyModalQuote ? (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm sm:p-6"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="enterprise-reply-modal-title"
+        >
+          <div className="max-h-[90dvh] w-full max-w-lg overflow-y-auto rounded-2xl border border-zinc-700 bg-zinc-900 p-6 shadow-xl">
+            <div className="flex items-start justify-between gap-4">
+              <div className="min-w-0">
+                <p id="enterprise-reply-modal-title" className="text-base font-semibold text-zinc-100">
+                  Reply (enterprise quote)
+                </p>
+                <p className="mt-1 text-sm text-zinc-400">
+                  Sends through Resend with the branded Fit Room HTML layout (
+                  <span className="text-zinc-300">support@fit-room.com</span> by default).
+                </p>
+                <p className="mt-2 text-xs text-zinc-500">
+                  To:{" "}
+                  <span className="font-medium text-zinc-300">{enterpriseReplyModalQuote.email}</span>
+                  {" · "}
+                  {enterpriseReplyModalQuote.storeName}
+                </p>
+              </div>
+              <button
+                type="button"
+                disabled={enterpriseReplyBusy}
+                onClick={closeEnterpriseReplyModal}
+                className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-zinc-600 bg-zinc-800 text-zinc-200 transition hover:border-zinc-500 hover:bg-zinc-700 disabled:opacity-45"
+                aria-label="Close"
+              >
+                ✕
+              </button>
+            </div>
+
+            <label htmlFor="enterprise-reply-body" className="mt-5 block text-sm font-medium text-zinc-200">
+              Message
+            </label>
+            <textarea
+              id="enterprise-reply-body"
+              value={enterpriseReplyBody}
+              onChange={(e) => setEnterpriseReplyBody(e.target.value)}
+              disabled={enterpriseReplyBusy}
+              rows={8}
+              placeholder="Write your reply…"
+              className="mt-2 block w-full resize-y rounded-xl border border-zinc-700 bg-zinc-950 px-4 py-3 text-sm leading-relaxed text-zinc-100 outline-none placeholder:text-zinc-600 focus:border-accent/60 disabled:opacity-55"
+            />
+            <p className="mt-2 text-[11px] text-zinc-500">
+              Blank lines start a new paragraph. Line breaks inside a paragraph are preserved.
+            </p>
+
+            {enterpriseReplyError ? (
+              <div className="mt-4 rounded-xl border border-red-900/60 bg-red-950/40 px-4 py-3 text-sm text-red-200">
+                {enterpriseReplyError}
+              </div>
+            ) : null}
+
+            <div className="mt-6 flex flex-wrap justify-end gap-3">
+              <button
+                type="button"
+                disabled={enterpriseReplyBusy}
+                onClick={closeEnterpriseReplyModal}
+                className="inline-flex h-11 items-center justify-center rounded-full border border-zinc-600 bg-zinc-800 px-6 text-sm font-semibold text-zinc-100 transition hover:border-zinc-500 hover:bg-zinc-700 disabled:opacity-45"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                disabled={enterpriseReplyBusy}
+                onClick={() => void submitEnterpriseReply()}
+                className="btn-accent-gradient inline-flex h-11 min-w-[7rem] items-center justify-center rounded-full px-6 text-sm font-semibold disabled:cursor-not-allowed disabled:opacity-45"
+              >
+                {enterpriseReplyBusy ? "Sending…" : "Send email"}
               </button>
             </div>
           </div>
@@ -1999,6 +2245,34 @@ export default function AdminClient() {
                     aria-hidden
                   >
                     {contactInquiriesUnread > 99 ? "99+" : contactInquiriesUnread}
+                  </span>
+                ) : null}
+              </span>
+            </button>
+            <button
+              type="button"
+              role="tab"
+              aria-selected={activeTab === "enterprise"}
+              aria-label={
+                enterpriseQuotesUnread > 0
+                  ? `Enterprise quotes, ${enterpriseQuotesUnread} unread`
+                  : "Enterprise quote submissions"
+              }
+              onClick={() => setActiveTab("enterprise")}
+              className={`rounded-full px-5 py-2 text-sm font-semibold transition ${
+                activeTab === "enterprise"
+                  ? "bg-zinc-800 text-zinc-100 shadow-sm"
+                  : "text-zinc-500 hover:text-zinc-300"
+              }`}
+            >
+              <span className="inline-flex items-center justify-center gap-2">
+                Enterprise
+                {enterpriseQuotesUnread > 0 ? (
+                  <span
+                    className="inline-flex min-h-[1.125rem] min-w-[1.125rem] items-center justify-center rounded-full bg-red-600 px-1.5 text-[10px] font-bold leading-none text-white tabular-nums"
+                    aria-hidden
+                  >
+                    {enterpriseQuotesUnread > 99 ? "99+" : enterpriseQuotesUnread}
                   </span>
                 ) : null}
               </span>
@@ -2689,6 +2963,121 @@ export default function AdminClient() {
                 Redis keys: <span className="font-mono text-zinc-400">fit-room:contactInquiry:*</span>,{" "}
                 <span className="font-mono text-zinc-400">fit-room:contactInquiries:index</span>,{" "}
                 <span className="font-mono text-zinc-400">fit-room:contactInquiries:unreadCount</span>
+              </p>
+            </section>
+          ) : activeTab === "enterprise" ? (
+            <section className="mt-8 w-full overflow-hidden rounded-2xl border border-zinc-800 bg-zinc-900/60 p-6 shadow-sm md:p-8">
+              <h2 className="text-base font-semibold text-zinc-100">Enterprise quote requests</h2>
+              <p className="mt-1 text-sm text-zinc-400">
+                From the Pricing page “Request a quote” flow (Redis). Opening this tab marks every listed submission as read
+                and clears the badge until new requests arrive.
+              </p>
+              {enterpriseQuotesError ? (
+                <div className="mt-6 rounded-xl border border-red-900/60 bg-red-950/40 px-4 py-3 text-sm text-red-200">
+                  {enterpriseQuotesError}
+                </div>
+              ) : null}
+              {enterpriseQuotesLoading ? (
+                <div className="mt-8 text-sm text-zinc-500">Loading submissions…</div>
+              ) : enterpriseQuotes.length === 0 ? (
+                <div className="mt-8 text-sm text-zinc-500">No enterprise quote requests yet.</div>
+              ) : (
+                <ul className="mt-6 space-y-4">
+                  {enterpriseQuotes.map((row) => {
+                    const when = Number.isFinite(Date.parse(row.createdAt))
+                      ? new Date(row.createdAt).toLocaleString("en-GB", {
+                          timeZone: "UTC",
+                          day: "numeric",
+                          month: "short",
+                          year: "numeric",
+                          hour: "2-digit",
+                          minute: "2-digit",
+                        })
+                      : "—";
+                    return (
+                      <li
+                        key={row.id}
+                        className="rounded-xl border border-zinc-800 bg-zinc-950/40 px-4 py-4 md:px-5"
+                      >
+                        <div className="flex flex-wrap items-start justify-between gap-3">
+                          <div className="min-w-0">
+                            <span className="font-semibold text-zinc-100">{row.storeName}</span>
+                            <p className="mt-1 text-xs text-zinc-500">{when} UTC</p>
+                          </div>
+                          <div className="flex shrink-0 flex-wrap gap-2">
+                            <button
+                              type="button"
+                              disabled={
+                                enterpriseReplyBusy ||
+                                Boolean(enterpriseReplyModalQuote) ||
+                                enterpriseQuoteDeleteBusyId !== null
+                              }
+                              onClick={() => {
+                                setEnterpriseReplyModalQuote(row);
+                                setEnterpriseReplyBody("");
+                                setEnterpriseReplyError(null);
+                              }}
+                              className="inline-flex shrink-0 items-center justify-center rounded-lg border border-sky-800/75 bg-sky-950/50 px-3 py-1.5 text-xs font-semibold uppercase tracking-wide text-sky-200 transition hover:border-sky-600/85 hover:bg-sky-950/90 disabled:cursor-not-allowed disabled:opacity-40"
+                            >
+                              Reply
+                            </button>
+                            <button
+                              type="button"
+                              disabled={
+                                enterpriseQuoteDeleteBusyId !== null ||
+                                enterpriseReplyBusy ||
+                                Boolean(enterpriseReplyModalQuote)
+                              }
+                              onClick={() => void deleteEnterpriseQuoteRow(row)}
+                              className="inline-flex shrink-0 items-center justify-center rounded-lg border border-red-900/65 bg-red-950/35 px-3 py-1.5 text-xs font-semibold uppercase tracking-wide text-red-200 transition hover:border-red-700/70 hover:bg-red-950/65 disabled:cursor-not-allowed disabled:opacity-40"
+                            >
+                              {enterpriseQuoteDeleteBusyId === row.id ? "Deleting…" : "Delete"}
+                            </button>
+                          </div>
+                        </div>
+                        <div className="mt-3 grid gap-2 text-sm text-zinc-300 md:grid-cols-2">
+                          <div>
+                            <span className="text-zinc-500">Email </span>
+                            {row.email ? (
+                              <a
+                                href={`mailto:${row.email}`}
+                                className="text-sky-400 underline-offset-2 hover:underline"
+                              >
+                                {row.email}
+                              </a>
+                            ) : (
+                              "—"
+                            )}
+                          </div>
+                          <div>
+                            <span className="text-zinc-500">Monthly visitors </span>
+                            {row.monthlyVisitorsLabel || row.monthlyVisitors || "—"}
+                          </div>
+                          <div>
+                            <span className="text-zinc-500">Platform </span>
+                            {row.platformLabel || row.platform || "—"}
+                          </div>
+                          <div className="md:col-span-2">
+                            <span className="text-zinc-500">Website </span>
+                            <a
+                              href={row.websiteUrl}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="break-all text-sky-400 underline-offset-2 hover:underline"
+                            >
+                              {row.websiteUrl}
+                            </a>
+                          </div>
+                        </div>
+                      </li>
+                    );
+                  })}
+                </ul>
+              )}
+              <p className="mt-6 text-xs text-zinc-600">
+                Redis keys: <span className="font-mono text-zinc-400">fit-room:enterpriseQuote:*</span>,{" "}
+                <span className="font-mono text-zinc-400">fit-room:enterpriseQuotes:index</span>,{" "}
+                <span className="font-mono text-zinc-400">fit-room:enterpriseQuotes:unreadCount</span>
               </p>
             </section>
           ) : activeTab === "reviews" ? (
