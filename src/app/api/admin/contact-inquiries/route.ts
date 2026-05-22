@@ -1,6 +1,7 @@
 import { cookies } from "next/headers";
 import { ADMIN_AUTH_COOKIE, isAdminAuthorizedCookieValue } from "@/lib/adminAuth";
 import {
+  deleteContactInquiry,
   getUnreadContactInquiryCount,
   listContactInquiries,
   markAllContactInquiriesRead,
@@ -68,6 +69,40 @@ export async function POST(req: Request) {
     } catch (e) {
       return Response.json(
         { error: e instanceof Error ? e.message : "Could not mark inquiries as read." },
+        { status: 503 },
+      );
+    }
+  }
+
+  const wantDelete =
+    typeof body === "object" &&
+    body !== null &&
+    (body as { delete?: unknown }).delete === true;
+
+  if (wantDelete) {
+    const deleteId =
+      typeof body === "object" &&
+      body !== null &&
+      "id" in body &&
+      typeof (body as { id: unknown }).id === "string"
+        ? (body as { id: string }).id.trim()
+        : "";
+
+    if (!deleteId) {
+      return Response.json({ error: "Missing inquiry id." }, { status: 400 });
+    }
+
+    try {
+      const ok = await deleteContactInquiry(deleteId);
+      if (!ok) return Response.json({ error: "Inquiry not found." }, { status: 404 });
+      const [unreadCount, inquiries] = await Promise.all([
+        getUnreadContactInquiryCount(),
+        listContactInquiries(200),
+      ]);
+      return Response.json({ ok: true, unreadCount, inquiries });
+    } catch (e) {
+      return Response.json(
+        { error: e instanceof Error ? e.message : "Could not delete inquiry." },
         { status: 503 },
       );
     }

@@ -223,3 +223,36 @@ export async function markContactInquiryRead(id: string): Promise<boolean> {
 
   return true;
 }
+
+function redisTruthyCount(v: unknown): boolean {
+  if (typeof v === "boolean") return v;
+  if (typeof v === "number") return v > 0;
+  const n = Number(v);
+  return Number.isFinite(n) && n > 0;
+}
+
+/**
+ * Deletes the Redis record and every matching index entry, then recomputes unread.
+ * Returns true if a record existed and/or the id was listed in the index.
+ */
+export async function deleteContactInquiry(id: string): Promise<boolean> {
+  const trimmed = id.trim();
+  if (!trimmed) return false;
+
+  const redis = getRedis();
+  const key = recordKey(trimmed);
+
+  const [lremResult, existedResult] = await Promise.all([
+    redis.lrem(INDEX_KEY, 0, trimmed),
+    redis.exists(key),
+  ]);
+
+  const removedFromIndex = redisTruthyCount(lremResult);
+  const hadRecordKey = redisTruthyCount(existedResult);
+
+  await redis.del(key).catch(() => {});
+
+  await syncUnreadCountFromIndex();
+
+  return removedFromIndex || hadRecordKey;
+}

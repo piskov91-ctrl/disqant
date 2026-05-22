@@ -468,6 +468,7 @@ export default function AdminClient() {
   const [contactReplyBody, setContactReplyBody] = useState("");
   const [contactReplyBusy, setContactReplyBusy] = useState(false);
   const [contactReplyError, setContactReplyError] = useState<string | null>(null);
+  const [contactInquiryDeleteBusyId, setContactInquiryDeleteBusyId] = useState<string | null>(null);
 
   const [reviewsPendingBadge, setReviewsPendingBadge] = useState(0);
   const [subscriptionReviewsPending, setSubscriptionReviewsPending] = useState<SubscriptionReviewRow[]>([]);
@@ -761,6 +762,54 @@ export default function AdminClient() {
       setContactReplyError(e instanceof Error ? e.message : "Network error.");
     } finally {
       setContactReplyBusy(false);
+    }
+  }
+
+  async function deleteContactInquiryRow(inq: ContactInquiryRow) {
+    const confirmed = window.confirm(
+      [
+        `Delete this contact submission from Redis?`,
+        "",
+        `${inq.name} · ${inq.email}`,
+        `"${inq.company}"`,
+        "",
+        "This cannot be undone.",
+      ].join("\n"),
+    );
+    if (!confirmed) return;
+
+    setContactInquiryDeleteBusyId(inq.id);
+    setContactInquiriesError(null);
+    try {
+      const res = await fetch("/api/admin/contact-inquiries", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ delete: true, id: inq.id }),
+      });
+      const data = (await res.json()) as {
+        ok?: boolean;
+        error?: string;
+        unreadCount?: number;
+        inquiries?: ContactInquiryRow[];
+      };
+      if (!res.ok) {
+        if (data.error === "Unauthorized.") window.location.reload();
+        setContactInquiriesError(data.error || "Could not delete submission.");
+        return;
+      }
+      const u =
+        typeof data.unreadCount === "number" && Number.isFinite(data.unreadCount)
+          ? Math.max(0, Math.floor(data.unreadCount))
+          : 0;
+      setContactInquiriesUnread(u);
+      setContactInquiries(Array.isArray(data.inquiries) ? data.inquiries : []);
+      if (contactReplyModalInquiry?.id === inq.id) {
+        closeContactReplyModal();
+      }
+    } catch (e) {
+      setContactInquiriesError(e instanceof Error ? e.message : "Could not delete submission.");
+    } finally {
+      setContactInquiryDeleteBusyId(null);
     }
   }
 
@@ -2565,18 +2614,36 @@ export default function AdminClient() {
                             <span className="font-semibold text-zinc-100">{inq.name}</span>
                             <p className="mt-1 text-xs text-zinc-500">{when} UTC</p>
                           </div>
-                          <button
-                            type="button"
-                            disabled={contactReplyBusy || Boolean(contactReplyModalInquiry)}
-                            onClick={() => {
-                              setContactReplyModalInquiry(inq);
-                              setContactReplyBody("");
-                              setContactReplyError(null);
-                            }}
-                            className="inline-flex shrink-0 items-center justify-center rounded-lg border border-sky-800/75 bg-sky-950/50 px-3 py-1.5 text-xs font-semibold uppercase tracking-wide text-sky-200 transition hover:border-sky-600/85 hover:bg-sky-950/90 disabled:cursor-not-allowed disabled:opacity-40"
-                          >
-                            Reply
-                          </button>
+                          <div className="flex shrink-0 flex-wrap gap-2">
+                            <button
+                              type="button"
+                              disabled={
+                                contactReplyBusy ||
+                                Boolean(contactReplyModalInquiry) ||
+                                contactInquiryDeleteBusyId !== null
+                              }
+                              onClick={() => {
+                                setContactReplyModalInquiry(inq);
+                                setContactReplyBody("");
+                                setContactReplyError(null);
+                              }}
+                              className="inline-flex shrink-0 items-center justify-center rounded-lg border border-sky-800/75 bg-sky-950/50 px-3 py-1.5 text-xs font-semibold uppercase tracking-wide text-sky-200 transition hover:border-sky-600/85 hover:bg-sky-950/90 disabled:cursor-not-allowed disabled:opacity-40"
+                            >
+                              Reply
+                            </button>
+                            <button
+                              type="button"
+                              disabled={
+                                contactInquiryDeleteBusyId !== null ||
+                                contactReplyBusy ||
+                                Boolean(contactReplyModalInquiry)
+                              }
+                              onClick={() => void deleteContactInquiryRow(inq)}
+                              className="inline-flex shrink-0 items-center justify-center rounded-lg border border-red-900/65 bg-red-950/35 px-3 py-1.5 text-xs font-semibold uppercase tracking-wide text-red-200 transition hover:border-red-700/70 hover:bg-red-950/65 disabled:cursor-not-allowed disabled:opacity-40"
+                            >
+                              {contactInquiryDeleteBusyId === inq.id ? "Deleting…" : "Delete"}
+                            </button>
+                          </div>
                         </div>
                         <div className="mt-3 grid gap-2 text-sm text-zinc-300 md:grid-cols-2">
                           <div>
