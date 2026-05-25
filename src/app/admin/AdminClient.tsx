@@ -133,7 +133,6 @@ type AdminTab =
   | "clients"
   | "contact"
   | "enterprise"
-  | "enterprisePricing"
   | "reviews"
   | "topUps"
   | "analytics"
@@ -344,15 +343,6 @@ const CREDIT_PLANS = [
 const FASHN_GBP_PER_TRYON = 34 / 300;
 const RECOMMENDED_GBP_PER_TRYON = 149 / 300;
 
-/** Enterprise pricing tab — explicit Fashn unit cost requested for this calculator only. */
-const ENTERPRISE_PRICING_FASHN_GBP_PER_TRYON = 0.12;
-
-const ENTERPRISE_PRICING_EXTRA_DISCOUNT_GBP_OPTIONS = [
-  { penceLabel: "20p", pounds: 0.2 },
-  { penceLabel: "30p", pounds: 0.3 },
-  { penceLabel: "40p", pounds: 0.4 },
-] as const;
-
 function formatGbp(n: number) {
   return `£${n.toFixed(2)}`;
 }
@@ -557,51 +547,6 @@ export default function AdminClient() {
     const profit = recommendedPrice - fashnCost;
     return { tryOns: n, credits, fashnCost, recommendedPrice, profit };
   }, [calcTryOnsInput]);
-
-  /** Dedicated Enterprise Price Calculator tab (not the header Credit Calculator modal). */
-  const [enterprisePricingBaseTryOns, setEnterprisePricingBaseTryOns] = useState("2000");
-  const [enterprisePricingBasePricePerTryOn, setEnterprisePricingBasePricePerTryOn] = useState("0.50");
-  const [enterprisePricingExtraTryOns, setEnterprisePricingExtraTryOns] = useState("0");
-  const [enterprisePricingExtraDiscountGbp, setEnterprisePricingExtraDiscountGbp] =
-    useState<(typeof ENTERPRISE_PRICING_EXTRA_DISCOUNT_GBP_OPTIONS)[number]["pounds"]>(0.3);
-
-  const enterprisePricingCalc = useMemo(() => {
-    const baseTryOns = Number.parseInt(enterprisePricingBaseTryOns.trim(), 10);
-    const basePricePerTryOn = Number.parseFloat(enterprisePricingBasePricePerTryOn.trim());
-    const extraTryOns = Number.parseInt(enterprisePricingExtraTryOns.trim(), 10);
-
-    if (!Number.isFinite(baseTryOns) || baseTryOns <= 0) return null;
-    if (!Number.isFinite(basePricePerTryOn) || basePricePerTryOn < 0) return null;
-    if (!Number.isFinite(extraTryOns) || extraTryOns < 0) return null;
-
-    const discountOnExtraPerTryOn = enterprisePricingExtraDiscountGbp;
-    const pricePerAdditionalTryOn = Math.max(0, basePricePerTryOn - discountOnExtraPerTryOn);
-
-    const baseRevenue = baseTryOns * basePricePerTryOn;
-    const extraRevenue = extraTryOns * pricePerAdditionalTryOn;
-    const recommendedPrice = baseRevenue + extraRevenue;
-
-    const totalTryOns = baseTryOns + extraTryOns;
-    const fashnCost = totalTryOns * ENTERPRISE_PRICING_FASHN_GBP_PER_TRYON;
-    const profit = recommendedPrice - fashnCost;
-
-    return {
-      baseTryOns,
-      basePricePerTryOn,
-      extraTryOns,
-      totalTryOns,
-      discountOnExtraPerTryOn,
-      pricePerAdditionalTryOn,
-      recommendedPrice,
-      fashnCost,
-      profit,
-    };
-  }, [
-    enterprisePricingBaseTryOns,
-    enterprisePricingBasePricePerTryOn,
-    enterprisePricingExtraTryOns,
-    enterprisePricingExtraDiscountGbp,
-  ]);
 
   async function load() {
     setLoading(true);
@@ -2335,20 +2280,6 @@ export default function AdminClient() {
             <button
               type="button"
               role="tab"
-              aria-selected={activeTab === "enterprisePricing"}
-              aria-label="Enterprise price calculator"
-              onClick={() => setActiveTab("enterprisePricing")}
-              className={`rounded-full px-5 py-2 text-sm font-semibold transition ${
-                activeTab === "enterprisePricing"
-                  ? "border border-[#c6a77d]/50 bg-[#1a1712] text-[#f0e8dc] shadow-[0_0_20px_-4px_rgba(198,167,125,0.35)]"
-                  : "border border-transparent text-zinc-500 hover:border-[#c6a77d]/20 hover:bg-[#0f0e0d] hover:text-[#dcccb4]"
-              }`}
-            >
-              Enterprise pricing
-            </button>
-            <button
-              type="button"
-              role="tab"
               aria-selected={activeTab === "reviews"}
               aria-label={
                 reviewsPendingBadge > 0
@@ -3148,218 +3079,6 @@ export default function AdminClient() {
                   <span className="font-mono text-zinc-400">fit-room:enterpriseQuotes:index</span>,{" "}
                   <span className="font-mono text-zinc-400">fit-room:enterpriseQuotes:unreadCount</span>
                 </p>
-            </section>
-          ) : activeTab === "enterprisePricing" ? (
-            <section
-              className="relative mt-8 w-full overflow-hidden rounded-[1.75rem] border border-[#c6a77d]/30 bg-gradient-to-br from-[#12100e] via-zinc-950 to-[#070605] p-6 shadow-[0_28px_80px_-48px_rgba(198,167,125,0.55)] md:p-9"
-              aria-label="Enterprise price calculator"
-            >
-              <div
-                className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_90%_60%_at_50%_-10%,rgba(198,167,125,0.14),transparent_52%)]"
-                aria-hidden
-              />
-              <div className="relative">
-                <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-[#c6a77d]/90">
-                  Enterprise
-                </p>
-                <h2 className="mt-2 font-serif text-2xl font-light tracking-tight text-[#f5efe6]">
-                  Price calculator
-                </h2>
-                <p className="mt-2 max-w-2xl text-sm leading-relaxed text-[#a39e96]">
-                  Model enterprise quotes with a base tier, margin on bundled try-ons, and a selectable per‑try‑on
-                  concession on <span className="text-[#d4bc94]">additional</span> volume. Separate from the header{" "}
-                  <span className="font-medium text-zinc-300">Credit Calculator</span>.{" "}
-                  <span className="text-[#7a746b]">
-                    Fashn cost here is fixed at {formatGbp(ENTERPRISE_PRICING_FASHN_GBP_PER_TRYON)} per try-on.
-                  </span>
-                </p>
-
-                <div className="mt-8 flex flex-wrap gap-3">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setEnterprisePricingBaseTryOns("2000");
-                      setEnterprisePricingBasePricePerTryOn("0.50");
-                    }}
-                    className="rounded-xl border border-[#a68b5f]/45 bg-black/35 px-4 py-2.5 text-left text-sm text-[#f0e8dc] shadow-inner shadow-black/40 transition hover:border-[#d4bc94]/55 hover:bg-[#1c1914]"
-                  >
-                    <span className="block font-semibold tracking-wide">2000 try-ons @ 50p</span>
-                    <span className="mt-1 block text-xs font-normal text-[#9d9488]">
-                      Prefill base tier fields
-                    </span>
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setEnterprisePricingBaseTryOns("4000");
-                      setEnterprisePricingBasePricePerTryOn("0.50");
-                    }}
-                    className="rounded-xl border border-[#a68b5f]/45 bg-black/35 px-4 py-2.5 text-left text-sm text-[#f0e8dc] shadow-inner shadow-black/40 transition hover:border-[#d4bc94]/55 hover:bg-[#1c1914]"
-                  >
-                    <span className="block font-semibold tracking-wide">4000 try-ons @ 50p</span>
-                    <span className="mt-1 block text-xs font-normal text-[#9d9488]">
-                      Prefill base tier fields
-                    </span>
-                  </button>
-                </div>
-
-                <div className="relative mt-8 grid gap-6 md:grid-cols-12">
-                  <div className="space-y-5 md:col-span-5">
-                    <div>
-                      <label
-                        htmlFor="ent-price-base-tryons"
-                        className="block text-xs font-semibold uppercase tracking-wide text-[#b8a892]"
-                      >
-                        Base try-ons
-                      </label>
-                      <input
-                        id="ent-price-base-tryons"
-                        value={enterprisePricingBaseTryOns}
-                        onChange={(e) => setEnterprisePricingBaseTryOns(e.target.value)}
-                        inputMode="numeric"
-                        className="mt-2 block w-full rounded-xl border border-[#5c4f3d]/50 bg-black/55 px-4 py-3 text-sm tabular-nums text-[#f5efe6] outline-none ring-0 transition placeholder:text-zinc-600 focus:border-[#c6a77d]/60 focus:shadow-[inset_0_0_0_1px_rgba(198,167,125,0.15)]"
-                      />
-                    </div>
-                    <div>
-                      <label
-                        htmlFor="ent-price-base-per-tryon"
-                        className="block text-xs font-semibold uppercase tracking-wide text-[#b8a892]"
-                      >
-                        Base price per try-on (£)
-                      </label>
-                      <input
-                        id="ent-price-base-per-tryon"
-                        value={enterprisePricingBasePricePerTryOn}
-                        onChange={(e) => setEnterprisePricingBasePricePerTryOn(e.target.value)}
-                        inputMode="decimal"
-                        placeholder="0.50"
-                        className="mt-2 block w-full rounded-xl border border-[#5c4f3d]/50 bg-black/55 px-4 py-3 text-sm tabular-nums text-[#f5efe6] outline-none ring-0 transition placeholder:text-zinc-600 focus:border-[#c6a77d]/60 focus:shadow-[inset_0_0_0_1px_rgba(198,167,125,0.15)]"
-                      />
-                      <p className="mt-2 text-[11px] leading-relaxed text-[#726b61]">
-                        Revenue from included try-ons is base try-ons × this rate.
-                      </p>
-                    </div>
-                    <div>
-                      <label
-                        htmlFor="ent-price-extra"
-                        className="block text-xs font-semibold uppercase tracking-wide text-[#b8a892]"
-                      >
-                        Additional try-ons
-                      </label>
-                      <input
-                        id="ent-price-extra"
-                        value={enterprisePricingExtraTryOns}
-                        onChange={(e) => setEnterprisePricingExtraTryOns(e.target.value)}
-                        inputMode="numeric"
-                        placeholder="0"
-                        className="mt-2 block w-full rounded-xl border border-[#5c4f3d]/50 bg-black/55 px-4 py-3 text-sm tabular-nums text-[#f5efe6] outline-none ring-0 transition placeholder:text-zinc-600 focus:border-[#c6a77d]/60 focus:shadow-[inset_0_0_0_1px_rgba(198,167,125,0.15)]"
-                      />
-                    </div>
-                  </div>
-
-                  <div className="md:col-span-7 md:pt-7">
-                    <p className="text-xs font-semibold uppercase tracking-wide text-[#b8a892]">
-                      Discount on extra try-ons
-                    </p>
-                    <p className="mt-1 text-xs text-[#726b61]">
-                      Subtract this amount from base price per try-on for each additional try-on (floored at £0).
-                    </p>
-                    <div className="mt-4 grid grid-cols-3 gap-2 sm:gap-3" role="group" aria-label="Discount amount">
-                      {ENTERPRISE_PRICING_EXTRA_DISCOUNT_GBP_OPTIONS.map(({ penceLabel, pounds }) => {
-                        const sel = enterprisePricingExtraDiscountGbp === pounds;
-                        return (
-                          <button
-                            key={penceLabel}
-                            type="button"
-                            aria-pressed={sel}
-                            onClick={() => setEnterprisePricingExtraDiscountGbp(pounds)}
-                            className={`rounded-xl border px-3 py-3 text-center transition sm:py-4 ${
-                              sel
-                                ? "border-[#e8dcc4]/45 bg-[#c6a77d]/10 text-[#f5efe6] shadow-[inset_0_0_24px_rgba(198,167,125,0.12)] ring-1 ring-[#d4bc94]/30"
-                                : "border-[#5c4f3d]/40 bg-black/30 text-[#a39e96] hover:border-[#88755a]/55 hover:bg-[#141210]"
-                            }`}
-                          >
-                            <span className="block font-serif text-lg font-medium tabular-nums text-[#e8dcc4]">
-                              {penceLabel}
-                            </span>
-                            <span className="mt-1 block text-[10px] font-medium uppercase tracking-wider text-[#7d7569]">
-                              per extra try-on
-                            </span>
-                          </button>
-                        );
-                      })}
-                    </div>
-
-                    <div className="mt-8 rounded-[1.25rem] border border-[#69563f]/55 bg-black/45 p-5 md:p-6">
-                      {enterprisePricingCalc ? (
-                        <>
-                          <div className="flex flex-wrap items-end justify-between gap-3 border-b border-[#3d352c]/70 pb-4">
-                            <div>
-                              <p className="text-[11px] font-semibold uppercase tracking-wide text-[#9d917f]">
-                                Additional unit price
-                              </p>
-                              <p className="mt-2 font-serif text-xl tabular-nums text-[#f5efe6]">
-                                {formatGbp(enterprisePricingCalc.pricePerAdditionalTryOn)}
-                              </p>
-                              <p className="mt-2 text-[11px] text-[#6b6460]">
-                                {formatGbp(enterprisePricingCalc.basePricePerTryOn)}{" "}
-                                <span className="text-[#5c574f]">−</span>{" "}
-                                {formatGbp(enterprisePricingCalc.discountOnExtraPerTryOn)} discount
-                              </p>
-                            </div>
-                          </div>
-                          <dl className="mt-5 grid gap-4 sm:grid-cols-2">
-                            <div className="rounded-xl border border-[#4f4334]/55 bg-black/35 px-4 py-4">
-                              <dt className="text-[11px] font-semibold uppercase tracking-wide text-[#9d917f]">
-                                Total try-ons
-                              </dt>
-                              <dd className="mt-1 font-serif text-2xl tabular-nums text-[#f5efe6]">
-                                {enterprisePricingCalc.totalTryOns.toLocaleString()}
-                              </dd>
-                            </div>
-                            <div className="rounded-xl border border-[#4f4334]/55 bg-black/35 px-4 py-4">
-                              <dt className="text-[11px] font-semibold uppercase tracking-wide text-[#9d917f]">
-                                Fashn.ai cost (est.)
-                              </dt>
-                              <dd className="mt-1 font-serif text-xl tabular-nums text-[#d4bc94]/95">
-                                {formatGbp(enterprisePricingCalc.fashnCost)}
-                              </dd>
-                              <dd className="mt-2 text-[10px] text-[#686059]">
-                                {enterprisePricingCalc.totalTryOns.toLocaleString()} ×{" "}
-                                {formatGbp(ENTERPRISE_PRICING_FASHN_GBP_PER_TRYON)}
-                              </dd>
-                            </div>
-                            <div className="rounded-xl border border-[#4f4334]/55 bg-black/35 px-4 py-4 sm:col-span-2">
-                              <dt className="text-[11px] font-semibold uppercase tracking-wide text-[#9d917f]">
-                                Recommended price
-                              </dt>
-                              <dd className="mt-1 font-serif text-2xl tabular-nums text-[#f5efe6]">
-                                {formatGbp(enterprisePricingCalc.recommendedPrice)}
-                              </dd>
-                              <dd className="mt-2 text-[10px] text-[#686059]">
-                                Base revenue + extras at discounted unit rate.
-                              </dd>
-                            </div>
-                            <div className="rounded-xl border border-[#6b9353]/35 bg-emerald-950/[0.09] px-4 py-4 sm:col-span-2">
-                              <dt className="text-[11px] font-semibold uppercase tracking-wide text-[#8fb87a]/90">
-                                Profit
-                              </dt>
-                              <dd className="mt-2 font-serif text-3xl tabular-nums text-[#bde4aa]">
-                                {formatGbp(enterprisePricingCalc.profit)}
-                              </dd>
-                            </div>
-                          </dl>
-                        </>
-                      ) : (
-                        <p className="text-sm text-[#7d766d]">
-                          Enter positive base try-ons, a non‑negative price per try-on, and zero or more additional
-                          try-ons.
-                        </p>
-                      )}
-                    </div>
-                  </div>
-                </div>
-              </div>
             </section>
           ) : activeTab === "reviews" ? (
             <section className="mt-8 w-full overflow-hidden rounded-2xl border border-zinc-800 bg-zinc-900/60 p-6 shadow-sm md:p-8">
