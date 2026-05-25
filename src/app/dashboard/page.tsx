@@ -8,7 +8,7 @@ import { retailerWelcomeGreetingName } from "@/lib/retailerDisplayName";
 import { getRetailerSessionUser, retailerEligibleForTryOnTopUps } from "@/lib/retailerAuth";
 import { storedOrDerivedBasePlanLimit } from "@/lib/clientTryOnBuckets";
 import { getNextMonthlyResetUtcDateForDisplay, resolveBillingAnchorDay } from "@/lib/billingCycle";
-import { retailerDashboardPlanFromBaseLimit } from "@/lib/subscriptionPlans";
+import { catalogSubscriptionPlanKeyFromTryOnLimit, retailerDashboardPlanFromBaseLimit } from "@/lib/subscriptionPlans";
 import {
   SUBSCRIPTION_CANCELLATION_REASON_LABELS,
   SUBSCRIPTION_CANCELLATION_REASONS,
@@ -160,12 +160,23 @@ export default async function DashboardPage() {
       .join(" · ") || "Your retailer account";
 
   const canceledAtStored = user.subscriptionCanceledAt?.trim() || null;
+  const accessUntilIso = user.subscriptionAccessUntil?.trim() || null;
+  const accessUntilMs = accessUntilIso ? Date.parse(accessUntilIso) : NaN;
+  const subscriptionAccessEnded = Number.isFinite(accessUntilMs) && accessUntilMs <= Date.now();
+  const hasStripeSubscription = Boolean(user.stripeSubscriptionId?.trim());
+
+  /** Avoid duplicate Stripe checkouts while a normal billed subscription runs uncancelled. */
+  const showRenewSubscriptionButton =
+    !hasStripeSubscription || Boolean(canceledAtStored) || subscriptionAccessEnded;
+
   const subscriptionBilling = {
     canRequestCancellation: !canceledAtStored,
     cancellationScheduled: Boolean(canceledAtStored),
-    accessUntilIso: user.subscriptionAccessUntil?.trim() || null,
+    accessUntilIso,
     canceledAtIso: canceledAtStored,
     cancellationReasonLabel: cancellationReasonLabelFromStored(user.cancellationReason),
+    renewSubscriptionPlanKey: catalogSubscriptionPlanKeyFromTryOnLimit(planCap),
+    showRenewSubscriptionButton,
   };
 
   const topUpEligible = retailerEligibleForTryOnTopUps(user);

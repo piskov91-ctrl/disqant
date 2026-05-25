@@ -56,6 +56,16 @@ export function planLabelFromTryOnLimit(limit: number): string {
   return "Custom plan";
 }
 
+/** Maps a client's base try-on cap to a self-serve Stripe catalog tier; null for custom/admin limits. */
+export function catalogSubscriptionPlanKeyFromTryOnLimit(limit: number): SubscriptionPlanKey | null {
+  const lim = Math.floor(limit);
+  if (!Number.isFinite(lim) || lim <= 0) return null;
+  for (const key of ["starter", "growth", "pro"] as const) {
+    if (SUBSCRIPTION_PLANS[key].tryOnLimit === lim) return key;
+  }
+  return null;
+}
+
 /** Short tier label for retailer dashboard (matches SUBSCRIPTION_PLANS try-on caps). */
 export function retailerDashboardPlanFromBaseLimit(limit: number): {
   planName: string;

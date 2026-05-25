@@ -7,6 +7,7 @@ import {
   SUBSCRIPTION_CANCELLATION_REASONS,
   type SubscriptionCancellationReasonCode,
 } from "@/lib/subscriptionCancellation";
+import type { SubscriptionPlanKey } from "@/lib/subscriptionPlans";
 
 export type DashboardSubscriptionBillingProps = {
   canRequestCancellation: boolean;
@@ -14,6 +15,10 @@ export type DashboardSubscriptionBillingProps = {
   accessUntilIso: string | null;
   canceledAtIso: string | null;
   cancellationReasonLabel: string | null;
+  /** When set, Renew starts Stripe Checkout for this tier; otherwise Renew sends the user to /subscriptions. */
+  renewSubscriptionPlanKey: SubscriptionPlanKey | null;
+  /** Hide while an uncancelled Stripe subscription is active (avoids duplicate checkout). */
+  showRenewSubscriptionButton: boolean;
 };
 
 function formatUtcLong(iso: string | null): string {
@@ -31,6 +36,70 @@ function formatUtcLong(iso: string | null): string {
   } catch {
     return iso;
   }
+}
+
+function subscriptionAccessEnded(accessUntilIso: string | null): boolean {
+  const raw = accessUntilIso?.trim();
+  if (!raw) return false;
+  const ms = Date.parse(raw);
+  return Number.isFinite(ms) && ms <= Date.now();
+}
+
+function DashboardRenewSubscriptionButton({ planKey }: { planKey: SubscriptionPlanKey | null }) {
+  const router = useRouter();
+  const [pending, setPending] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const onClick = useCallback(() => {
+    void (async () => {
+      setError(null);
+      if (!planKey) {
+        router.push("/subscriptions");
+        return;
+      }
+      setPending(true);
+      try {
+        const res = await fetch("/api/stripe/checkout", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          credentials: "include",
+          body: JSON.stringify({ plan: planKey }),
+        });
+        const data = (await res.json()) as { url?: string; error?: string };
+        if (data.url) {
+          window.location.assign(data.url);
+          return;
+        }
+        if (res.status === 401) {
+          router.push("/login?next=/dashboard");
+          return;
+        }
+        setError(data.error || "Could not start checkout.");
+      } catch {
+        setError("Something went wrong. Please try again.");
+      } finally {
+        setPending(false);
+      }
+    })();
+  }, [planKey, router]);
+
+  return (
+    <div className="flex flex-col items-end gap-1">
+      <button
+        type="button"
+        disabled={pending}
+        onClick={onClick}
+        className="inline-flex shrink-0 items-center justify-center rounded-full border border-emerald-500/40 bg-emerald-500/[0.12] px-4 py-2 text-xs font-semibold uppercase tracking-[0.12em] text-emerald-100/95 transition hover:border-emerald-400/55 hover:bg-emerald-500/[0.18] disabled:cursor-not-allowed disabled:opacity-45"
+      >
+        {pending ? "Loading…" : "Renew subscription"}
+      </button>
+      {error ? (
+        <p className="max-w-[14rem] text-right text-[11px] leading-snug text-red-300/90" role="alert">
+          {error}
+        </p>
+      ) : null}
+    </div>
+  );
 }
 
 export function DashboardCancelSubscriptionPanel(props: DashboardSubscriptionBillingProps) {
@@ -83,11 +152,26 @@ export function DashboardCancelSubscriptionPanel(props: DashboardSubscriptionBil
     }
   }
 
+  const accessEnded = subscriptionAccessEnded(props.accessUntilIso);
+  const subscriptionStatusLabel = props.cancellationScheduled
+    ? "Cancellation scheduled"
+    : accessEnded
+      ? "Subscription ended"
+      : props.canRequestCancellation
+        ? "Active"
+        : "Subscription";
+
   return (
     <div className="mt-8 border-t border-[#c6a77d]/15 pt-8">
-      <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-[#d4bc94]/85">
-        Subscription
-      </p>
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div className="min-w-0">
+          <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-[#d4bc94]/85">Subscription</p>
+          <p className="mt-2 text-sm font-semibold text-zinc-200">{subscriptionStatusLabel}</p>
+        </div>
+        {props.showRenewSubscriptionButton ? (
+          <DashboardRenewSubscriptionButton planKey={props.renewSubscriptionPlanKey} />
+        ) : null}
+      </div>
 
       {props.cancellationScheduled ? (
         <div className="mt-4 rounded-2xl border border-amber-400/25 bg-amber-500/[0.09] px-4 py-4 text-sm leading-relaxed text-amber-50/95">
