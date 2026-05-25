@@ -104,7 +104,7 @@ export type RetailerDashboardShellProps = {
   websiteUrl: string | null;
   planSummary: RetailerPlanSummary;
   subscriptionBilling: DashboardSubscriptionBillingProps;
-  /** Top-up checkout allowed while Stripe access is active (still allowed through cancel-at-period-end). */
+  /** When false, dashboard hides top-up purchases; requires active Stripe-backed access window in Redis state. */
   topUpEligible: boolean;
   apiKey: string;
   /** Subscription bucket usage (`usageCount`). */
@@ -644,48 +644,44 @@ function RetailerDashboardShellInner({
                       />
                     </div>
                   </div>
-                  {topUpLimit > 0 ? (
-                    <div>
-                      <div className="flex flex-wrap items-center justify-between gap-2">
-                        <span className="text-sm font-semibold text-zinc-200">Top-up bucket</span>
-                        <span className="tabular-nums text-sm text-zinc-500">
-                          {topUpUsed.toLocaleString()} / {topUpLimit.toLocaleString()}{" "}
-                          <span className="font-semibold text-[#c6a77d]/90">({topUpPct}%)</span>
-                        </span>
+                  {topUpEligible ? (
+                    topUpLimit > 0 ? (
+                      <div>
+                        <div className="flex flex-wrap items-center justify-between gap-2">
+                          <span className="text-sm font-semibold text-zinc-200">Top-up bucket</span>
+                          <span className="tabular-nums text-sm text-zinc-500">
+                            {topUpUsed.toLocaleString()} / {topUpLimit.toLocaleString()}{" "}
+                            <span className="font-semibold text-[#c6a77d]/90">({topUpPct}%)</span>
+                          </span>
+                        </div>
+                        <div className="relative mt-3 h-3.5 w-full overflow-hidden rounded-full border border-white/[0.12] bg-black/55 shadow-[inset_0_2px_8px_rgba(0,0,0,0.45)] ring-1 ring-[#c6a77d]/10">
+                          <div
+                            className="relative h-full min-w-0 rounded-full shadow-[inset_0_1px_0_rgba(255,255,255,0.2)] transition-[width] duration-700 ease-out motion-reduce:transition-none"
+                            style={tryOnUsageFillStyle(topUpPct)}
+                          />
+                        </div>
                       </div>
-                      <div className="relative mt-3 h-3.5 w-full overflow-hidden rounded-full border border-white/[0.12] bg-black/55 shadow-[inset_0_2px_8px_rgba(0,0,0,0.45)] ring-1 ring-[#c6a77d]/10">
-                        <div
-                          className="relative h-full min-w-0 rounded-full shadow-[inset_0_1px_0_rgba(255,255,255,0.2)] transition-[width] duration-700 ease-out motion-reduce:transition-none"
-                          style={tryOnUsageFillStyle(topUpPct)}
-                        />
-                      </div>
-                    </div>
-                  ) : (
-                    <p className="text-sm text-zinc-600">
-                      {topUpEligible ? (
-                        <>No top-up bucket yet—add try-ons below whenever you need extra capacity beyond your plan.</>
-                      ) : (
-                        <>
-                          Purchased try-ons appear here once you qualify for top-ups and buy a bundle. Subscribe or renew if
-                          this section stays locked after your billing access ends.
-                        </>
-                      )}
-                    </p>
-                  )}
+                    ) : (
+                      <p className="text-sm text-zinc-600">
+                        No top-up bucket yet—add try-ons below whenever you need extra capacity beyond your plan.
+                      </p>
+                    )
+                  ) : null}
                 </div>
 
                 {topUpEligible ? (
                   <DashboardTopUpPanel />
                 ) : (
-                  <section className="rounded-3xl border border-zinc-600/35 bg-black/38 p-7 shadow-inner shadow-black/40 backdrop-blur-xl md:p-9">
-                    <p className="text-[11px] font-semibold uppercase tracking-[0.26em] text-zinc-500">Try-on top-ups</p>
-                    <p className="mt-4 max-w-xl text-sm leading-relaxed text-zinc-400">
-                      Top-ups unlock with an active paid subscription. Once a plan ends or lapses—or after your billing
-                      access ends if you cancelled at period end—they stay locked until you resubscribe.
+                  <section
+                    className="rounded-3xl border border-[#c6a77d]/20 bg-black/28 p-6 shadow-inner shadow-black/45 backdrop-blur-xl md:p-9"
+                    aria-label="Try-on top-ups unavailable"
+                  >
+                    <p className="max-w-xl text-sm leading-relaxed text-zinc-400">
+                      Top-ups are available with an active plan.
                     </p>
                     <Link
                       href="/subscriptions"
-                      className="mt-6 inline-flex w-fit items-center rounded-full border border-[#c6a77d]/45 bg-[#c6a77d]/12 px-5 py-2.5 text-sm font-semibold text-[#f0e6d8] transition hover:border-[#d4bc94]/55 hover:bg-[#c6a77d]/22"
+                      className="btn-accent-gradient mt-5 inline-flex w-fit items-center justify-center px-6 py-2.5 text-sm font-semibold"
                     >
                       View subscriptions
                     </Link>

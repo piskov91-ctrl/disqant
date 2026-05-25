@@ -190,13 +190,13 @@ export type RetailerUser = {
 export type RetailerPublic = Omit<RetailerUser, "passwordSalt" | "passwordHash" | "stripeSubscriptionId" | "stripeCustomerId">;
 
 /**
- * One-time try-ons top-ups via Stripe Checkout need a subscription id plus remaining billable access.
+ * Retailer-facing try-on **purchases** (Stripe Checkout): only when Stripe subscription access is currently valid.
  *
- * Scheduling cancellation (“cancel at period end”) keeps top-ups available until
- * {@link RetailerUser.subscriptionAccessUntil}; only after that instant (UTC) should top-ups lock.
+ * Ineligible (`false`): never subscribed ({@link RetailerUser.stripeSubscriptionId} missing), billing access ended
+ * ({@link RetailerUser.subscriptionAccessUntil} in the past when set), cancellation recorded without a remaining access
+ * end date, or ambiguous legacy cancellation without `subscriptionAccessUntil`.
  *
- * When cancellation exists but {@link RetailerUser.subscriptionAccessUntil} is missing, treat access as ended
- * (legacy / rare) and deny checkout.
+ * Eligible during cancel-at-period-end only while {@link RetailerUser.subscriptionAccessUntil} is still in the future.
  */
 export function retailerEligibleForTryOnTopUps(
   user: Pick<RetailerUser, "stripeSubscriptionId" | "subscriptionCanceledAt" | "subscriptionAccessUntil">,

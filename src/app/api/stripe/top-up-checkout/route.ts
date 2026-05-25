@@ -54,7 +54,7 @@ export async function POST(req: Request) {
     return Response.json(
       {
         error:
-          "Top-ups need an active paid subscription through your plan’s billing access window. Subscribe on the Plans page to purchase extra try-ons or renew once access has ended.",
+          "Top-ups are available with an active plan. Visit the Subscriptions page to subscribe or renew.",
       },
       { status: 403 },
     );
