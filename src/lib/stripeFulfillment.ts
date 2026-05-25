@@ -1,8 +1,10 @@
 import type Stripe from "stripe";
 import {
   createClientKey,
+  getClientKeyRecordById,
   getRedis,
   incrementClientTryOnLimit,
+  updateClientKey,
 } from "@/lib/apiKeyStore";
 import { attachStripeBillingIds, getRetailerById, linkRetailerToClientId, type RetailerUser } from "@/lib/retailerAuth";
 import { getSubscriptionPlanDefinition, parseSubscriptionPlanKey } from "@/lib/subscriptionPlans";
@@ -137,7 +139,7 @@ async function fulfillPaidTopUpCheckoutSession(session: Stripe.Checkout.Session)
 }
 
 /**
- * Provisions or upgrades the billing client API key after a paid subscription checkout.
+ * Provisions a client API key on first subscribe, or reapplies subscription plan caps on renewal while keeping the same embedded key record.
  * Idempotency lock must be claimed by the webhook handler before calling.
  */
 async function fulfillPaidSubscriptionCheckoutSession(session: Stripe.Checkout.Session): Promise<void> {
@@ -173,22 +175,33 @@ async function fulfillPaidSubscriptionCheckoutSession(session: Stripe.Checkout.S
 
   const contactEmail = user.email.trim();
 
-  // Always provision a brand-new client key on paid checkout, even if the account had an older key.
-  // This ensures each paying customer gets a unique API key and avoids accidentally reusing any shared/demo key.
   const subscribedAtMs =
     typeof session.created === "number" && Number.isFinite(session.created)
       ? session.created * 1000
       : Date.now();
   const anchorSourceDate = new Date(subscribedAtMs);
 
-  const rec = await createClientKey({
-    clientName,
-    contactEmail,
-    usageLimit: tryOnLimit,
-    anchorSourceDate,
-  });
+  const existingClientId = user.clientId?.trim() ?? "";
+  const existingClient = existingClientId ? await getClientKeyRecordById(existingClientId) : null;
 
-  await linkRetailerToClientId(user.id, rec.id);
+  /** Reuse embedded API key across subscription renewals; only provision when none is linked yet. */
+  const clientRecord =
+    existingClient && !existingClient.deletedAt
+      ? await updateClientKey({
+          id: existingClient.id,
+          clientName,
+          contactEmail,
+          monthlyPlanLimit: tryOnLimit,
+          topUpLimit: Math.floor(existingClient.topUpLimit ?? 0),
+        })
+      : await createClientKey({
+          clientName,
+          contactEmail,
+          usageLimit: tryOnLimit,
+          anchorSourceDate,
+        });
+
+  await linkRetailerToClientId(user.id, clientRecord.id);
 
   const stripeSubscriptionId = stripeExpandableId(session.subscription);
   const stripeCustomerId = stripeExpandableId(session.customer);
