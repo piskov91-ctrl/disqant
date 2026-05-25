@@ -515,9 +515,40 @@ export async function listDeletedRetailerAccounts(limit = 200): Promise<DeletedR
 }
 
 export type RetailerEmailForQuotaNotice = {
+  userId: string;
   email: string;
   storeName: string;
 };
+
+/** Placeholder `stripe_subscription` id — not valid in Stripe; unlocks retailer top-ups UI / API guards for QA. */
+export const ADMIN_TEST_STRIPE_SUBSCRIPTION_ID = "sub_fitroom_admin_test";
+
+/**
+ * Admin-only: overwrite `stripeSubscriptionId` so Try-on top-ups can be exercised without a live Stripe subscription.
+ *
+ * Clears cancel-at-period-end metadata whenever the subscription id is applied or cleared, so eligibility matches an
+ * “active-access” sandbox. Stripe Checkout sessions for top-ups may still bill real cards.
+ */
+export async function applyRetailStripeSubscriptionIdAdminOverride(params: {
+  retailerUserId: string;
+  stripeSubscriptionId: string | null;
+}): Promise<void> {
+  const row = await loadRetailerRecord(params.retailerUserId.trim());
+  if (!row) throw new Error("Retailer account not found.");
+  const sidTrim = params.stripeSubscriptionId?.trim() ?? "";
+  const stripeSubscriptionId = sidTrim ? sidTrim.slice(0, 240) : null;
+
+  const next: RetailerUser = {
+    ...row.user,
+    stripeSubscriptionId,
+    subscriptionCanceledAt: null,
+    subscriptionAccessUntil: null,
+    cancellationReason: null,
+    cancellationComments: null,
+  };
+
+  await getRedis().set(row.userRedisKey, JSON.stringify(next));
+}
 
 /**
  * Finds retailer accounts pointing at `clientId` via Redis SCAN over user records.
@@ -547,7 +578,11 @@ export async function listRetailersLinkedToClientId(
         const raw = await redis.get(key);
         const u = parseRetailerUserRaw(raw);
         if (!u?.email?.trim() || u.clientId?.trim() !== cid) continue;
-        merged.set(u.id, { email: u.email.trim(), storeName: typeof u.storeName === "string" ? u.storeName : "" });
+        merged.set(u.id, {
+          userId: u.id,
+          email: u.email.trim(),
+          storeName: typeof u.storeName === "string" ? u.storeName : "",
+        });
       }
       if (!Number.isFinite(cursorNum) || cursorNum === 0) break;
       cursor = cursorNum;

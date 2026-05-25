@@ -506,6 +506,14 @@ export default function AdminClient() {
   const [sendInstallBusyClientId, setSendInstallBusyClientId] = useState<string | null>(null);
   const [sendInstallResult, setSendInstallResult] = useState<{ clientId: string; toEmail: string } | null>(null);
 
+  /** Clients tab — sandbox Stripe subscription id on linked retailer Redis record (unlock dashboard top-ups). */
+  const [retailerDevStripeBusyId, setRetailerDevStripeBusyId] = useState<string | null>(null);
+  const [retailerDevStripeBanner, setRetailerDevStripeBanner] = useState<{
+    clientId: string;
+    kind: "success" | "error";
+    text: string;
+  } | null>(null);
+
   type QuotaEmailPreviewPayload = {
     subject: string;
     body: string;
@@ -1395,6 +1403,80 @@ export default function AdminClient() {
     } finally {
       setSendInstallBusyClientId(null);
     }
+  }
+
+  async function adminRetailerDevStripeSubscription(
+    k: KeyRecord,
+    action: "set_test" | "clear" | "set_custom",
+    stripeSubscriptionId?: string,
+  ) {
+    setError(null);
+    setRetailerDevStripeBusyId(k.id);
+    setRetailerDevStripeBanner(null);
+    try {
+      const res = await fetch("/api/admin/retailer-dev-stripe-subscription", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          clientId: k.id,
+          action,
+          ...(action === "set_custom" ? { stripeSubscriptionId: stripeSubscriptionId ?? "" } : {}),
+        }),
+      });
+      const data = (await res.json()) as {
+        ok?: boolean;
+        message?: string;
+        error?: string;
+        retailers?: Array<{ userId: string; email: string }>;
+      };
+      if (!res.ok) {
+        if (data.error === "Unauthorized.") window.location.reload();
+        let extra = "";
+        if (res.status === 409 && Array.isArray(data.retailers)) {
+          extra =
+            " Linked accounts: " +
+            data.retailers.map((r) => `${r.email} (${r.userId})`).join("; ");
+        }
+        setRetailerDevStripeBanner({
+          clientId: k.id,
+          kind: "error",
+          text: (data.error ?? "Request failed.") + extra,
+        });
+        return;
+      }
+      setRetailerDevStripeBanner({
+        clientId: k.id,
+        kind: "success",
+        text:
+          typeof data.message === "string"
+            ? data.message
+            : action === "clear"
+              ? "Cleared Stripe subscription id on retailer record."
+              : "Applied Stripe subscription id.",
+      });
+    } catch (e) {
+      setRetailerDevStripeBanner({
+        clientId: k.id,
+        kind: "error",
+        text: e instanceof Error ? e.message : "Network error.",
+      });
+    } finally {
+      setRetailerDevStripeBusyId(null);
+    }
+  }
+
+  function promptAdminCustomStripeSubId(rec: KeyRecord) {
+    const v =
+      typeof globalThis.prompt === "function"
+        ? globalThis.prompt(
+            'Stripe subscription id (e.g. sub_…) — stored only in Redis as "sandbox" unlock for top-ups',
+            "",
+          )
+        : "";
+    if (v == null) return;
+    const trimmed = String(v).trim();
+    if (!trimmed.length) return;
+    void adminRetailerDevStripeSubscription(rec, "set_custom", trimmed);
   }
 
   async function copyRawKey(apiKey: string) {
@@ -2684,6 +2766,65 @@ export default function AdminClient() {
                                 aria-label="Delete"
                               >
                                 Delete
+                              </button>
+                            </div>
+                          </div>
+
+                          <div className="min-w-[80rem] w-full border-b border-violet-900/30 bg-black/42 px-4 py-2.5 md:px-6">
+                            <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
+                              <div className="min-w-0">
+                                <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-violet-200/95">
+                                  Retailer · Top-up QA
+                                </p>
+                                <p className="mt-1 max-w-3xl text-[11px] leading-relaxed text-zinc-500">
+                                  Requires a retailer login whose Redis <span className="font-mono text-zinc-400">clientId</span>{" "}
+                                  matches this API key id. Applies <span className="font-medium text-zinc-400">sub_fitroom_admin_test</span>
+                                  {" "}or your custom id — clears scheduled-cancellation timestamps so top-ups unblock. Stripe
+                                  Checkout still uses API keys / live vs test mode from env.
+                                </p>
+                              </div>
+                              {retailerDevStripeBanner?.clientId === k.id ? (
+                                <p
+                                  className={`sm:max-w-md sm:text-right text-xs ${
+                                    retailerDevStripeBanner.kind === "success"
+                                      ? "text-emerald-300/95"
+                                      : "text-red-300/95"
+                                  }`}
+                                  role={retailerDevStripeBanner.kind === "error" ? "alert" : undefined}
+                                >
+                                  {retailerDevStripeBanner.text}
+                                </p>
+                              ) : (
+                                <span className="hidden sm:block sm:w-0 sm:flex-shrink" aria-hidden />
+                              )}
+                            </div>
+                            <div className="mt-2 flex flex-wrap gap-2">
+                              <button
+                                type="button"
+                                disabled={retailerDevStripeBusyId === k.id}
+                                onClick={() => void adminRetailerDevStripeSubscription(k, "set_test")}
+                                title="Writes sub_fitroom_admin_test onto the sole linked retailer Redis record."
+                                className="inline-flex h-9 shrink-0 items-center justify-center rounded-full border border-violet-500/45 bg-violet-950/45 px-3.5 text-xs font-semibold text-violet-100 transition hover:border-violet-400/55 hover:bg-violet-900/55 disabled:cursor-not-allowed disabled:opacity-45"
+                              >
+                                {retailerDevStripeBusyId === k.id ? "Working…" : "Set test sub ID"}
+                              </button>
+                              <button
+                                type="button"
+                                disabled={retailerDevStripeBusyId === k.id}
+                                onClick={() => promptAdminCustomStripeSubId(k)}
+                                title="Prompt for any subscription id string to store locally."
+                                className="inline-flex h-9 shrink-0 items-center justify-center rounded-full border border-zinc-600 bg-zinc-900/85 px-3.5 text-xs font-semibold text-zinc-200 transition hover:border-zinc-500 hover:bg-zinc-800 disabled:cursor-not-allowed disabled:opacity-45"
+                              >
+                                Custom…
+                              </button>
+                              <button
+                                type="button"
+                                disabled={retailerDevStripeBusyId === k.id}
+                                onClick={() => void adminRetailerDevStripeSubscription(k, "clear")}
+                                title="Remove stored stripeSubscriptionId and cancellation timestamps from retailer record."
+                                className="inline-flex h-9 shrink-0 items-center justify-center rounded-full border border-zinc-600 bg-zinc-950/65 px-3.5 text-xs font-semibold text-zinc-400 transition hover:border-zinc-500 hover:text-zinc-200 disabled:cursor-not-allowed disabled:opacity-45"
+                              >
+                                Clear Stripe sub ID
                               </button>
                             </div>
                           </div>
