@@ -292,7 +292,12 @@ export async function linkRetailerToClientId(retailerUserId: string, clientApiKe
 /** Persist Stripe ids after subscription checkout (webhook fulfillment). */
 export async function attachStripeBillingIds(
   retailerUserId: string,
-  ids: { stripeSubscriptionId?: string | null; stripeCustomerId?: string | null },
+  ids: {
+    stripeSubscriptionId?: string | null;
+    stripeCustomerId?: string | null;
+    /** Clears cancel-at-period-end timestamps after a paid subscription Checkout (renewal / new purchase). */
+    clearSubscriptionCancellationSchedule?: boolean;
+  },
 ): Promise<void> {
   const row = await loadRetailerRecord(retailerUserId.trim());
   if (!row) throw new Error("Retailer account not found.");
@@ -303,6 +308,9 @@ export async function attachStripeBillingIds(
       ? { stripeSubscriptionId: ids.stripeSubscriptionId?.trim() || null }
       : {}),
     ...(ids.stripeCustomerId !== undefined ? { stripeCustomerId: ids.stripeCustomerId?.trim() || null } : {}),
+    ...(ids.clearSubscriptionCancellationSchedule
+      ? { subscriptionCanceledAt: null, subscriptionAccessUntil: null }
+      : {}),
   };
   await getRedis().set(row.userRedisKey, JSON.stringify(next));
 }

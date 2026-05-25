@@ -192,12 +192,12 @@ async function fulfillPaidSubscriptionCheckoutSession(session: Stripe.Checkout.S
 
   const stripeSubscriptionId = stripeExpandableId(session.subscription);
   const stripeCustomerId = stripeExpandableId(session.customer);
-  if (stripeSubscriptionId ?? stripeCustomerId) {
-    await attachStripeBillingIds(user.id, {
-      ...(stripeSubscriptionId ? { stripeSubscriptionId } : {}),
-      ...(stripeCustomerId ? { stripeCustomerId } : {}),
-    });
-  }
+
+  await attachStripeBillingIds(user.id, {
+    ...(stripeSubscriptionId ? { stripeSubscriptionId } : {}),
+    ...(stripeCustomerId ? { stripeCustomerId } : {}),
+    clearSubscriptionCancellationSchedule: true,
+  });
 }
 
 async function findRetailerIdentityForStripeSession(retailerUserId: string): Promise<RetailerUser | null> {
