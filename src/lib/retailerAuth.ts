@@ -190,29 +190,23 @@ export type RetailerUser = {
 export type RetailerPublic = Omit<RetailerUser, "passwordSalt" | "passwordHash" | "stripeSubscriptionId" | "stripeCustomerId">;
 
 /**
- * Retailer-facing try-on **purchases** (Stripe Checkout): only when Stripe subscription access is currently valid.
+ * Retailer-facing try-on **purchases** (Stripe Checkout): only when Stripe shows an active subscription and access has not ended.
  *
- * Ineligible (`false`): never subscribed ({@link RetailerUser.stripeSubscriptionId} missing), billing access ended
- * ({@link RetailerUser.subscriptionAccessUntil} in the past when set), cancellation recorded without a remaining access
- * end date, or ambiguous legacy cancellation without `subscriptionAccessUntil`.
+ * Eligible (`true`): {@link RetailerUser.stripeSubscriptionId} present, and either no {@link RetailerUser.subscriptionAccessUntil},
+ * or it parses to a time **strictly after** now (coverage through cancel-at-period-end until the billed-through date).
  *
- * Eligible during cancel-at-period-end only while {@link RetailerUser.subscriptionAccessUntil} is still in the future.
+ * Ineligible (`false`): no Stripe subscription id, `subscriptionAccessUntil` in the past, or set but unparseable.
  */
 export function retailerEligibleForTryOnTopUps(
-  user: Pick<RetailerUser, "stripeSubscriptionId" | "subscriptionCanceledAt" | "subscriptionAccessUntil">,
+  user: Pick<RetailerUser, "stripeSubscriptionId" | "subscriptionAccessUntil">,
 ): boolean {
   if (!user.stripeSubscriptionId?.trim()) return false;
 
   const untilRaw = user.subscriptionAccessUntil?.trim();
-  if (untilRaw) {
-    const endMs = Date.parse(untilRaw);
-    if (Number.isFinite(endMs) && endMs <= Date.now()) return false;
-    return true;
-  }
+  if (!untilRaw) return true;
 
-  if (user.subscriptionCanceledAt?.trim()) return false;
-
-  return true;
+  const endMs = Date.parse(untilRaw);
+  return Number.isFinite(endMs) && endMs > Date.now();
 }
 
 export function toPublicRetailer(u: RetailerUser): RetailerPublic {
