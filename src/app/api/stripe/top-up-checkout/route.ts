@@ -54,7 +54,7 @@ export async function POST(req: Request) {
     return Response.json(
       {
         error:
-          "Top-ups are available with an active Fit Room subscription. Subscribe on the Plans page to purchase extra try-ons.",
+          "Top-ups need an active paid subscription through your plan’s billing access window. Subscribe on the Plans page to purchase extra try-ons or renew once access has ended.",
       },
       { status: 403 },
     );

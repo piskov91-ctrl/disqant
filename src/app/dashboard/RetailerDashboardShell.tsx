@@ -104,7 +104,7 @@ export type RetailerDashboardShellProps = {
   websiteUrl: string | null;
   planSummary: RetailerPlanSummary;
   subscriptionBilling: DashboardSubscriptionBillingProps;
-  /** Fixed packs require a renewing Fit Room Stripe subscription (not cancelled). */
+  /** Top-up checkout allowed while Stripe access is active (still allowed through cancel-at-period-end). */
   topUpEligible: boolean;
   apiKey: string;
   /** Subscription bucket usage (`usageCount`). */
@@ -663,13 +663,11 @@ function RetailerDashboardShellInner({
                   ) : (
                     <p className="text-sm text-zinc-600">
                       {topUpEligible ? (
-                        <>
-                          No top-up bucket yet—add try-ons below whenever you need extra capacity beyond your plan.
-                        </>
+                        <>No top-up bucket yet—add try-ons below whenever you need extra capacity beyond your plan.</>
                       ) : (
                         <>
-                          With an active Fit Room plan you can purchase extra try-ons as one-off bundles anytime from this
-                          page.
+                          Purchased try-ons appear here once you qualify for top-ups and buy a bundle. Subscribe or renew if
+                          this section stays locked after your billing access ends.
                         </>
                       )}
                     </p>
@@ -682,7 +680,8 @@ function RetailerDashboardShellInner({
                   <section className="rounded-3xl border border-zinc-600/35 bg-black/38 p-7 shadow-inner shadow-black/40 backdrop-blur-xl md:p-9">
                     <p className="text-[11px] font-semibold uppercase tracking-[0.26em] text-zinc-500">Try-on top-ups</p>
                     <p className="mt-4 max-w-xl text-sm leading-relaxed text-zinc-400">
-                      Top-ups are available with an active Fit Room plan. Subscribe to unlock additional try-ons anytime.
+                      Top-ups unlock with an active paid subscription. Once a plan ends or lapses—or after your billing
+                      access ends if you cancelled at period end—they stay locked until you resubscribe.
                     </p>
                     <Link
                       href="/subscriptions"
