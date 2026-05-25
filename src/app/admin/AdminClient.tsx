@@ -489,6 +489,13 @@ export default function AdminClient() {
   const [sendInstallBusyClientId, setSendInstallBusyClientId] = useState<string | null>(null);
   const [sendInstallResult, setSendInstallResult] = useState<{ clientId: string; toEmail: string } | null>(null);
 
+  const [retailerExpireSubSimBusyId, setRetailerExpireSubSimBusyId] = useState<string | null>(null);
+  const [retailerExpireSubSimFlash, setRetailerExpireSubSimFlash] = useState<{
+    clientId: string;
+    kind: "success" | "error";
+    text: string;
+  } | null>(null);
+
   type QuotaEmailPreviewPayload = {
     subject: string;
     body: string;
@@ -1355,6 +1362,56 @@ export default function AdminClient() {
       setError(e instanceof Error ? e.message : "Failed to send install email.");
     } finally {
       setSendInstallBusyClientId(null);
+    }
+  }
+
+  async function simulateRetailSubscriptionExpiredYesterday(k: KeyRecord) {
+    setError(null);
+    setRetailerExpireSubSimBusyId(k.id);
+    setRetailerExpireSubSimFlash(null);
+    try {
+      const res = await fetch("/api/admin/retailer-simulate-expired-subscription", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ clientId: k.id }),
+      });
+      const data = (await res.json()) as {
+        ok?: boolean;
+        subscriptionAccessUntil?: string;
+        retailerEmail?: string;
+        error?: string;
+        retailers?: Array<{ userId: string; email: string }>;
+      };
+      if (!res.ok) {
+        if (data.error === "Unauthorized.") window.location.reload();
+        let suffix = "";
+        if (res.status === 409 && Array.isArray(data.retailers)) {
+          suffix =
+            " Accounts: " +
+            data.retailers.map((r) => `${r.email} (${r.userId})`).join("; ");
+        }
+        setRetailerExpireSubSimFlash({
+          clientId: k.id,
+          kind: "error",
+          text: (data.error ?? "Request failed.") + suffix,
+        });
+        return;
+      }
+      const iso = typeof data.subscriptionAccessUntil === "string" ? data.subscriptionAccessUntil : "";
+      const who = typeof data.retailerEmail === "string" ? data.retailerEmail : "retailer";
+      setRetailerExpireSubSimFlash({
+        clientId: k.id,
+        kind: "success",
+        text: `Set subscriptionAccessUntil to yesterday (UTC end) for ${who}${iso ? ` → ${iso}` : ""}. Dashboard top-ups should hide after refresh.`,
+      });
+    } catch (e) {
+      setRetailerExpireSubSimFlash({
+        clientId: k.id,
+        kind: "error",
+        text: e instanceof Error ? e.message : "Network error.",
+      });
+    } finally {
+      setRetailerExpireSubSimBusyId(null);
     }
   }
 
@@ -2406,7 +2463,7 @@ export default function AdminClient() {
                   <div className="px-6 py-10 text-sm text-zinc-500 md:px-8">No clients yet.</div>
                 ) : (
                   <div className="w-full overflow-x-auto">
-                    <div className="grid min-w-[80rem] w-full grid-cols-[minmax(0,1.2fr)_minmax(0,0.62fr)_minmax(0,0.72fr)_minmax(0,0.72fr)_minmax(0,1.35fr)_minmax(0,0.58fr)_minmax(0,0.52fr)_minmax(0,0.54fr)_minmax(0,0.62fr)_minmax(0,0.5fr)_minmax(0,0.52fr)_minmax(0,0.62fr)] gap-2 border-b border-zinc-800 px-4 py-3 text-xs font-semibold uppercase tracking-wider text-zinc-500 md:px-6">
+                    <div className="grid min-w-[88rem] w-full grid-cols-[minmax(0,1.2fr)_minmax(0,0.62fr)_minmax(0,0.72fr)_minmax(0,0.72fr)_minmax(0,1.35fr)_minmax(0,0.58fr)_minmax(0,0.52fr)_minmax(0,0.54fr)_minmax(0,0.62fr)_minmax(0,0.5fr)_minmax(0,0.52fr)_minmax(0,0.55fr)_minmax(0,0.62fr)] gap-2 border-b border-zinc-800 px-4 py-3 text-xs font-semibold uppercase tracking-wider text-zinc-500 md:px-6">
                       <div>Client Name</div>
                       <div>API Key</div>
                       <div title="Key record created (UTC)">Created</div>
@@ -2420,6 +2477,9 @@ export default function AdminClient() {
                       <div className="text-center">COPY</div>
                       <div className="text-center">COPY KEY</div>
                       <div className="text-center">RESET</div>
+                      <div className="text-center" title="QA: subscriptionAccessUntil = end of yesterday (UTC) for linked retailer">
+                        Expire sub
+                      </div>
                       <div className="text-center">DELETE</div>
                     </div>
 
@@ -2438,7 +2498,7 @@ export default function AdminClient() {
 
                       return (
                         <div key={k.id}>
-                          <div className="grid min-w-[80rem] w-full grid-cols-[minmax(0,1.2fr)_minmax(0,0.62fr)_minmax(0,0.72fr)_minmax(0,0.72fr)_minmax(0,1.35fr)_minmax(0,0.58fr)_minmax(0,0.52fr)_minmax(0,0.54fr)_minmax(0,0.62fr)_minmax(0,0.5fr)_minmax(0,0.52fr)_minmax(0,0.62fr)] items-center gap-2 border-b border-zinc-800 px-4 py-4 text-base md:px-6">
+                          <div className="grid min-w-[88rem] w-full grid-cols-[minmax(0,1.2fr)_minmax(0,0.62fr)_minmax(0,0.72fr)_minmax(0,0.72fr)_minmax(0,1.35fr)_minmax(0,0.58fr)_minmax(0,0.52fr)_minmax(0,0.54fr)_minmax(0,0.62fr)_minmax(0,0.5fr)_minmax(0,0.52fr)_minmax(0,0.55fr)_minmax(0,0.62fr)] items-center gap-2 border-b border-zinc-800 px-4 py-4 text-base md:px-6">
                             <div className="min-w-0">
                               <div className="flex min-w-0 items-start justify-between gap-2">
                                 <div className="min-w-0 flex-1">
@@ -2624,6 +2684,18 @@ export default function AdminClient() {
                             <div className="text-center">
                               <button
                                 type="button"
+                                disabled={retailerExpireSubSimBusyId === k.id}
+                                onClick={() => void simulateRetailSubscriptionExpiredYesterday(k)}
+                                title="Sets Redis subscriptionAccessUntil to end-of-yesterday UTC for the retailer login linked via clientId."
+                                className="inline-flex h-9 max-w-[5.75rem] items-center justify-center rounded-full border border-amber-900/55 bg-amber-950/40 px-2 text-center text-[11px] font-semibold leading-tight text-amber-100 transition hover:border-amber-700/65 hover:bg-amber-950/70 disabled:cursor-not-allowed disabled:opacity-45"
+                                aria-label="Simulate expired subscription for linked retailer (QA)"
+                              >
+                                {retailerExpireSubSimBusyId === k.id ? "…" : "Expire sub"}
+                              </button>
+                            </div>
+                            <div className="text-center">
+                              <button
+                                type="button"
                                 onClick={() => void deleteKey(k.id)}
                                 className="inline-flex h-9 items-center justify-center rounded-full border border-red-900/60 bg-red-950/40 px-3 text-sm font-semibold text-red-200 transition hover:border-red-800 hover:bg-red-950/70"
                                 aria-label="Delete"
@@ -2633,8 +2705,19 @@ export default function AdminClient() {
                             </div>
                           </div>
 
+                          {retailerExpireSubSimFlash?.clientId === k.id ? (
+                            <div className="min-w-[88rem] w-full border-b border-zinc-800 bg-zinc-950/65 px-4 py-2.5 md:px-6">
+                              <p
+                                className={`text-xs leading-relaxed ${retailerExpireSubSimFlash.kind === "success" ? "text-emerald-300/95" : "text-red-300/95"}`}
+                                role={retailerExpireSubSimFlash.kind === "error" ? "alert" : undefined}
+                              >
+                                {retailerExpireSubSimFlash.text}
+                              </p>
+                            </div>
+                          ) : null}
+
                           {historyOpen ? (
-                            <div className="min-w-[80rem] w-full border-b border-zinc-800 bg-zinc-950/55 px-4 py-5 md:px-6">
+                            <div className="min-w-[88rem] w-full border-b border-zinc-800 bg-zinc-950/55 px-4 py-5 md:px-6">
                               {billingHistoryLoadingId === k.id ? (
                                 <p className="text-sm text-zinc-400">Loading billing history…</p>
                               ) : billingHistoryErrorId === k.id ? (

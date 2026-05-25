@@ -515,9 +515,39 @@ export async function listDeletedRetailerAccounts(limit = 200): Promise<DeletedR
 }
 
 export type RetailerEmailForQuotaNotice = {
+  /** Redis retailer user row id (`RetailerUser.id`). */
+  userId: string;
   email: string;
   storeName: string;
 };
+
+/**
+ * End of yesterday in UTC (`23:59:59.999Z` on calendar yesterday) — always &lt;= `Date.now()` for eligibility checks.
+ */
+export function subscriptionAccessUntilYesterdayUtcIso(): string {
+  const d = new Date();
+  d.setUTCDate(d.getUTCDate() - 1);
+  d.setUTCHours(23, 59, 59, 999);
+  return d.toISOString();
+}
+
+/**
+ * ADMIN / QA ONLY — writes {@link RetailerUser.subscriptionAccessUntil} on the Redis retailer record (typically to
+ * simulate lapsed Stripe access for dashboard top-up UX).
+ */
+export async function adminSetRetailSubscriptionAccessUntilUtc(
+  retailerUserId: string,
+  subscriptionAccessUntilIsoUtc: string,
+): Promise<void> {
+  const row = await loadRetailerRecord(retailerUserId.trim());
+  if (!row) throw new Error("Retailer account not found.");
+  if (row.user.deletedAt) throw new Error("Retailer account is deleted.");
+  const next: RetailerUser = {
+    ...row.user,
+    subscriptionAccessUntil: subscriptionAccessUntilIsoUtc.trim(),
+  };
+  await getRedis().set(row.userRedisKey, JSON.stringify(next));
+}
 
 /**
  * Finds retailer accounts pointing at `clientId` via Redis SCAN over user records.
@@ -547,7 +577,11 @@ export async function listRetailersLinkedToClientId(
         const raw = await redis.get(key);
         const u = parseRetailerUserRaw(raw);
         if (!u?.email?.trim() || u.clientId?.trim() !== cid) continue;
-        merged.set(u.id, { email: u.email.trim(), storeName: typeof u.storeName === "string" ? u.storeName : "" });
+        merged.set(u.id, {
+          userId: u.id,
+          email: u.email.trim(),
+          storeName: typeof u.storeName === "string" ? u.storeName : "",
+        });
       }
       if (!Number.isFinite(cursorNum) || cursorNum === 0) break;
       cursor = cursorNum;
