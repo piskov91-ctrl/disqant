@@ -147,18 +147,6 @@ export type TopUpPurchaseMeta = {
   packId?: string;
 };
 
-export type AdminTopUpPurchaseRow = {
-  clientId: string;
-  clientName: string;
-  storeName: string;
-  purchasedAt: string;
-  tryOnsAdded: number;
-  amountPaidPence: number | null;
-  currency: string;
-  stripeCheckoutSessionId?: string;
-  packId?: string;
-};
-
 export type ClientBillingResetHistoryRow = {
   at: string;
   previousTryOns: number;
@@ -248,47 +236,6 @@ export async function listClientKeys() {
     ClientApiKeyRecord | null
   >;
   return (keys ?? []).filter(Boolean) as ClientApiKeyRecord[];
-}
-
-/** All top-up purchases across active clients, newest first (admin). */
-export async function listAllTopUpPurchasesForAdmin(): Promise<AdminTopUpPurchaseRow[]> {
-  const clients = await listClientKeys();
-  const redis = getRedis();
-  const out: AdminTopUpPurchaseRow[] = [];
-
-  for (const c of clients) {
-    if (c.deletedAt) continue;
-    const raw = (await redis.lrange(CLIENT_BILLING_TOPUP_LIST(c.id), 0, MAX_CLIENT_BILLING_HISTORY_ITEMS - 1)) as
-      | string[]
-      | null;
-    for (const s of raw ?? []) {
-      try {
-        const row = JSON.parse(s) as ClientTopUpHistoryRow;
-        if (typeof row.tryOnsAdded !== "number" || !Number.isFinite(row.tryOnsAdded)) continue;
-        out.push({
-          clientId: c.id,
-          clientName: c.clientName,
-          storeName: (row.storeName ?? c.clientName).trim() || c.clientName,
-          purchasedAt: row.at,
-          tryOnsAdded: row.tryOnsAdded,
-          amountPaidPence:
-            typeof row.amountPaidPence === "number" && Number.isFinite(row.amountPaidPence)
-              ? row.amountPaidPence
-              : null,
-          currency:
-            typeof row.currency === "string" && row.currency.trim() ? row.currency.trim().toLowerCase() : "gbp",
-          stripeCheckoutSessionId:
-            typeof row.stripeCheckoutSessionId === "string" ? row.stripeCheckoutSessionId : undefined,
-          packId: typeof row.packId === "string" ? row.packId : undefined,
-        });
-      } catch {
-        /* skip */
-      }
-    }
-  }
-
-  out.sort((a, b) => Date.parse(b.purchasedAt) - Date.parse(a.purchasedAt));
-  return out;
 }
 
 function generateKey() {

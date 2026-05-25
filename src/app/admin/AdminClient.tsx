@@ -80,18 +80,6 @@ function billingResetReasonLabel(reason: "monthly_billing" | "admin_manual"): st
   return reason === "monthly_billing" ? "Monthly billing" : "Admin manual";
 }
 
-type AdminTopUpPurchaseRow = {
-  clientId: string;
-  clientName: string;
-  storeName: string;
-  purchasedAt: string;
-  tryOnsAdded: number;
-  amountPaidPence: number | null;
-  currency: string;
-  stripeCheckoutSessionId?: string;
-  packId?: string;
-};
-
 function formatMinorCurrency(amountPence: number | null, currency: string): string {
   if (amountPence == null || !Number.isFinite(amountPence)) return "—";
   const major = amountPence / 100;
@@ -134,7 +122,6 @@ type AdminTab =
   | "contact"
   | "enterprise"
   | "reviews"
-  | "topUps"
   | "analytics"
   | "wearMe"
   | "integration"
@@ -470,10 +457,6 @@ export default function AdminClient() {
   const [billingHistoryLoadingId, setBillingHistoryLoadingId] = useState<string | null>(null);
   const [billingHistoryErrorId, setBillingHistoryErrorId] = useState<string | null>(null);
 
-  const [topUpsPurchases, setTopUpsPurchases] = useState<AdminTopUpPurchaseRow[]>([]);
-  const [topUpsLoading, setTopUpsLoading] = useState(false);
-  const [topUpsError, setTopUpsError] = useState<string | null>(null);
-
   const [contactInquiriesUnread, setContactInquiriesUnread] = useState(0);
   const [contactInquiries, setContactInquiries] = useState<ContactInquiryRow[]>([]);
   const [contactInquiriesLoading, setContactInquiriesLoading] = useState(false);
@@ -505,14 +488,6 @@ export default function AdminClient() {
   const [sendInstallMenuClientId, setSendInstallMenuClientId] = useState<string | null>(null);
   const [sendInstallBusyClientId, setSendInstallBusyClientId] = useState<string | null>(null);
   const [sendInstallResult, setSendInstallResult] = useState<{ clientId: string; toEmail: string } | null>(null);
-
-  /** Clients tab — sandbox Stripe subscription id on linked retailer Redis record (unlock dashboard top-ups). */
-  const [retailerDevStripeBusyId, setRetailerDevStripeBusyId] = useState<string | null>(null);
-  const [retailerDevStripeBanner, setRetailerDevStripeBanner] = useState<{
-    clientId: string;
-    kind: "success" | "error";
-    text: string;
-  } | null>(null);
 
   type QuotaEmailPreviewPayload = {
     subject: string;
@@ -602,27 +577,6 @@ export default function AdminClient() {
     setExpandedHistoryClientId(clientId);
     if (!billingHistoryByClient[clientId]) {
       void loadBillingHistory(clientId);
-    }
-  }
-
-  async function loadTopUps() {
-    setTopUpsLoading(true);
-    setTopUpsError(null);
-    try {
-      const res = await fetch("/api/admin/top-ups");
-      const data = (await res.json()) as { purchases?: AdminTopUpPurchaseRow[]; error?: string };
-      if (!res.ok) {
-        if (data.error === "Unauthorized.") window.location.reload();
-        setTopUpsError(data.error || "Failed to load top-ups.");
-        setTopUpsPurchases([]);
-        return;
-      }
-      setTopUpsPurchases(Array.isArray(data.purchases) ? data.purchases : []);
-    } catch (e) {
-      setTopUpsError(e instanceof Error ? e.message : "Failed to load top-ups.");
-      setTopUpsPurchases([]);
-    } finally {
-      setTopUpsLoading(false);
     }
   }
 
@@ -1208,7 +1162,6 @@ export default function AdminClient() {
   useEffect(() => {
     if (activeTab === "analytics") void loadAnalytics();
     if (activeTab === "recovery") void loadRecovery();
-    if (activeTab === "topUps") void loadTopUps();
     if (activeTab === "contact") void loadContactInquiries();
     if (activeTab === "enterprise") void loadEnterpriseQuotes();
     if (activeTab === "reviews") void loadSubscriptionReviews();
@@ -1405,80 +1358,6 @@ export default function AdminClient() {
     }
   }
 
-  async function adminRetailerDevStripeSubscription(
-    k: KeyRecord,
-    action: "set_test" | "clear" | "set_custom",
-    stripeSubscriptionId?: string,
-  ) {
-    setError(null);
-    setRetailerDevStripeBusyId(k.id);
-    setRetailerDevStripeBanner(null);
-    try {
-      const res = await fetch("/api/admin/retailer-dev-stripe-subscription", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          clientId: k.id,
-          action,
-          ...(action === "set_custom" ? { stripeSubscriptionId: stripeSubscriptionId ?? "" } : {}),
-        }),
-      });
-      const data = (await res.json()) as {
-        ok?: boolean;
-        message?: string;
-        error?: string;
-        retailers?: Array<{ userId: string; email: string }>;
-      };
-      if (!res.ok) {
-        if (data.error === "Unauthorized.") window.location.reload();
-        let extra = "";
-        if (res.status === 409 && Array.isArray(data.retailers)) {
-          extra =
-            " Linked accounts: " +
-            data.retailers.map((r) => `${r.email} (${r.userId})`).join("; ");
-        }
-        setRetailerDevStripeBanner({
-          clientId: k.id,
-          kind: "error",
-          text: (data.error ?? "Request failed.") + extra,
-        });
-        return;
-      }
-      setRetailerDevStripeBanner({
-        clientId: k.id,
-        kind: "success",
-        text:
-          typeof data.message === "string"
-            ? data.message
-            : action === "clear"
-              ? "Cleared Stripe subscription id on retailer record."
-              : "Applied Stripe subscription id.",
-      });
-    } catch (e) {
-      setRetailerDevStripeBanner({
-        clientId: k.id,
-        kind: "error",
-        text: e instanceof Error ? e.message : "Network error.",
-      });
-    } finally {
-      setRetailerDevStripeBusyId(null);
-    }
-  }
-
-  function promptAdminCustomStripeSubId(rec: KeyRecord) {
-    const v =
-      typeof globalThis.prompt === "function"
-        ? globalThis.prompt(
-            'Stripe subscription id (e.g. sub_…) — stored only in Redis as "sandbox" unlock for top-ups',
-            "",
-          )
-        : "";
-    if (v == null) return;
-    const trimmed = String(v).trim();
-    if (!trimmed.length) return;
-    void adminRetailerDevStripeSubscription(rec, "set_custom", trimmed);
-  }
-
   async function copyRawKey(apiKey: string) {
     try {
       await navigator.clipboard.writeText(apiKey);
@@ -1556,7 +1435,6 @@ export default function AdminClient() {
     void loadSubscriptionReviewsBadge();
     if (activeTab === "clients" || activeTab === "wearMe") void load();
     else if (activeTab === "analytics") void loadAnalytics();
-    else if (activeTab === "topUps") void loadTopUps();
     else if (activeTab === "contact") void loadContactInquiries();
     else if (activeTab === "enterprise") void loadEnterpriseQuotes();
     else if (activeTab === "reviews") void loadSubscriptionReviews();
@@ -1570,15 +1448,13 @@ export default function AdminClient() {
         ? analyticsLoading
         : activeTab === "recovery"
           ? recoveryLoading
-          : activeTab === "topUps"
-            ? topUpsLoading
-            : activeTab === "contact"
-              ? contactInquiriesLoading
-              : activeTab === "enterprise"
-                ? enterpriseQuotesLoading
-                : activeTab === "reviews"
-                  ? subscriptionReviewsLoading
-                  : false;
+          : activeTab === "contact"
+            ? contactInquiriesLoading
+            : activeTab === "enterprise"
+              ? enterpriseQuotesLoading
+              : activeTab === "reviews"
+                ? subscriptionReviewsLoading
+                : false;
 
   const wearMeKeyRecord = useMemo(
     () => keys.find((k) => k.id === wearMeKeyId) ?? null,
@@ -2390,19 +2266,6 @@ export default function AdminClient() {
             <button
               type="button"
               role="tab"
-              aria-selected={activeTab === "topUps"}
-              onClick={() => setActiveTab("topUps")}
-              className={`rounded-full px-5 py-2 text-sm font-semibold transition ${
-                activeTab === "topUps"
-                  ? "bg-zinc-800 text-zinc-100 shadow-sm"
-                  : "text-zinc-500 hover:text-zinc-300"
-              }`}
-            >
-              Top Ups
-            </button>
-            <button
-              type="button"
-              role="tab"
               aria-selected={activeTab === "analytics"}
               onClick={() => setActiveTab("analytics")}
               className={`rounded-full px-5 py-2 text-sm font-semibold transition ${
@@ -2766,65 +2629,6 @@ export default function AdminClient() {
                                 aria-label="Delete"
                               >
                                 Delete
-                              </button>
-                            </div>
-                          </div>
-
-                          <div className="min-w-[80rem] w-full border-b border-violet-900/30 bg-black/42 px-4 py-2.5 md:px-6">
-                            <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
-                              <div className="min-w-0">
-                                <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-violet-200/95">
-                                  Retailer · Top-up QA
-                                </p>
-                                <p className="mt-1 max-w-3xl text-[11px] leading-relaxed text-zinc-500">
-                                  Requires a retailer login whose Redis <span className="font-mono text-zinc-400">clientId</span>{" "}
-                                  matches this API key id. Applies <span className="font-medium text-zinc-400">sub_fitroom_admin_test</span>
-                                  {" "}or your custom id — clears scheduled-cancellation timestamps so top-ups unblock. Stripe
-                                  Checkout still uses API keys / live vs test mode from env.
-                                </p>
-                              </div>
-                              {retailerDevStripeBanner?.clientId === k.id ? (
-                                <p
-                                  className={`sm:max-w-md sm:text-right text-xs ${
-                                    retailerDevStripeBanner.kind === "success"
-                                      ? "text-emerald-300/95"
-                                      : "text-red-300/95"
-                                  }`}
-                                  role={retailerDevStripeBanner.kind === "error" ? "alert" : undefined}
-                                >
-                                  {retailerDevStripeBanner.text}
-                                </p>
-                              ) : (
-                                <span className="hidden sm:block sm:w-0 sm:flex-shrink" aria-hidden />
-                              )}
-                            </div>
-                            <div className="mt-2 flex flex-wrap gap-2">
-                              <button
-                                type="button"
-                                disabled={retailerDevStripeBusyId === k.id}
-                                onClick={() => void adminRetailerDevStripeSubscription(k, "set_test")}
-                                title="Writes sub_fitroom_admin_test onto the sole linked retailer Redis record."
-                                className="inline-flex h-9 shrink-0 items-center justify-center rounded-full border border-violet-500/45 bg-violet-950/45 px-3.5 text-xs font-semibold text-violet-100 transition hover:border-violet-400/55 hover:bg-violet-900/55 disabled:cursor-not-allowed disabled:opacity-45"
-                              >
-                                {retailerDevStripeBusyId === k.id ? "Working…" : "Set test sub ID"}
-                              </button>
-                              <button
-                                type="button"
-                                disabled={retailerDevStripeBusyId === k.id}
-                                onClick={() => promptAdminCustomStripeSubId(k)}
-                                title="Prompt for any subscription id string to store locally."
-                                className="inline-flex h-9 shrink-0 items-center justify-center rounded-full border border-zinc-600 bg-zinc-900/85 px-3.5 text-xs font-semibold text-zinc-200 transition hover:border-zinc-500 hover:bg-zinc-800 disabled:cursor-not-allowed disabled:opacity-45"
-                              >
-                                Custom…
-                              </button>
-                              <button
-                                type="button"
-                                disabled={retailerDevStripeBusyId === k.id}
-                                onClick={() => void adminRetailerDevStripeSubscription(k, "clear")}
-                                title="Remove stored stripeSubscriptionId and cancellation timestamps from retailer record."
-                                className="inline-flex h-9 shrink-0 items-center justify-center rounded-full border border-zinc-600 bg-zinc-950/65 px-3.5 text-xs font-semibold text-zinc-400 transition hover:border-zinc-500 hover:text-zinc-200 disabled:cursor-not-allowed disabled:opacity-45"
-                              >
-                                Clear Stripe sub ID
                               </button>
                             </div>
                           </div>
@@ -3304,65 +3108,6 @@ export default function AdminClient() {
                 Last viewed (badge baseline):{" "}
                 <span className="font-mono text-zinc-400">fit-room:subscriptionsFeedback:adminReviewsLastSeenAt</span>.
               </p>
-            </section>
-          ) : activeTab === "topUps" ? (
-            <section className="mt-8 w-full overflow-hidden rounded-2xl border border-zinc-800 bg-zinc-900/60 p-6 shadow-sm md:p-8">
-              <h2 className="text-base font-semibold text-zinc-100">Top-up purchases</h2>
-              <p className="mt-1 text-sm text-zinc-400">
-                Stripe checkouts that added try-ons. Monthly billing resets subscription usage only; purchased top-ups stay
-                on the account until consumed. Combined usage (
-                <span className="font-medium text-zinc-300">usageCount</span> vs{" "}
-                <span className="font-medium text-zinc-300">usageLimit</span>) blocks try-ons at the cap.
-              </p>
-              {topUpsError ? (
-                <div className="mt-6 rounded-xl border border-red-900/60 bg-red-950/40 px-4 py-3 text-sm text-red-200">
-                  {topUpsError}
-                </div>
-              ) : null}
-              {topUpsLoading ? (
-                <div className="mt-8 text-sm text-zinc-500">Loading top-ups…</div>
-              ) : topUpsPurchases.length === 0 ? (
-                <div className="mt-8 text-sm text-zinc-500">No top-up purchases recorded yet.</div>
-              ) : (
-                <div className="mt-6 w-full overflow-x-auto">
-                  <div className="min-w-[56rem]">
-                    <div className="grid grid-cols-[minmax(0,1.15fr)_minmax(0,1fr)_minmax(0,0.75fr)_minmax(0,0.55fr)_minmax(0,0.65fr)] gap-3 border-b border-zinc-800 px-3 py-2 text-xs font-semibold uppercase tracking-wider text-zinc-500">
-                      <div>Store</div>
-                      <div>Client name</div>
-                      <div>Purchased (UTC)</div>
-                      <div className="tabular-nums">Try-ons</div>
-                      <div className="tabular-nums">Paid</div>
-                    </div>
-                    {topUpsPurchases.map((row, idx) => (
-                      <div
-                        key={`${row.clientId}-${row.stripeCheckoutSessionId ?? row.purchasedAt}-${idx}`}
-                        className="grid grid-cols-[minmax(0,1.15fr)_minmax(0,1fr)_minmax(0,0.75fr)_minmax(0,0.55fr)_minmax(0,0.65fr)] items-center gap-3 border-b border-zinc-800 px-3 py-3 text-sm text-zinc-200"
-                      >
-                        <div className="min-w-0 font-medium text-zinc-100">{row.storeName}</div>
-                        <div className="min-w-0 truncate text-zinc-400" title={row.clientName}>
-                          {row.clientName}
-                        </div>
-                        <div className="tabular-nums text-zinc-400">
-                          {Number.isFinite(Date.parse(row.purchasedAt))
-                            ? new Date(row.purchasedAt).toLocaleString("en-GB", {
-                                timeZone: "UTC",
-                                day: "numeric",
-                                month: "short",
-                                year: "numeric",
-                                hour: "2-digit",
-                                minute: "2-digit",
-                              })
-                            : "—"}
-                        </div>
-                        <div className="font-semibold tabular-nums text-emerald-200/90">+{row.tryOnsAdded}</div>
-                        <div className="tabular-nums text-zinc-300">
-                          {formatMinorCurrency(row.amountPaidPence, row.currency)}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
             </section>
           ) : activeTab === "wearMe" ? (
             <section className="mt-8 w-full overflow-visible rounded-2xl border border-zinc-800 bg-zinc-900/60 p-6 shadow-sm md:p-8">
