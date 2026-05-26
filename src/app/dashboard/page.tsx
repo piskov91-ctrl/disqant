@@ -169,12 +169,32 @@ export default async function DashboardPage() {
   const subscriptionAccessEnded = Number.isFinite(accessUntilMs) && accessUntilMs <= Date.now();
   const hasStripeSubscription = Boolean(user.stripeSubscriptionId?.trim());
 
+  /** Opt-in prod: `DASHBOARD_LOG_SUBSCRIPTION_CANCEL=1`. Always logs when `NODE_ENV !== "production"` for this branch. */
+  const logSubscriptionCancelGate =
+    process.env.NODE_ENV !== "production" || process.env.DASHBOARD_LOG_SUBSCRIPTION_CANCEL === "1";
+  const canRequestCancellationFlag = !canceledAtStored;
+  if (logSubscriptionCancelGate) {
+    console.log("[dashboard] subscriptionCancellation gate", {
+      retailerUserId: user.id,
+      subscriptionCanceledAtRaw: user.subscriptionCanceledAt ?? null,
+      canceledAtStored,
+      subscriptionAccessUntil: accessUntilIso,
+      subscriptionAccessEnded,
+      canRequestCancellation: canRequestCancellationFlag,
+    });
+    if (!canRequestCancellationFlag) {
+      console.log(
+        "[dashboard] canRequestCancellation is false because subscriptionCanceledAt is set — cancel UI hidden until this is cleared.",
+      );
+    }
+  }
+
   /** Avoid duplicate Stripe checkouts while a normal billed subscription runs uncancelled. */
   const showRenewSubscriptionButton =
     !hasStripeSubscription || Boolean(canceledAtStored) || subscriptionAccessEnded;
 
   const subscriptionBilling = {
-    canRequestCancellation: !canceledAtStored,
+    canRequestCancellation: canRequestCancellationFlag,
     cancellationScheduled: Boolean(canceledAtStored),
     accessUntilIso,
     canceledAtIso: canceledAtStored,
