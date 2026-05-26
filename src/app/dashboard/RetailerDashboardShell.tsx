@@ -1,11 +1,12 @@
 "use client";
 
-import { Activity, Coins, Gauge, ImageOff } from "lucide-react";
 import Link from "next/link";
+import { ImageOff } from "lucide-react";
 import { useSearchParams } from "next/navigation";
 import { Suspense, useCallback, useEffect, useMemo, useState } from "react";
 import { TryOnTimingCharts } from "@/components/TryOnTimingCharts";
 import { LOCAL_OR_UNKNOWN_PRODUCT } from "@/lib/tryOnConstants";
+import type { RetailerDashboardSubscriptionClientUsagePayload } from "@/lib/retailerSubscriptionClients";
 import { tryOnUsageFillStyle } from "@/lib/tryOnUsageBarStyle";
 import { retailerDashboardPlanFromBaseLimit } from "@/lib/subscriptionPlans";
 import { DashboardEmailDeveloperPanel } from "./DashboardEmailDeveloperPanel";
@@ -32,17 +33,13 @@ function searchParamsStringForTab(tab: DashboardTab): string {
   return qs.toString();
 }
 
-function DashboardShellSuspenseFallback() {
-  return (
-    <div className="mx-auto max-w-6xl px-6 pb-20 pt-8 md:pt-10">
-      <div className="h-12 w-full max-w-lg animate-pulse rounded-full bg-zinc-900/80" />
-      <div className="mt-10 h-56 animate-pulse rounded-2xl border border-white/5 bg-zinc-900/40" />
-    </div>
-  );
-}
-
-type ClientUsagePayload = {
+type RetailerClientUsageFetchJson = {
   error?: string;
+  linkedClientId?: string | null;
+  keys?: RetailerDashboardSubscriptionClientUsagePayload[];
+  clientId?: string;
+  clientName?: string;
+  keyPrefix?: string;
   usageCount?: number;
   usageLimit?: number;
   basePlanLimit?: number;
@@ -51,6 +48,141 @@ type ClientUsagePayload = {
   topUpUsageCount?: number;
   topUpLimit?: number;
 };
+
+function subscriptionRowsFromUsageJson(data: RetailerClientUsageFetchJson): RetailerDashboardSubscriptionClientUsagePayload[] {
+  const ks = Array.isArray(data.keys) ? data.keys : [];
+  if (ks.length > 0) return ks;
+
+  const baseLim =
+    typeof data.basePlanLimit === "number" && Number.isFinite(data.basePlanLimit)
+      ? data.basePlanLimit
+      : typeof data.planLimit === "number"
+        ? data.planLimit
+        : 0;
+
+  const cid =
+    typeof data.clientId === "string" ? data.clientId : (data.linkedClientId?.trim() ?? "unknown-client");
+  return [
+    {
+      clientId: cid,
+      clientName: typeof data.clientName === "string" ? data.clientName : "Storefront",
+      keyPrefix: typeof data.keyPrefix === "string" ? data.keyPrefix : "········…",
+      isLinked: true,
+      usageCount: typeof data.usageCount === "number" ? data.usageCount : 0,
+      usageLimit: typeof data.usageLimit === "number" ? data.usageLimit : 0,
+      basePlanLimit: baseLim,
+      planUsageCount: typeof data.planUsageCount === "number" ? data.planUsageCount : 0,
+      planLimit: baseLim,
+      topUpUsageCount: typeof data.topUpUsageCount === "number" ? data.topUpUsageCount : 0,
+      topUpLimit: typeof data.topUpLimit === "number" ? data.topUpLimit : 0,
+      createdAt: new Date().toISOString(),
+    },
+  ];
+}
+
+function SubscriptionKeyUsageCard({ row }: { row: RetailerDashboardSubscriptionClientUsagePayload }) {
+  const totalLimit = row.usageLimit;
+  const totalUsed = row.usageCount;
+  const pctTotal = totalLimit > 0 ? Math.min(100, Math.round((totalUsed / totalLimit) * 100)) : 0;
+  const planUsed = row.planUsageCount;
+  const basePlanLimit = row.basePlanLimit;
+  const planPct = basePlanLimit > 0 ? Math.min(100, Math.round((planUsed / basePlanLimit) * 100)) : 0;
+  const topUpLimit = row.topUpLimit;
+  const topUpUsed = row.topUpUsageCount;
+  const topUpPct = topUpLimit > 0 ? Math.min(100, Math.round((topUpUsed / topUpLimit) * 100)) : 0;
+  const blocked = totalLimit > 0 && totalUsed >= totalLimit;
+
+  return (
+    <div className="space-y-5 rounded-3xl border border-[#c6a77d]/22 bg-black/28 p-6 shadow-inner shadow-black/45 backdrop-blur-xl md:p-8">
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div className="min-w-0">
+          <p className="text-sm font-semibold text-zinc-100">{row.clientName.trim() || "Wear Me API key"}</p>
+          <p className="mt-1 font-mono text-xs text-zinc-500" title="Widget key preview">
+            {row.keyPrefix}
+          </p>
+          {row.isLinked ? (
+            <span className="mt-2 inline-flex rounded-full border border-emerald-500/35 bg-emerald-950/35 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-emerald-200/90">
+              Linked storefront
+            </span>
+          ) : (
+            <span className="mt-2 inline-flex rounded-full border border-zinc-600 bg-zinc-950/65 px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-zinc-400">
+              Historical key
+            </span>
+          )}
+        </div>
+        <span
+          className={`inline-flex shrink-0 items-center rounded-full border px-3 py-1 text-[10px] font-bold uppercase tracking-[0.14em] ${
+            blocked
+              ? "border-amber-400/40 bg-amber-500/15 text-amber-100"
+              : "border-emerald-400/35 bg-emerald-500/12 text-emerald-100"
+          }`}
+        >
+          {blocked ? "Limit reached" : "Active"}
+        </span>
+      </div>
+
+      <div>
+        <div className="flex flex-wrap items-baseline justify-between gap-2">
+          <p className="text-sm font-medium text-zinc-300">Consumption (this key)</p>
+          <p className="tabular-nums text-sm font-semibold text-[#d4bc94]">
+            {totalUsed.toLocaleString()} / {totalLimit.toLocaleString()}{" "}
+            <span className="font-normal text-zinc-500">({pctTotal}%)</span>
+          </p>
+        </div>
+        <div className="relative mt-3 h-4 w-full overflow-hidden rounded-full border border-white/[0.14] bg-black/55 shadow-[inset_0_2px_8px_rgba(0,0,0,0.45)] ring-1 ring-[#c6a77d]/12">
+          <div
+            className="relative h-full min-w-0 rounded-full shadow-[inset_0_1px_0_rgba(255,255,255,0.22)] transition-[width] duration-700 ease-out motion-reduce:transition-none"
+            style={tryOnUsageFillStyle(pctTotal)}
+          />
+        </div>
+      </div>
+
+      <div className="space-y-4 border-t border-[#c6a77d]/12 pt-5">
+        <div>
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <span className="text-xs font-semibold uppercase tracking-[0.12em] text-zinc-500">Monthly plan bucket</span>
+            <span className="tabular-nums text-xs text-zinc-500">
+              {planUsed.toLocaleString()} / {basePlanLimit.toLocaleString()}{" "}
+              <span className="font-semibold text-[#c6a77d]/90">({planPct}%)</span>
+            </span>
+          </div>
+          <div className="relative mt-2 h-3 w-full overflow-hidden rounded-full border border-white/[0.12] bg-black/55 shadow-[inset_0_2px_8px_rgba(0,0,0,0.45)] ring-1 ring-[#c6a77d]/10">
+            <div
+              className="relative h-full min-w-0 rounded-full shadow-[inset_0_1px_0_rgba(255,255,255,0.2)] transition-[width] duration-700 ease-out motion-reduce:transition-none"
+              style={tryOnUsageFillStyle(planPct)}
+            />
+          </div>
+        </div>
+        {topUpLimit > 0 ? (
+          <div>
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <span className="text-xs font-semibold uppercase tracking-[0.12em] text-zinc-500">Top-up bucket</span>
+              <span className="tabular-nums text-xs text-zinc-500">
+                {topUpUsed.toLocaleString()} / {topUpLimit.toLocaleString()}{" "}
+                <span className="font-semibold text-[#c6a77d]/90">({topUpPct}%)</span>
+              </span>
+            </div>
+            <div className="relative mt-2 h-3 w-full overflow-hidden rounded-full border border-white/[0.12] bg-black/55 shadow-[inset_0_2px_8px_rgba(0,0,0,0.45)] ring-1 ring-[#c6a77d]/10">
+              <div
+                className="relative h-full min-w-0 rounded-full shadow-[inset_0_1px_0_rgba(255,255,255,0.2)] transition-[width] duration-700 ease-out motion-reduce:transition-none"
+                style={tryOnUsageFillStyle(topUpPct)}
+              />
+            </div>
+          </div>
+        ) : null}
+      </div>
+    </div>
+  );
+}
+
+function DashboardShellSuspenseFallback() {
+  return (
+    <div className="mx-auto max-w-6xl px-6 pb-20 pt-8 md:pt-10">
+      <div className="h-12 w-full max-w-lg animate-pulse rounded-full bg-zinc-900/80" />
+      <div className="mt-10 h-56 animate-pulse rounded-2xl border border-white/5 bg-zinc-900/40" />
+    </div>
+  );
+}
 
 type AnalyticsPayload = {
   tryOnByHourUtc?: number[];
@@ -107,12 +239,7 @@ export type RetailerDashboardShellProps = {
   /** When false, dashboard hides top-up purchases; requires active Stripe-backed access window in Redis state. */
   topUpEligible: boolean;
   apiKey: string;
-  /** Subscription bucket usage (`usageCount`). */
-  initialPlanUsed: number;
-  /** Monthly plan cap (`basePlanLimit`). */
-  initialBasePlanLimit: number;
-  initialTopUpUsed: number;
-  initialTopUpLimit: number;
+  subscriptionClientsUsage: RetailerDashboardSubscriptionClientUsagePayload[];
 };
 
 function utcCalendarDayOrdinal(day: number): string {
@@ -148,10 +275,7 @@ function RetailerDashboardShellInner({
   subscriptionBilling,
   topUpEligible,
   apiKey,
-  initialPlanUsed,
-  initialBasePlanLimit,
-  initialTopUpUsed,
-  initialTopUpLimit,
+  subscriptionClientsUsage,
 }: RetailerDashboardShellProps) {
   const searchParams = useSearchParams();
   const [tab, setTab] = useState<DashboardTab>(() => parseDashboardTab(searchParams));
@@ -176,14 +300,25 @@ function RetailerDashboardShellInner({
     window.history.replaceState(null, "", "/dashboard?" + searchParamsStringForTab(next));
   }, []);
 
-  const [planUsed, setPlanUsed] = useState(initialPlanUsed);
-  const [basePlanLimit, setBasePlanLimit] = useState(initialBasePlanLimit);
-  const [topUpUsed, setTopUpUsed] = useState(initialTopUpUsed);
-  const [topUpLimit, setTopUpLimit] = useState(initialTopUpLimit);
+  const [subscriptionRows, setSubscriptionRows] = useState(subscriptionClientsUsage);
+  useEffect(() => {
+    setSubscriptionRows(subscriptionClientsUsage);
+  }, [subscriptionClientsUsage]);
+
+  const linkedSubscriptionRow = useMemo(() => {
+    const hit = subscriptionRows.find((r) => r.isLinked);
+    return hit ?? subscriptionRows[0] ?? null;
+  }, [subscriptionRows]);
+
+  const sidebarBasePlanLimit =
+    linkedSubscriptionRow != null
+      ? linkedSubscriptionRow.basePlanLimit
+      : planSummary.monthlyTryOnLimit;
+
   const [usageLoading, setUsageLoading] = useState(false);
   const [usageError, setUsageError] = useState<string | null>(null);
 
-  const derivedPlan = useMemo(() => retailerDashboardPlanFromBaseLimit(basePlanLimit), [basePlanLimit]);
+  const derivedPlan = useMemo(() => retailerDashboardPlanFromBaseLimit(sidebarBasePlanLimit), [sidebarBasePlanLimit]);
   const derivedMonthlyPriceLabel = useMemo(() => {
     if (derivedPlan.priceGbpPence == null) return null;
     return new Intl.NumberFormat("en-GB", { style: "currency", currency: "GBP" }).format(
@@ -238,28 +373,12 @@ function RetailerDashboardShellInner({
     setUsageLoading(true);
     try {
       const res = await fetch("/api/retailer/client-usage", { method: "GET", credentials: "include" });
-      const data = (await res.json()) as ClientUsagePayload;
+      const data = (await res.json()) as RetailerClientUsageFetchJson;
       if (!res.ok) {
         setUsageError(data.error || "Could not load try-on usage.");
         return;
       }
-      const base =
-        typeof data.basePlanLimit === "number"
-          ? data.basePlanLimit
-          : typeof data.planLimit === "number"
-            ? data.planLimit
-            : NaN;
-      if (
-        typeof data.planUsageCount === "number" &&
-        Number.isFinite(base) &&
-        typeof data.topUpUsageCount === "number" &&
-        typeof data.topUpLimit === "number"
-      ) {
-        setPlanUsed(data.planUsageCount);
-        setBasePlanLimit(base);
-        setTopUpUsed(data.topUpUsageCount);
-        setTopUpLimit(data.topUpLimit);
-      }
+      setSubscriptionRows(subscriptionRowsFromUsageJson(data));
     } catch {
       setUsageError("Something went wrong. Please try again.");
     } finally {
@@ -278,29 +397,14 @@ function RetailerDashboardShellInner({
     window.history.replaceState(null, "", nextUrl);
   }, [refreshUsage]);
 
+  const dashboardLinkedBlocked =
+    linkedSubscriptionRow != null &&
+    linkedSubscriptionRow.usageLimit > 0 &&
+    linkedSubscriptionRow.usageCount >= linkedSubscriptionRow.usageLimit;
+
   useEffect(() => {
     void refreshUsage();
   }, [refreshUsage]);
-
-  const totalUsed = useMemo(() => planUsed + topUpUsed, [planUsed, topUpUsed]);
-  const totalLimit = useMemo(() => basePlanLimit + topUpLimit, [basePlanLimit, topUpLimit]);
-
-  const remaining = useMemo(() => Math.max(0, totalLimit - totalUsed), [totalLimit, totalUsed]);
-  const totalPct = useMemo(
-    () => (totalLimit > 0 ? Math.min(100, Math.round((totalUsed / totalLimit) * 100)) : 0),
-    [totalUsed, totalLimit],
-  );
-  const planPct = useMemo(
-    () =>
-      basePlanLimit > 0 ? Math.min(100, Math.round((planUsed / basePlanLimit) * 100)) : 0,
-    [planUsed, basePlanLimit],
-  );
-  const topUpPct = useMemo(
-    () =>
-      topUpLimit > 0 ? Math.min(100, Math.round((topUpUsed / topUpLimit) * 100)) : 0,
-    [topUpUsed, topUpLimit],
-  );
-  const blocked = totalLimit > 0 && totalUsed >= totalLimit;
 
   const [analytics, setAnalytics] = useState<AnalyticsPayload | null>(null);
   const [analyticsLoading, setAnalyticsLoading] = useState(false);
@@ -510,6 +614,14 @@ function RetailerDashboardShellInner({
                   <p className="mt-8 flex-1 text-sm leading-relaxed text-zinc-500">
                     Upgrade or change tier anytime—your monthly bucket and billing follow the plan you select.
                   </p>
+                  {subscriptionRows.length > 1 ? (
+                    <p className="mt-4 rounded-xl border border-amber-500/25 bg-amber-950/25 px-4 py-3 text-xs leading-relaxed text-amber-100/90">
+                      This account has{" "}
+                      <span className="font-semibold tabular-nums">{subscriptionRows.length}</span> Wear Me API keys
+                      (same billing email). The <span className="font-semibold text-amber-50">linked storefront</span> key
+                      powers your live embed today; other keys may remain from prior checkouts.
+                    </p>
+                  ) : null}
                   <Link
                     href="/subscriptions"
                     className="mt-8 inline-flex w-fit items-center gap-2 rounded-full border border-[#c6a77d]/45 bg-[#c6a77d]/12 px-5 py-2.5 text-sm font-semibold text-[#f0e6d8] shadow-sm transition hover:border-[#d4bc94]/55 hover:bg-[#c6a77d]/22"
@@ -529,7 +641,8 @@ function RetailerDashboardShellInner({
                     </p>
                     <h2 className="text-xl font-semibold tracking-tight text-zinc-50 md:text-2xl">Try-on allowance</h2>
                     <p className="max-w-xl text-sm leading-relaxed text-zinc-500">
-                      Every completed Wear Me session on your storefront draws from this pool—plan plus any top-ups.
+                      Each API key has its own pool. Your <span className="text-zinc-400">linked storefront</span> key
+                      is the one shoppers use on your site today.
                     </p>
                   </div>
                   <div className="flex flex-wrap items-center gap-3">
@@ -543,12 +656,12 @@ function RetailerDashboardShellInner({
                     </button>
                     <span
                       className={`inline-flex items-center rounded-full border px-4 py-2 text-xs font-semibold uppercase tracking-[0.14em] ${
-                        blocked
+                        dashboardLinkedBlocked
                           ? "border-amber-400/40 bg-amber-500/15 text-amber-100"
                           : "border-emerald-400/35 bg-emerald-500/12 text-emerald-100"
                       }`}
                     >
-                      {blocked ? "Limit reached" : "Active"}
+                      {dashboardLinkedBlocked ? "Linked key at cap" : "Active"}
                     </span>
                   </div>
                 </div>
@@ -559,115 +672,21 @@ function RetailerDashboardShellInner({
                   </p>
                 ) : null}
 
-                <div className="rounded-3xl border border-[#c6a77d]/22 bg-black/32 p-6 shadow-inner shadow-black/50 backdrop-blur-xl md:p-8">
-                  <div className="flex flex-wrap items-baseline justify-between gap-3">
-                    <p className="text-sm font-medium text-zinc-300">Overall consumption</p>
-                    <p className="tabular-nums text-sm font-semibold text-[#d4bc94]">
-                      {totalUsed.toLocaleString()} / {totalLimit.toLocaleString()}{" "}
-                      <span className="font-normal text-zinc-500">({totalPct}%)</span>
-                    </p>
+                <div className="space-y-3">
+                  <h3 className="text-sm font-semibold uppercase tracking-[0.14em] text-zinc-400">Subscription keys</h3>
+                  <div className="space-y-6">
+                    {subscriptionRows.map((row) => (
+                      <SubscriptionKeyUsageCard key={row.clientId} row={row} />
+                    ))}
                   </div>
-                  <div className="relative mt-4 h-4 w-full overflow-hidden rounded-full border border-white/[0.14] bg-black/55 shadow-[inset_0_2px_8px_rgba(0,0,0,0.45)] ring-1 ring-[#c6a77d]/12">
-                    <div
-                      className="relative h-full min-w-0 rounded-full shadow-[inset_0_1px_0_rgba(255,255,255,0.22)] transition-[width] duration-700 ease-out motion-reduce:transition-none"
-                      style={tryOnUsageFillStyle(totalPct)}
-                    />
-                  </div>
-                  <p className="mt-3 text-xs leading-relaxed text-zinc-600">
-                    Bar tint moves from green toward amber and red as you approach your cap—same scale as the breakdown
-                    below.
+                </div>
+
+                {subscriptionRows.length > 1 && topUpEligible ? (
+                  <p className="text-xs leading-relaxed text-zinc-600">
+                    Stripe top-ups purchased below add try-ons to your <span className="font-medium text-zinc-400">linked storefront</span>{" "}
+                    key only.
                   </p>
-                </div>
-
-                <div className="grid gap-5 sm:gap-6 md:grid-cols-3">
-                  {(
-                    [
-                      {
-                        label: "Try-ons used",
-                        value: totalUsed,
-                        hint: "Sessions completed",
-                        Icon: Activity,
-                      },
-                      {
-                        label: "Remaining",
-                        value: remaining,
-                        hint: "Still available",
-                        Icon: Coins,
-                      },
-                      {
-                        label: "Total limit",
-                        value: totalLimit,
-                        hint: "Plan + top-ups",
-                        Icon: Gauge,
-                      },
-                    ] as const
-                  ).map(({ label, value, hint, Icon }) => (
-                    <div
-                      key={label}
-                      className="group relative flex flex-col overflow-hidden rounded-3xl border border-[#c6a77d]/30 bg-gradient-to-b from-black/52 via-black/38 to-black/[0.28] p-7 shadow-[0_20px_50px_-28px_rgba(0,0,0,0.75)] backdrop-blur-xl transition hover:border-[#c6a77d]/42 md:p-8"
-                    >
-                      <div
-                        className="pointer-events-none absolute inset-x-6 top-0 h-px bg-gradient-to-r from-transparent via-[#c6a77d]/75 to-transparent opacity-90"
-                        aria-hidden
-                      />
-                      <div className="flex items-start justify-between gap-3">
-                        <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-[#d4bc94]/82">
-                          {label}
-                        </p>
-                        <Icon
-                          className="h-[22px] w-[22px] shrink-0 text-[#c6a77d]/50 transition group-hover:text-[#c6a77d]/85"
-                          strokeWidth={1.35}
-                          aria-hidden
-                        />
-                      </div>
-                      <p className="mt-6 text-4xl font-light tabular-nums tracking-tight text-zinc-50 md:text-[2.65rem] md:leading-none">
-                        {typeof value === "number" ? value.toLocaleString() : "—"}
-                      </p>
-                      <p className="mt-3 text-xs font-medium uppercase tracking-[0.18em] text-zinc-600">{hint}</p>
-                    </div>
-                  ))}
-                </div>
-
-                <div className="space-y-8 rounded-3xl border border-[#c6a77d]/20 bg-black/28 p-6 shadow-inner shadow-black/45 backdrop-blur-xl md:p-8">
-                  <div>
-                    <div className="flex flex-wrap items-center justify-between gap-2">
-                      <span className="text-sm font-semibold text-zinc-200">Monthly plan bucket</span>
-                      <span className="tabular-nums text-sm text-zinc-500">
-                        {planUsed.toLocaleString()} / {basePlanLimit.toLocaleString()}{" "}
-                        <span className="font-semibold text-[#c6a77d]/90">({planPct}%)</span>
-                      </span>
-                    </div>
-                    <div className="relative mt-3 h-3.5 w-full overflow-hidden rounded-full border border-white/[0.12] bg-black/55 shadow-[inset_0_2px_8px_rgba(0,0,0,0.45)] ring-1 ring-[#c6a77d]/10">
-                      <div
-                        className="relative h-full min-w-0 rounded-full shadow-[inset_0_1px_0_rgba(255,255,255,0.2)] transition-[width] duration-700 ease-out motion-reduce:transition-none"
-                        style={tryOnUsageFillStyle(planPct)}
-                      />
-                    </div>
-                  </div>
-                  {topUpEligible ? (
-                    topUpLimit > 0 ? (
-                      <div>
-                        <div className="flex flex-wrap items-center justify-between gap-2">
-                          <span className="text-sm font-semibold text-zinc-200">Top-up bucket</span>
-                          <span className="tabular-nums text-sm text-zinc-500">
-                            {topUpUsed.toLocaleString()} / {topUpLimit.toLocaleString()}{" "}
-                            <span className="font-semibold text-[#c6a77d]/90">({topUpPct}%)</span>
-                          </span>
-                        </div>
-                        <div className="relative mt-3 h-3.5 w-full overflow-hidden rounded-full border border-white/[0.12] bg-black/55 shadow-[inset_0_2px_8px_rgba(0,0,0,0.45)] ring-1 ring-[#c6a77d]/10">
-                          <div
-                            className="relative h-full min-w-0 rounded-full shadow-[inset_0_1px_0_rgba(255,255,255,0.2)] transition-[width] duration-700 ease-out motion-reduce:transition-none"
-                            style={tryOnUsageFillStyle(topUpPct)}
-                          />
-                        </div>
-                      </div>
-                    ) : (
-                      <p className="text-sm text-zinc-600">
-                        No top-up bucket yet—add try-ons below whenever you need extra capacity beyond your plan.
-                      </p>
-                    )
-                  ) : null}
-                </div>
+                ) : null}
 
                 {topUpEligible ? (
                   <DashboardTopUpPanel />

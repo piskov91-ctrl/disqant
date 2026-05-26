@@ -1,17 +1,19 @@
 import { NextResponse } from "next/server";
-import {
-  type ClientApiKeyRecord,
-  getClientByApiKey,
-  getClientKeyRecordById,
-} from "@/lib/apiKeyStore";
+import type { ClientApiKeyRecord } from "@/lib/apiKeyStore";
+import { getClientByApiKey } from "@/lib/apiKeyStore";
 import { storedOrDerivedBasePlanLimit, totalTryOnsUsed } from "@/lib/clientTryOnBuckets";
+import {
+  buildRetailerSubscriptionClientUsagePayload,
+  listSubscriptionClientRecordsForRetailerDashboard,
+} from "@/lib/retailerSubscriptionClients";
 import { getRetailerSessionUser } from "@/lib/retailerAuth";
 
 export const runtime = "nodejs";
 
-function clientUsagePayload(client: ClientApiKeyRecord) {
+function singleClientUsageFlatten(client: ClientApiKeyRecord) {
   const basePlanLimit = storedOrDerivedBasePlanLimit(client);
   return {
+    clientId: client.id,
     clientName: client.clientName,
     usageCount: totalTryOnsUsed(client),
     usageLimit: client.usageLimit,
@@ -21,11 +23,12 @@ function clientUsagePayload(client: ClientApiKeyRecord) {
     planLimit: basePlanLimit,
     topUpUsageCount: client.topUpUsageCount ?? 0,
     topUpLimit: client.topUpLimit ?? 0,
+    keyPrefix: `${(client.key || "").slice(0, 8)}…`,
   };
 }
 
 /**
- * Returns try-on usage for the logged-in retailer's linked client (no API key in request).
+ * All subscription-related client rows (linked storefront key plus other keys billed to this email).
  */
 export async function GET() {
   const user = await getRetailerSessionUser();
@@ -33,21 +36,41 @@ export async function GET() {
     return NextResponse.json({ error: "Unauthorized." }, { status: 401 });
   }
 
-  const linkedId = user.clientId?.trim() ?? "";
-  if (!linkedId) {
-    return NextResponse.json({ error: "No linked API key." }, { status: 404 });
-  }
+  const linkedTrim = user.clientId?.trim() ?? "";
 
-  const client = await getClientKeyRecordById(linkedId);
-  if (!client) {
-    return NextResponse.json({ error: "Client not found." }, { status: 404 });
-  }
+  try {
+    const records = await listSubscriptionClientRecordsForRetailerDashboard(user);
+    if (records.length === 0 && !linkedTrim) {
+      return NextResponse.json({ error: "No linked API key." }, { status: 404 });
+    }
 
-  return NextResponse.json(clientUsagePayload(client));
+    const keys = records.map((r) => buildRetailerSubscriptionClientUsagePayload(r, linkedTrim || null));
+
+    const linkedRecord = linkedTrim ? records.find((r) => r.id === linkedTrim) : undefined;
+    const primaryFlatten =
+      linkedRecord != null
+        ? singleClientUsageFlatten(linkedRecord)
+        : records.length > 0 && records[0]
+          ? singleClientUsageFlatten(records[0])
+          : null;
+
+    if (!primaryFlatten) {
+      return NextResponse.json({ error: "No client usage available." }, { status: 404 });
+    }
+
+    return NextResponse.json({
+      linkedClientId: linkedTrim || null,
+      keys,
+      /** @deprecated Prefer `keys` array; flattened fields mirror the linked client when present */
+      ...primaryFlatten,
+    });
+  } catch {
+    return NextResponse.json({ error: "Could not load usage." }, { status: 500 });
+  }
 }
 
 /**
- * Returns try-on usage for an API key when it matches the logged-in retailer's linked client.
+ * Validates an embed API key belongs to this account; returns flattened usage plus full `keys` list.
  */
 export async function POST(req: Request) {
   const user = await getRetailerSessionUser();
@@ -81,5 +104,15 @@ export async function POST(req: Request) {
     );
   }
 
-  return NextResponse.json(clientUsagePayload(client));
+  try {
+    const records = await listSubscriptionClientRecordsForRetailerDashboard(user);
+    const keys = records.map((r) => buildRetailerSubscriptionClientUsagePayload(r, linkedId || null));
+    return NextResponse.json({
+      linkedClientId: linkedId || null,
+      keys,
+      ...singleClientUsageFlatten(client),
+    });
+  } catch {
+    return NextResponse.json({ error: "Could not load usage." }, { status: 500 });
+  }
 }

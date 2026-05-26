@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { Fragment, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { ChevronDown } from "lucide-react";
 import { Footer } from "@/components/Footer";
@@ -32,6 +32,11 @@ type KeyRecord = {
   /** Equals `usageLimit` when the 99% quota warning was sent this cycle */
   usageNinetyNinePctEmailSentForLimit?: number;
   createdAt: string;
+};
+
+type AdminClientsByStoreGroup = {
+  displayStoreName: string;
+  rows: KeyRecord[];
 };
 
 function isBareContactEmail(email: string | undefined): boolean {
@@ -518,6 +523,36 @@ export default function AdminClient() {
     const used = keys.reduce((s, k) => s + totalTryOnsUsed(k), 0);
     const limit = keys.reduce((s, k) => s + k.usageLimit, 0);
     return { used, limit };
+  }, [keys]);
+
+  const adminClientsGroupedByStore = useMemo((): AdminClientsByStoreGroup[] => {
+    const m = new Map<string, KeyRecord[]>();
+    for (const k of keys) {
+      const nk = k.clientName.trim().toLowerCase();
+      const slot = nk.length > 0 ? nk : `__id:${k.id}`;
+      const bucket = m.get(slot) ?? [];
+      bucket.push(k);
+      m.set(slot, bucket);
+    }
+    return [...m.values()]
+      .map((rows) => {
+        rows.sort((a, b) => Date.parse(b.createdAt) - Date.parse(a.createdAt));
+        return {
+          displayStoreName: rows[0]?.clientName.trim() || "—",
+          rows,
+        };
+      })
+      .sort((a, b) => a.displayStoreName.localeCompare(b.displayStoreName, "en", { sensitivity: "base" }));
+  }, [keys]);
+
+  const adminWearMeDupStoreNames = useMemo(() => {
+    const counts = new Map<string, number>();
+    for (const k of keys) {
+      const nk = k.clientName.trim().toLowerCase();
+      const slot = nk.length > 0 ? nk : k.id;
+      counts.set(slot, (counts.get(slot) ?? 0) + 1);
+    }
+    return counts;
   }, [keys]);
 
   const tryOnBreakdownPct = useMemo(() => {
@@ -2483,7 +2518,19 @@ export default function AdminClient() {
                       <div className="text-center">DELETE</div>
                     </div>
 
-                    {keys.map((k) => {
+                    {adminClientsGroupedByStore.map((storeGroup) => (
+                      <Fragment key={`${storeGroup.displayStoreName}-${storeGroup.rows[0]?.id ?? "unknown"}`}>
+                        {storeGroup.rows.length > 1 ? (
+                          <div className="min-w-[88rem] w-full border-b border-amber-800/35 bg-zinc-950/95 px-4 py-2.5 md:px-6">
+                            <p className="text-xs font-semibold text-amber-100/95">
+                              Grouped · {storeGroup.displayStoreName}
+                              <span className="ml-2 font-normal tabular-nums text-amber-100/65">
+                                {storeGroup.rows.length} client keys · newest first
+                              </span>
+                            </p>
+                          </div>
+                        ) : null}
+                        {storeGroup.rows.map((k, rowWithinStore) => {
                       const basePlanLimit = storedOrDerivedBasePlanLimit(k);
                       const planUsed = k.usageCount;
                       const topLim = k.topUpLimit ?? 0;
@@ -2500,32 +2547,71 @@ export default function AdminClient() {
                         <div key={k.id}>
                           <div className="grid min-w-[88rem] w-full grid-cols-[minmax(0,1.2fr)_minmax(0,0.62fr)_minmax(0,0.72fr)_minmax(0,0.72fr)_minmax(0,1.35fr)_minmax(0,0.58fr)_minmax(0,0.52fr)_minmax(0,0.54fr)_minmax(0,0.62fr)_minmax(0,0.5fr)_minmax(0,0.52fr)_minmax(0,0.55fr)_minmax(0,0.62fr)] items-center gap-2 border-b border-zinc-800 px-4 py-4 text-base md:px-6">
                             <div className="min-w-0">
-                              <div className="flex min-w-0 items-start justify-between gap-2">
-                                <div className="min-w-0 flex-1">
-                                  <div className="truncate font-semibold text-zinc-100">{k.clientName}</div>
-                                  {k.contactEmail ? (
-                                    <div
-                                      className="mt-0.5 truncate text-sm text-sky-400/90"
-                                      title={k.contactEmail}
-                                    >
-                                      {k.contactEmail}
+                              {rowWithinStore > 0 ? (
+                                <div className="border-l border-amber-800/55 pl-3">
+                                  <div className="flex min-w-0 items-start justify-between gap-2">
+                                    <div className="min-w-0 flex-1 space-y-1">
+                                      <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-amber-200/90">
+                                        Additional client key · same store
+                                      </p>
+                                      <p className="font-mono text-xs text-zinc-400">
+                                        {(k.key || "").slice(0, 8)}… · created{" "}
+                                        <span className="tabular-nums">{formatKeyCreatedUtc(k.createdAt)}</span>
+                                      </p>
+                                      {k.contactEmail ? (
+                                        <div
+                                          className="truncate text-xs text-sky-400/85"
+                                          title={k.contactEmail}
+                                        >
+                                          {k.contactEmail}
+                                        </div>
+                                      ) : null}
                                     </div>
-                                  ) : null}
+                                    <QuotaEmailNoticeBadges k={k} />
+                                  </div>
+                                  <button
+                                    type="button"
+                                    onClick={() => toggleBillingHistory(k.id)}
+                                    className="mt-2 inline-flex items-center gap-1.5 rounded-lg border border-zinc-700/90 bg-zinc-950/60 px-2.5 py-1 text-xs font-semibold text-[#d4bc94] transition hover:border-[#c6a77d]/50 hover:bg-zinc-900 hover:text-[#e8dcc8]"
+                                    aria-expanded={historyOpen}
+                                  >
+                                    <ChevronDown
+                                      className={`h-3.5 w-3.5 shrink-0 transition ${historyOpen ? "rotate-180" : ""}`}
+                                      aria-hidden
+                                    />
+                                    Billing history
+                                  </button>
                                 </div>
-                                <QuotaEmailNoticeBadges k={k} />
-                              </div>
-                              <button
-                                type="button"
-                                onClick={() => toggleBillingHistory(k.id)}
-                                className="mt-2 inline-flex items-center gap-1.5 rounded-lg border border-zinc-700/90 bg-zinc-950/60 px-2.5 py-1 text-xs font-semibold text-[#d4bc94] transition hover:border-[#c6a77d]/50 hover:bg-zinc-900 hover:text-[#e8dcc8]"
-                                aria-expanded={historyOpen}
-                              >
-                                <ChevronDown
-                                  className={`h-3.5 w-3.5 shrink-0 transition ${historyOpen ? "rotate-180" : ""}`}
-                                  aria-hidden
-                                />
-                                Billing history
-                              </button>
+                              ) : (
+                                <>
+                                  <div className="flex min-w-0 items-start justify-between gap-2">
+                                    <div className="min-w-0 flex-1">
+                                      <div className="truncate font-semibold text-zinc-100">{k.clientName}</div>
+                                      {k.contactEmail ? (
+                                        <div
+                                          className="mt-0.5 truncate text-sm text-sky-400/90"
+                                          title={k.contactEmail}
+                                        >
+                                          {k.contactEmail}
+                                        </div>
+                                      ) : null}
+                                    </div>
+                                    <QuotaEmailNoticeBadges k={k} />
+                                  </div>
+                                  <button
+                                    type="button"
+                                    onClick={() => toggleBillingHistory(k.id)}
+                                    className="mt-2 inline-flex items-center gap-1.5 rounded-lg border border-zinc-700/90 bg-zinc-950/60 px-2.5 py-1 text-xs font-semibold text-[#d4bc94] transition hover:border-[#c6a77d]/50 hover:bg-zinc-900 hover:text-[#e8dcc8]"
+                                    aria-expanded={historyOpen}
+                                  >
+                                    <ChevronDown
+                                      className={`h-3.5 w-3.5 shrink-0 transition ${historyOpen ? "rotate-180" : ""}`}
+                                      aria-hidden
+                                    />
+                                    Billing history
+                                  </button>
+                                </>
+                              )}
                             </div>
                             <div>
                               <span className="rounded-md border border-zinc-700 bg-zinc-950 px-2 py-1 font-mono text-sm text-zinc-300">
@@ -2816,6 +2902,8 @@ export default function AdminClient() {
                         </div>
                       );
                     })}
+                  </Fragment>
+                    ))}
                   </div>
                 )}
 
@@ -3222,10 +3310,14 @@ export default function AdminClient() {
                         const basePlanLimit = storedOrDerivedBasePlanLimit(k);
                         const tl = k.topUpLimit ?? 0;
                         const tu = k.topUpUsageCount ?? 0;
+                        const nk = k.clientName.trim().toLowerCase();
+                        const dupSlot = nk.length > 0 ? nk : k.id;
+                        const ambiguousName = (adminWearMeDupStoreNames.get(dupSlot) ?? 0) > 1;
+                        const keyBit = ambiguousName ? ` · key ${(k.key || "").slice(0, 8)}…` : "";
                         const label =
                           tl > 0
-                            ? `${k.clientName} · Plan ${k.usageCount}/${basePlanLimit}, Top Up ${tu}/${tl}`
-                            : `${k.clientName} · Plan ${k.usageCount}/${basePlanLimit}`;
+                            ? `${k.clientName}${keyBit} · Plan ${k.usageCount}/${basePlanLimit}, Top Up ${tu}/${tl}`
+                            : `${k.clientName}${keyBit} · Plan ${k.usageCount}/${basePlanLimit}`;
                         return (
                           <option key={k.id} value={k.id}>
                             {label}

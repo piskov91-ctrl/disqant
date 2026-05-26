@@ -8,6 +8,10 @@ import { retailerWelcomeGreetingName } from "@/lib/retailerDisplayName";
 import { getRetailerSessionUser, retailerEligibleForTryOnTopUps } from "@/lib/retailerAuth";
 import { storedOrDerivedBasePlanLimit } from "@/lib/clientTryOnBuckets";
 import { getNextMonthlyResetUtcDateForDisplay, resolveBillingAnchorDay } from "@/lib/billingCycle";
+import {
+  buildRetailerSubscriptionClientUsagePayload,
+  listSubscriptionClientRecordsForRetailerDashboard,
+} from "@/lib/retailerSubscriptionClients";
 import { catalogSubscriptionPlanKeyFromTryOnLimit, retailerDashboardPlanFromBaseLimit } from "@/lib/subscriptionPlans";
 import {
   SUBSCRIPTION_CANCELLATION_REASON_LABELS,
@@ -181,6 +185,12 @@ export default async function DashboardPage() {
 
   const topUpEligible = retailerEligibleForTryOnTopUps(user);
 
+  const linkedTrim = user.clientId?.trim() ?? "";
+  const subscriptionClientRecords = await listSubscriptionClientRecordsForRetailerDashboard(user);
+  const subscriptionClientsUsage = subscriptionClientRecords.map((rec) =>
+    buildRetailerSubscriptionClientUsagePayload(rec, linkedTrim || null),
+  );
+
   return (
     <>
       <Header />
@@ -193,10 +203,7 @@ export default async function DashboardPage() {
           subscriptionBilling={subscriptionBilling}
           topUpEligible={topUpEligible}
           apiKey={client.key}
-          initialPlanUsed={client.usageCount}
-          initialBasePlanLimit={planCap}
-          initialTopUpUsed={client.topUpUsageCount ?? 0}
-          initialTopUpLimit={client.topUpLimit ?? 0}
+          subscriptionClientsUsage={subscriptionClientsUsage}
         />
       </main>
       <Footer />
