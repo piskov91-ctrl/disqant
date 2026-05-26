@@ -2,7 +2,12 @@ import type { ClientApiKeyRecord } from "@/lib/apiKeyStore";
 import { getClientKeyRecordById, listClientKeys } from "@/lib/apiKeyStore";
 import { normalizeClientTryOnBuckets, storedOrDerivedBasePlanLimit, totalTryOnsUsed } from "@/lib/clientTryOnBuckets";
 import type { RetailerUser } from "@/lib/retailerAuth";
-import { getSubscriptionPlanDefinition, parseSubscriptionPlanKey, planLabelFromTryOnLimit } from "@/lib/subscriptionPlans";
+import {
+  getSubscriptionPlanDefinition,
+  maxTopUpPurchasesPerBillingCycleForCatalogBaseLimit,
+  parseSubscriptionPlanKey,
+  planLabelFromTryOnLimit,
+} from "@/lib/subscriptionPlans";
 
 export function normalizeRetailerBillingEmail(email: string): string {
   return email.trim().toLowerCase();
@@ -50,6 +55,10 @@ export type RetailerDashboardSubscriptionClientUsagePayload = {
   planLimit: number;
   topUpUsageCount: number;
   topUpLimit: number;
+  /** Successful Stripe top-up checkouts since the last billing reset on this key. */
+  topUpsPurchasedThisBillingCycle: number;
+  /** Max top-up checkouts allowed per billing cycle for catalog tiers; `null` = unlimited / custom plans. */
+  maxTopUpsPurchasesPerBillingCycle: number | null;
   billingAnchorDay?: number;
   createdAt: string;
   /** Next monthly plan bucket (try-ons) after the current subscription bucket is fully used. */
@@ -64,6 +73,7 @@ export function buildRetailerSubscriptionClientUsagePayload(
   linkedClientId: string | null,
 ): RetailerDashboardSubscriptionClientUsagePayload {
   const basePlanLimit = storedOrDerivedBasePlanLimit(client);
+  const maxTopUpsPurchasesPerBillingCycle = maxTopUpPurchasesPerBillingCycleForCatalogBaseLimit(basePlanLimit);
   const trimmedLinked = linkedClientId?.trim() || null;
   const pendLim = client.pendingBasePlanLimit;
   let pendingBasePlanLimit: number | null = null;
@@ -89,6 +99,8 @@ export function buildRetailerSubscriptionClientUsagePayload(
     planLimit: basePlanLimit,
     topUpUsageCount: client.topUpUsageCount ?? 0,
     topUpLimit: client.topUpLimit ?? 0,
+    topUpsPurchasedThisBillingCycle: Math.max(0, Math.floor(client.topUpsPurchasedThisBillingCycle ?? 0)),
+    maxTopUpsPurchasesPerBillingCycle,
     billingAnchorDay: client.billingAnchorDay,
     createdAt: client.createdAt,
     pendingBasePlanLimit,

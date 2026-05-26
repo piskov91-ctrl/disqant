@@ -327,6 +327,14 @@ function SubscriptionReviewCard({
 const CREDIT_PLANS = [
   {
     name: "Starter",
+    tryOns: 100,
+    credits: 200,
+    fashnCost: 11,
+    price: 50,
+    profit: 39,
+  },
+  {
+    name: "Boutique",
     tryOns: 300,
     credits: 600,
     fashnCost: 34,
@@ -334,7 +342,7 @@ const CREDIT_PLANS = [
     profit: 115,
   },
   {
-    name: "Growth",
+    name: "Studio",
     tryOns: 600,
     credits: 1200,
     fashnCost: 68,
@@ -342,7 +350,7 @@ const CREDIT_PLANS = [
     profit: 231,
   },
   {
-    name: "Pro",
+    name: "Premium",
     tryOns: 1200,
     credits: 2400,
     fashnCost: 136,

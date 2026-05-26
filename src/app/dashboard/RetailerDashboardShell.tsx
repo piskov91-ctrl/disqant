@@ -8,7 +8,7 @@ import { TryOnTimingCharts } from "@/components/TryOnTimingCharts";
 import { LOCAL_OR_UNKNOWN_PRODUCT } from "@/lib/tryOnConstants";
 import type { RetailerDashboardSubscriptionClientUsagePayload } from "@/lib/retailerSubscriptionClients";
 import { tryOnUsageFillStyle } from "@/lib/tryOnUsageBarStyle";
-import { retailerDashboardPlanFromBaseLimit } from "@/lib/subscriptionPlans";
+import { retailerDashboardPlanFromBaseLimit, maxTopUpPurchasesPerBillingCycleForCatalogBaseLimit } from "@/lib/subscriptionPlans";
 import { DashboardEmailDeveloperPanel } from "./DashboardEmailDeveloperPanel";
 import { DashboardInstallPlatformGuide } from "./DashboardInstallPlatformGuide";
 import { DashboardInstallPreviewAnimation } from "./DashboardInstallPreviewAnimation";
@@ -47,6 +47,8 @@ type RetailerClientUsageFetchJson = {
   planLimit?: number;
   topUpUsageCount?: number;
   topUpLimit?: number;
+  topUpsPurchasedThisBillingCycle?: number;
+  maxTopUpsPurchasesPerBillingCycle?: number | null;
   pendingBasePlanLimit?: number | null;
   pendingPlanDisplayName?: string | null;
   pendingSubscriptionPlanKey?: string | null;
@@ -79,6 +81,16 @@ function subscriptionRowsFromUsageJson(data: RetailerClientUsageFetchJson): Reta
       planLimit: baseLim,
       topUpUsageCount: typeof data.topUpUsageCount === "number" ? data.topUpUsageCount : 0,
       topUpLimit: typeof data.topUpLimit === "number" ? data.topUpLimit : 0,
+      topUpsPurchasedThisBillingCycle:
+        typeof data.topUpsPurchasedThisBillingCycle === "number" && Number.isFinite(data.topUpsPurchasedThisBillingCycle)
+          ? Math.floor(data.topUpsPurchasedThisBillingCycle)
+          : 0,
+      maxTopUpsPurchasesPerBillingCycle:
+        typeof data.maxTopUpsPurchasesPerBillingCycle === "number"
+          ? data.maxTopUpsPurchasesPerBillingCycle
+          : data.maxTopUpsPurchasesPerBillingCycle === null
+            ? null
+            : maxTopUpPurchasesPerBillingCycleForCatalogBaseLimit(baseLim),
       createdAt: new Date().toISOString(),
       pendingBasePlanLimit:
         typeof data.pendingBasePlanLimit === "number" && Number.isFinite(data.pendingBasePlanLimit)
@@ -700,8 +712,16 @@ function RetailerDashboardShellInner({
                   </p>
                 ) : null}
 
-                {topUpEligible ? (
-                  <DashboardTopUpPanel />
+                {topUpEligible && linkedSubscriptionRow ? (
+                  <DashboardTopUpPanel
+                    topUpsPurchasedThisBillingCycle={linkedSubscriptionRow.topUpsPurchasedThisBillingCycle}
+                    maxTopUpsPurchasesPerBillingCycle={linkedSubscriptionRow.maxTopUpsPurchasesPerBillingCycle}
+                  />
+                ) : topUpEligible ? (
+                  <DashboardTopUpPanel
+                    topUpsPurchasedThisBillingCycle={0}
+                    maxTopUpsPurchasesPerBillingCycle={null}
+                  />
                 ) : (
                   <section
                     className="rounded-3xl border border-[#c6a77d]/20 bg-black/28 p-6 shadow-inner shadow-black/45 backdrop-blur-xl md:p-9"

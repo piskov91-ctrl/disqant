@@ -1,5 +1,8 @@
 import { getStripe, checkoutSiteOrigin } from "@/lib/stripeServer";
 import { getRetailerSessionUser, retailerEligibleForTryOnTopUps } from "@/lib/retailerAuth";
+import { loadClientSubscriptionSnapshotWithoutPendingApply } from "@/lib/apiKeyStore";
+import { storedOrDerivedBasePlanLimit } from "@/lib/clientTryOnBuckets";
+import { maxTopUpPurchasesPerBillingCycleForCatalogBaseLimit } from "@/lib/subscriptionPlans";
 import {
   STRIPE_TOP_UP_CHECKOUT_KIND,
   TOP_UP_CUSTOM_MAX_TRY_ONS,
@@ -63,6 +66,23 @@ export async function POST(req: Request) {
   const clientId = user.clientId?.trim() || "";
   if (!clientId) {
     return Response.json({ error: "No API key is linked to this account yet." }, { status: 400 });
+  }
+
+  const loaded = await loadClientSubscriptionSnapshotWithoutPendingApply(clientId);
+  if (!loaded?.rec || loaded.rec.deletedAt) {
+    return Response.json({ error: "Could not load your API key record." }, { status: 400 });
+  }
+  const snap = loaded.rec;
+  const base = storedOrDerivedBasePlanLimit(snap);
+  const topUpCap = maxTopUpPurchasesPerBillingCycleForCatalogBaseLimit(base);
+  const purchased = snap.topUpsPurchasedThisBillingCycle ?? 0;
+  if (topUpCap !== null && purchased >= topUpCap) {
+    return Response.json(
+      {
+        error: `You've reached your plan's limit of ${topUpCap.toLocaleString()} top-up purchases for this billing cycle. More top-ups unlock after your next monthly plan reset.`,
+      },
+      { status: 403 },
+    );
   }
 
   const origin = checkoutSiteOrigin(req);

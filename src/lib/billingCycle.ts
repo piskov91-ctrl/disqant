@@ -18,6 +18,8 @@ export type MonthlyBillingCycleFields = {
   topUpLimit?: number;
   /** Try-ons consumed from the top-up pool (persists across monthly resets). */
   topUpUsageCount?: number;
+  /** Count of successful Stripe top-up checkouts since the last monthly billing reset (pack or custom counts as one each). */
+  topUpsPurchasedThisBillingCycle?: number;
 };
 
 /** Valid billing anchor day in 1..31 derived from a UTC instant (day-of-month of subscription). */
@@ -157,6 +159,7 @@ export function applyAllDueMonthlyUsageResetsWithEvents<T extends MonthlyBilling
     const next: T = {
       ...cur,
       usageCount: 0,
+      topUpsPurchasedThisBillingCycle: 0,
       lastAutoBillingResetYyyymmdd: yyyymmddUtc(due),
       ...(restoredBase !== undefined ? { usageLimit: restoredBase + topLim } : null),
     } as T;
@@ -188,6 +191,7 @@ export function monthlyBillingCycleChanged(prev: MonthlyBillingCycleFields, next
     prev.usageLimit !== next.usageLimit ||
     (prev.topUpLimit ?? 0) !== (next.topUpLimit ?? 0) ||
     (prev.topUpUsageCount ?? 0) !== (next.topUpUsageCount ?? 0) ||
+    (prev.topUpsPurchasedThisBillingCycle ?? 0) !== (next.topUpsPurchasedThisBillingCycle ?? 0) ||
     prev.lastAutoBillingResetYyyymmdd !== next.lastAutoBillingResetYyyymmdd ||
     prev.usageSeventyFivePctEmailSentForLimit !== next.usageSeventyFivePctEmailSentForLimit ||
     prev.usageNinetyNinePctEmailSentForLimit !== next.usageNinetyNinePctEmailSentForLimit

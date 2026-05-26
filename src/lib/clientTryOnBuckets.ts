@@ -5,6 +5,8 @@ export type TryOnBucketFields = {
   basePlanLimit?: number;
   topUpLimit?: number;
   topUpUsageCount?: number;
+  /** Successful top-up Stripe checkouts since last monthly billing reset. */
+  topUpsPurchasedThisBillingCycle?: number;
   /** @deprecated migrated into `topUpLimit` */
   topUpAllowanceTryOns?: number;
 };
@@ -84,6 +86,7 @@ export function sameBucketSnapshot(a: TryOnBucketFields, b: TryOnBucketFields): 
     (a.topUpUsageCount ?? 0) === (b.topUpUsageCount ?? 0) &&
     (a.topUpLimit ?? 0) === (b.topUpLimit ?? 0) &&
     a.usageLimit === b.usageLimit &&
-    (a.basePlanLimit ?? null) === (b.basePlanLimit ?? null)
+    (a.basePlanLimit ?? null) === (b.basePlanLimit ?? null) &&
+    (a.topUpsPurchasedThisBillingCycle ?? 0) === (b.topUpsPurchasedThisBillingCycle ?? 0)
   );
 }

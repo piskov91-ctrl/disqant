@@ -18,7 +18,17 @@ const gbpFormatter = new Intl.NumberFormat("en-GB", {
   currency: "GBP",
 });
 
-export function DashboardTopUpPanel() {
+export type DashboardTopUpPanelProps = {
+  /** Completed Stripe top-up checkouts since the linked key’s last monthly billing reset (each checkout = one). */
+  topUpsPurchasedThisBillingCycle: number;
+  /** Catalogue cap for linked plan; `null` = unlimited top-up purchases each cycle (e.g. Premium or custom caps). */
+  maxTopUpsPurchasesPerBillingCycle: number | null;
+};
+
+export function DashboardTopUpPanel({
+  topUpsPurchasedThisBillingCycle,
+  maxTopUpsPurchasesPerBillingCycle,
+}: DashboardTopUpPanelProps) {
   const [loadingKey, setLoadingKey] = useState<CheckoutLoadingKey | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [customTryOnsInput, setCustomTryOnsInput] = useState("");
@@ -92,6 +102,14 @@ export function DashboardTopUpPanel() {
 
   const busy = loadingKey !== null;
 
+  const purchaseCap =
+    typeof maxTopUpsPurchasesPerBillingCycle === "number" && Number.isFinite(maxTopUpsPurchasesPerBillingCycle)
+      ? Math.floor(maxTopUpsPurchasesPerBillingCycle)
+      : null;
+  const hasCap = purchaseCap !== null;
+  const atTopUpPurchaseCap =
+    purchaseCap !== null && Math.floor(topUpsPurchasedThisBillingCycle) >= purchaseCap;
+
   return (
     <section className="relative overflow-hidden rounded-3xl border border-[#c6a77d]/35 bg-gradient-to-br from-[#c6a77d]/[0.14] via-black/45 to-black/70 p-7 shadow-[0_24px_70px_-28px_rgba(0,0,0,0.75)] backdrop-blur-xl md:p-9">
       <div
@@ -106,6 +124,28 @@ export function DashboardTopUpPanel() {
             One-time purchases extend your allowance on the same API key immediately after checkout. Top-ups carry forward
             across monthly billing resets until you use them; only your included plan try-ons refresh each cycle.
           </p>
+          {hasCap ? (
+            <p className="mt-4 max-w-xl rounded-xl border border-[#c6a77d]/25 bg-black/30 px-4 py-3 text-xs leading-relaxed text-zinc-300">
+              <span className="font-semibold text-[#e8dcc8]">Plan top-up allowance (this billing cycle)</span>:{" "}
+              <span className="tabular-nums">
+                {Math.floor(topUpsPurchasedThisBillingCycle).toLocaleString()} used
+              </span>{" "}
+              of{" "}
+              <span className="tabular-nums">{purchaseCap.toLocaleString()}</span> Stripe top-ups
+              allowed until your monthly plan resets. Each pack or custom purchase counts once.
+              {atTopUpPurchaseCap ? (
+                <span className="mt-2 block font-medium text-amber-100/95">
+                  You&apos;ve reached your limit — more top-ups are available after the next allowance reset on your billing
+                  day.
+                </span>
+              ) : null}
+            </p>
+          ) : (
+            <p className="mt-4 max-w-xl rounded-xl border border-emerald-500/22 bg-emerald-950/20 px-4 py-3 text-xs leading-relaxed text-emerald-100/90">
+              <span className="font-semibold text-emerald-50/95">Plan top-ups</span>: no per-cycle purchase limit on your
+              current tier — you can buy extras whenever you need them.
+            </p>
+          )}
         </div>
       </div>
 
@@ -120,7 +160,7 @@ export function DashboardTopUpPanel() {
           <button
             key={pack.id}
             type="button"
-            disabled={busy}
+            disabled={busy || atTopUpPurchaseCap}
             onClick={() => void startCheckout(pack.id)}
             className="group relative min-w-[10.5rem] flex-1 overflow-hidden rounded-2xl border border-[#c6a77d]/42 bg-gradient-to-b from-[#c6a77d]/22 via-black/40 to-black/60 px-5 py-4 text-center shadow-[inset_0_1px_0_0_rgba(255,236,210,0.16)] transition-all duration-300 hover:border-[#e8d5b5]/60 hover:from-[#c6a77d]/30 hover:shadow-[0_16px_42px_-14px_rgba(198,167,125,0.42)] disabled:cursor-not-allowed disabled:opacity-50 sm:flex-none sm:items-stretch"
           >
@@ -180,7 +220,7 @@ export function DashboardTopUpPanel() {
           </div>
           <button
             type="button"
-            disabled={busy || customTryOnsParsed == null}
+            disabled={busy || customTryOnsParsed == null || atTopUpPurchaseCap}
             onClick={() => void startCustomCheckout()}
             className="inline-flex h-12 shrink-0 items-center justify-center rounded-2xl border border-[#e8d5b5]/45 bg-gradient-to-b from-[#e8dcc8] via-[#c6a77d] to-[#a68958] px-6 text-sm font-semibold tracking-wide text-zinc-950 shadow-[inset_0_1px_0_rgba(255,255,255,0.35),0_12px_36px_-12px_rgba(198,167,125,0.55)] transition hover:from-[#f5ebe0] hover:via-[#d4bc94] hover:to-[#b89363] disabled:cursor-not-allowed disabled:opacity-45 disabled:shadow-none"
           >

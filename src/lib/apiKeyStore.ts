@@ -38,6 +38,8 @@ export type ClientApiKeyRecord = {
   topUpLimit?: number;
   /** Try-ons consumed from the top-up pool (persists across monthly billing resets). */
   topUpUsageCount?: number;
+  /** Successful Stripe top-up checkouts since the last monthly billing reset (each session counts once). */
+  topUpsPurchasedThisBillingCycle?: number;
   /**
    * UTC calendar day-of-month (1–31) for automatic monthly `usageCount` reset.
    * Usually the subscription signup day; shorter months use the last day when anchor > length.
@@ -54,7 +56,7 @@ export type ClientApiKeyRecord = {
   deletedAt?: string | null;
   /** Queued next monthly plan bucket (applied when {@link subscriptionPlanCap}-bucket usage reaches the prior cap while top-ups behave as usual). */
   pendingBasePlanLimit?: number;
-  /** Catalog key for the queued plan (`starter`, `growth`, …) for dashboards. */
+  /** Catalog key for the queued plan (`starter`, `boutique`, legacy `growth`, …) for dashboards. */
   pendingSubscriptionPlanKey?: string;
   /** When the queued plan won Stripe checkout fulfillment. ISO. */
   pendingPlanRecordedAt?: string;
@@ -578,10 +580,12 @@ export async function incrementClientTryOnLimit(id: string, delta: number, meta?
   const planCap = subscriptionPlanCap(cur);
   let topLim = Math.floor(cur.topUpLimit ?? 0);
   topLim += delta;
+  const purchases = Math.floor(cur.topUpsPurchasedThisBillingCycle ?? 0) + 1;
   const next = normalizeClientTryOnBuckets({
     ...cur,
     topUpLimit: topLim,
     basePlanLimit: cur.basePlanLimit ?? planCap,
+    topUpsPurchasedThisBillingCycle: purchases,
   });
 
   await redis.set(redisKey, next);

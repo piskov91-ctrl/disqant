@@ -21,19 +21,34 @@ type Plan = {
 
 const plans: Plan[] = [
   {
+    name: "Starter",
+    description: "The fastest way to add virtual try-ons to a boutique-sized catalogue",
+    price: "£50",
+    period: "/month",
+    features: [
+      "100 try-ons included each billing month",
+      "Up to 10 top-up purchases per billing cycle (then unlocks next cycle)",
+      "Wear Me on every product page, automatically",
+      "Email support",
+      "Live on your store in under 10 minutes",
+    ],
+    highlighted: false,
+    stripePlan: "starter",
+  },
+  {
     name: "Boutique",
     description: "Perfect for independent boutiques and small online stores",
     price: "£149",
     period: "/month",
     features: [
-      "300 try-ons — enough to make a real difference",
+      "300 try-ons included each billing month",
+      "Up to 10 top-up purchases per billing cycle",
       "Wear Me on every product page, automatically",
       "See which items your shoppers try on most",
-      "Email support whenever you need it",
       "Live on your store in under 10 minutes",
     ],
     highlighted: false,
-    stripePlan: "starter",
+    stripePlan: "boutique",
   },
   {
     name: "Studio",
@@ -41,15 +56,15 @@ const plans: Plan[] = [
     price: "£299",
     period: "/month",
     features: [
-      "600 try-ons — double the confidence, double the sales",
+      "600 try-ons included each billing month",
+      "Up to 20 top-up purchases per billing cycle",
       "Wear Me on every product page, automatically",
-      "Full analytics — know your bestsellers before they sell out",
-      "Priority support — we pick up faster",
+      "Wear Me Stats — hourly and daily patterns",
+      "Priority support",
       "Live on your store in under 10 minutes",
-      "Top up anytime if you need more",
     ],
     highlighted: true,
-    stripePlan: "growth",
+    stripePlan: "studio",
   },
   {
     name: "Premium",
@@ -57,16 +72,16 @@ const plans: Plan[] = [
     price: "£599",
     period: "/month",
     features: [
-      "1200 try-ons — for stores that mean business",
+      "1200 try-ons included each billing month",
+      "Unlimited top-up purchases — buy extra try-ons whenever you need",
       "Wear Me on every product page, automatically",
-      "Advanced analytics — see exactly what your customers love",
-      "Dedicated support — your own point of contact",
-      "Live on your store in under 10 minutes",
-      "Top up anytime if you need more",
+      "Wear Me Stats and product breakdowns",
+      "Dedicated support",
       "Custom integration help if needed",
+      "Live on your store in under 10 minutes",
     ],
     highlighted: false,
-    stripePlan: "pro",
+    stripePlan: "premium",
   },
   {
     name: "Enterprise",
@@ -96,7 +111,7 @@ export function Pricing({ sectionId = "subscriptions" }: PricingProps) {
       id={sectionId || undefined}
       className="scroll-mt-28 border-t border-[#C6A77D]/15 bg-transparent py-20 md:py-24"
     >
-      <div className="mx-auto max-w-6xl px-6">
+      <div className="mx-auto max-w-7xl px-6">
         <h2 className="text-center text-sm font-semibold uppercase tracking-widest text-[#C6A77D]">
           Subscriptions
         </h2>
@@ -107,7 +122,7 @@ export function Pricing({ sectionId = "subscriptions" }: PricingProps) {
           All plans include core try-on and integration support. Upgrade as your store grows.
         </p>
 
-        <div className="mt-14 grid gap-6 sm:grid-cols-2 xl:grid-cols-4">
+        <div className="mt-14 grid gap-6 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
           {plans.map((plan) => {
             const isContact = Boolean(plan.contactOnly);
             const ctaLabel = plan.stripePlan ? "Subscribe" : "Get Started";
