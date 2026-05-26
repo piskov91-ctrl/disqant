@@ -110,6 +110,8 @@ export function DashboardTopUpPanel({
   const atTopUpPurchaseCap =
     purchaseCap !== null && Math.floor(topUpsPurchasedThisBillingCycle) >= purchaseCap;
 
+  const nUsed = Math.floor(topUpsPurchasedThisBillingCycle);
+
   return (
     <section className="relative overflow-hidden rounded-3xl border border-[#c6a77d]/35 bg-gradient-to-br from-[#c6a77d]/[0.14] via-black/45 to-black/70 p-7 shadow-[0_24px_70px_-28px_rgba(0,0,0,0.75)] backdrop-blur-xl md:p-9">
       <div
@@ -120,30 +122,26 @@ export function DashboardTopUpPanel({
         <div>
           <p className="text-[11px] font-semibold uppercase tracking-[0.26em] text-[#f0e6d8]/90">Top up</p>
           <h3 className="mt-3 text-lg font-semibold tracking-tight text-zinc-50">Add more try-ons</h3>
-          <p className="mt-2 max-w-xl text-sm leading-relaxed text-zinc-400">
-            One-time purchases extend your allowance on the same API key immediately after checkout. Top-ups carry forward
-            across monthly billing resets until you use them; only your included plan try-ons refresh each cycle.
-          </p>
-          {hasCap ? (
-            <p className="mt-4 max-w-xl rounded-xl border border-[#c6a77d]/25 bg-black/30 px-4 py-3 text-xs leading-relaxed text-zinc-300">
-              <span className="font-semibold text-[#e8dcc8]">Plan top-up allowance (this billing cycle)</span>:{" "}
-              <span className="tabular-nums">
-                {Math.floor(topUpsPurchasedThisBillingCycle).toLocaleString()} used
-              </span>{" "}
-              of{" "}
-              <span className="tabular-nums">{purchaseCap.toLocaleString()}</span> Stripe top-ups
-              allowed until your monthly plan resets. Each pack or custom purchase counts once.
+          {hasCap && purchaseCap !== null ? (
+            <p className="mt-2 max-w-xl text-sm leading-relaxed text-zinc-300">
+              Top-ups stay with you — they don&apos;t expire when your plan resets each month. Your included try-ons refresh
+              every cycle, but any top-ups you&apos;ve bought carry forward until you use them up. This plan allows up to{" "}
+              <span className="tabular-nums font-medium text-[#e8dcc8]">{purchaseCap.toLocaleString()}</span> top-up purchases
+              per month. You have used{" "}
+              <span className="tabular-nums font-medium text-[#e8dcc8]">{nUsed.toLocaleString()}</span> of{" "}
+              <span className="tabular-nums font-medium text-[#e8dcc8]">{purchaseCap.toLocaleString()}</span>.
               {atTopUpPurchaseCap ? (
                 <span className="mt-2 block font-medium text-amber-100/95">
-                  You&apos;ve reached your limit — more top-ups are available after the next allowance reset on your billing
-                  day.
+                  You&apos;ve reached this limit for the current cycle — more top-ups will be available after your next
+                  monthly plan reset.
                 </span>
               ) : null}
             </p>
           ) : (
-            <p className="mt-4 max-w-xl rounded-xl border border-emerald-500/22 bg-emerald-950/20 px-4 py-3 text-xs leading-relaxed text-emerald-100/90">
-              <span className="font-semibold text-emerald-50/95">Plan top-ups</span>: no per-cycle purchase limit on your
-              current tier — you can buy extras whenever you need them.
+            <p className="mt-2 max-w-xl text-sm leading-relaxed text-zinc-300">
+              Top-ups stay with you — they don&apos;t expire when your plan resets each month. Your included try-ons refresh
+              every cycle, but any top-ups you&apos;ve bought carry forward until you use them up. This plan has no cap on
+              how many top-up purchases you can make each billing month — buy whenever you need more.
             </p>
           )}
         </div>
