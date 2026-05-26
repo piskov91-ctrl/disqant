@@ -6,7 +6,6 @@ import {
   buildLastNDatesUtcDescending,
   emptyBusySlots,
   emptyWearMeRetailDashboardStats,
-  isoDayUtcShortUk,
   partOfDayFromHour,
   utcDayStartMs,
   weekdaysMondayFirstBars,
@@ -76,6 +75,7 @@ export type TryOnTimingBuckets = {
 
 export type {
   WearMeBusyTimeSlot,
+  WearMeDailyCount,
   WearMeDailyTryOnPoint,
   WearMeRetailDashboardStats,
   WearMeWeekdayBar,
@@ -94,10 +94,8 @@ async function retailerTryOnsFromStatsHash(clientId: string): Promise<number> {
 }
 
 /**
- * Try-on aggregates for Wear Me Stats: 30‑day timeline, best time-of-day blocks, weekdays, hero total.
- * Recent slices use whichever events fall in that window inside the capped event log (`TRYON_EVENT_LOG_SCAN_CAP`).
- * When the recent window looks empty but lifetime timing buckets exist, time-of-day and weekday summaries fall back
- * to Redis timing histograms (all time since tracking started).
+ * Try-on aggregates for Wear Me Stats: timeline (all dates in capped event log), best time-of-day blocks, weekdays, hero total.
+ * Slot/weekday summaries still use whichever events fell in the last `WEAR_ME_TIMELINE_DAYS` UTC days (or Redis timing hashes as fallback).
  */
 export async function getWearMeRetailDashboardStats(clientId: string): Promise<WearMeRetailDashboardStats> {
   if (!clientId?.trim()) {
@@ -127,9 +125,7 @@ export async function getWearMeRetailDashboardStats(clientId: string): Promise<W
     nowUtc.getUTCDate() + 1,
   );
 
-  const dailyCounts = new Map<string, number>();
-  for (const dk of dateKeysOrdered) dailyCounts.set(dk, 0);
-
+  const lifetimeDaily = new Map<string, number>();
   const recentBuckets = { morning: 0, afternoon: 0, evening: 0, night: 0 };
   const recentWeekdaySunFirst = Array.from({ length: 7 }, () => 0);
 
@@ -144,9 +140,10 @@ export async function getWearMeRetailDashboardStats(clientId: string): Promise<W
       const ymd =
         /^(\d{4}-\d{2}-\d{2})/.exec(new Date(ms).toISOString())?.[1];
       if (!ymd) continue;
+
+      lifetimeDaily.set(ymd, (lifetimeDaily.get(ymd) ?? 0) + 1);
+
       if (ms >= windowStartMs && ms < windowEndExclusive) {
-        const dayCnt = dailyCounts.get(ymd);
-        if (dayCnt !== undefined) dailyCounts.set(ymd, dayCnt + 1);
         const h = new Date(ms).getUTCHours();
         recentBuckets[partOfDayFromHour(h)] += 1;
         const wd = new Date(ms).getUTCDay();
@@ -157,11 +154,9 @@ export async function getWearMeRetailDashboardStats(clientId: string): Promise<W
     }
   }
 
-  const dailyTryOnsLast30 = dateKeysOrdered.map((date) => ({
-    date,
-    shortLabel: isoDayUtcShortUk(date),
-    count: dailyCounts.get(date) ?? 0,
-  }));
+  const dailyTryOnsByDate = Array.from(lifetimeDaily.entries())
+    .sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0))
+    .map(([date, count]) => ({ date, count }));
 
   const recentSlotTotal =
     recentBuckets.morning + recentBuckets.afternoon + recentBuckets.evening + recentBuckets.night;
@@ -174,7 +169,7 @@ export async function getWearMeRetailDashboardStats(clientId: string): Promise<W
 
   return {
     allTimeTryOnTotal,
-    dailyTryOnsLast30,
+    dailyTryOnsByDate,
     busyTimeSlots,
     weekdaysMondayFirst,
   };

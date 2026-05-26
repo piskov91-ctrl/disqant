@@ -224,12 +224,34 @@ function coerceWearMeStats(raw: unknown): WearMeRetailDashboardStats {
   if (
     typeof o.allTimeTryOnTotal !== "number" ||
     !Number.isFinite(o.allTimeTryOnTotal) ||
-    !Array.isArray(o.dailyTryOnsLast30) ||
     !Array.isArray(o.busyTimeSlots) ||
     !Array.isArray(o.weekdaysMondayFirst)
   )
     return emptyWearMeRetailDashboardStats();
-  return o as WearMeRetailDashboardStats;
+
+  let dailyTryOnsByDate: WearMeRetailDashboardStats["dailyTryOnsByDate"] = [];
+  if (Array.isArray(o.dailyTryOnsByDate)) {
+    dailyTryOnsByDate = o.dailyTryOnsByDate
+      .filter(
+        (row): row is WearMeRetailDashboardStats["dailyTryOnsByDate"][number] =>
+          row != null &&
+          typeof row === "object" &&
+          typeof (row as { date?: string }).date === "string" &&
+          /^\d{4}-\d{2}-\d{2}$/.test((row as { date: string }).date) &&
+          typeof (row as { count?: unknown }).count === "number" &&
+          Number.isFinite((row as { count: number }).count),
+      )
+      .map((row) => ({
+        date: row.date,
+        count: Math.max(0, Math.floor(row.count)),
+      }))
+      .sort((a, b) => (a.date < b.date ? -1 : a.date > b.date ? 1 : 0));
+  }
+
+  return {
+    ...(o as WearMeRetailDashboardStats),
+    dailyTryOnsByDate,
+  };
 }
 
 function ProductThumb({ url }: { url: string }) {

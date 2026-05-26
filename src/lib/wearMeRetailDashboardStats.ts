@@ -3,6 +3,9 @@
  * Used by `platformAnalytics` and client components for typings / empty states.
  */
 
+/** One calendar day in UTC (`YYYY-MM-DD`) → try-on finishes recorded in that day’s slice of the event log. */
+export type WearMeDailyCount = { date: string; count: number };
+
 export type WearMeDailyTryOnPoint = { date: string; shortLabel: string; count: number };
 export type WearMeBusyTimeSlot = {
   /** Stable key for React lists / chart mapping. */
@@ -15,11 +18,13 @@ export type WearMeWeekdayBar = { label: string; count: number };
 
 export type WearMeRetailDashboardStats = {
   allTimeTryOnTotal: number;
-  dailyTryOnsLast30: WearMeDailyTryOnPoint[];
+  /** All days seen in try-on events (within server scan cap), sorted ascending by `date`. Sparse — omit days with zero. */
+  dailyTryOnsByDate: WearMeDailyCount[];
   busyTimeSlots: WearMeBusyTimeSlot[];
   weekdaysMondayFirst: WearMeWeekdayBar[];
 };
 
+/** Recent window for slot / weekday rollups (still uses last N UTC days ending today). */
 export const WEAR_ME_TIMELINE_DAYS = 30;
 export const WEAR_ME_MS_DAY = 86_400_000;
 
@@ -46,6 +51,11 @@ export function buildLastNDatesUtcDescending(nDays: number): string[] {
     out.push(utcYyyyMmDd(new Date(ms)));
   }
   return out;
+}
+
+/** How many calendar days in a UTC month (28–31). */
+export function daysInUtcMonth(year: number, monthIndex0: number): number {
+  return new Date(Date.UTC(year, monthIndex0 + 1, 0)).getUTCDate();
 }
 
 export function isoDayUtcShortUk(isoYyyyMmDdDate: string): string {
@@ -125,11 +135,7 @@ export function weekdaysMondayFirstBars(sunday0: number[]): WearMeWeekdayBar[] {
 export function emptyWearMeRetailDashboardStats(): WearMeRetailDashboardStats {
   return {
     allTimeTryOnTotal: 0,
-    dailyTryOnsLast30: buildLastNDatesUtcDescending(WEAR_ME_TIMELINE_DAYS).map((date) => ({
-      date,
-      shortLabel: isoDayUtcShortUk(date),
-      count: 0,
-    })),
+    dailyTryOnsByDate: [],
     busyTimeSlots: emptyBusySlots({ morning: 0, afternoon: 0, evening: 0, night: 0 }),
     weekdaysMondayFirst: WEAR_ME_WEEKDAY_MONDAY_FIRST_LABELS.map((label) => ({ label, count: 0 })),
   };
