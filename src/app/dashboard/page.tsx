@@ -169,42 +169,11 @@ export default async function DashboardPage() {
   const subscriptionAccessEnded = Number.isFinite(accessUntilMs) && accessUntilMs <= Date.now();
   const hasStripeSubscription = Boolean(user.stripeSubscriptionId?.trim());
 
-  /** Opt-in prod: `DASHBOARD_LOG_SUBSCRIPTION_CANCEL=1`. Always logs when `NODE_ENV !== "production"` for this branch. */
-  const logSubscriptionCancelGate =
-    process.env.NODE_ENV !== "production" || process.env.DASHBOARD_LOG_SUBSCRIPTION_CANCEL === "1";
   const canRequestCancellationFlag = !canceledAtStored;
-  if (logSubscriptionCancelGate) {
-    console.log("[dashboard] subscriptionCancellation gate", {
-      retailerUserId: user.id,
-      subscriptionCanceledAtRaw: user.subscriptionCanceledAt ?? null,
-      canceledAtStored,
-      subscriptionAccessUntil: accessUntilIso,
-      subscriptionAccessEnded,
-      canRequestCancellation: canRequestCancellationFlag,
-    });
-    if (!canRequestCancellationFlag) {
-      console.log(
-        "[dashboard] canRequestCancellation is false because subscriptionCanceledAt is set — cancel UI hidden until this is cleared.",
-      );
-    }
-  }
 
   /** Avoid duplicate Stripe checkouts while a normal billed subscription runs uncancelled. */
   const showRenewSubscriptionButton =
     !hasStripeSubscription || Boolean(canceledAtStored) || subscriptionAccessEnded;
-
-  const subscriptionBilling = {
-    canRequestCancellation: canRequestCancellationFlag,
-    cancellationScheduled: Boolean(canceledAtStored),
-    accessUntilIso,
-    canceledAtIso: canceledAtStored,
-    cancellationReasonLabel: cancellationReasonLabelFromStored(user.cancellationReason),
-    planDisplayName: planSummary.planName,
-    renewSubscriptionPlanKey: catalogSubscriptionPlanKeyFromTryOnLimit(planCap),
-    showRenewSubscriptionButton,
-    hasQueuedPlanUpgrade:
-      client.pendingBasePlanLimit != null && Number.isFinite(client.pendingBasePlanLimit),
-  };
 
   const topUpEligible = retailerEligibleForTryOnTopUps(user);
 
@@ -213,6 +182,53 @@ export default async function DashboardPage() {
   const subscriptionClientsUsage = subscriptionClientRecords.map((rec) =>
     buildRetailerSubscriptionClientUsagePayload(rec, linkedTrim || null),
   );
+
+  const linkedUsage =
+    subscriptionClientsUsage.find((r) => r.isLinked) ?? subscriptionClientsUsage[0] ?? null;
+  const currentPlanBits = linkedUsage
+    ? retailerDashboardPlanFromBaseLimit(linkedUsage.basePlanLimit)
+    : planBits;
+  const currentMonthlyPriceLabel =
+    typeof currentPlanBits.priceGbpPence === "number"
+      ? new Intl.NumberFormat("en-GB", { style: "currency", currency: "GBP" }).format(
+          currentPlanBits.priceGbpPence / 100,
+        )
+      : null;
+
+  const plansPanel = {
+    stripeSubscriptionId: user.stripeSubscriptionId?.trim() || null,
+    current: {
+      planDisplayName: currentPlanBits.planName,
+      planUsageCount: linkedUsage?.planUsageCount ?? 0,
+      planTryOnLimit:
+        linkedUsage && linkedUsage.basePlanLimit > 0
+          ? linkedUsage.basePlanLimit
+          : Math.max(currentPlanBits.monthlyTryOnLimit, 0),
+      monthlyPriceLabel: currentMonthlyPriceLabel,
+      canRequestStripeCancellation: canRequestCancellationFlag,
+      cancellationScheduled: Boolean(canceledAtStored),
+      accessUntilIso,
+      canceledAtIso: canceledAtStored,
+      cancellationReasonLabel: cancellationReasonLabelFromStored(user.cancellationReason),
+      showRenewSubscriptionButton,
+      renewSubscriptionPlanKey: catalogSubscriptionPlanKeyFromTryOnLimit(planCap),
+      hasQueuedPlanUpgrade:
+        typeof linkedUsage?.pendingBasePlanLimit === "number" &&
+        Number.isFinite(linkedUsage.pendingBasePlanLimit),
+    },
+    pending:
+      linkedUsage &&
+      typeof linkedUsage.pendingPlanDisplayName === "string" &&
+      linkedUsage.pendingPlanDisplayName.trim().length > 0 &&
+      typeof linkedUsage.pendingBasePlanLimit === "number" &&
+      Number.isFinite(linkedUsage.pendingBasePlanLimit)
+        ? {
+            clientId: linkedUsage.clientId,
+            pendingPlanDisplayName: linkedUsage.pendingPlanDisplayName,
+            pendingTryOnLimit: linkedUsage.pendingBasePlanLimit,
+          }
+        : null,
+  };
 
   return (
     <>
@@ -223,7 +239,7 @@ export default async function DashboardPage() {
           accountSubtitle={accountSubtitle}
           websiteUrl={user.websiteUrl?.trim() ? user.websiteUrl.trim() : null}
           planSummary={planSummary}
-          subscriptionBilling={subscriptionBilling}
+          plansPanel={plansPanel}
           topUpEligible={topUpEligible}
           apiKey={client.key}
           subscriptionClientsUsage={subscriptionClientsUsage}

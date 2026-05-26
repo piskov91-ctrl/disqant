@@ -14,7 +14,7 @@ import {
   SUBSCRIPTION_CANCELLATION_REASON_LABELS,
 } from "@/lib/subscriptionCancellation";
 import {
-  findCancellableStripeSubscription,
+  resolveStripeSubscriptionForRetailCancel,
   scheduleStripeSubscriptionCancelAtPeriodEnd,
 } from "@/lib/stripeSubscriptionCancel";
 
@@ -49,7 +49,7 @@ export async function POST(req: Request): Promise<Response> {
     });
   }
 
-  const resolved = await findCancellableStripeSubscription(user);
+  const resolved = await resolveStripeSubscriptionForRetailCancel(user, parsed.stripeSubscriptionId);
   if (!resolved) {
     return Response.json(
       {
