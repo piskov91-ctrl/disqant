@@ -4,7 +4,7 @@ import { StripeSubscribeButton } from "@/components/StripeSubscribeButton";
 
 type Plan = {
   name: string;
-  /** Marketing line under tier name — subscriptions page copy. */
+  /** Short line under tier name — kept tight for compact cards. */
   description: string;
   price: string | null;
   period: string | null;
@@ -13,8 +13,6 @@ type Plan = {
   contactOnly?: boolean;
   /** Shown instead of price for contact tier (e.g. "Contact us"). */
   subtitle?: string;
-  /** Only for Enterprise — self-serve plans use Stripe checkout or Contact. */
-  href?: string;
   /** When set, the CTA starts a Stripe Subscription Checkout for this tier. */
   stripePlan?: SubscriptionPlanKey;
 };
@@ -22,76 +20,73 @@ type Plan = {
 const plans: Plan[] = [
   {
     name: "Starter",
-    description: "The fastest way to add virtual try-ons to a boutique-sized catalogue",
+    description: "Get started fast",
     price: "£50",
     period: "/month",
     features: [
-      "100 try-ons included each billing month",
-      "Up to 10 top-up purchases per billing cycle (then unlocks next cycle)",
-      "Wear Me on every product page, automatically",
+      "100 try-ons per month",
+      "Wear Me on all your products",
+      "Basic stats",
       "Email support",
-      "Live on your store in under 10 minutes",
+      "Discounted top-ups available",
     ],
     highlighted: false,
     stripePlan: "starter",
   },
   {
     name: "Boutique",
-    description: "Perfect for independent boutiques and small online stores",
+    description: "For busy independents",
     price: "£149",
     period: "/month",
     features: [
-      "300 try-ons included each billing month",
-      "Up to 10 top-up purchases per billing cycle",
-      "Wear Me on every product page, automatically",
-      "See which items your shoppers try on most",
-      "Live on your store in under 10 minutes",
+      "300 try-ons per month",
+      "Wear Me on all your products",
+      "See what gets tried on most",
+      "Email support",
+      "Discounted top-ups available",
     ],
     highlighted: false,
     stripePlan: "boutique",
   },
   {
     name: "Studio",
-    description: "Ideal for growing fashion brands ready to scale",
+    description: "Growing brands",
     price: "£299",
     period: "/month",
     features: [
-      "600 try-ons included each billing month",
-      "Up to 20 top-up purchases per billing cycle",
-      "Wear Me on every product page, automatically",
-      "Wear Me Stats — hourly and daily patterns",
+      "600 try-ons per month",
+      "Wear Me on all your products",
+      "Full stats and insights",
       "Priority support",
-      "Live on your store in under 10 minutes",
+      "Discounted top-ups available",
     ],
     highlighted: true,
     stripePlan: "studio",
   },
   {
     name: "Premium",
-    description: "Built for established retailers with a high-volume catalogue",
+    description: "High throughput",
     price: "£599",
     period: "/month",
     features: [
-      "1200 try-ons included each billing month",
-      "Unlimited top-up purchases — buy extra try-ons whenever you need",
-      "Wear Me on every product page, automatically",
-      "Wear Me Stats and product breakdowns",
+      "1200 try-ons per month",
+      "Wear Me on all your products",
+      "Advanced analytics",
       "Dedicated support",
-      "Custom integration help if needed",
-      "Live on your store in under 10 minutes",
+      "Unlimited discounted top-ups",
     ],
     highlighted: false,
     stripePlan: "premium",
   },
   {
     name: "Enterprise",
-    description: "For large retailers, chains and platforms. Custom setup and dedicated support included",
+    description: "Scale without limits",
     price: null,
     period: null,
     features: [
-      "Unlimited try-ons — no cap, no worries",
+      "Unlimited try-ons",
       "Everything in Premium",
-      "Custom pricing and contract",
+      "Custom pricing",
       "Dedicated account manager",
     ],
     highlighted: false,
@@ -109,20 +104,20 @@ export function Pricing({ sectionId = "subscriptions" }: PricingProps) {
   return (
     <section
       id={sectionId || undefined}
-      className="scroll-mt-28 border-t border-[#C6A77D]/15 bg-transparent py-20 md:py-24"
+      className="scroll-mt-28 border-t border-[#C6A77D]/15 bg-transparent py-14 md:py-16"
     >
-      <div className="mx-auto max-w-7xl px-6">
-        <h2 className="text-center text-sm font-semibold uppercase tracking-widest text-[#C6A77D]">
+      <div className="mx-auto max-w-[1600px] px-4 sm:px-6">
+        <h2 className="text-center text-xs font-semibold uppercase tracking-widest text-[#C6A77D] sm:text-sm">
           Subscriptions
         </h2>
-        <p className="mx-auto mt-3 max-w-2xl text-center text-3xl font-semibold tracking-tight text-[#F5EDE4] md:text-4xl">
+        <p className="mx-auto mt-2 max-w-2xl text-center text-2xl font-semibold tracking-tight text-[#F5EDE4] md:text-3xl">
           Plans for every stage
         </p>
-        <p className="mx-auto mt-4 max-w-xl text-center text-sm leading-relaxed text-[#F5EDE4]/70 md:text-base">
+        <p className="mx-auto mt-3 max-w-xl text-center text-xs leading-relaxed text-[#F5EDE4]/70 sm:text-sm">
           All plans include core try-on and integration support. Upgrade as your store grows.
         </p>
 
-        <div className="mt-14 grid gap-6 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
+        <div className="mt-10 grid grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-4 lg:grid-cols-5 lg:gap-3">
           {plans.map((plan) => {
             const isContact = Boolean(plan.contactOnly);
             const ctaLabel = plan.stripePlan ? "Subscribe" : "Get Started";
@@ -130,38 +125,36 @@ export function Pricing({ sectionId = "subscriptions" }: PricingProps) {
             return (
               <article
                 key={plan.name}
-                className={`relative flex min-h-0 flex-col rounded-2xl border p-7 md:p-8 ${
+                className={`relative flex min-h-0 min-w-0 flex-col rounded-xl border p-4 sm:p-4 ${
                   plan.highlighted
-                    ? "border-[#C6A77D]/55 bg-[#231e1a] shadow-lg shadow-black/30 ring-1 ring-[#C6A77D]/35"
-                    : "border-[#C6A77D]/20 bg-[#1f1b17]/90"
+                    ? "border-[#C6A77D]/55 bg-[#231e1a] shadow-md shadow-black/25 ring-1 ring-[#C6A77D]/30"
+                    : "border-[#C6A77D]/18 bg-[#1f1b17]/92"
                 }`}
               >
                 {plan.highlighted && (
-                  <span className="absolute -top-3 left-1/2 -translate-x-1/2 whitespace-nowrap rounded-full bg-gradient-to-r from-[#C6A77D] to-[#e8d4bc] px-3 py-0.5 text-xs font-semibold text-[#2C241F]">
+                  <span className="absolute -top-2 left-1/2 z-[1] -translate-x-1/2 whitespace-nowrap rounded-full bg-gradient-to-r from-[#C6A77D] to-[#e8d4bc] px-2 py-px text-[10px] font-semibold uppercase tracking-wide text-[#2C241F]">
                     Most popular
                   </span>
                 )}
 
-                <h3 className="text-lg font-semibold text-[#F5EDE4]">{plan.name}</h3>
-                <p className="mt-3 text-sm leading-relaxed text-[#F5EDE4]/70">{plan.description}</p>
+                <h3 className="text-base font-semibold leading-tight text-[#F5EDE4]">{plan.name}</h3>
+                <p className="mt-1 text-[11px] leading-snug text-[#F5EDE4]/58 sm:text-xs">{plan.description}</p>
 
                 {isContact ? (
-                  <p className="mt-6 min-h-[3.5rem] text-2xl font-semibold tracking-tight text-[#F5EDE4]">
+                  <p className="mt-3 min-h-[2.75rem] text-xl font-semibold tracking-tight text-[#F5EDE4] sm:text-2xl">
                     {plan.subtitle ?? "Contact us"}
                   </p>
                 ) : (
-                  <div className="mt-6 flex min-h-[3.5rem] items-baseline gap-1">
-                    <span className="text-4xl font-semibold tracking-tight text-[#F5EDE4]">
-                      {plan.price}
-                    </span>
-                    <span className="text-sm text-[#F5EDE4]/55">{plan.period}</span>
+                  <div className="mt-3 flex min-h-[2.75rem] items-baseline gap-1">
+                    <span className="text-2xl font-semibold tracking-tight text-[#F5EDE4] sm:text-3xl">{plan.price}</span>
+                    <span className="text-[11px] text-[#F5EDE4]/50 sm:text-xs">{plan.period}</span>
                   </div>
                 )}
 
-                <ul className="mt-6 flex-1 space-y-3 text-sm text-[#F5EDE4]/85">
+                <ul className="mt-3 flex-1 space-y-1.5 text-[11px] leading-snug text-[#F5EDE4]/82 sm:text-xs sm:leading-snug">
                   {plan.features.map((f, i) => (
-                    <li key={`${plan.name}-${i}`} className="flex gap-2">
-                      <span className="shrink-0 text-[#C6A77D]" aria-hidden>
+                    <li key={`${plan.name}-${i}`} className="flex gap-1.5">
+                      <span className="mt-px shrink-0 text-[10px] text-[#C6A77D] sm:text-[11px]" aria-hidden>
                         ✓
                       </span>
                       <span>{f}</span>
@@ -170,11 +163,11 @@ export function Pricing({ sectionId = "subscriptions" }: PricingProps) {
                 </ul>
 
                 {isContact ? (
-                  <EnterpriseQuoteButton className="btn-accent-gradient mt-8 w-full" />
+                  <EnterpriseQuoteButton className="btn-accent-gradient mt-4 w-full py-2.5 text-sm" />
                 ) : plan.stripePlan ? (
                   <StripeSubscribeButton
                     planKey={plan.stripePlan}
-                    className="wear-me-btn mt-8 w-full disabled:cursor-wait disabled:opacity-70"
+                    className="wear-me-btn mt-4 w-full py-2.5 text-sm disabled:cursor-wait disabled:opacity-70"
                   >
                     {ctaLabel}
                   </StripeSubscribeButton>
