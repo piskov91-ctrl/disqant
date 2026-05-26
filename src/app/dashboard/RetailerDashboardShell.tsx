@@ -788,8 +788,9 @@ function RetailerDashboardShellInner({
             <div className="flex flex-wrap items-end justify-between gap-4">
               <div>
                 <h2 className="text-lg font-semibold text-zinc-50">Wear Me Stats</h2>
-                <p className="mt-1 max-w-xl text-sm text-zinc-400">
-                  When shoppers complete try-ons on your store. Times are shown in UTC (not your local clock).
+                <p className="mt-1 max-w-xl text-sm leading-relaxed text-zinc-400">
+                  A simple snapshot of how shoppers use Wear Me on your site: what time they tend to try things on,
+                  which days are busiest, and which products show up most.
                 </p>
               </div>
               <button
@@ -798,7 +799,7 @@ function RetailerDashboardShellInner({
                 onClick={() => void loadAnalytics()}
                 className="inline-flex h-10 items-center justify-center rounded-full border border-white/15 bg-zinc-950/50 px-4 text-sm font-semibold text-zinc-200 transition hover:border-white/25 hover:bg-zinc-900/80 disabled:opacity-50"
               >
-                {analyticsLoading ? "Loading…" : "Refresh data"}
+                {analyticsLoading ? "Loading…" : "Refresh"}
               </button>
             </div>
 
@@ -810,14 +811,15 @@ function RetailerDashboardShellInner({
               <>
                 <TryOnTimingCharts
                   variant="dashboard"
-                  subtitle="Your store’s completed try-ons, all time."
                   tryOnByHourUtc={hourArr}
                   tryOnByWeekdayUtc={weekdayArr}
                 />
 
                 <section className="rounded-2xl border border-white/10 bg-zinc-900/40 p-8 backdrop-blur-sm">
-                  <h3 className="text-base font-semibold text-zinc-100">Products tried on</h3>
-                  <p className="mt-1 text-sm text-zinc-500">Sorted by how often each product image was used in a try-on.</p>
+                  <h3 className="text-base font-semibold text-zinc-100">Products shoppers tried on</h3>
+                  <p className="mt-1 text-sm leading-relaxed text-zinc-400">
+                    A ranked list — what people actually put on virtually, so you can see what draws interest.
+                  </p>
                   {analytics.products && analytics.products.length > 0 ? (
                     <ul className="mt-6 divide-y divide-white/10 rounded-xl border border-white/10 bg-zinc-950/40">
                       {analytics.products.map((p) => (
@@ -825,9 +827,6 @@ function RetailerDashboardShellInner({
                           <ProductThumb url={p.productImageUrl} />
                           <div className="min-w-0 flex-1">
                             <p className="truncate text-sm font-medium text-zinc-100">{p.displayName}</p>
-                            {p.productImageUrl !== LOCAL_OR_UNKNOWN_PRODUCT ? (
-                              <p className="mt-0.5 truncate font-mono text-[11px] text-zinc-500">{p.productImageUrl}</p>
-                            ) : null}
                           </div>
                           <p className="shrink-0 tabular-nums text-sm font-semibold text-zinc-200">
                             {p.tryOnCount.toLocaleString()}
@@ -836,7 +835,10 @@ function RetailerDashboardShellInner({
                       ))}
                     </ul>
                   ) : (
-                    <p className="mt-6 text-sm text-zinc-500">No product-level data yet. Try-ons will appear here after shoppers use Wear Me.</p>
+                    <p className="mt-6 text-sm text-zinc-500">
+                      Nothing here yet — as soon as customers finish try-ons with Wear Me on your storefront, counts will
+                      show up.
+                    </p>
                   )}
                 </section>
               </>

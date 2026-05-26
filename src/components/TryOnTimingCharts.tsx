@@ -2,6 +2,13 @@ import type { TryOnTimingBuckets } from "@/lib/platformAnalytics";
 
 const WEEKDAY_LABELS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"] as const;
 
+function hourTickLabel(hour: number): string {
+  if (hour === 0) return "12am";
+  if (hour < 12) return `${hour}am`;
+  if (hour === 12) return "12pm";
+  return `${hour - 12}pm`;
+}
+
 function normalize24(values: number[] | undefined): number[] {
   return Array.from({ length: 24 }, (_, i) => {
     const v = values?.[i];
@@ -54,15 +61,15 @@ export function TryOnTimingCharts({
     <div>
       {!embedded ? (
         <div className="flex flex-wrap items-baseline justify-between gap-2">
-          <h3 className="text-sm font-medium text-zinc-300">Peak hours (UTC)</h3>
+          <h3 className="text-sm font-medium text-zinc-300">When people try clothes on — by time of day</h3>
           <span className="text-xs tabular-nums text-zinc-500">
-            {totalTryOns.toLocaleString()} try-on{totalTryOns === 1 ? "" : "s"} in chart
+            {totalTryOns.toLocaleString()} completed try-on{totalTryOns === 1 ? "" : "s"} in view
           </span>
         </div>
       ) : (
         <div className="flex flex-wrap items-baseline justify-between gap-2">
           <span className="text-xs tabular-nums text-zinc-500">
-            {totalTryOns.toLocaleString()} try-on{totalTryOns === 1 ? "" : "s"} (UTC)
+            {totalTryOns.toLocaleString()} try-on{totalTryOns === 1 ? "" : "s"}
           </span>
         </div>
       )}
@@ -71,7 +78,11 @@ export function TryOnTimingCharts({
           <div key={hour} className="flex min-w-0 flex-1 flex-col items-center gap-1">
             <div
               className={`flex h-28 w-full max-w-[14px] flex-col justify-end ${trackCls}`}
-              title={`${hour}:00 UTC — ${count.toLocaleString()} try-on${count === 1 ? "" : "s"}`}
+              title={
+                count > 0
+                  ? `${count.toLocaleString()} try-on${count === 1 ? "" : "s"} between ${hour}:00 and ${hour}:59`
+                  : "No try-ons in this hour"
+              }
             >
               <div
                 className={`w-full ${barCls}`}
@@ -79,7 +90,7 @@ export function TryOnTimingCharts({
               />
             </div>
             {hour % 4 === 0 ? (
-              <span className={`${tickCls} tabular-nums`}>{hour}</span>
+              <span className={`${tickCls} tabular-nums`}>{hourTickLabel(hour)}</span>
             ) : (
               <span className={`${tickCls} select-none opacity-0`} aria-hidden>
                 ·
@@ -88,15 +99,15 @@ export function TryOnTimingCharts({
           </div>
         ))}
       </div>
-      <p className="mt-2 text-center text-[10px] text-zinc-600">Hour of day (UTC)</p>
+      <p className="mt-2 text-center text-[10px] text-zinc-600">Across the clock — midnight on the left, late night on the right.</p>
     </div>
   );
 
   const weekdayBlock =
     showWeekdays ? (
       <div>
-        <h3 className="text-sm font-medium text-zinc-300">Busiest weekdays (UTC)</h3>
-        <p className="mt-1 text-xs text-zinc-500">Sunday = 0 … Saturday = 6 (same as JavaScript Date.getUTCDay()).</p>
+        <h3 className="text-sm font-medium text-zinc-300">Busiest days of the week</h3>
+        <p className="mt-1 text-xs text-zinc-500">Shows which weekdays shoppers actually use Wear Me — great for spotting weekend vs weekday lifts.</p>
         <div className="mt-4 space-y-2">
           {days.map((count, d) => (
             <div key={d} className="flex items-center gap-3">
@@ -130,8 +141,9 @@ export function TryOnTimingCharts({
     <div className={card}>
       <h2 className={titleCls}>When customers use Wear Me</h2>
       {subtitle ? <p className={descCls}>{subtitle}</p> : null}
-      <p className={subtitle ? "mt-2 text-xs text-zinc-500" : descCls}>
-        Completed try-ons by UTC hour and UTC weekday (all time). Times are UTC, not your local timezone.
+      <p className={subtitle ? "mt-2 text-sm text-zinc-400" : descCls}>
+        These charts add up finished try-ons on your storefront — anytime someone sees a result from Wear Me after trying
+        something on. Use them to see whether traffic clusters on certain hours or weekdays.
       </p>
 
       <div className="mt-8 space-y-10">

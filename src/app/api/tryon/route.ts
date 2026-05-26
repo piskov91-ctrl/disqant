@@ -179,8 +179,15 @@ export async function POST(req: Request) {
     );
   }
 
-  /** Caller sent an integrator key (retailer/embed); otherwise usage is attributed to demo/visitor. */
-  const isRetailerTryOn = Boolean(clientApiKey);
+  /**
+   * Retailer/store try-on: any successful run billed to a real client key, including the dashboard path that injects the
+   * linked storefront key from the signed-in session (no `x-api-key` header). Only the anonymous fall-back to
+   * `DEMO_API_KEY` when the caller sent no key is treated as non-retailer for per-client timing buckets.
+   */
+  const demoKeyTrim = process.env.DEMO_API_KEY?.trim() ?? "";
+  const usedAnonymousDemoKey =
+    !clientApiKey && demoKeyTrim.length > 0 && effectiveClientApiKey === demoKeyTrim;
+  const isRetailerTryOn = !usedAnonymousDemoKey;
 
   let client: Awaited<ReturnType<typeof assertClientCanUseByApiKey>>;
   try {

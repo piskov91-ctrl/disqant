@@ -171,7 +171,7 @@ export function AnalyticsInsightsModal({
             <div className="space-y-10">
               <section>
                 <h3 className={`text-sm font-semibold ${pad}`}>Peak hours</h3>
-                <p className={`mt-1 text-xs ${muted}`}>When try-ons complete, by hour of day (UTC).</p>
+                <p className={`mt-1 text-xs ${muted}`}>When try-ons finished, grouped by hour of day.</p>
                 <div className="mt-4">
                   <TryOnTimingCharts
                     variant={chartVariant}

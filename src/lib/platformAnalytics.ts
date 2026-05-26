@@ -94,6 +94,32 @@ async function loadGlobalTryOnTiming(redis: ReturnType<typeof getRedis>): Promis
   };
 }
 
+function tryOnEventsListKey(clientId: string) {
+  return `fit-room:tryon:events:${clientId}`;
+}
+
+const TRYON_EVENT_LOG_SCAN_CAP = 12_000;
+
+/** Rebuild hour/weekday histograms from stored try-on event log (ISO `at` timestamps) when Redis timing hashes are empty. */
+function timingBucketsFromEventJsonLines(lines: string[]): TryOnTimingBuckets {
+  const tryOnByHourUtc = Array.from({ length: 24 }, () => 0);
+  const tryOnByWeekdayUtc = Array.from({ length: 7 }, () => 0);
+  for (const line of lines) {
+    try {
+      const o = JSON.parse(line) as { at?: string };
+      const at = o?.at?.trim();
+      if (!at) continue;
+      const d = new Date(at);
+      if (!Number.isFinite(d.getTime())) continue;
+      tryOnByHourUtc[d.getUTCHours()] += 1;
+      tryOnByWeekdayUtc[d.getUTCDay()] += 1;
+    } catch {
+      /* skip bad row */
+    }
+  }
+  return { tryOnByHourUtc, tryOnByWeekdayUtc };
+}
+
 /** Per-client try-on timing (all try-ons billed to this client id). */
 export async function getTryOnTimingForClient(clientId: string): Promise<TryOnTimingBuckets> {
   if (!clientId) {
@@ -104,14 +130,28 @@ export async function getTryOnTimingForClient(clientId: string): Promise<TryOnTi
   }
   try {
     const redis = getRedis();
-    const [hHour, hWeek] = await Promise.all([
+    const [hHour, hWeek, eventLinesRaw] = await Promise.all([
       redis.hgetall(tryOnClientHourKey(clientId)),
       redis.hgetall(tryOnClientWeekdayKey(clientId)),
+      redis.lrange(tryOnEventsListKey(clientId), 0, TRYON_EVENT_LOG_SCAN_CAP - 1),
     ]);
-    return {
+    const eventLines = Array.isArray(eventLinesRaw)
+      ? (eventLinesRaw as unknown[]).map((line) => String(line ?? "")).filter(Boolean)
+      : [];
+    const fromHash: TryOnTimingBuckets = {
       tryOnByHourUtc: hashToBuckets(hHour as Record<string, string> | null, 24),
       tryOnByWeekdayUtc: hashToBuckets(hWeek as Record<string, string> | null, 7),
     };
+    const hashTotal =
+      fromHash.tryOnByHourUtc.reduce((a, b) => a + b, 0) + fromHash.tryOnByWeekdayUtc.reduce((a, b) => a + b, 0);
+    if (hashTotal > 0) return fromHash;
+
+    const fromEvents = timingBucketsFromEventJsonLines(eventLines);
+    const evTotal =
+      fromEvents.tryOnByHourUtc.reduce((a, b) => a + b, 0) + fromEvents.tryOnByWeekdayUtc.reduce((a, b) => a + b, 0);
+    if (evTotal > 0) return fromEvents;
+
+    return fromHash;
   } catch (e) {
     console.error("[platformAnalytics] getTryOnTimingForClient failed", e);
     return {
