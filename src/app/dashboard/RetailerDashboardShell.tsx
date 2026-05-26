@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { ImageOff } from "lucide-react";
-import { useSearchParams } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useCallback, useEffect, useMemo, useState } from "react";
 import { TryOnTimingCharts } from "@/components/TryOnTimingCharts";
 import { LOCAL_OR_UNKNOWN_PRODUCT } from "@/lib/tryOnConstants";
@@ -93,6 +93,10 @@ function subscriptionRowsFromUsageJson(data: RetailerClientUsageFetchJson): Reta
 }
 
 function SubscriptionKeyUsageCard({ row }: { row: RetailerDashboardSubscriptionClientUsagePayload }) {
+  const router = useRouter();
+  const [clearQueuedBusy, setClearQueuedBusy] = useState(false);
+  const [clearQueuedError, setClearQueuedError] = useState<string | null>(null);
+
   const totalLimit = row.usageLimit;
   const totalUsed = row.usageCount;
   const pctTotal = totalLimit > 0 ? Math.min(100, Math.round((totalUsed / totalLimit) * 100)) : 0;
@@ -103,6 +107,29 @@ function SubscriptionKeyUsageCard({ row }: { row: RetailerDashboardSubscriptionC
   const topUpUsed = row.topUpUsageCount;
   const topUpPct = topUpLimit > 0 ? Math.min(100, Math.round((topUpUsed / topUpLimit) * 100)) : 0;
   const blocked = totalLimit > 0 && totalUsed >= totalLimit;
+
+  async function cancelQueuedUpgrade() {
+    setClearQueuedError(null);
+    setClearQueuedBusy(true);
+    try {
+      const res = await fetch("/api/retailer/pending-subscription", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({ action: "clear", clientId: row.clientId }),
+      });
+      const data = (await res.json()) as { error?: string; ok?: boolean };
+      if (!res.ok) {
+        setClearQueuedError(data.error || "Could not remove the queued upgrade.");
+        return;
+      }
+      router.refresh();
+    } catch {
+      setClearQueuedError("Something went wrong. Please try again.");
+    } finally {
+      setClearQueuedBusy(false);
+    }
+  }
 
   return (
     <div className="space-y-5 rounded-3xl border border-[#c6a77d]/22 bg-black/28 p-6 shadow-inner shadow-black/45 backdrop-blur-xl md:p-8">
@@ -195,6 +222,21 @@ function SubscriptionKeyUsageCard({ row }: { row: RetailerDashboardSubscriptionC
               This becomes your active monthly plan automatically once the current plan bucket reaches its limit (subscription try-ons
               reset to 0 then). Purchased top-ups stay on this key unchanged.
             </p>
+            <div className="mt-4">
+              <button
+                type="button"
+                disabled={clearQueuedBusy}
+                onClick={() => void cancelQueuedUpgrade()}
+                className="inline-flex w-full items-center justify-center rounded-xl border border-amber-500/35 bg-black/35 px-4 py-3 text-xs font-semibold uppercase tracking-[0.12em] text-amber-100 transition hover:border-amber-400/50 hover:bg-amber-950/55 disabled:cursor-not-allowed disabled:opacity-50 sm:w-auto sm:min-w-[12rem]"
+              >
+                {clearQueuedBusy ? "Removing…" : "Remove queued upgrade"}
+              </button>
+              {clearQueuedError ? (
+                <p className="mt-2 text-xs text-red-300/95" role="alert">
+                  {clearQueuedError}
+                </p>
+              ) : null}
+            </div>
           </div>
         ) : null}
       </div>

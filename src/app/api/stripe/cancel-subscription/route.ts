@@ -2,6 +2,7 @@ import {
   getRetailerSessionUser,
   persistSubscriptionCancellationSchedule,
 } from "@/lib/retailerAuth";
+import { clearPendingSubscriptionPlanOnClient } from "@/lib/apiKeyStore";
 import { isFitRoomEmailConfigured, sendFitRoomPlainTextMail } from "@/lib/fitRoomEmail";
 import {
   transactionalParagraph,
@@ -77,6 +78,14 @@ export async function POST(req: Request): Promise<Response> {
     cancellationReason: parsed.reason,
     cancellationComments: parsed.comments,
   });
+
+  if (parsed.clearPendingPlan && user.clientId?.trim()) {
+    try {
+      await clearPendingSubscriptionPlanOnClient(user.clientId.trim());
+    } catch (e) {
+      console.error("[stripe] cancellation clear pending plan failed", e);
+    }
+  }
 
   const reasonLabel = SUBSCRIPTION_CANCELLATION_REASON_LABELS[parsed.reason];
   const storeLabel = user.storeName?.trim() || user.companyName?.trim() || "Store";

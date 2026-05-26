@@ -181,6 +181,8 @@ export default async function DashboardPage() {
     cancellationReasonLabel: cancellationReasonLabelFromStored(user.cancellationReason),
     renewSubscriptionPlanKey: catalogSubscriptionPlanKeyFromTryOnLimit(planCap),
     showRenewSubscriptionButton,
+    hasQueuedPlanUpgrade:
+      client.pendingBasePlanLimit != null && Number.isFinite(client.pendingBasePlanLimit),
   };
 
   const topUpEligible = retailerEligibleForTryOnTopUps(user);

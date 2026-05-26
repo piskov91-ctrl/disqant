@@ -19,6 +19,8 @@ export type DashboardSubscriptionBillingProps = {
   renewSubscriptionPlanKey: SubscriptionPlanKey | null;
   /** Hide while an uncancelled Stripe subscription is active (avoids duplicate checkout). */
   showRenewSubscriptionButton: boolean;
+  /** True when a subscription tier is queued in Redis (before monthly bucket exhaust). */
+  hasQueuedPlanUpgrade?: boolean;
 };
 
 function formatUtcLong(iso: string | null): string {
@@ -111,11 +113,13 @@ export function DashboardCancelSubscriptionPanel(props: DashboardSubscriptionBil
   const [comments, setComments] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [alsoRemoveQueuedUpgrade, setAlsoRemoveQueuedUpgrade] = useState(false);
 
   const close = useCallback(() => {
     if (busy) return;
     setOpen(false);
     setError(null);
+    setAlsoRemoveQueuedUpgrade(false);
   }, [busy]);
 
   useEffect(() => {
@@ -135,7 +139,11 @@ export function DashboardCancelSubscriptionPanel(props: DashboardSubscriptionBil
         method: "POST",
         headers: { "Content-Type": "application/json" },
         credentials: "include",
-        body: JSON.stringify({ reason, comments: comments.trim() }),
+        body: JSON.stringify({
+          reason,
+          comments: comments.trim(),
+          clearPendingPlan: Boolean(props.hasQueuedPlanUpgrade && alsoRemoveQueuedUpgrade),
+        }),
       });
       const data = (await res.json()) as { error?: string; ok?: boolean };
       if (!res.ok) {
@@ -144,6 +152,7 @@ export function DashboardCancelSubscriptionPanel(props: DashboardSubscriptionBil
       }
       setOpen(false);
       setComments("");
+      setAlsoRemoveQueuedUpgrade(false);
       router.refresh();
     } catch {
       setError("Something went wrong. Please try again.");
@@ -200,6 +209,13 @@ export function DashboardCancelSubscriptionPanel(props: DashboardSubscriptionBil
           <p className="mt-4 text-sm leading-relaxed text-zinc-500">
             Cancel stops renewal charges at the end of your current Stripe billing period. Your embed and dashboard
             stay active until then.
+            {props.hasQueuedPlanUpgrade ? (
+              <>
+                {" "}
+                Any <span className="text-zinc-400">queued plan upgrade</span> stays on your key unless you remove it in
+                the cancellation flow or cancel the queue separately under Try-on allowance.
+              </>
+            ) : null}
           </p>
           <button
             type="button"
@@ -232,6 +248,27 @@ export function DashboardCancelSubscriptionPanel(props: DashboardSubscriptionBil
             <p id={descId} className="mt-2 text-sm leading-relaxed text-zinc-400">
               Tell us why you are leaving. We&apos;ll confirm by email and notify our team.
             </p>
+            {props.hasQueuedPlanUpgrade ? (
+              <div className="mt-5 rounded-xl border border-amber-500/35 bg-amber-950/30 px-4 py-4 text-sm leading-relaxed text-amber-50/95">
+                <p>
+                  You have a <span className="font-semibold">queued plan upgrade</span>. Cancelling Stripe stops renewal at
+                  the end of this billing period; by default we keep that queue so your new tier can still apply when your
+                  current monthly try-on bucket is fully used. Uncheck below only if you want to drop it.
+                </p>
+                <label className="mt-4 flex cursor-pointer items-start gap-3">
+                  <input
+                    type="checkbox"
+                    checked={alsoRemoveQueuedUpgrade}
+                    onChange={(e) => setAlsoRemoveQueuedUpgrade(e.target.checked)}
+                    className="mt-1 border-white/30 bg-zinc-900 text-[#c6a77d] focus:ring-[#c6a77d]/40"
+                  />
+                  <span className="text-zinc-200">
+                    Also remove my queued plan upgrade from this storefront key{" "}
+                    <span className="font-normal text-zinc-500">(optional)</span>
+                  </span>
+                </label>
+              </div>
+            ) : null}
 
             <fieldset className="mt-6 space-y-3 border-0 p-0">
               <legend className="sr-only">Cancellation reason</legend>

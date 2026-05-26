@@ -738,6 +738,37 @@ export async function mergeClientStripeCheckoutProfileAndQueuePendingSubscriptio
 }
 
 /**
+ * Removes queued subscription tier fields from a client record (retailer-cancel pending upgrade).
+ * Returns `{ cleared: true }` when pending fields existed and were persisted.
+ */
+export async function clearPendingSubscriptionPlanOnClient(clientId: string): Promise<{
+  rec: ClientApiKeyRecord;
+  cleared: boolean;
+}> {
+  const bundle = await getRecordForMutation(clientId.trim());
+  if (!bundle) throw new Error("Client key not found.");
+  if (bundle.rec.deletedAt) throw new Error("This API key is no longer active.");
+
+  const stored = normalizeClientTryOnBuckets(bundle.rec);
+  const hadPending =
+    stored.pendingBasePlanLimit != null ||
+    Boolean(stored.pendingSubscriptionPlanKey?.trim()) ||
+    Boolean(stored.pendingPlanRecordedAt?.trim());
+
+  if (!hadPending) {
+    return { rec: stored, cleared: false };
+  }
+
+  const next: ClientApiKeyRecord = { ...stored };
+  delete next.pendingBasePlanLimit;
+  delete next.pendingSubscriptionPlanKey;
+  delete next.pendingPlanRecordedAt;
+  const written = normalizeClientTryOnBuckets(next);
+  await getRedis().set(bundle.redisKey, written);
+  return { rec: written, cleared: true };
+}
+
+/**
  * Batch job: apply the same monthly usage reset as lazy reads, for every client in the admin index.
  * Uses UTC calendar (aligned with `billingCycle`). Skips soft-deleted keys.
  */

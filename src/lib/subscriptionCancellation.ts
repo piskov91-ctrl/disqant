@@ -22,6 +22,8 @@ export const SUBSCRIPTION_CANCELLATION_REASON_LABELS: Record<SubscriptionCancell
 export function parseSubscriptionCancellationPayload(raw: unknown): {
   reason: SubscriptionCancellationReasonCode;
   comments: string;
+  /** When true, clears queued plan fields on the linked API key after Stripe cancellation is scheduled. */
+  clearPendingPlan: boolean;
 } | null {
   if (!raw || typeof raw !== "object") return null;
   const o = raw as Record<string, unknown>;
@@ -32,5 +34,6 @@ export function parseSubscriptionCancellationPayload(raw: unknown): {
   const commentsRaw = o.comments;
   const comments =
     typeof commentsRaw === "string" ? commentsRaw.trim().slice(0, 2000) : "";
-  return { reason: reason as SubscriptionCancellationReasonCode, comments };
+  const clearPendingPlan = o.clearPendingPlan === true;
+  return { reason: reason as SubscriptionCancellationReasonCode, comments, clearPendingPlan };
 }
