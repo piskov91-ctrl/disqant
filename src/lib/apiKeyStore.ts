@@ -17,6 +17,7 @@ import {
   subscriptionPlanCap,
   totalTryOnsUsed,
 } from "@/lib/clientTryOnBuckets";
+import { tryApplyPendingSubscriptionPlan } from "@/lib/pendingSubscriptionPlan";
 
 export type ClientApiKeyRecord = {
   id: string;
@@ -51,6 +52,12 @@ export type ClientApiKeyRecord = {
   createdAt: string; // ISO
   /** Soft-delete timestamp (e.g. retailer deleted account). Deleted keys are removed from active admin lists and rejected for usage. */
   deletedAt?: string | null;
+  /** Queued next monthly plan bucket (applied when {@link subscriptionPlanCap}-bucket usage reaches the prior cap while top-ups behave as usual). */
+  pendingBasePlanLimit?: number;
+  /** Catalog key for the queued plan (`starter`, `growth`, …) for dashboards. */
+  pendingSubscriptionPlanKey?: string;
+  /** When the queued plan won Stripe checkout fulfillment. ISO. */
+  pendingPlanRecordedAt?: string;
 };
 
 const KEY_INDEX = "fit-room:clientKeys:index"; // list of ids (newest first)
@@ -376,8 +383,10 @@ export async function getClientByApiKey(apiKey: string) {
   if (events.length > 0) {
     await persistMonthlyBillingResetHistory(id, events);
   }
-  const norm = normalizeClientTryOnBuckets(after);
-  if (!sameBucketSnapshot(stored, norm)) {
+  let norm = normalizeClientTryOnBuckets(after);
+  const { next: afterPending, activated } = tryApplyPendingSubscriptionPlan(norm);
+  norm = afterPending;
+  if (!sameBucketSnapshot(stored, norm) || activated) {
     await redis.set(recKey, norm);
   }
   return norm;
@@ -418,8 +427,10 @@ export async function getClientKeyRecordById(id: string): Promise<ClientApiKeyRe
   if (events.length > 0) {
     await persistMonthlyBillingResetHistory(stored.id, events);
   }
-  const norm = normalizeClientTryOnBuckets(after);
-  if (!sameBucketSnapshot(stored, norm)) {
+  let norm = normalizeClientTryOnBuckets(after);
+  const { next: afterPending, activated } = tryApplyPendingSubscriptionPlan(norm);
+  norm = afterPending;
+  if (!sameBucketSnapshot(stored, norm) || activated) {
     await getRedis().set(redisKey, norm);
   }
   return norm;
@@ -444,10 +455,15 @@ export async function incrementUsageOrThrow(id: string) {
   if (events.length > 0) {
     await persistMonthlyBillingResetHistory(bundle.rec.id, events);
   }
-  const rec = normalizeClientTryOnBuckets(afterApply);
+  let rec = normalizeClientTryOnBuckets(afterApply);
   if (!sameBucketSnapshot(stored, rec)) {
     await redis.set(redisKey, rec);
   }
+  const { next: afterPend, activated: pendingApplied } = tryApplyPendingSubscriptionPlan(rec);
+  if (pendingApplied || !sameBucketSnapshot(rec, afterPend)) {
+    await redis.set(redisKey, afterPend);
+  }
+  rec = afterPend;
 
   const planCap = subscriptionPlanCap(rec);
   const topLim = Math.floor(rec.topUpLimit ?? 0);
@@ -639,6 +655,9 @@ export async function updateClientKey(params: {
       ? { fashnApiKey: params.fashnApiKey.trim() }
       : null),
   };
+  delete next.pendingBasePlanLimit;
+  delete next.pendingSubscriptionPlanKey;
+  delete next.pendingPlanRecordedAt;
 
   if (params.contactEmail !== undefined) {
     const normalized = normalizeContactEmailInput(params.contactEmail);
@@ -647,6 +666,75 @@ export async function updateClientKey(params: {
   }
   await redis.set(redisKey, next);
   return next;
+}
+
+/**
+ * Apply monthly billing resets + normalize subscription buckets; persists reset side effects.
+ * Does not apply queued pending plans (Stripe fulfillment must choose queue vs immediate swap).
+ */
+export async function loadClientSubscriptionSnapshotWithoutPendingApply(id: string): Promise<{
+  rec: ClientApiKeyRecord;
+  redisKey: string;
+} | null> {
+  const bundle = await getRecordForMutation(id.trim());
+  if (!bundle || bundle.rec.deletedAt) return null;
+
+  const { rec: stored, redisKey } = bundle;
+  const { rec: after, events } = applyAllDueMonthlyUsageResetsWithEvents(stored, new Date());
+  if (events.length > 0) {
+    await persistMonthlyBillingResetHistory(stored.id, events);
+  }
+  const snap = normalizeClientTryOnBuckets(after);
+  if (!sameBucketSnapshot(stored, snap)) {
+    await getRedis().set(redisKey, snap);
+  }
+  return { rec: snap, redisKey };
+}
+
+/**
+ * Stripe fulfillment: refresh profile + enqueue a queued plan while the subscription bucket still has quota.
+ */
+export async function mergeClientStripeCheckoutProfileAndQueuePendingSubscription(params: {
+  id: string;
+  clientName: string;
+  contactEmail?: string;
+  pendingTryOnLimit: number;
+  pendingPlanKey: string;
+}) {
+  const id = params.id.trim();
+  if (!id) throw new Error("Key id is required.");
+
+  const loaded = await loadClientSubscriptionSnapshotWithoutPendingApply(id);
+  if (!loaded) throw new Error("Client key not found.");
+
+  const { rec: snapshot, redisKey } = loaded;
+
+  const planLimFloor = Math.floor(params.pendingTryOnLimit);
+  if (!Number.isFinite(planLimFloor) || planLimFloor < 1) {
+    throw new Error("Pending plan try-on limit must be at least 1.");
+  }
+
+  const planKey = params.pendingPlanKey.trim().toLowerCase();
+  if (!planKey) throw new Error("Pending subscription plan key is required.");
+
+  const clientName = params.clientName.trim();
+  if (!clientName) throw new Error("Client name is required.");
+
+  const next: ClientApiKeyRecord = {
+    ...snapshot,
+    clientName,
+    pendingBasePlanLimit: planLimFloor,
+    pendingSubscriptionPlanKey: planKey,
+    pendingPlanRecordedAt: new Date().toISOString(),
+  };
+  if (params.contactEmail !== undefined) {
+    const normalized = normalizeContactEmailInput(params.contactEmail);
+    if (normalized) next.contactEmail = normalized;
+    else delete next.contactEmail;
+  }
+  const written = normalizeClientTryOnBuckets(next);
+  await getRedis().set(redisKey, written);
+  return written;
 }
 
 /**

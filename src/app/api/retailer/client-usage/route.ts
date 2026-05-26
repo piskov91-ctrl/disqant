@@ -1,7 +1,6 @@
 import { NextResponse } from "next/server";
 import type { ClientApiKeyRecord } from "@/lib/apiKeyStore";
 import { getClientByApiKey } from "@/lib/apiKeyStore";
-import { storedOrDerivedBasePlanLimit, totalTryOnsUsed } from "@/lib/clientTryOnBuckets";
 import {
   buildRetailerSubscriptionClientUsagePayload,
   listSubscriptionClientRecordsForRetailerDashboard,
@@ -10,21 +9,8 @@ import { getRetailerSessionUser } from "@/lib/retailerAuth";
 
 export const runtime = "nodejs";
 
-function singleClientUsageFlatten(client: ClientApiKeyRecord) {
-  const basePlanLimit = storedOrDerivedBasePlanLimit(client);
-  return {
-    clientId: client.id,
-    clientName: client.clientName,
-    usageCount: totalTryOnsUsed(client),
-    usageLimit: client.usageLimit,
-    basePlanLimit,
-    planUsageCount: client.usageCount,
-    /** @deprecated use basePlanLimit */
-    planLimit: basePlanLimit,
-    topUpUsageCount: client.topUpUsageCount ?? 0,
-    topUpLimit: client.topUpLimit ?? 0,
-    keyPrefix: `${(client.key || "").slice(0, 8)}…`,
-  };
+function singleClientUsageFlatten(client: ClientApiKeyRecord, linkedId: string | null) {
+  return buildRetailerSubscriptionClientUsagePayload(client, linkedId?.trim() ?? null);
 }
 
 /**
@@ -49,9 +35,9 @@ export async function GET() {
     const linkedRecord = linkedTrim ? records.find((r) => r.id === linkedTrim) : undefined;
     const primaryFlatten =
       linkedRecord != null
-        ? singleClientUsageFlatten(linkedRecord)
+        ? singleClientUsageFlatten(linkedRecord, linkedTrim || null)
         : records.length > 0 && records[0]
-          ? singleClientUsageFlatten(records[0])
+          ? singleClientUsageFlatten(records[0], linkedTrim || null)
           : null;
 
     if (!primaryFlatten) {
@@ -110,7 +96,7 @@ export async function POST(req: Request) {
     return NextResponse.json({
       linkedClientId: linkedId || null,
       keys,
-      ...singleClientUsageFlatten(client),
+      ...singleClientUsageFlatten(client, linkedId || null),
     });
   } catch {
     return NextResponse.json({ error: "Could not load usage." }, { status: 500 });

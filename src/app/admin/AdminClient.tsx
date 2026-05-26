@@ -14,6 +14,11 @@ import {
   ADMIN_CLIENT_INSTALL_EMAIL_PLATFORMS,
   type AdminClientInstallPlatform,
 } from "@/lib/adminClientInstallEmail";
+import {
+  getSubscriptionPlanDefinition,
+  parseSubscriptionPlanKey,
+  planLabelFromTryOnLimit,
+} from "@/lib/subscriptionPlans";
 
 type KeyRecord = {
   id: string;
@@ -32,6 +37,10 @@ type KeyRecord = {
   /** Equals `usageLimit` when the 99% quota warning was sent this cycle */
   usageNinetyNinePctEmailSentForLimit?: number;
   createdAt: string;
+  /** Queued Stripe subscription tier (applied when current monthly bucket is exhausted). */
+  pendingBasePlanLimit?: number;
+  pendingSubscriptionPlanKey?: string;
+  pendingPlanRecordedAt?: string;
 };
 
 type AdminClientsByStoreGroup = {
@@ -42,6 +51,17 @@ type AdminClientsByStoreGroup = {
 function isBareContactEmail(email: string | undefined): boolean {
   const t = email?.trim() ?? "";
   return t.length > 0 && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(t);
+}
+
+function adminPendingPlanLine(k: Pick<KeyRecord, "pendingBasePlanLimit" | "pendingSubscriptionPlanKey">): string | null {
+  const lim = k.pendingBasePlanLimit;
+  if (lim == null || !Number.isFinite(lim)) return null;
+  const floored = Math.floor(lim);
+  const pk = k.pendingSubscriptionPlanKey?.trim()
+    ? parseSubscriptionPlanKey(k.pendingSubscriptionPlanKey)
+    : null;
+  const name = pk ? getSubscriptionPlanDefinition(pk).name : planLabelFromTryOnLimit(floored);
+  return `${name} · ${floored.toLocaleString()} try-ons / mo`;
 }
 
 function formatKeyCreatedUtc(iso: string): string {
@@ -2542,6 +2562,7 @@ export default function AdminClient() {
                       const blocked = k.usageLimit > 0 && clientTryOnFullyBlocked(k);
                       const historyOpen = expandedHistoryClientId === k.id;
                       const bh = billingHistoryByClient[k.id];
+                      const pendingPlanLine = adminPendingPlanLine(k);
 
                       return (
                         <div key={k.id}>
@@ -2649,6 +2670,15 @@ export default function AdminClient() {
                                     Top Up: {topUsed}/{topLim}
                                   </span>
                                 </div>
+                              ) : null}
+                              {pendingPlanLine ? (
+                                <p className="text-xs font-semibold leading-snug text-amber-100/90">
+                                  <span className="font-bold uppercase tracking-wide text-amber-400/90">Pending · </span>
+                                  {pendingPlanLine}
+                                  <span className="mt-0.5 block font-normal text-amber-100/65">
+                                    Applies when the current monthly plan bucket reaches its cap (usage then resets).
+                                  </span>
+                                </p>
                               ) : null}
                             </div>
                             <div>

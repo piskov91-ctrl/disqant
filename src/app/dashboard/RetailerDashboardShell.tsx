@@ -47,6 +47,10 @@ type RetailerClientUsageFetchJson = {
   planLimit?: number;
   topUpUsageCount?: number;
   topUpLimit?: number;
+  pendingBasePlanLimit?: number | null;
+  pendingPlanDisplayName?: string | null;
+  pendingSubscriptionPlanKey?: string | null;
+  pendingPlanRecordedAt?: string | null;
 };
 
 function subscriptionRowsFromUsageJson(data: RetailerClientUsageFetchJson): RetailerDashboardSubscriptionClientUsagePayload[] {
@@ -76,6 +80,14 @@ function subscriptionRowsFromUsageJson(data: RetailerClientUsageFetchJson): Reta
       topUpUsageCount: typeof data.topUpUsageCount === "number" ? data.topUpUsageCount : 0,
       topUpLimit: typeof data.topUpLimit === "number" ? data.topUpLimit : 0,
       createdAt: new Date().toISOString(),
+      pendingBasePlanLimit:
+        typeof data.pendingBasePlanLimit === "number" && Number.isFinite(data.pendingBasePlanLimit)
+          ? data.pendingBasePlanLimit
+          : null,
+      pendingPlanDisplayName: typeof data.pendingPlanDisplayName === "string" ? data.pendingPlanDisplayName : null,
+      pendingSubscriptionPlanKey:
+        typeof data.pendingSubscriptionPlanKey === "string" ? data.pendingSubscriptionPlanKey : null,
+      pendingPlanRecordedAt: typeof data.pendingPlanRecordedAt === "string" ? data.pendingPlanRecordedAt : null,
     },
   ];
 }
@@ -168,6 +180,21 @@ function SubscriptionKeyUsageCard({ row }: { row: RetailerDashboardSubscriptionC
                 style={tryOnUsageFillStyle(topUpPct)}
               />
             </div>
+          </div>
+        ) : null}
+        {row.pendingBasePlanLimit != null && row.pendingPlanDisplayName ? (
+          <div className="rounded-2xl border border-amber-500/25 bg-amber-950/25 p-4 shadow-inner shadow-black/30">
+            <p className="text-xs font-semibold uppercase tracking-[0.12em] text-amber-200/95">Queued plan upgrade</p>
+            <p className="mt-2 text-sm font-semibold text-amber-50">
+              {row.pendingPlanDisplayName}{" "}
+              <span className="tabular-nums text-[#d4bc94]">
+                · {row.pendingBasePlanLimit.toLocaleString()} try-ons per billing month
+              </span>
+            </p>
+            <p className="mt-2 text-xs leading-snug text-amber-100/75">
+              This becomes your active monthly plan automatically once the current plan bucket reaches its limit (subscription try-ons
+              reset to 0 then). Purchased top-ups stay on this key unchanged.
+            </p>
           </div>
         ) : null}
       </div>

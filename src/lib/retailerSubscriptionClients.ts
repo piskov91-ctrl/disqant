@@ -2,6 +2,7 @@ import type { ClientApiKeyRecord } from "@/lib/apiKeyStore";
 import { getClientKeyRecordById, listClientKeys } from "@/lib/apiKeyStore";
 import { normalizeClientTryOnBuckets, storedOrDerivedBasePlanLimit, totalTryOnsUsed } from "@/lib/clientTryOnBuckets";
 import type { RetailerUser } from "@/lib/retailerAuth";
+import { getSubscriptionPlanDefinition, parseSubscriptionPlanKey, planLabelFromTryOnLimit } from "@/lib/subscriptionPlans";
 
 export function normalizeRetailerBillingEmail(email: string): string {
   return email.trim().toLowerCase();
@@ -51,6 +52,11 @@ export type RetailerDashboardSubscriptionClientUsagePayload = {
   topUpLimit: number;
   billingAnchorDay?: number;
   createdAt: string;
+  /** Next monthly plan bucket (try-ons) after the current subscription bucket is fully used. */
+  pendingBasePlanLimit?: number | null;
+  pendingPlanDisplayName?: string | null;
+  pendingSubscriptionPlanKey?: string | null;
+  pendingPlanRecordedAt?: string | null;
 };
 
 export function buildRetailerSubscriptionClientUsagePayload(
@@ -59,6 +65,18 @@ export function buildRetailerSubscriptionClientUsagePayload(
 ): RetailerDashboardSubscriptionClientUsagePayload {
   const basePlanLimit = storedOrDerivedBasePlanLimit(client);
   const trimmedLinked = linkedClientId?.trim() || null;
+  const pendLim = client.pendingBasePlanLimit;
+  let pendingBasePlanLimit: number | null = null;
+  let pendingPlanDisplayName: string | null = null;
+  let pendingSubscriptionPlanKey: string | null = null;
+  if (pendLim != null && Number.isFinite(pendLim)) {
+    pendingBasePlanLimit = Math.floor(pendLim);
+    const pk = client.pendingSubscriptionPlanKey?.trim()
+      ? parseSubscriptionPlanKey(client.pendingSubscriptionPlanKey)
+      : null;
+    pendingSubscriptionPlanKey = client.pendingSubscriptionPlanKey?.trim().toLowerCase() || null;
+    pendingPlanDisplayName = pk ? getSubscriptionPlanDefinition(pk).name : planLabelFromTryOnLimit(pendingBasePlanLimit);
+  }
   return {
     clientId: client.id,
     clientName: client.clientName,
@@ -73,5 +91,10 @@ export function buildRetailerSubscriptionClientUsagePayload(
     topUpLimit: client.topUpLimit ?? 0,
     billingAnchorDay: client.billingAnchorDay,
     createdAt: client.createdAt,
+    pendingBasePlanLimit,
+    pendingPlanDisplayName,
+    pendingSubscriptionPlanKey,
+    pendingPlanRecordedAt:
+      pendingBasePlanLimit != null ? (typeof client.pendingPlanRecordedAt === "string" ? client.pendingPlanRecordedAt : null) : null,
   };
 }

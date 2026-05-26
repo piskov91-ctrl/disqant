@@ -1,11 +1,13 @@
 import type Stripe from "stripe";
 import {
   createClientKey,
-  getClientKeyRecordById,
   getRedis,
   incrementClientTryOnLimit,
+  loadClientSubscriptionSnapshotWithoutPendingApply,
+  mergeClientStripeCheckoutProfileAndQueuePendingSubscription,
   updateClientKey,
 } from "@/lib/apiKeyStore";
+import { subscriptionPlanCap } from "@/lib/clientTryOnBuckets";
 import { attachStripeBillingIds, getRetailerById, linkRetailerToClientId, type RetailerUser } from "@/lib/retailerAuth";
 import { getSubscriptionPlanDefinition, parseSubscriptionPlanKey } from "@/lib/subscriptionPlans";
 import {
@@ -139,7 +141,8 @@ async function fulfillPaidTopUpCheckoutSession(session: Stripe.Checkout.Session)
 }
 
 /**
- * Provisions a client API key on first subscribe, or reapplies subscription plan caps on renewal while keeping the same embedded key record.
+ * Provisions a client API key on first subscribe, reapplies plan caps when the monthly subscription bucket is exhausted,
+ * or queues the new plan as pending while the current monthly bucket still has remaining try-ons.
  * Idempotency lock must be claimed by the webhook handler before calling.
  */
 async function fulfillPaidSubscriptionCheckoutSession(session: Stripe.Checkout.Session): Promise<void> {
@@ -182,24 +185,48 @@ async function fulfillPaidSubscriptionCheckoutSession(session: Stripe.Checkout.S
   const anchorSourceDate = new Date(subscribedAtMs);
 
   const existingClientId = user.clientId?.trim() ?? "";
-  const existingClient = existingClientId ? await getClientKeyRecordById(existingClientId) : null;
 
-  /** Reuse embedded API key across subscription renewals; only provision when none is linked yet. */
-  const clientRecord =
-    existingClient && !existingClient.deletedAt
-      ? await updateClientKey({
-          id: existingClient.id,
+  let clientRecord: Awaited<ReturnType<typeof createClientKey>>;
+
+  if (existingClientId) {
+    const loaded = await loadClientSubscriptionSnapshotWithoutPendingApply(existingClientId);
+    if (!loaded) {
+      clientRecord = await createClientKey({
+        clientName,
+        contactEmail,
+        usageLimit: tryOnLimit,
+        anchorSourceDate,
+      });
+    } else {
+      const snap = loaded.rec;
+      const subscriptionBucketHasRemaining = snap.usageCount < subscriptionPlanCap(snap);
+
+      if (subscriptionBucketHasRemaining) {
+        clientRecord = await mergeClientStripeCheckoutProfileAndQueuePendingSubscription({
+          id: existingClientId,
+          clientName,
+          contactEmail,
+          pendingTryOnLimit: tryOnLimit,
+          pendingPlanKey: planKey,
+        });
+      } else {
+        clientRecord = await updateClientKey({
+          id: existingClientId,
           clientName,
           contactEmail,
           monthlyPlanLimit: tryOnLimit,
-          topUpLimit: Math.floor(existingClient.topUpLimit ?? 0),
-        })
-      : await createClientKey({
-          clientName,
-          contactEmail,
-          usageLimit: tryOnLimit,
-          anchorSourceDate,
+          topUpLimit: Math.floor(snap.topUpLimit ?? 0),
         });
+      }
+    }
+  } else {
+    clientRecord = await createClientKey({
+      clientName,
+      contactEmail,
+      usageLimit: tryOnLimit,
+      anchorSourceDate,
+    });
+  }
 
   await linkRetailerToClientId(user.id, clientRecord.id);
 
