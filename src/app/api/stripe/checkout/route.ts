@@ -39,7 +39,7 @@ async function createCheckoutSessionUrl(params: { req: Request; planKey: keyof t
     customer_email: user.email,
     client_reference_id: user.id,
     line_items: subscriptionLineItems,
-    success_url: `${origin}/subscriptions?checkout=success`,
+    success_url: `${origin}/dashboard?tab=get-code`,
     cancel_url: `${origin}/subscriptions?checkout=cancelled`,
     metadata: {
       retailer_user_id: user.id,
