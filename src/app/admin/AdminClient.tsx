@@ -1,6 +1,6 @@
 "use client";
 
-import { Fragment, useEffect, useMemo, useState } from "react";
+import { Fragment, useEffect, useId, useMemo, useState } from "react";
 import Link from "next/link";
 import { ChevronDown } from "lucide-react";
 import { Footer } from "@/components/Footer";
@@ -520,6 +520,19 @@ export default function AdminClient() {
     kind: "success" | "error";
     text: string;
   } | null>(null);
+
+  const expireSubWizardTitleId = useId();
+  const expireSubWizardDescId = useId();
+  const [expireSubWizard, setExpireSubWizard] = useState<{ row: KeyRecord; step: 1 | 2 } | null>(null);
+
+  useEffect(() => {
+    if (!expireSubWizard) return;
+    function onKey(e: KeyboardEvent) {
+      if (e.key === "Escape") setExpireSubWizard(null);
+    }
+    document.addEventListener("keydown", onKey);
+    return () => document.removeEventListener("keydown", onKey);
+  }, [expireSubWizard]);
 
   type QuotaEmailPreviewPayload = {
     subject: string;
@@ -2801,7 +2814,7 @@ export default function AdminClient() {
                               <button
                                 type="button"
                                 disabled={retailerExpireSubSimBusyId === k.id}
-                                onClick={() => void simulateRetailSubscriptionExpiredYesterday(k)}
+                                onClick={() => setExpireSubWizard({ row: k, step: 1 })}
                                 title="Sets Redis subscriptionAccessUntil to end-of-yesterday UTC for the retailer login linked via clientId."
                                 className="inline-flex h-9 max-w-[5.75rem] items-center justify-center rounded-full border border-amber-900/55 bg-amber-950/40 px-2 text-center text-[11px] font-semibold leading-tight text-amber-100 transition hover:border-amber-700/65 hover:bg-amber-950/70 disabled:cursor-not-allowed disabled:opacity-45"
                                 aria-label="Simulate expired subscription for linked retailer (QA)"
@@ -3646,6 +3659,96 @@ export default function AdminClient() {
           )}
         </div>
       </main>
+      {expireSubWizard ? (
+        <div
+          className="fixed inset-0 z-[100] flex items-end justify-center bg-black/70 p-4 backdrop-blur-sm sm:items-center"
+          role="presentation"
+        >
+          <button
+            type="button"
+            className="absolute inset-0 cursor-default"
+            aria-label="Close"
+            onClick={() => setExpireSubWizard(null)}
+          />
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby={expireSubWizardTitleId}
+            aria-describedby={expireSubWizardDescId}
+            className="relative z-[101] w-full max-w-lg rounded-2xl border border-zinc-700 bg-zinc-950 p-6 shadow-2xl sm:p-8"
+          >
+            <h2 id={expireSubWizardTitleId} className="text-lg font-semibold text-zinc-50">
+              Cancel subscription (QA)
+            </h2>
+            {expireSubWizard.step === 1 ? (
+              <>
+                <p id={expireSubWizardDescId} className="mt-4 text-sm leading-relaxed text-zinc-300">
+                  Are you sure you want to cancel your{" "}
+                  <span className="font-semibold text-zinc-100">
+                    {planLabelFromTryOnLimit(storedOrDerivedBasePlanLimit(expireSubWizard.row))}
+                  </span>{" "}
+                  subscription?
+                </p>
+                <p className="mt-3 text-xs leading-relaxed text-zinc-500">
+                  QA only: assigns end-of-yesterday UTC access for the retailer linked to this client.
+                </p>
+                <div className="mt-8 flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
+                  <button
+                    type="button"
+                    onClick={() => setExpireSubWizard(null)}
+                    className="inline-flex h-11 items-center justify-center rounded-xl border border-zinc-600 px-5 text-sm font-semibold text-zinc-300 transition hover:bg-zinc-900"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setExpireSubWizard((w) => (w ? { ...w, step: 2 } : null))}
+                    className="inline-flex h-11 items-center justify-center rounded-xl border border-emerald-800/65 bg-emerald-950/50 px-5 text-sm font-semibold text-emerald-100 transition hover:bg-emerald-950/80"
+                  >
+                    Confirm
+                  </button>
+                </div>
+              </>
+            ) : (
+              <>
+                <p id={expireSubWizardDescId} className="mt-4 text-sm leading-relaxed text-zinc-300">
+                  This will stop your{" "}
+                  <span className="font-semibold text-zinc-100">
+                    {planLabelFromTryOnLimit(storedOrDerivedBasePlanLimit(expireSubWizard.row))}
+                  </span>{" "}
+                  plan at the end of the current billing period. Your access continues until then. This cannot be undone.
+                  Cancel subscription?
+                </p>
+                <p className="mt-3 text-xs leading-relaxed text-zinc-500">
+                  QA only: assigns end-of-yesterday UTC access for the retailer linked to this client.
+                </p>
+                <div className="mt-8 flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
+                  <button
+                    type="button"
+                    onClick={() => setExpireSubWizard((w) => (w ? { ...w, step: 1 } : null))}
+                    disabled={retailerExpireSubSimBusyId === expireSubWizard.row.id}
+                    className="inline-flex h-11 items-center justify-center rounded-xl border border-zinc-600 px-5 text-sm font-semibold text-zinc-300 transition hover:bg-zinc-900 disabled:opacity-45"
+                  >
+                    Go Back
+                  </button>
+                  <button
+                    type="button"
+                    disabled={retailerExpireSubSimBusyId === expireSubWizard.row.id}
+                    onClick={() => {
+                      const row = expireSubWizard.row;
+                      setExpireSubWizard(null);
+                      void simulateRetailSubscriptionExpiredYesterday(row);
+                    }}
+                    className="inline-flex h-11 items-center justify-center rounded-xl border border-red-800/65 bg-red-950/55 px-5 text-sm font-semibold text-red-100 transition hover:bg-red-950/85 disabled:cursor-not-allowed disabled:opacity-45"
+                  >
+                    {retailerExpireSubSimBusyId === expireSubWizard.row.id ? "…" : "Yes, Cancel"}
+                  </button>
+                </div>
+              </>
+            )}
+          </div>
+        </div>
+      ) : null}
       <Footer />
     </div>
   );

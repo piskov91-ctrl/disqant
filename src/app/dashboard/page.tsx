@@ -179,6 +179,7 @@ export default async function DashboardPage() {
     accessUntilIso,
     canceledAtIso: canceledAtStored,
     cancellationReasonLabel: cancellationReasonLabelFromStored(user.cancellationReason),
+    planDisplayName: planSummary.planName,
     renewSubscriptionPlanKey: catalogSubscriptionPlanKeyFromTryOnLimit(planCap),
     showRenewSubscriptionButton,
     hasQueuedPlanUpgrade:
