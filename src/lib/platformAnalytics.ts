@@ -1,5 +1,17 @@
 import { randomUUID } from "node:crypto";
 import { getRedis, listClientKeys } from "./apiKeyStore";
+import {
+  WEAR_ME_TIMELINE_DAYS,
+  busySlotsFromHourlyTotals,
+  buildLastNDatesUtcDescending,
+  emptyBusySlots,
+  emptyWearMeRetailDashboardStats,
+  isoDayUtcShortUk,
+  partOfDayFromHour,
+  utcDayStartMs,
+  weekdaysMondayFirstBars,
+} from "./wearMeRetailDashboardStats";
+import type { WearMeRetailDashboardStats } from "./wearMeRetailDashboardStats";
 
 /** HttpOnly cookie set on /demo so try-ons can attribute demo usage to the same visitor. */
 export const DEMO_ANALYTICS_SESSION_COOKIE = "fit-room_demo_sid";
@@ -62,6 +74,112 @@ export type TryOnTimingBuckets = {
   tryOnByWeekdayUtc: number[];
 };
 
+export type {
+  WearMeBusyTimeSlot,
+  WearMeDailyTryOnPoint,
+  WearMeRetailDashboardStats,
+  WearMeWeekdayBar,
+} from "./wearMeRetailDashboardStats";
+
+async function retailerTryOnsFromStatsHash(clientId: string): Promise<number> {
+  try {
+    const h = (await getRedis().hgetall(`${CLIENT_STATS_PREFIX}${clientId.trim()}`)) as Record<
+      string,
+      string
+    > | null;
+    return h?.tryOns != null ? num(h.tryOns) : 0;
+  } catch {
+    return 0;
+  }
+}
+
+/**
+ * Try-on aggregates for Wear Me Stats: 30‑day timeline, best time-of-day blocks, weekdays, hero total.
+ * Recent slices use whichever events fall in that window inside the capped event log (`TRYON_EVENT_LOG_SCAN_CAP`).
+ * When the recent window looks empty but lifetime timing buckets exist, time-of-day and weekday summaries fall back
+ * to Redis timing histograms (all time since tracking started).
+ */
+export async function getWearMeRetailDashboardStats(clientId: string): Promise<WearMeRetailDashboardStats> {
+  if (!clientId?.trim()) {
+    return emptyWearMeRetailDashboardStats();
+  }
+
+  const id = clientId.trim();
+  const redis = getRedis();
+  const [timing, statsTotal, rawLines] = await Promise.all([
+    getTryOnTimingForClient(id),
+    retailerTryOnsFromStatsHash(id),
+    redis.lrange(tryOnEventsListKey(id), 0, TRYON_EVENT_LOG_SCAN_CAP - 1),
+  ]);
+  const eventLines = Array.isArray(rawLines)
+    ? (rawLines as unknown[]).map((line) => String(line ?? "")).filter(Boolean)
+    : [];
+
+  const hourlyTotalLifetime = timing.tryOnByHourUtc.reduce((a, b) => a + b, 0);
+  const allTimeTryOnTotal = Math.max(statsTotal, hourlyTotalLifetime);
+
+  const dateKeysOrdered = buildLastNDatesUtcDescending(WEAR_ME_TIMELINE_DAYS);
+  const windowStartMs = Date.parse(`${dateKeysOrdered[0]}T00:00:00.000Z`);
+  const nowUtc = new Date();
+  const windowEndExclusive = utcDayStartMs(
+    nowUtc.getUTCFullYear(),
+    nowUtc.getUTCMonth(),
+    nowUtc.getUTCDate() + 1,
+  );
+
+  const dailyCounts = new Map<string, number>();
+  for (const dk of dateKeysOrdered) dailyCounts.set(dk, 0);
+
+  const recentBuckets = { morning: 0, afternoon: 0, evening: 0, night: 0 };
+  const recentWeekdaySunFirst = Array.from({ length: 7 }, () => 0);
+
+  for (const line of eventLines) {
+    try {
+      const o = JSON.parse(line) as { at?: string };
+      const atRaw = o?.at?.trim();
+      if (!atRaw) continue;
+      const ms = Date.parse(atRaw);
+      if (!Number.isFinite(ms)) continue;
+
+      const ymd =
+        /^(\d{4}-\d{2}-\d{2})/.exec(new Date(ms).toISOString())?.[1];
+      if (!ymd) continue;
+      if (ms >= windowStartMs && ms < windowEndExclusive) {
+        const dayCnt = dailyCounts.get(ymd);
+        if (dayCnt !== undefined) dailyCounts.set(ymd, dayCnt + 1);
+        const h = new Date(ms).getUTCHours();
+        recentBuckets[partOfDayFromHour(h)] += 1;
+        const wd = new Date(ms).getUTCDay();
+        recentWeekdaySunFirst[wd] += 1;
+      }
+    } catch {
+      /* skip */
+    }
+  }
+
+  const dailyTryOnsLast30 = dateKeysOrdered.map((date) => ({
+    date,
+    shortLabel: isoDayUtcShortUk(date),
+    count: dailyCounts.get(date) ?? 0,
+  }));
+
+  const recentSlotTotal =
+    recentBuckets.morning + recentBuckets.afternoon + recentBuckets.evening + recentBuckets.night;
+  const busyTimeSlots =
+    recentSlotTotal > 0 ? emptyBusySlots(recentBuckets) : busySlotsFromHourlyTotals(timing.tryOnByHourUtc);
+
+  const recentWeekSum = recentWeekdaySunFirst.reduce((a, b) => a + b, 0);
+  const weekdaysMondayFirst =
+    recentWeekSum > 0 ? weekdaysMondayFirstBars(recentWeekdaySunFirst) : weekdaysMondayFirstBars(timing.tryOnByWeekdayUtc);
+
+  return {
+    allTimeTryOnTotal,
+    dailyTryOnsLast30,
+    busyTimeSlots,
+    weekdaysMondayFirst,
+  };
+}
+
 export type PlatformAnalyticsSummary = {
   demoVisitsToday: number;
   demoVisitsThisMonth: number;
@@ -98,7 +216,7 @@ function tryOnEventsListKey(clientId: string) {
   return `fit-room:tryon:events:${clientId}`;
 }
 
-const TRYON_EVENT_LOG_SCAN_CAP = 12_000;
+const TRYON_EVENT_LOG_SCAN_CAP = 25_000;
 
 /** Rebuild hour/weekday histograms from stored try-on event log (ISO `at` timestamps) when Redis timing hashes are empty. */
 function timingBucketsFromEventJsonLines(lines: string[]): TryOnTimingBuckets {

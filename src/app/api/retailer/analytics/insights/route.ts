@@ -1,5 +1,5 @@
 import { getClientKeyRecordById } from "@/lib/apiKeyStore";
-import { getTryOnTimingForClient } from "@/lib/platformAnalytics";
+import { getTryOnTimingForClient, getWearMeRetailDashboardStats } from "@/lib/platformAnalytics";
 import { getRetailerSessionUser } from "@/lib/retailerAuth";
 import { getAllTryOnProducts, productDisplayName } from "@/lib/tryOnAnalytics";
 
@@ -17,14 +17,16 @@ export async function GET() {
     );
   }
 
-  const [timing, products] = await Promise.all([
+  const [timing, products, wearMe] = await Promise.all([
     getTryOnTimingForClient(client.id),
     getAllTryOnProducts(client.id, 2000),
+    getWearMeRetailDashboardStats(client.id),
   ]);
 
   return Response.json({
     tryOnByHourUtc: timing.tryOnByHourUtc,
     tryOnByWeekdayUtc: timing.tryOnByWeekdayUtc,
+    wearMe,
     products: products.map((p) => ({
       productImageUrl: p.productImageUrl,
       displayName: productDisplayName(p.productImageUrl),

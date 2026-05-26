@@ -4,7 +4,9 @@ import Link from "next/link";
 import { ImageOff } from "lucide-react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useCallback, useEffect, useMemo, useState } from "react";
-import { TryOnTimingCharts } from "@/components/TryOnTimingCharts";
+import { WearMeStatsPanel } from "@/components/WearMeStatsPanel";
+import { emptyWearMeRetailDashboardStats } from "@/lib/wearMeRetailDashboardStats";
+import type { WearMeRetailDashboardStats } from "@/lib/wearMeRetailDashboardStats";
 import { LOCAL_OR_UNKNOWN_PRODUCT } from "@/lib/tryOnConstants";
 import type { RetailerDashboardSubscriptionClientUsagePayload } from "@/lib/retailerSubscriptionClients";
 import { tryOnUsageFillStyle } from "@/lib/tryOnUsageBarStyle";
@@ -209,11 +211,26 @@ function DashboardShellSuspenseFallback() {
 }
 
 type AnalyticsPayload = {
-  tryOnByHourUtc?: number[];
-  tryOnByWeekdayUtc?: number[];
-  products?: Array<{ productImageUrl: string; displayName: string; tryOnCount: number }>;
-  error?: string;
+  wearMe: WearMeRetailDashboardStats;
+  /** Still returned for admin / modal consumers that plot raw UTC hours. */
+  tryOnByHourUtc: number[];
+  tryOnByWeekdayUtc: number[];
+  products: Array<{ productImageUrl: string; displayName: string; tryOnCount: number }>;
 };
+
+function coerceWearMeStats(raw: unknown): WearMeRetailDashboardStats {
+  if (!raw || typeof raw !== "object") return emptyWearMeRetailDashboardStats();
+  const o = raw as Partial<WearMeRetailDashboardStats>;
+  if (
+    typeof o.allTimeTryOnTotal !== "number" ||
+    !Number.isFinite(o.allTimeTryOnTotal) ||
+    !Array.isArray(o.dailyTryOnsLast30) ||
+    !Array.isArray(o.busyTimeSlots) ||
+    !Array.isArray(o.weekdaysMondayFirst)
+  )
+    return emptyWearMeRetailDashboardStats();
+  return o as WearMeRetailDashboardStats;
+}
 
 function ProductThumb({ url }: { url: string }) {
   const [failed, setFailed] = useState(false);
@@ -439,13 +456,14 @@ function RetailerDashboardShellInner({
     setAnalyticsError(null);
     try {
       const res = await fetch("/api/retailer/analytics/insights", { credentials: "include" });
-      const json = (await res.json()) as AnalyticsPayload;
+      const json = (await res.json()) as Partial<AnalyticsPayload> & { error?: string };
       if (!res.ok) {
         setAnalytics(null);
         setAnalyticsError(json.error || "Could not load analytics.");
         return;
       }
       setAnalytics({
+        wearMe: coerceWearMeStats(json.wearMe),
         tryOnByHourUtc: Array.isArray(json.tryOnByHourUtc) ? json.tryOnByHourUtc : [],
         tryOnByWeekdayUtc: Array.isArray(json.tryOnByWeekdayUtc) ? json.tryOnByWeekdayUtc : [],
         products: Array.isArray(json.products) ? json.products : [],
@@ -462,26 +480,6 @@ function RetailerDashboardShellInner({
     if (tab !== "analytics") return;
     void loadAnalytics();
   }, [tab, loadAnalytics]);
-
-  const hourArr = useMemo(
-    () =>
-      Array.from({ length: 24 }, (_, i) =>
-        typeof analytics?.tryOnByHourUtc?.[i] === "number" && Number.isFinite(analytics.tryOnByHourUtc[i])
-          ? analytics.tryOnByHourUtc[i]
-          : 0,
-      ),
-    [analytics],
-  );
-
-  const weekdayArr = useMemo(
-    () =>
-      Array.from({ length: 7 }, (_, i) =>
-        typeof analytics?.tryOnByWeekdayUtc?.[i] === "number" && Number.isFinite(analytics.tryOnByWeekdayUtc[i])
-          ? analytics.tryOnByWeekdayUtc[i]
-          : 0,
-      ),
-    [analytics],
-  );
 
   return (
     <div className="relative">
@@ -789,9 +787,9 @@ function RetailerDashboardShellInner({
               <div>
                 <h2 className="text-lg font-semibold text-zinc-50">Wear Me Stats</h2>
                 <p className="mt-1 max-w-xl text-sm leading-relaxed text-zinc-400">
-                  A simple snapshot of how shoppers use Wear Me on your site: what time they tend to try things on,
-                  which days are busiest, and which products show up most.
-                </p>
+          A gentle snapshot for your shop — how busy the last month has been, which parts of the day stand out,
+          favourite weekdays, and which products shoppers reach for most.
+        </p>
               </div>
               <button
                 type="button"
@@ -809,11 +807,7 @@ function RetailerDashboardShellInner({
               <p className="text-sm text-red-300/90">{analyticsError}</p>
             ) : analytics ? (
               <>
-                <TryOnTimingCharts
-                  variant="dashboard"
-                  tryOnByHourUtc={hourArr}
-                  tryOnByWeekdayUtc={weekdayArr}
-                />
+                <WearMeStatsPanel stats={analytics.wearMe} />
 
                 <section className="rounded-2xl border border-white/10 bg-zinc-900/40 p-8 backdrop-blur-sm">
                   <h3 className="text-base font-semibold text-zinc-100">Products shoppers tried on</h3>
