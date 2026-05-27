@@ -8,31 +8,22 @@ import {
 } from "@/lib/platformAnalytics";
 import { recordTryOnProductUsage } from "@/lib/tryOnAnalytics";
 import { getRetailerSessionUser } from "@/lib/retailerAuth";
-import { resolveEmbedCorsAllowOrigin } from "@/lib/embedCors";
+import {
+  resolveEmbedCorsAllowOrigin,
+  TRY_ON_EMBED_CORS_BASE_HEADERS,
+  tryOnEmbedOptionsResponse,
+} from "@/lib/embedCors";
 
 export const runtime = "nodejs";
 
-/** Omit `Allow-Origin` — set dynamically from `Origin` (see `resolveEmbedCorsAllowOrigin`). */
-const TRY_ON_CORS_BASE_HEADERS: Record<string, string> = {
-  "Access-Control-Allow-Methods": "POST, OPTIONS",
-  "Access-Control-Allow-Headers": "Content-Type, x-api-key, x-tryon-trace",
-};
-
 export function OPTIONS(request: Request) {
-  const allowOrigin = resolveEmbedCorsAllowOrigin(request.headers.get("Origin"));
-  return new Response(null, {
-    status: 204,
-    headers: {
-      ...TRY_ON_CORS_BASE_HEADERS,
-      "Access-Control-Allow-Origin": allowOrigin,
-    },
-  });
+  return tryOnEmbedOptionsResponse(request);
 }
 
 function withTryOnCors(response: Response, allowOrigin: string): Response {
   const headers = new Headers(response.headers);
   headers.set("Access-Control-Allow-Origin", allowOrigin);
-  for (const [k, v] of Object.entries(TRY_ON_CORS_BASE_HEADERS)) {
+  for (const [k, v] of Object.entries(TRY_ON_EMBED_CORS_BASE_HEADERS)) {
     headers.set(k, v);
   }
   return new Response(response.body, {
