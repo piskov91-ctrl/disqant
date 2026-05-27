@@ -8,6 +8,7 @@ import { Footer } from "@/components/Footer";
 import { AnalyticsInsightsModal } from "@/components/AnalyticsInsightsModal";
 import { AdminWearMeClient } from "@/app/admin/AdminWearMeClient";
 import AdminIntegrationGuide from "@/app/admin/AdminIntegrationGuide";
+import { EnterprisePriceCalculator } from "@/app/admin/EnterprisePriceCalculator";
 import { getNextMonthlyResetUtcDateForDisplay } from "@/lib/billingCycle";
 import { storedOrDerivedBasePlanLimit, totalTryOnsUsed, clientTryOnFullyBlocked } from "@/lib/clientTryOnBuckets";
 import { tryOnUsageFillStyle } from "@/lib/tryOnUsageBarStyle";
@@ -3159,6 +3160,8 @@ export default function AdminClient() {
               </p>
             </section>
           ) : activeTab === "enterprise" ? (
+            <>
+            <EnterprisePriceCalculator />
             <section className="mt-8 w-full overflow-hidden rounded-2xl border border-zinc-800 bg-zinc-900/60 p-6 shadow-sm md:p-8">
                 <h2 className="text-base font-semibold text-zinc-100">Enterprise quote requests</h2>
                 <p className="mt-1 text-sm text-zinc-400">
@@ -3286,6 +3289,7 @@ export default function AdminClient() {
                   <span className="font-mono text-zinc-400">fit-room:inquiryThread:enterprise:*</span>
                 </p>
             </section>
+            </>
           ) : activeTab === "reviews" ? (
             <section className="mt-8 w-full overflow-hidden rounded-2xl border border-zinc-800 bg-zinc-900/60 p-6 shadow-sm md:p-8">
               <h2 className="text-base font-semibold text-zinc-100">Reviews</h2>
