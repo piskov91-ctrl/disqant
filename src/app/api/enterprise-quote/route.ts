@@ -1,5 +1,10 @@
 import { Resend } from "resend";
-import { recordEnterpriseQuote } from "@/lib/enterpriseQuoteInquiriesStore";
+import { recordEnterpriseQuote, getEnterpriseQuoteById } from "@/lib/enterpriseQuoteInquiriesStore";
+import { seedEnterpriseQuoteThread } from "@/lib/inquiryConversationStore";
+import {
+  staffNotificationSubjectWithToken,
+  staffNotificationThreadHeaders,
+} from "@/lib/inquiryReplyEmail";
 import { resolveWebsiteFormEmailFrom } from "@/lib/fitRoomEmail";
 import { incrementOutboundEmailSentCounters } from "@/lib/fitRoomEmailSentCounters";
 import {
@@ -104,6 +109,8 @@ export async function POST(req: Request) {
       platform,
       platformLabel,
     });
+    const savedQuote = await getEnterpriseQuoteById(quoteId);
+    if (savedQuote) await seedEnterpriseQuoteThread(savedQuote);
   } catch (e) {
     console.error("[fit-room][enterprise-quote] Redis save failed", e);
     return Response.json({ error: "Could not save your request. Please try again shortly." }, { status: 503 });
@@ -137,9 +144,14 @@ export async function POST(req: Request) {
     from,
     to: [TO_EMAIL],
     replyTo: email,
-    subject: `Enterprise quote: ${storeName}`,
+    subject: staffNotificationSubjectWithToken({
+      kind: "enterprise",
+      inquiryId: quoteId,
+      baseSubject: `Enterprise quote: ${storeName}`,
+    }),
     text,
     html: staffHtml,
+    headers: staffNotificationThreadHeaders({ kind: "enterprise", inquiryId: quoteId }),
   });
 
   if (error) {

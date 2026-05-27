@@ -1,12 +1,13 @@
 import { cookies } from "next/headers";
 import { ADMIN_AUTH_COOKIE, isAdminAuthorizedCookieValue } from "@/lib/adminAuth";
 import { getContactInquiryById } from "@/lib/contactInquiriesStore";
-import { isFitRoomEmailConfigured, sendFitRoomMail } from "@/lib/fitRoomEmail";
+import { isFitRoomEmailConfigured } from "@/lib/fitRoomEmail";
 import {
-  transactionalFormattedLetterBody,
-  transactionalParagraph,
-  wrapFitRoomTransactionalHtml,
-} from "@/lib/fitRoomTransactionalEmailHtml";
+  appendInquiryThreadMessage,
+  getInquiryThreadMessages,
+  hydrateContactInquiryThread,
+} from "@/lib/inquiryConversationStore";
+import { sendInquiryReplyEmail } from "@/lib/inquiryReplyEmail";
 
 export const runtime = "nodejs";
 
@@ -68,29 +69,27 @@ export async function POST(req: Request) {
   }
 
   const first = greetingFirstName(inquiry.name);
-  const preheaderSlice = message.length > 100 ? `${message.slice(0, 97)}…` : message;
-  const text = [`Hi ${first},`, "", message, "", "Warmly,", "The Fit Room team"].join("\n");
-
-  const htmlInner =
-    transactionalParagraph(`Hi ${first},`) +
-    transactionalFormattedLetterBody(message) +
-    transactionalParagraph("Warmly,") +
-    transactionalParagraph("The Fit Room team");
+  const subject = `Re: Your Fit Room enquiry — ${inquiry.company}`;
 
   try {
-    await sendFitRoomMail({
+    const { resendEmailId } = await sendInquiryReplyEmail({
+      kind: "contact",
+      inquiryId: inquiry.id,
       to: inquiry.email,
-      subject: `Re: Your Fit Room enquiry — ${inquiry.company}`,
-      text,
-      html: wrapFitRoomTransactionalHtml({
-        documentTitle: "Message from Fit Room",
-        preheader: preheaderSlice,
-        heading: "A note from Fit Room support",
-        innerHtml: htmlInner,
-      }),
+      subject,
+      greetingName: first,
+      message,
+    });
+
+    await appendInquiryThreadMessage("contact", inquiry.id, {
+      direction: "outbound",
+      authorLabel: "Fit Room",
+      body: message,
+      subject,
+      resendEmailId: resendEmailId ?? undefined,
     });
   } catch (e) {
-    console.error("[fit-room][admin-contact-reply] sendFitRoomMail failed", {
+    console.error("[fit-room][admin-contact-reply] sendInquiryReplyEmail failed", {
       inquiryId: inquiry.id,
       to: inquiry.email,
       message: e instanceof Error ? e.message : String(e),
@@ -101,11 +100,14 @@ export async function POST(req: Request) {
     );
   }
 
+  const thread = await getInquiryThreadMessages("contact", inquiry.id);
+  const hydrated = await hydrateContactInquiryThread({ ...inquiry, read: inquiry.read });
+
   console.log("[fit-room][admin-contact-reply] sent reply", {
     inquiryId: inquiry.id,
     to: inquiry.email,
     subjectPrefix: inquiry.company.slice(0, 40),
   });
 
-  return Response.json({ ok: true });
+  return Response.json({ ok: true, thread, inquiry: { ...hydrated, thread } });
 }

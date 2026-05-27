@@ -1,7 +1,16 @@
 import { Resend } from "resend";
 import { resolveWebsiteFormEmailFrom, sendFitRoomMail } from "@/lib/fitRoomEmail";
 import { incrementOutboundEmailSentCounters } from "@/lib/fitRoomEmailSentCounters";
-import { recordContactInquiry } from "@/lib/contactInquiriesStore";
+import { recordContactInquiry, getContactInquiryById } from "@/lib/contactInquiriesStore";
+import {
+  FIT_ROOM_THREAD_HEADER,
+  fitRoomThreadHeaderValue,
+  seedContactInquiryThread,
+} from "@/lib/inquiryConversationStore";
+import {
+  staffNotificationSubjectWithToken,
+  staffNotificationThreadHeaders,
+} from "@/lib/inquiryReplyEmail";
 import {
   transactionalParagraph,
   transactionalSnippetBlock,
@@ -129,6 +138,8 @@ export async function POST(req: Request) {
       monthlyVisitorsLabel: visitorsLabel,
       message,
     });
+    const savedInquiry = await getContactInquiryById(inquiryId);
+    if (savedInquiry) await seedContactInquiryThread(savedInquiry);
     console.log("[fit-room][contact-api] Redis recordContactInquiry completed", {
       inquiryId,
       unreadIndexKey: "fit-room:contactInquiries:index",
@@ -183,9 +194,14 @@ export async function POST(req: Request) {
     from,
     to: [TO_EMAIL],
     replyTo: email,
-    subject: `Contact: ${name} — ${company}`,
+    subject: staffNotificationSubjectWithToken({
+      kind: "contact",
+      inquiryId,
+      baseSubject: `Contact: ${name} — ${company}`,
+    }),
     text,
     html: staffHtml,
+    headers: staffNotificationThreadHeaders({ kind: "contact", inquiryId }),
   });
 
   if (error) {
@@ -229,7 +245,11 @@ export async function POST(req: Request) {
 
   void sendFitRoomMail({
     to: email,
-    subject: "We tucked your Fit Room note away",
+    subject: staffNotificationSubjectWithToken({
+      kind: "contact",
+      inquiryId,
+      baseSubject: "We tucked your Fit Room note away",
+    }),
     text: [
       `Hi ${name},`,
       "",
@@ -255,6 +275,9 @@ export async function POST(req: Request) {
         transactionalParagraph("Warmly,") +
         transactionalParagraph("The Fit Room team"),
     }),
+    headers: {
+      [FIT_ROOM_THREAD_HEADER]: fitRoomThreadHeaderValue("contact", inquiryId),
+    },
   }).catch((confirmationErr: unknown) => {
     console.error("[fit-room][contact-form] visitor confirmation email failed", {
       inquiryId,

@@ -187,6 +187,8 @@ export async function deleteEnterpriseQuote(id: string): Promise<boolean> {
   const hadRecordKey = redisTruthyCount(existedResult);
 
   await redis.del(key).catch(() => {});
+  const { deleteInquiryThread } = await import("@/lib/inquiryConversationStore");
+  await deleteInquiryThread("enterprise", trimmed);
 
   await syncUnreadEnterpriseQuotesFromIndex();
 

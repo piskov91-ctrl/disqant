@@ -7,8 +7,14 @@ import {
   markAllContactInquiriesRead,
   markContactInquiryRead,
 } from "@/lib/contactInquiriesStore";
+import { hydrateContactInquiryThread } from "@/lib/inquiryConversationStore";
 
 export const runtime = "nodejs";
+
+async function listContactInquiriesForAdmin(limit: number) {
+  const inquiries = await listContactInquiries(limit);
+  return Promise.all(inquiries.map((row) => hydrateContactInquiryThread(row)));
+}
 
 async function requireAdmin() {
   const jar = await cookies();
@@ -27,7 +33,7 @@ export async function GET(req: Request) {
 
     const [unreadCount, inquiries] = await Promise.all([
       getUnreadContactInquiryCount(),
-      listContactInquiries(200),
+      listContactInquiriesForAdmin(200),
     ]);
     return Response.json({ unreadCount, inquiries });
   } catch (e) {
@@ -63,7 +69,7 @@ export async function POST(req: Request) {
       await markAllContactInquiriesRead();
       const [unreadCount, inquiries] = await Promise.all([
         getUnreadContactInquiryCount(),
-        listContactInquiries(200),
+        listContactInquiriesForAdmin(200),
       ]);
       return Response.json({ ok: true, unreadCount, inquiries });
     } catch (e) {
@@ -97,7 +103,7 @@ export async function POST(req: Request) {
       if (!ok) return Response.json({ error: "Inquiry not found." }, { status: 404 });
       const [unreadCount, inquiries] = await Promise.all([
         getUnreadContactInquiryCount(),
-        listContactInquiries(200),
+        listContactInquiriesForAdmin(200),
       ]);
       return Response.json({ ok: true, unreadCount, inquiries });
     } catch (e) {

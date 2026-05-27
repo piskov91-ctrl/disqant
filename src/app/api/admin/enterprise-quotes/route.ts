@@ -6,8 +6,14 @@ import {
   listEnterpriseQuotes,
   markAllEnterpriseQuotesRead,
 } from "@/lib/enterpriseQuoteInquiriesStore";
+import { hydrateEnterpriseQuoteThread } from "@/lib/inquiryConversationStore";
 
 export const runtime = "nodejs";
+
+async function listEnterpriseQuotesForAdmin(limit: number) {
+  const quotes = await listEnterpriseQuotes(limit);
+  return Promise.all(quotes.map((row) => hydrateEnterpriseQuoteThread(row)));
+}
 
 async function requireAdmin() {
   const jar = await cookies();
@@ -26,7 +32,7 @@ export async function GET(req: Request) {
 
     const [unreadCount, quotes] = await Promise.all([
       getUnreadEnterpriseQuoteCount(),
-      listEnterpriseQuotes(200),
+      listEnterpriseQuotesForAdmin(200),
     ]);
     return Response.json({ unreadCount, quotes });
   } catch (e) {
@@ -62,7 +68,7 @@ export async function POST(req: Request) {
       await markAllEnterpriseQuotesRead();
       const [unreadCount, quotes] = await Promise.all([
         getUnreadEnterpriseQuoteCount(),
-        listEnterpriseQuotes(200),
+        listEnterpriseQuotesForAdmin(200),
       ]);
       return Response.json({ ok: true, unreadCount, quotes });
     } catch (e) {
@@ -96,7 +102,7 @@ export async function POST(req: Request) {
       if (!ok) return Response.json({ error: "Submission not found." }, { status: 404 });
       const [unreadCount, quotes] = await Promise.all([
         getUnreadEnterpriseQuoteCount(),
-        listEnterpriseQuotes(200),
+        listEnterpriseQuotesForAdmin(200),
       ]);
       return Response.json({ ok: true, unreadCount, quotes });
     } catch (e) {

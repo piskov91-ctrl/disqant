@@ -3,6 +3,7 @@
 import { Fragment, useEffect, useId, useMemo, useState } from "react";
 import Link from "next/link";
 import { ChevronDown } from "lucide-react";
+import { AdminInquiryThread, type InquiryThreadMessageRow } from "@/components/AdminInquiryThread";
 import { Footer } from "@/components/Footer";
 import { AnalyticsInsightsModal } from "@/components/AnalyticsInsightsModal";
 import { AdminWearMeClient } from "@/app/admin/AdminWearMeClient";
@@ -187,6 +188,7 @@ type ContactInquiryRow = {
   monthlyVisitors: string;
   monthlyVisitorsLabel: string;
   message: string;
+  thread?: InquiryThreadMessageRow[];
 };
 
 /** Mirrors `/api/admin/enterprise-quotes`. */
@@ -201,6 +203,7 @@ type EnterpriseQuoteRow = {
   monthlyVisitorsLabel: string;
   platform: string;
   platformLabel: string;
+  thread?: InquiryThreadMessageRow[];
 };
 
 type SubscriptionReviewRow = {
@@ -821,11 +824,18 @@ export default function AdminClient() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ id: target.id, message: msg }),
       });
-      const data = (await res.json()) as { ok?: boolean; error?: string };
+      const data = (await res.json()) as {
+        ok?: boolean;
+        error?: string;
+        inquiry?: ContactInquiryRow;
+      };
       if (!res.ok) {
         if (data.error === "Unauthorized.") window.location.reload();
         setContactReplyError(data.error || "Could not send reply.");
         return;
+      }
+      if (data.inquiry) {
+        setContactInquiries((prev) => prev.map((row) => (row.id === data.inquiry!.id ? data.inquiry! : row)));
       }
       closeContactReplyModal();
     } catch (e) {
@@ -959,11 +969,18 @@ export default function AdminClient() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ id: target.id, message: msg }),
       });
-      const data = (await res.json()) as { ok?: boolean; error?: string };
+      const data = (await res.json()) as {
+        ok?: boolean;
+        error?: string;
+        quote?: EnterpriseQuoteRow;
+      };
       if (!res.ok) {
         if (data.error === "Unauthorized.") window.location.reload();
         setEnterpriseReplyError(data.error || "Could not send reply.");
         return;
+      }
+      if (data.quote) {
+        setEnterpriseQuotes((prev) => prev.map((row) => (row.id === data.quote!.id ? data.quote! : row)));
       }
       closeEnterpriseReplyModal();
     } catch (e) {
@@ -3020,8 +3037,9 @@ export default function AdminClient() {
             <section className="mt-8 w-full overflow-hidden rounded-2xl border border-zinc-800 bg-zinc-900/60 p-6 shadow-sm md:p-8">
               <h2 className="text-base font-semibold text-zinc-100">Contact form submissions</h2>
               <p className="mt-1 text-sm text-zinc-400">
-                Stored when each public contact form send succeeds (Redis). Opening this tab marks every listed
-                submission as read and clears the nav badge until new messages arrive.
+                Stored when each public contact form send succeeds (Redis). Client replies to support@fit-room.com appear
+                in the conversation thread via Resend inbound. Opening this tab marks every listed submission as read and
+                clears the nav badge until new messages arrive.
               </p>
               {contactInquiriesError ? (
                 <div className="mt-6 rounded-xl border border-red-900/60 bg-red-950/40 px-4 py-3 text-sm text-red-200">
@@ -3120,7 +3138,7 @@ export default function AdminClient() {
                             {inq.monthlyVisitorsLabel}
                           </div>
                         </div>
-                        <p className="mt-3 whitespace-pre-wrap text-sm leading-relaxed text-zinc-200">{inq.message}</p>
+                        <AdminInquiryThread thread={inq.thread ?? []} />
                       </li>
                     );
                   })}
@@ -3129,15 +3147,17 @@ export default function AdminClient() {
               <p className="mt-6 text-xs text-zinc-600">
                 Redis keys: <span className="font-mono text-zinc-400">fit-room:contactInquiry:*</span>,{" "}
                 <span className="font-mono text-zinc-400">fit-room:contactInquiries:index</span>,{" "}
-                <span className="font-mono text-zinc-400">fit-room:contactInquiries:unreadCount</span>
+                <span className="font-mono text-zinc-400">fit-room:contactInquiries:unreadCount</span>,{" "}
+                <span className="font-mono text-zinc-400">fit-room:inquiryThread:contact:*</span>
               </p>
             </section>
           ) : activeTab === "enterprise" ? (
             <section className="mt-8 w-full overflow-hidden rounded-2xl border border-zinc-800 bg-zinc-900/60 p-6 shadow-sm md:p-8">
                 <h2 className="text-base font-semibold text-zinc-100">Enterprise quote requests</h2>
                 <p className="mt-1 text-sm text-zinc-400">
-                  From the Pricing page “Request a quote” flow (Redis). Opening this tab marks every listed submission as read
-                  and clears the badge until new requests arrive.
+                  From the Pricing page “Request a quote” flow (Redis). Client replies to support@fit-room.com are appended
+                  to the thread via Resend inbound. Opening this tab marks every listed submission as read and clears the
+                  badge until new requests arrive.
                 </p>
                 {enterpriseQuotesError ? (
                   <div className="mt-6 rounded-xl border border-red-900/60 bg-red-950/40 px-4 py-3 text-sm text-red-200">
@@ -3236,6 +3256,7 @@ export default function AdminClient() {
                               </a>
                             </div>
                           </div>
+                          <AdminInquiryThread thread={row.thread ?? []} />
                         </li>
                       );
                     })}
@@ -3244,7 +3265,8 @@ export default function AdminClient() {
                 <p className="mt-6 text-xs text-zinc-600">
                   Redis keys: <span className="font-mono text-zinc-400">fit-room:enterpriseQuote:*</span>,{" "}
                   <span className="font-mono text-zinc-400">fit-room:enterpriseQuotes:index</span>,{" "}
-                  <span className="font-mono text-zinc-400">fit-room:enterpriseQuotes:unreadCount</span>
+                  <span className="font-mono text-zinc-400">fit-room:enterpriseQuotes:unreadCount</span>,{" "}
+                  <span className="font-mono text-zinc-400">fit-room:inquiryThread:enterprise:*</span>
                 </p>
             </section>
           ) : activeTab === "reviews" ? (

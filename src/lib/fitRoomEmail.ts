@@ -168,7 +168,9 @@ export async function sendFitRoomMail(params: {
   text: string;
   html: string;
   attachments?: readonly FitRoomEmailAttachment[];
-}) {
+  replyTo?: string;
+  headers?: Record<string, string>;
+}): Promise<{ resendEmailId: string | null }> {
   const from = resolveFitRoomEmailFrom();
   const attachmentNames = params.attachments?.map((a) => a.filename) ?? [];
   console.log("[fit-room][email-debug] sendFitRoomMail payload (before Resend)", {
@@ -180,10 +182,13 @@ export async function sendFitRoomMail(params: {
     htmlPreview: previewForLog(params.html, 1200),
     attachmentCount: attachmentNames.length,
     attachmentFilenames: attachmentNames,
+    replyTo: params.replyTo?.trim() || null,
+    customHeaderKeys: params.headers ? Object.keys(params.headers) : [],
   });
 
   const resend = new Resend(requireResendApiKey());
   let loggedFailure = false;
+  let resendEmailId: string | null = null;
   try {
     const payload: Parameters<typeof resend.emails.send>[0] = {
       from,
@@ -192,6 +197,11 @@ export async function sendFitRoomMail(params: {
       text: params.text,
       html: params.html,
     };
+    const replyTo = params.replyTo?.trim();
+    if (replyTo) payload.replyTo = replyTo;
+    if (params.headers && Object.keys(params.headers).length > 0) {
+      payload.headers = params.headers;
+    }
     const atts = normalizeFitRoomAttachments(params.attachments);
     if (atts?.length) {
       payload.attachments = atts;
@@ -203,10 +213,11 @@ export async function sendFitRoomMail(params: {
       throw new Error(error.message);
     }
 
+    resendEmailId = data?.id ?? null;
     console.log("[fit-room][email-debug] sendFitRoomMail resendAccepted", {
       to: params.to,
       subject: params.subject,
-      resendEmailId: data?.id,
+      resendEmailId,
     });
     void import("@/lib/fitRoomEmailSentCounters")
       .then((m) => m.incrementOutboundEmailSentCounters())
@@ -224,4 +235,5 @@ export async function sendFitRoomMail(params: {
     }
     throw err;
   }
+  return { resendEmailId };
 }
