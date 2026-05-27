@@ -14,21 +14,21 @@ export const SUBSCRIPTION_PLANS = {
     key: "boutique",
     name: "Boutique",
     amountGbpPence: 149_00,
-    tryOnLimit: 300,
+    tryOnLimit: 500,
     maxTopUpPurchasesPerBillingCycle: 10,
   },
   studio: {
     key: "studio",
     name: "Studio",
     amountGbpPence: 299_00,
-    tryOnLimit: 600,
+    tryOnLimit: 1000,
     maxTopUpPurchasesPerBillingCycle: 20,
   },
   premium: {
     key: "premium",
     name: "Premium",
     amountGbpPence: 599_00,
-    tryOnLimit: 1200,
+    tryOnLimit: 2000,
   },
 } as const;
 

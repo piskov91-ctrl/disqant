@@ -335,33 +335,33 @@ const CREDIT_PLANS = [
   },
   {
     name: "Boutique",
-    tryOns: 300,
-    credits: 600,
-    fashnCost: 34,
+    tryOns: 500,
+    credits: 1000,
+    fashnCost: 57,
     price: 149,
-    profit: 115,
+    profit: 92,
   },
   {
     name: "Studio",
-    tryOns: 600,
-    credits: 1200,
-    fashnCost: 68,
+    tryOns: 1000,
+    credits: 2000,
+    fashnCost: 113,
     price: 299,
-    profit: 231,
+    profit: 186,
   },
   {
     name: "Premium",
-    tryOns: 1200,
-    credits: 2400,
-    fashnCost: 136,
+    tryOns: 2000,
+    credits: 4000,
+    fashnCost: 227,
     price: 599,
-    profit: 463,
+    profit: 372,
   },
 ] as const;
 
 /** Per-try-on unit economics from Starter (linear Fashn cost). */
 const FASHN_GBP_PER_TRYON = 34 / 300;
-const RECOMMENDED_GBP_PER_TRYON = 149 / 300;
+const RECOMMENDED_GBP_PER_TRYON = 149 / 500;
 
 function formatGbp(n: number) {
   return `£${n.toFixed(2)}`;
@@ -1653,7 +1653,7 @@ export default function AdminClient() {
             <div className="mt-8 rounded-xl border border-zinc-800 bg-zinc-950/40 p-5">
               <h3 className="text-sm font-semibold text-zinc-100">Custom package</h3>
               <p className="mt-1 text-xs text-zinc-500">
-                Recommended price uses the Starter plan rate (£149 ÷ 300 try-ons). Fashn cost scales linearly
+                Recommended price uses the Boutique plan rate (£149 ÷ 500 try-ons). Fashn cost scales linearly
                 (£34 ÷ 300).
               </p>
               <label className="mt-4 block text-sm font-medium text-zinc-200">Number of try-ons</label>

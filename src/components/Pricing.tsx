@@ -39,7 +39,7 @@ const plans: Plan[] = [
     price: "£149",
     period: "/month",
     features: [
-      "300 try-ons per month",
+      "500 try-ons per month",
       "Wear Me on all your products",
       "See what gets tried on most",
       "Email support",
@@ -54,7 +54,7 @@ const plans: Plan[] = [
     price: "£299",
     period: "/month",
     features: [
-      "600 try-ons per month",
+      "1000 try-ons per month",
       "Wear Me on all your products",
       "Full stats and insights",
       "Priority support",
@@ -69,7 +69,7 @@ const plans: Plan[] = [
     price: "£599",
     period: "/month",
     features: [
-      "1200 try-ons per month",
+      "2000 try-ons per month",
       "Wear Me on all your products",
       "Advanced analytics",
       "Dedicated support",
