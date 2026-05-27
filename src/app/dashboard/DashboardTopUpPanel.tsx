@@ -178,11 +178,6 @@ export function DashboardTopUpPanel({
 
       <div className="relative mt-10 border-t border-[#c6a77d]/18 pt-8">
         <p className="text-sm font-semibold text-zinc-100">Custom amount</p>
-        <p className="mt-2 text-xs leading-relaxed text-zinc-500">
-          Minimum {TOP_UP_CUSTOM_MIN_TRY_ONS.toLocaleString()} try-ons · £
-          {(TOP_UP_CUSTOM_PENCE_PER_TRY_ON / 100).toFixed(2)} each · up to{" "}
-          {TOP_UP_CUSTOM_MAX_TRY_ONS.toLocaleString()} try-ons
-        </p>
         <div className="mt-5 flex flex-col gap-4 sm:flex-row sm:flex-wrap sm:items-end">
           <label className="flex min-w-[12rem] flex-1 flex-col gap-2">
             <span className="text-[11px] font-semibold uppercase tracking-[0.18em] text-zinc-500">

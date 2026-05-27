@@ -18,12 +18,21 @@ export default async function ProfilePage() {
   return (
     <>
       <Header />
-      <main className="min-h-dvh bg-zinc-950 pt-[var(--site-header-height)]">
-        <div className="mx-auto max-w-lg px-6 py-12 md:py-16">
-          <h1 className="text-3xl font-semibold tracking-tight text-zinc-50">Profile settings</h1>
-          <p className="mt-2 text-sm leading-relaxed text-zinc-400">
-            Update your name, email, company, store, and website. Your store name is used when we set up your API access.
-          </p>
+      <main className="relative min-h-dvh bg-zinc-950 pt-[var(--site-header-height)]">
+        <div
+          className="pointer-events-none absolute inset-0 -z-10 min-h-full bg-[radial-gradient(ellipse_95%_45%_at_50%_0%,rgba(198,167,125,0.08),transparent_55%),radial-gradient(ellipse_70%_50%_at_100%_100%,rgba(0,0,0,0.4),transparent_50%),radial-gradient(ellipse_55%_45%_at_0%_85%,rgba(198,167,125,0.05),transparent_48%)]"
+          aria-hidden
+        />
+        <div className="mx-auto max-w-xl px-6 pb-24 pt-14 md:pt-16 md:pb-28">
+          <header>
+            <h1 className="text-[11px] font-semibold uppercase tracking-[0.28em] text-[#d4bc94]/85">Account</h1>
+            <p className="mt-3 text-balance text-3xl font-semibold tracking-tight text-zinc-50 md:text-4xl">
+              Profile settings
+            </p>
+            <p className="mt-3 max-w-lg text-sm leading-relaxed text-zinc-400">
+              View your storefront identity here. Editing opens your full details whenever you&apos;re ready.
+            </p>
+          </header>
           <ProfileForm
             initial={{
               firstName: user.firstName,
@@ -36,7 +45,7 @@ export default async function ProfilePage() {
           />
         </div>
         <p className="pb-12 text-center text-xs text-zinc-600">
-          <Link href="/dashboard" className="underline-offset-2 hover:text-zinc-400 hover:underline">
+          <Link href="/dashboard" className="underline-offset-2 hover:text-[#d4bc94]/90 hover:underline">
             Dashboard
           </Link>
         </p>
