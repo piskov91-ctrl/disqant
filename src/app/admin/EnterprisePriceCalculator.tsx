@@ -3,9 +3,12 @@
 import { useMemo, useState, type ReactNode } from "react";
 import {
   computeEnterprisePricing,
+  computeEnterpriseRecommendedDiscount,
   ENTERPRISE_RECOMMENDED_RATE_TIERS,
   FASHN_USD_PER_CREDIT,
   FASHN_USD_TO_GBP,
+  MAX_ENTERPRISE_DISCOUNT_PCT,
+  parseEnterpriseDiscountPct,
 } from "@/lib/enterprisePriceCalculator";
 
 function formatGbp(amount: number, fractionDigits = 2): string {
@@ -87,13 +90,26 @@ function PriceCard({
 
 export function EnterprisePriceCalculator() {
   const [rawTryOns, setRawTryOns] = useState("5000");
+  const [rawDiscountPct, setRawDiscountPct] = useState("0");
 
   const breakdown = useMemo(() => {
     const parsed = Number.parseInt(rawTryOns.replace(/,/g, ""), 10);
     return computeEnterprisePricing(parsed);
   }, [rawTryOns]);
 
+  const discountPct = useMemo(() => parseEnterpriseDiscountPct(rawDiscountPct), [rawDiscountPct]);
+
+  const discountResult = useMemo(() => {
+    if (!breakdown || discountPct === null) return null;
+    return computeEnterpriseRecommendedDiscount(
+      breakdown.recommended.totalGbp,
+      breakdown.fashnCostGbp,
+      discountPct,
+    );
+  }, [breakdown, discountPct]);
+
   const inputInvalid = rawTryOns.trim().length > 0 && breakdown === null;
+  const discountInvalid = rawDiscountPct.trim().length > 0 && discountPct === null;
 
   return (
     <section className="w-full overflow-hidden rounded-2xl border border-[#C6A77D]/20 bg-gradient-to-br from-[#1f1b17] via-zinc-900/90 to-[#14110e] p-6 shadow-xl shadow-black/40 md:p-8">
@@ -184,6 +200,80 @@ export function EnterprisePriceCalculator() {
               profitGbp={breakdown.minimum.profitGbp}
               marginPct={breakdown.minimum.marginPct}
             />
+          </div>
+
+          <div className="mt-8 rounded-2xl border border-[#C6A77D]/25 bg-gradient-to-br from-[#1a1612]/90 to-[#0f0d0b] p-5 md:p-6">
+            <div className="flex flex-wrap items-end justify-between gap-4">
+              <div>
+                <h3 className="text-sm font-semibold uppercase tracking-[0.12em] text-[#e8d4bc]">Discount</h3>
+                <p className="mt-1 text-xs text-zinc-500">
+                  Apply up to {MAX_ENTERPRISE_DISCOUNT_PCT}% off the recommended price.
+                </p>
+              </div>
+              <div className="w-full max-w-xs">
+                <label htmlFor="enterprise-calc-discount" className="block text-sm font-medium text-[#F5EDE4]/85">
+                  Discount %
+                </label>
+                <div className="mt-2 flex items-center gap-3">
+                  <input
+                    id="enterprise-calc-discount"
+                    type="range"
+                    min={0}
+                    max={MAX_ENTERPRISE_DISCOUNT_PCT}
+                    step={1}
+                    value={discountPct ?? 0}
+                    onChange={(e) => setRawDiscountPct(e.target.value)}
+                    className="h-2 min-w-0 flex-1 cursor-pointer appearance-none rounded-full bg-zinc-800 accent-[#C6A77D]"
+                  />
+                  <div className="relative w-20 shrink-0">
+                    <input
+                      type="text"
+                      inputMode="decimal"
+                      value={rawDiscountPct}
+                      onChange={(e) => setRawDiscountPct(e.target.value.replace(/[^\d]/g, ""))}
+                      className="w-full rounded-lg border border-[#C6A77D]/25 bg-[#0f0d0b] py-2 pl-3 pr-7 text-right text-sm font-medium tabular-nums text-[#F5EDE4] outline-none focus:border-[#C6A77D]/55"
+                      aria-label="Discount percentage"
+                    />
+                    <span className="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 text-xs text-zinc-500">
+                      %
+                    </span>
+                  </div>
+                </div>
+                {discountInvalid ? (
+                  <p className="mt-2 text-xs text-red-300/90">
+                    Enter a number from 0 to {MAX_ENTERPRISE_DISCOUNT_PCT}.
+                  </p>
+                ) : null}
+              </div>
+            </div>
+
+            {discountResult ? (
+              <div className="mt-6 grid gap-4 sm:grid-cols-2">
+                <div className="rounded-xl border border-[#C6A77D]/20 bg-black/30 px-4 py-4">
+                  <p className="text-xs font-medium uppercase tracking-wider text-zinc-500">Discounted price</p>
+                  <p className="mt-1 font-serif text-2xl tracking-tight text-[#F5EDE4]">
+                    {formatGbp(discountResult.discountedPriceGbp)}
+                  </p>
+                  <p className="mt-1 text-xs text-zinc-500">
+                    {formatGbp(breakdown.recommended.totalGbp)} − {discountResult.discountPct}%
+                  </p>
+                </div>
+                <div className="rounded-xl border border-[#C6A77D]/20 bg-black/30 px-4 py-4">
+                  <p className="text-xs font-medium uppercase tracking-wider text-zinc-500">Profit after discount</p>
+                  <p
+                    className={`mt-1 font-serif text-2xl tracking-tight tabular-nums ${
+                      discountResult.profitAfterDiscountGbp >= 0 ? "text-emerald-300/95" : "text-red-300"
+                    }`}
+                  >
+                    {formatGbp(discountResult.profitAfterDiscountGbp)}
+                  </p>
+                  <p className="mt-1 text-xs text-zinc-500">
+                    Margin {discountResult.marginAfterDiscountPct.toFixed(1)}% · Fashn cost{" "}
+                    {formatGbp(breakdown.fashnCostGbp)}
+                  </p>
+                </div>
+              </div>
+            ) : null}
           </div>
 
           <details className="mt-8 rounded-xl border border-zinc-800/70 bg-black/20 px-4 py-3 text-sm text-zinc-400">

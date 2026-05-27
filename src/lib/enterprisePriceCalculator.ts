@@ -15,6 +15,45 @@ export const ENTERPRISE_RECOMMENDED_RATE_TIERS = [
   { maxTryOns: Number.POSITIVE_INFINITY, rateGbp: 0.2, label: "Above 10,000" },
 ] as const;
 
+export const MAX_ENTERPRISE_DISCOUNT_PCT = 50;
+
+export type EnterpriseDiscountResult = {
+  discountPct: number;
+  discountedPriceGbp: number;
+  profitAfterDiscountGbp: number;
+  marginAfterDiscountPct: number;
+};
+
+export function parseEnterpriseDiscountPct(raw: string): number | null {
+  const trimmed = raw.trim();
+  if (!trimmed.length) return 0;
+  const n = Number.parseFloat(trimmed);
+  if (!Number.isFinite(n)) return null;
+  if (n < 0 || n > MAX_ENTERPRISE_DISCOUNT_PCT) return null;
+  return n;
+}
+
+/** Apply a discount (0–50%) to the recommended price and derive profit vs Fashn cost. */
+export function computeEnterpriseRecommendedDiscount(
+  recommendedPriceGbp: number,
+  fashnCostGbp: number,
+  discountPct: number,
+): EnterpriseDiscountResult | null {
+  if (!Number.isFinite(discountPct) || discountPct < 0 || discountPct > MAX_ENTERPRISE_DISCOUNT_PCT) {
+    return null;
+  }
+  const discountedPriceGbp = recommendedPriceGbp * (1 - discountPct / 100);
+  const profitAfterDiscountGbp = discountedPriceGbp - fashnCostGbp;
+  const marginAfterDiscountPct =
+    discountedPriceGbp > 0 ? (profitAfterDiscountGbp / discountedPriceGbp) * 100 : 0;
+  return {
+    discountPct,
+    discountedPriceGbp,
+    profitAfterDiscountGbp,
+    marginAfterDiscountPct,
+  };
+}
+
 export type EnterprisePriceOption = {
   totalGbp: number;
   profitGbp: number;
