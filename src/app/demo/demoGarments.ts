@@ -33,6 +33,7 @@ export type GarmentPreset = {
     | "blouse"
     | "scarf"
     | "bracelet"
+    | "ring"
     | "swim_men"
     | "swim_women"
     | "eyeglasses";
@@ -234,6 +235,15 @@ export const GARMENT_PRESETS: GarmentPreset[] = [
       "https://images.unsplash.com/photo-1684616289712-dd118c126fae?auto=format&fit=crop&w=1400&q=80",
   },
   {
+    id: "ring",
+    label: "Ring",
+    name: "Wedding rings (gold, white background)",
+    category: "tops",
+    // https://unsplash.com/photos/photo-1523170335258-f5ed11844a99
+    imageUrl:
+      "https://images.unsplash.com/photo-1523170335258-f5ed11844a99?auto=format&fit=crop&w=1400&q=80",
+  },
+  {
     id: "swim_men",
     label: "Swim (men's)",
     name: "Surfer walking from the ocean with a board (stock)",
@@ -288,17 +298,29 @@ export const DEMO_CATALOG: readonly {
   },
   {
     id: "accessories",
-    title: "Accessories",
-    line: "Necklace, earrings, bracelet, ankle bracelet, bags",
+    title: "Jewellery & headwear",
+    line: "Hats/caps, glasses & sunglasses, earrings, bracelets, necklaces & chains, rings — plus bags",
     Icon: Gem,
-    presetIds: ["necklace", "earrings", "bracelet", "ankle_bracelet", "handbag_women", "mens_bag"],
+    presetIds: [
+      "cap",
+      "beanie",
+      "necklace",
+      "earrings",
+      "bracelet",
+      "ring",
+      "ankle_bracelet",
+      "sunglasses_aviator",
+      "eyeglasses",
+      "handbag_women",
+      "mens_bag",
+    ],
   },
   {
     id: "winter",
     title: "Winter",
-    line: "Jackets, gloves, caps & beanies",
+    line: "Jackets & gloves — cold-weather layers",
     Icon: Snowflake,
-    presetIds: ["jacket", "jacket_leather", "gloves", "cap", "beanie"],
+    presetIds: ["jacket", "jacket_leather", "gloves", "scarf"],
   },
   {
     id: "swimwear",
@@ -310,7 +332,7 @@ export const DEMO_CATALOG: readonly {
   {
     id: "eyewear",
     title: "Eyewear",
-    line: "Aviator, round, and wayfarer sunglasses; prescription glasses",
+    line: "Glasses & sunglasses (more shapes)",
     Icon: Glasses,
     presetIds: ["sunglasses_aviator", "sunglasses_round", "sunglasses_wayfarer", "eyeglasses"],
   },

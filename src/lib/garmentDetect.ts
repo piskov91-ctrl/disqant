@@ -12,7 +12,8 @@ function looksLikeShoesByName(name: string) {
 }
 
 function looksLikeClothingByName(name: string) {
-  return /(shirt|tee|t-?shirt|dress|coat|jacket|hoodie|sweater|cardigan|pants|jeans|trouser|shorts|skirt|blouse|top|suit|blazer|vest|knit|polo|jumper)/i.test(
+  // Includes headwear, eyewear, and jewellery so accessory uploads are treated as clothing (not shoes) when geometry is ambiguous.
+  return /(shirt|tee|t-?shirt|dress|coat|jacket|hoodie|sweater|cardigan|pants|jeans|trouser|shorts|skirt|blouse|\btops?\b|suit|blazer|vest|knit|polo|jumper|\bcaps?\b|hats?\b|beanie|beanies|beret|fedora|visor|snapback|bucket.?hat|headband|headbands|necklace|necklaces|\bchains?\b|pendant|pendants|choker|chokers|earring|earrings|\bstud(?:s)?\b|\bhoop(?:s)?\b|bracelet|bracelets|bangle|bangles|\brings?\b|anklet|anklets|glasses|eyeglasses|sunglasses|eyewear|spectacles|\bframes?\b|aviator|wayfarer)/i.test(
     name,
   );
 }

@@ -274,16 +274,24 @@
   }
 
   function inferCategoryFromImage(img) {
-    // Hint for /api/try-on (echoed in JSON): tops | bottoms only (shoe images → "bottoms"). Server calls Fashn Try-On Max.
+    // Hint for /api/try-on (echoed in JSON): tops | bottoms only (shoes & leg-wear → "bottoms"). Default tops: hats, eyewear, jewellery, etc.
     var DEFAULT_CATEGORY = "tops";
 
     var shoeKeywords = [
       "shoe", "shoes", "trainer", "trainers", "sneaker", "sneakers",
-      "boot", "boots", "footwear", "nike", "adidas", "jordan", "heel", "heels"
+      "boot", "boots", "footwear", "sandal", "sandals", "loafer", "loafers",
+      "mule", "mules", "cleat", "cleats", "nike", "adidas", "jordan",
+      "heel", "heels", "slides", "flip flop", "flip flops"
     ];
     var bottomsKeywords = [
-      "jeans", "denim", "trousers", "chinos", "dungaree", "joggers", "slacks"
+      "jeans", "denim", "trousers", "trouser", "chinos", "dungaree", "joggers", "slacks",
+      "shorts", "skirt", "skirts", "leggings", "legging", "pants", "sweatpants",
+      "boxer shorts", "overalls"
     ];
+
+    /** Low on the body → hint bottoms (better placement vs default tops). */
+    var lowerBodyPhraseKeywords = ["ankle bracelet", "ankle chain", "toe ring"];
+    var lowerBodyTokenKeywords = ["anklet", "anklets"];
 
     var parts = [];
     try {
@@ -304,42 +312,30 @@
     }
 
     var haystack = normalizeText(parts.join(" "));
+    var padded = " " + haystack + " ";
+
     for (var si = 0; si < shoeKeywords.length; si++) {
       if (haystack.indexOf(shoeKeywords[si]) !== -1) return "bottoms";
     }
     for (var bi = 0; bi < bottomsKeywords.length; bi++) {
       if (haystack.indexOf(bottomsKeywords[bi]) !== -1) return "bottoms";
     }
+    for (var li = 0; li < lowerBodyPhraseKeywords.length; li++) {
+      if (padded.indexOf(" " + lowerBodyPhraseKeywords[li] + " ") !== -1) return "bottoms";
+    }
+
+    var tokens = haystack.split(" ").filter(function (tok) {
+      return tok.length > 0;
+    });
+    var tokenHit = {};
+    for (var ti = 0; ti < tokens.length; ti++) {
+      tokenHit[tokens[ti]] = true;
+    }
+    for (var ai = 0; ai < lowerBodyTokenKeywords.length; ai++) {
+      if (tokenHit[lowerBodyTokenKeywords[ai]]) return "bottoms";
+    }
+
     return DEFAULT_CATEGORY;
-  }
-
-  function shouldSkipAccessoryImage(img) {
-    var keywords = [
-      "hat", "cap", "beanie", "scarf", "scarves", "glove", "gloves",
-      "accessory", "accessories", "socks", "sunglasses"
-    ];
-
-    var parts = [];
-    try {
-      parts.push(img.getAttribute("alt") || "");
-      parts.push(img.getAttribute("title") || "");
-    } catch (_e) { }
-
-    var p = img && img.parentElement ? img.parentElement : null;
-    var hops = 0;
-    while (p && hops < 3) {
-      var t = "";
-      try { t = p.textContent || ""; } catch (_e2) { }
-      if (t) parts.push(t);
-      p = p.parentElement;
-      hops++;
-    }
-
-    var haystack = normalizeText(parts.join(" "));
-    for (var i = 0; i < keywords.length; i++) {
-      if (haystack.indexOf(keywords[i]) !== -1) return true;
-    }
-    return false;
   }
 
   function createModal() {
@@ -797,10 +793,6 @@
   function bindImage(img) {
     if (img.getAttribute(WIDGET_ATTR_BOUND) === "1") return;
     if (img.getAttribute(WIDGET_ATTR_SKIP) === "1") return;
-    if (shouldSkipAccessoryImage(img)) {
-      img.setAttribute(WIDGET_ATTR_SKIP, "1");
-      return;
-    }
     var par = img.parentElement;
     if (!par) return;
 
