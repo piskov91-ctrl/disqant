@@ -8,23 +8,31 @@ import {
 } from "@/lib/platformAnalytics";
 import { recordTryOnProductUsage } from "@/lib/tryOnAnalytics";
 import { getRetailerSessionUser } from "@/lib/retailerAuth";
+import { resolveEmbedCorsAllowOrigin } from "@/lib/embedCors";
 
 export const runtime = "nodejs";
 
-/** Cross-origin widget + local test pages; `*` with API key in header (not cookies). */
-const TRY_ON_CORS_HEADERS: Record<string, string> = {
-  "Access-Control-Allow-Origin": "*",
+/** Omit `Allow-Origin` — set dynamically from `Origin` (see `resolveEmbedCorsAllowOrigin`). */
+const TRY_ON_CORS_BASE_HEADERS: Record<string, string> = {
   "Access-Control-Allow-Methods": "POST, OPTIONS",
   "Access-Control-Allow-Headers": "Content-Type, x-api-key, x-tryon-trace",
 };
 
-export function OPTIONS() {
-  return new Response(null, { status: 204, headers: { ...TRY_ON_CORS_HEADERS } });
+export function OPTIONS(request: Request) {
+  const allowOrigin = resolveEmbedCorsAllowOrigin(request.headers.get("Origin"));
+  return new Response(null, {
+    status: 204,
+    headers: {
+      ...TRY_ON_CORS_BASE_HEADERS,
+      "Access-Control-Allow-Origin": allowOrigin,
+    },
+  });
 }
 
-function withTryOnCors(response: Response): Response {
+function withTryOnCors(response: Response, allowOrigin: string): Response {
   const headers = new Headers(response.headers);
-  for (const [k, v] of Object.entries(TRY_ON_CORS_HEADERS)) {
+  headers.set("Access-Control-Allow-Origin", allowOrigin);
+  for (const [k, v] of Object.entries(TRY_ON_CORS_BASE_HEADERS)) {
     headers.set(k, v);
   }
   return new Response(response.body, {
@@ -166,6 +174,7 @@ async function startPrediction(params: {
 }
 
 export async function POST(req: Request) {
+  const corsAllowOrigin = resolveEmbedCorsAllowOrigin(req.headers.get("Origin"));
   const serverTrace = randomUUID();
   const clientTrace = req.headers.get("x-tryon-trace")?.trim() || null;
   console.log("[fit-room][tryon] /api/tryon (or /api/try-on) handler invoked (HTTP POST) — if you see 2 of these for one user click, the client (or a proxy) sent duplicate requests", {
@@ -201,6 +210,7 @@ export async function POST(req: Request) {
       { error: "Try It Free is not configured. Set DEMO_API_KEY for this environment." },
       { status: 503 },
       ),
+      corsAllowOrigin,
     );
   }
 
@@ -230,9 +240,10 @@ export async function POST(req: Request) {
           },
           { status: 403 },
         ),
+        corsAllowOrigin,
       );
     }
-    return withTryOnCors(Response.json({ error: msg }, { status: 401 }));
+    return withTryOnCors(Response.json({ error: msg }, { status: 401 }), corsAllowOrigin);
   }
 
   // Note: /demo page itself is still access-code gated, but this API now requires a client API key.
@@ -244,7 +255,7 @@ export async function POST(req: Request) {
   try {
     form = await req.formData();
   } catch {
-    return withTryOnCors(Response.json({ error: "Invalid form data." }, { status: 400 }));
+    return withTryOnCors(Response.json({ error: "Invalid form data." }, { status: 400 }), corsAllowOrigin);
   }
 
   const modelFile = form.get("model");
@@ -263,6 +274,7 @@ export async function POST(req: Request) {
         { error: "Please upload both a person photo and a garment image." },
         { status: 400 },
       ),
+      corsAllowOrigin,
     );
   }
 
@@ -279,7 +291,7 @@ export async function POST(req: Request) {
   });
 
   if (!first.ok) {
-    return withTryOnCors(Response.json({ error: first.error }, { status: 502 }));
+    return withTryOnCors(Response.json({ error: first.error }, { status: 502 }), corsAllowOrigin);
   }
 
   const result = await pollUntilDone({
@@ -290,6 +302,7 @@ export async function POST(req: Request) {
     pollMs: 1200,
     category,
     serverTrace,
+    corsAllowOrigin,
   });
   if (result.ok) {
     const at = new Date().toISOString();
@@ -311,7 +324,7 @@ export async function POST(req: Request) {
       demoIp,
     });
   }
-  return withTryOnCors(result.response);
+  return withTryOnCors(result.response, corsAllowOrigin);
 }
 
 async function pollUntilDone(params: {
@@ -322,8 +335,10 @@ async function pollUntilDone(params: {
   pollMs: number;
   category: GarmentCategoryHint;
   serverTrace: string;
+  corsAllowOrigin: string;
 }): Promise<{ ok: true; response: Response } | { ok: false; response: Response }> {
-  const { id, headers, baseUrl, timeoutMs, pollMs, category, serverTrace } = params;
+  const { id, headers, baseUrl, timeoutMs, pollMs, category, serverTrace, corsAllowOrigin } =
+    params;
   const startedAt = Date.now();
   let pollN = 0;
   const isDev = process.env.NODE_ENV === "development";
@@ -337,6 +352,7 @@ async function pollUntilDone(params: {
             { error: "Timed out waiting for try-on result. Please try again." },
             { status: 504 },
           ),
+          corsAllowOrigin,
         ),
       };
     }
@@ -361,6 +377,7 @@ async function pollUntilDone(params: {
             { error: `FASHN /status failed (${statusRes.status}). ${text || ""}`.trim() },
             { status: 502 },
           ),
+          corsAllowOrigin,
         ),
       };
     }
@@ -373,6 +390,7 @@ async function pollUntilDone(params: {
           ok: false,
           response: withTryOnCors(
             Response.json({ error: "FASHN completed but returned no output." }, { status: 502 }),
+            corsAllowOrigin,
           ),
         };
       }
@@ -380,6 +398,7 @@ async function pollUntilDone(params: {
         ok: true,
         response: withTryOnCors(
           Response.json({ id, output: statusData.output, category }),
+          corsAllowOrigin,
         ),
       };
     }
@@ -389,6 +408,7 @@ async function pollUntilDone(params: {
         ok: false,
         response: withTryOnCors(
           Response.json({ error: serializeFashnError(statusData.error) }, { status: 502 }),
+          corsAllowOrigin,
         ),
       };
     }
