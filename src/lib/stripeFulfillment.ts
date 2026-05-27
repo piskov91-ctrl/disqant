@@ -11,6 +11,11 @@ import { subscriptionPlanCap } from "@/lib/clientTryOnBuckets";
 import { attachStripeBillingIds, getRetailerById, linkRetailerToClientId, type RetailerUser } from "@/lib/retailerAuth";
 import { getSubscriptionPlanDefinition, parseSubscriptionPlanKey } from "@/lib/subscriptionPlans";
 import {
+  queueRetailerSubscriptionConfirmationEmail,
+  queueRetailerTopUpConfirmationEmail,
+  retailerStoreGreetingLabel,
+} from "@/lib/retailerStripeConfirmationEmails";
+import {
   STRIPE_TOP_UP_CHECKOUT_KIND,
   TOP_UP_CUSTOM_MAX_TRY_ONS,
   TOP_UP_CUSTOM_MIN_TRY_ONS,
@@ -104,6 +109,11 @@ async function fulfillPaidTopUpCheckoutSession(session: Stripe.Checkout.Session)
       storeName,
       packId: "custom",
     });
+    queueRetailerTopUpConfirmationEmail(
+      user.email,
+      retailerStoreGreetingLabel({ storeName: user.storeName, companyName: user.companyName }),
+      metaTryOns,
+    );
     return;
   }
 
@@ -138,6 +148,11 @@ async function fulfillPaidTopUpCheckoutSession(session: Stripe.Checkout.Session)
     storeName,
     packId: pack.id,
   });
+  queueRetailerTopUpConfirmationEmail(
+    user.email,
+    retailerStoreGreetingLabel({ storeName: user.storeName, companyName: user.companyName }),
+    pack.tryOns,
+  );
 }
 
 /**
@@ -238,6 +253,14 @@ async function fulfillPaidSubscriptionCheckoutSession(session: Stripe.Checkout.S
     ...(stripeCustomerId ? { stripeCustomerId } : {}),
     clearSubscriptionCancellationSchedule: true,
   });
+
+  const planDef = getSubscriptionPlanDefinition(planKey);
+  queueRetailerSubscriptionConfirmationEmail(
+    contactEmail,
+    retailerStoreGreetingLabel({ storeName: user.storeName, companyName: user.companyName }),
+    planDef.name,
+    planDef.tryOnLimit,
+  );
 }
 
 async function findRetailerIdentityForStripeSession(retailerUserId: string): Promise<RetailerUser | null> {
