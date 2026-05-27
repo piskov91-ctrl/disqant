@@ -877,10 +877,10 @@
   function beaconClientVisit(key) {
     if (!key) return;
     try {
-      fetch("/api/client-visit", {
+      fetch("https://fit-room.com/api/client-visit", {
         method: "POST",
         headers: { "x-api-key": key },
-        credentials: "same-origin",
+        credentials: "omit",
       }).catch(function () {});
     } catch (_e) {}
   }
