@@ -18,27 +18,12 @@ import {
 } from "@/lib/fitRoomTransactionalEmailHtml";
 
 const TO_EMAIL = (process.env.CONTACT_TO ?? "support@fit-room.com").trim();
-
-const VISITOR_OPTIONS = new Set(["under-10k", "10k-50k", "50k-100k", "100k-plus"]);
-
-const VISITOR_LABEL: Record<string, string> = {
-  "under-10k": "Under 10k",
-  "10k-50k": "10k – 50k",
-  "50k-100k": "50k – 100k",
-  "100k-plus": "100k+",
-};
+const MAX_MESSAGE_CHARS = 20_000;
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 function isNonEmptyString(v: unknown): v is string {
   return typeof v === "string" && v.trim().length > 0;
-}
-
-function normalizeWebsiteInput(raw: string) {
-  const t = raw.trim();
-  if (!t) return "";
-  if (/^https?:\/\//i.test(t)) return t;
-  return `https://${t}`;
 }
 
 export async function POST(req: Request) {
@@ -70,10 +55,8 @@ export async function POST(req: Request) {
   const name = isNonEmptyString(b.name) ? b.name.trim() : null;
   const emailRaw = isNonEmptyString(b.email) ? b.email.trim() : "";
   const email = EMAIL_RE.test(emailRaw) ? emailRaw : null;
-  const company = isNonEmptyString(b.company) ? b.company.trim() : null;
-  const message = isNonEmptyString(b.message) ? b.message.trim() : null;
-  const websiteUrlRaw = typeof b.websiteUrl === "string" ? b.websiteUrl : "";
-  const monthlyVisitors = typeof b.monthlyVisitors === "string" ? b.monthlyVisitors : "";
+  const messageRaw = isNonEmptyString(b.message) ? b.message : "";
+  const message = messageRaw.trim();
 
   if (!name) {
     console.warn("[fit-room][contact-api] validation failed: missing name");
@@ -83,31 +66,15 @@ export async function POST(req: Request) {
     console.warn("[fit-room][contact-api] validation failed: missing or invalid email");
     return Response.json({ error: "A valid email is required." }, { status: 400 });
   }
-  if (!company) {
-    console.warn("[fit-room][contact-api] validation failed: missing company/store");
-    return Response.json({ error: "Store name is required." }, { status: 400 });
-  }
   if (!message) {
     console.warn("[fit-room][contact-api] validation failed: missing message");
     return Response.json({ error: "Message is required." }, { status: 400 });
   }
-  if (!VISITOR_OPTIONS.has(monthlyVisitors)) {
-    console.warn("[fit-room][contact-api] validation failed: monthlyVisitors", { monthlyVisitorsRaw: monthlyVisitors });
-    return Response.json({ error: "Please select monthly visitors." }, { status: 400 });
-  }
-
-  let websiteLine = "—";
-  if (websiteUrlRaw.trim()) {
-    try {
-      const u = new URL(normalizeWebsiteInput(websiteUrlRaw));
-      if (u.protocol !== "http:" && u.protocol !== "https:") throw new Error("bad");
-      websiteLine = u.toString();
-    } catch {
-      console.warn("[fit-room][contact-api] validation failed: invalid website URL", {
-        trimmedLength: websiteUrlRaw.trim().length,
-      });
-      return Response.json({ error: "Please enter a valid website URL, or leave it empty." }, { status: 400 });
-    }
+  if (message.length > MAX_MESSAGE_CHARS) {
+    return Response.json(
+      { error: `Message is too long (max ${MAX_MESSAGE_CHARS.toLocaleString()} characters).` },
+      { status: 400 },
+    );
   }
 
   console.log("[fit-room][contact-api] staff mail routing resolved", {
@@ -116,28 +83,14 @@ export async function POST(req: Request) {
   });
 
   console.log("[fit-room][contact-api] payload validated", {
-    monthlyVisitorsBucket: monthlyVisitors,
-    visitorLabel: VISITOR_LABEL[monthlyVisitors] ?? monthlyVisitors,
     nameLength: name.length,
-    companyLength: company.length,
     messageLength: message.length,
-    hasWebsiteUrl: Boolean(websiteUrlRaw.trim()),
   });
-
-  const visitorsLabel = VISITOR_LABEL[monthlyVisitors] ?? monthlyVisitors;
 
   /** Persist before sending mail so enquiries are not lost if Resend fails. */
   let inquiryId: string;
   try {
-    inquiryId = await recordContactInquiry({
-      name,
-      email,
-      company,
-      websiteDisplay: websiteLine,
-      monthlyVisitors,
-      monthlyVisitorsLabel: visitorsLabel,
-      message,
-    });
+    inquiryId = await recordContactInquiry({ name, email, message });
     const savedInquiry = await getContactInquiryById(inquiryId);
     if (savedInquiry) await seedContactInquiryThread(savedInquiry);
     console.log("[fit-room][contact-api] Redis recordContactInquiry completed", {
@@ -155,15 +108,7 @@ export async function POST(req: Request) {
     );
   }
 
-  const text = [
-    `Name: ${name}`,
-    `Email: ${email}`,
-    `Store name: ${company}`,
-    `Website: ${websiteLine}`,
-    `Monthly visitors: ${visitorsLabel}`,
-    "",
-    message,
-  ].join("\n");
+  const text = [`Name: ${name}`, `Email: ${email}`, "", message].join("\n");
 
   const firstNameBubble = name.split(/\s+/).find(Boolean);
   const preheaderSnippet =
@@ -175,7 +120,7 @@ export async function POST(req: Request) {
     heading: "New contact form submission",
     innerHtml:
       transactionalParagraph(
-        `${name} from ${company} reached out via the Fit Room contact form — reply routing already points back to ${email}.`,
+        `${name} reached out via the Fit Room contact form — reply routing already points back to ${email}.`,
       ) + transactionalSnippetBlock(text),
   });
 
@@ -186,7 +131,7 @@ export async function POST(req: Request) {
     to: TO_EMAIL,
     from,
     replyToSubscriberEmail: `${email.slice(0, 2)}…@${email.includes("@") ? email.split("@")[1] : "(invalid)"}`,
-    subjectPreview: `Contact: ${name.slice(0, 24)}${name.length > 24 ? "…" : ""} — ${company.slice(0, 24)}${company.length > 24 ? "…" : ""}`,
+    subjectPreview: `Contact: ${name.slice(0, 24)}${name.length > 24 ? "…" : ""}`,
   });
 
   const resend = new Resend(apiKey);
@@ -197,7 +142,7 @@ export async function POST(req: Request) {
     subject: staffNotificationSubjectWithToken({
       kind: "contact",
       inquiryId,
-      baseSubject: `Contact: ${name} — ${company}`,
+      baseSubject: `Contact: ${name}`,
     }),
     text,
     html: staffHtml,

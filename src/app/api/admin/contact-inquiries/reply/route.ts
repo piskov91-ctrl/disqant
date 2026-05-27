@@ -69,7 +69,7 @@ export async function POST(req: Request) {
   }
 
   const first = greetingFirstName(inquiry.name);
-  const subject = `Re: Your Fit Room enquiry — ${inquiry.company}`;
+  const subject = `Re: Your Fit Room enquiry — ${inquiry.name}`;
 
   try {
     const { resendEmailId } = await sendInquiryReplyEmail({
@@ -106,7 +106,7 @@ export async function POST(req: Request) {
   console.log("[fit-room][admin-contact-reply] sent reply", {
     inquiryId: inquiry.id,
     to: inquiry.email,
-    subjectPrefix: inquiry.company.slice(0, 40),
+    subjectPrefix: inquiry.name.slice(0, 40),
   });
 
   return Response.json({ ok: true, thread, inquiry: { ...hydrated, thread } });

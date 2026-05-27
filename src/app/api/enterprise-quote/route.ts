@@ -16,37 +16,12 @@ import {
 export const runtime = "nodejs";
 
 const TO_EMAIL = (process.env.CONTACT_TO ?? "support@fit-room.com").trim();
+const MAX_MESSAGE_CHARS = 20_000;
 
-const VISITOR_SET = new Set(["under-10k", "10k-50k", "50k-100k", "100k-500k", "500k-plus"]);
-const VISITOR_LABEL: Record<string, string> = {
-  "under-10k": "Under 10k",
-  "10k-50k": "10k – 50k",
-  "50k-100k": "50k – 100k",
-  "100k-500k": "100k – 500k",
-  "500k-plus": "500k+",
-};
-
-const PLATFORM_SET = new Set(["shopify", "wordpress", "wix", "squarespace", "other"]);
-/** Same lightweight check as `/api/contact`; keeps obvious garbage out of queue. */
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-
-const PLATFORM_LABEL: Record<string, string> = {
-  shopify: "Shopify",
-  wordpress: "WordPress",
-  wix: "Wix",
-  squarespace: "Squarespace",
-  other: "Other",
-};
 
 function isNonEmptyString(v: unknown): v is string {
   return typeof v === "string" && v.trim().length > 0;
-}
-
-function normalizeWebsiteInput(raw: string) {
-  const t = raw.trim();
-  if (!t) return "";
-  if (/^https?:\/\//i.test(t)) return t;
-  return `https://${t}`;
 }
 
 export async function POST(req: Request) {
@@ -73,41 +48,25 @@ export async function POST(req: Request) {
   const storeName = isNonEmptyString(b.storeName) ? b.storeName.trim() : null;
   const emailRaw = isNonEmptyString(b.email) ? b.email.trim() : "";
   const email = EMAIL_RE.test(emailRaw) ? emailRaw : null;
-  const websiteUrlRaw = typeof b.websiteUrl === "string" ? b.websiteUrl : "";
-  const monthlyVisitors = typeof b.monthlyVisitors === "string" ? b.monthlyVisitors : "";
-  const platform = typeof b.platform === "string" ? b.platform : "";
+  const messageRaw = isNonEmptyString(b.message) ? b.message : "";
+  const message = messageRaw.trim();
 
   if (!storeName) return Response.json({ error: "Store name is required." }, { status: 400 });
   if (!email) return Response.json({ error: "A valid email address is required." }, { status: 400 });
-  if (!VISITOR_SET.has(monthlyVisitors)) {
-    return Response.json({ error: "Please select monthly website visitors." }, { status: 400 });
+  if (!message) return Response.json({ error: "Please tell us what you need." }, { status: 400 });
+  if (message.length > MAX_MESSAGE_CHARS) {
+    return Response.json(
+      { error: `Message is too long (max ${MAX_MESSAGE_CHARS.toLocaleString()} characters).` },
+      { status: 400 },
+    );
   }
-  if (!PLATFORM_SET.has(platform)) {
-    return Response.json({ error: "Please select a platform." }, { status: 400 });
-  }
-
-  let websiteUrl = "";
-  try {
-    const u = new URL(normalizeWebsiteInput(websiteUrlRaw));
-    if (u.protocol !== "http:" && u.protocol !== "https:") throw new Error("bad");
-    websiteUrl = u.toString();
-  } catch {
-    return Response.json({ error: "Please enter a valid website URL." }, { status: 400 });
-  }
-
-  const monthlyVisitorsLabel = VISITOR_LABEL[monthlyVisitors] ?? monthlyVisitors;
-  const platformLabel = PLATFORM_LABEL[platform] ?? platform;
 
   let quoteId: string;
   try {
     quoteId = await recordEnterpriseQuote({
       email,
       storeName,
-      websiteUrl,
-      monthlyVisitors,
-      monthlyVisitorsLabel,
-      platform,
-      platformLabel,
+      message,
     });
     const savedQuote = await getEnterpriseQuoteById(quoteId);
     if (savedQuote) await seedEnterpriseQuoteThread(savedQuote);
@@ -121,19 +80,21 @@ export async function POST(req: Request) {
     "",
     `Email: ${email}`,
     `Store name: ${storeName}`,
-    `Website: ${websiteUrl}`,
-    `Monthly visitors: ${monthlyVisitorsLabel}`,
-    `Platform: ${platformLabel}`,
+    "",
+    message,
+    "",
     `Record id: ${quoteId}`,
   ].join("\n");
 
+  const preheaderSnippet = message.length > 120 ? `${message.slice(0, 117).trim()}…` : message;
+
   const staffHtml = wrapFitRoomTransactionalHtml({
     documentTitle: "Enterprise quote",
-    preheader: `${storeName} · ${monthlyVisitorsLabel}`,
+    preheader: preheaderSnippet,
     heading: "Enterprise quote request",
     innerHtml:
       transactionalParagraph(
-        `Submitted from pricing — ${storeName}. Reply in your mail client to reach them at ${email}.`,
+        `${storeName} submitted an enterprise quote request from pricing — reply in your mail client to reach them at ${email}.`,
       ) + transactionalSnippetBlock(text),
   });
 

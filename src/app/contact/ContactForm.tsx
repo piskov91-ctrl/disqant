@@ -2,14 +2,6 @@
 
 import { useState } from "react";
 
-const VISITORS = [
-  { value: "", label: "Select range…" },
-  { value: "under-10k", label: "Under 10k" },
-  { value: "10k-50k", label: "10k – 50k" },
-  { value: "50k-100k", label: "50k – 100k" },
-  { value: "100k-plus", label: "100k+" },
-] as const;
-
 type Status = "idle" | "loading" | "success" | "error";
 
 const labelClass = "block text-sm font-medium text-zinc-100";
@@ -19,9 +11,6 @@ const fieldClass =
 export function ContactForm() {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
-  const [company, setCompany] = useState("");
-  const [websiteUrl, setWebsiteUrl] = useState("");
-  const [monthlyVisitors, setMonthlyVisitors] = useState<string>("");
   const [message, setMessage] = useState("");
   const [status, setStatus] = useState<Status>("idle");
   const [error, setError] = useState<string | null>(null);
@@ -34,30 +23,14 @@ export function ContactForm() {
       const bodyPayload = {
         name: name.trim(),
         email: email.trim(),
-        company: company.trim(),
-        websiteUrl: websiteUrl.trim(),
-        monthlyVisitors,
         message: message.trim(),
       };
-      console.log("[fit-room][contact-form-client] submitting", {
-        endpoint: "/api/contact",
-        nameLength: bodyPayload.name.length,
-        companyLength: bodyPayload.company.length,
-        monthlyVisitorsSelected: Boolean(bodyPayload.monthlyVisitors),
-      });
       const res = await fetch("/api/contact", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(bodyPayload),
       });
       const data = (await res.json()) as { ok?: boolean; error?: string; inquiryId?: string; id?: string | null };
-      console.log("[fit-room][contact-form-client] response", {
-        ok: res.ok,
-        httpStatus: res.status,
-        hasError: Boolean(data.error),
-        resendStaffEmailId: data.id ?? null,
-        inquiryId: data.inquiryId ?? null,
-      });
       if (!res.ok) {
         setError(data.error || "Something went wrong.");
         setStatus("error");
@@ -66,9 +39,6 @@ export function ContactForm() {
       setStatus("success");
       setName("");
       setEmail("");
-      setCompany("");
-      setWebsiteUrl("");
-      setMonthlyVisitors("");
       setMessage("");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Network error.");
@@ -137,66 +107,6 @@ export function ContactForm() {
         </div>
 
         <div>
-          <label htmlFor="contact-store" className={labelClass}>
-            Store name <span className="text-red-400">*</span>
-          </label>
-          <input
-            id="contact-store"
-            name="company"
-            type="text"
-            autoComplete="organization"
-            required
-            value={company}
-            onChange={(e) => setCompany(e.target.value)}
-            disabled={disabled}
-            className={fieldClass}
-          />
-        </div>
-
-        <div>
-          <label htmlFor="contact-website" className={labelClass}>
-            Website URL
-          </label>
-          <input
-            id="contact-website"
-            name="websiteUrl"
-            type="text"
-            inputMode="url"
-            autoComplete="url"
-            placeholder="https://yoursite.com"
-            value={websiteUrl}
-            onChange={(e) => setWebsiteUrl(e.target.value)}
-            disabled={disabled}
-            className={fieldClass}
-          />
-          <p className="mt-1.5 text-xs text-zinc-400">Optional — helps us understand your store.</p>
-        </div>
-
-        <div>
-          <label htmlFor="contact-visitors" className={labelClass}>
-            Monthly visitors <span className="text-red-400">*</span>
-          </label>
-          <select
-            id="contact-visitors"
-            name="monthlyVisitors"
-            required
-            value={monthlyVisitors}
-            onChange={(e) => setMonthlyVisitors(e.target.value)}
-            disabled={disabled}
-            className={`${fieldClass} appearance-none bg-[length:1rem] bg-[right_0.75rem_center] bg-no-repeat pr-10`}
-            style={{
-              backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%23a1a1aa'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'/%3E%3C/svg%3E")`,
-            }}
-          >
-            {VISITORS.map((opt) => (
-              <option key={opt.value || "empty"} value={opt.value} disabled={opt.value === ""}>
-                {opt.label}
-              </option>
-            ))}
-          </select>
-        </div>
-
-        <div>
           <label htmlFor="contact-message" className={labelClass}>
             Message <span className="text-red-400">*</span>
           </label>
@@ -209,7 +119,7 @@ export function ContactForm() {
             onChange={(e) => setMessage(e.target.value)}
             disabled={disabled}
             className={`${fieldClass} resize-y`}
-            placeholder="Tell us what you’re looking to achieve…"
+            placeholder="Tell us what you’re looking for — general questions, support, partnerships, anything else…"
           />
         </div>
 

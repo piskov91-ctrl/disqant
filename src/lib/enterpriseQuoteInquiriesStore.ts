@@ -12,12 +12,19 @@ export type EnterpriseQuoteRecord = {
   read: boolean;
   email: string;
   storeName: string;
-  /** Canonical https URL display */
-  websiteUrl: string;
-  monthlyVisitors: string;
-  monthlyVisitorsLabel: string;
-  platform: string;
-  platformLabel: string;
+  message: string;
+  /** Legacy fields from older quote forms (optional on new submissions). */
+  websiteUrl?: string;
+  monthlyVisitors?: string;
+  monthlyVisitorsLabel?: string;
+  platform?: string;
+  platformLabel?: string;
+};
+
+export type EnterpriseQuoteInput = {
+  email: string;
+  storeName: string;
+  message: string;
 };
 
 function recordKey(id: string) {
@@ -57,11 +64,13 @@ export function parseStoredEnterpriseQuote(raw: unknown): EnterpriseQuoteRecord 
   const storeName = typeof r.storeName === "string" ? r.storeName.trim() : "";
   const createdAt = typeof r.createdAt === "string" ? r.createdAt : "";
   const read = typeof r.read === "boolean" ? r.read : false;
-  const websiteUrl = typeof r.websiteUrl === "string" ? r.websiteUrl : "";
-  const monthlyVisitors = typeof r.monthlyVisitors === "string" ? r.monthlyVisitors : "";
-  const monthlyVisitorsLabel = typeof r.monthlyVisitorsLabel === "string" ? r.monthlyVisitorsLabel : "";
-  const platform = typeof r.platform === "string" ? r.platform : "";
-  const platformLabel = typeof r.platformLabel === "string" ? r.platformLabel : "";
+  const message = typeof r.message === "string" ? r.message : "";
+  const websiteUrl = typeof r.websiteUrl === "string" ? r.websiteUrl : undefined;
+  const monthlyVisitors = typeof r.monthlyVisitors === "string" ? r.monthlyVisitors : undefined;
+  const monthlyVisitorsLabel =
+    typeof r.monthlyVisitorsLabel === "string" ? r.monthlyVisitorsLabel : undefined;
+  const platform = typeof r.platform === "string" ? r.platform : undefined;
+  const platformLabel = typeof r.platformLabel === "string" ? r.platformLabel : undefined;
 
   if (!id || !storeName || !createdAt) return null;
 
@@ -71,15 +80,14 @@ export function parseStoredEnterpriseQuote(raw: unknown): EnterpriseQuoteRecord 
     read,
     email,
     storeName,
-    websiteUrl,
-    monthlyVisitors,
-    monthlyVisitorsLabel,
-    platform,
-    platformLabel,
+    message,
+    ...(websiteUrl ? { websiteUrl } : {}),
+    ...(monthlyVisitors ? { monthlyVisitors } : {}),
+    ...(monthlyVisitorsLabel ? { monthlyVisitorsLabel } : {}),
+    ...(platform ? { platform } : {}),
+    ...(platformLabel ? { platformLabel } : {}),
   };
 }
-
-export type EnterpriseQuoteInput = Omit<EnterpriseQuoteRecord, "id" | "createdAt" | "read">;
 
 export async function recordEnterpriseQuote(fields: EnterpriseQuoteInput): Promise<string> {
   const redis = getRedis();

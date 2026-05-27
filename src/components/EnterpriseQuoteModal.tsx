@@ -2,22 +2,6 @@
 
 import { useCallback, useEffect, useId, useState } from "react";
 
-const MONTHLY_VISITORS = [
-  { value: "under-10k", label: "Under 10k" },
-  { value: "10k-50k", label: "10k–50k" },
-  { value: "50k-100k", label: "50k–100k" },
-  { value: "100k-500k", label: "100k–500k" },
-  { value: "500k-plus", label: "500k+" },
-] as const;
-
-const PLATFORMS = [
-  { value: "shopify", label: "Shopify" },
-  { value: "wordpress", label: "WordPress" },
-  { value: "wix", label: "Wix" },
-  { value: "squarespace", label: "Squarespace" },
-  { value: "other", label: "Other" },
-] as const;
-
 type EnterpriseQuoteModalProps = {
   open: boolean;
   onClose: () => void;
@@ -27,9 +11,7 @@ export function EnterpriseQuoteModal({ open, onClose }: EnterpriseQuoteModalProp
   const titleId = useId();
   const [storeName, setStoreName] = useState("");
   const [email, setEmail] = useState("");
-  const [websiteUrl, setWebsiteUrl] = useState("");
-  const [monthlyVisitors, setMonthlyVisitors] = useState<(typeof MONTHLY_VISITORS)[number]["value"]>("under-10k");
-  const [platform, setPlatform] = useState<(typeof PLATFORMS)[number]["value"]>("shopify");
+  const [message, setMessage] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
@@ -37,9 +19,7 @@ export function EnterpriseQuoteModal({ open, onClose }: EnterpriseQuoteModalProp
   const reset = useCallback(() => {
     setStoreName("");
     setEmail("");
-    setWebsiteUrl("");
-    setMonthlyVisitors("under-10k");
-    setPlatform("shopify");
+    setMessage("");
     setSubmitting(false);
     setError(null);
     setSuccessMessage(null);
@@ -77,9 +57,7 @@ export function EnterpriseQuoteModal({ open, onClose }: EnterpriseQuoteModalProp
         body: JSON.stringify({
           storeName: storeName.trim(),
           email: email.trim(),
-          websiteUrl: websiteUrl.trim(),
-          monthlyVisitors,
-          platform,
+          message: message.trim(),
         }),
       });
       const data = (await res.json()) as { ok?: boolean; message?: string; error?: string };
@@ -152,13 +130,13 @@ export function EnterpriseQuoteModal({ open, onClose }: EnterpriseQuoteModalProp
               Enterprise quote
             </h2>
             <p className="mt-2 text-sm leading-relaxed text-[#F5EDE4]/65">
-              Tell us about your store — we’ll put together pricing that fits.
+              Tell us what you need — we’ll put together pricing that fits.
             </p>
 
             <form onSubmit={onSubmit} className="mt-6 space-y-4">
               <div>
                 <label htmlFor="eq-store" className="block text-sm font-medium text-[#F5EDE4]/85">
-                  Store name
+                  Store name <span className="text-red-400">*</span>
                 </label>
                 <input
                   id="eq-store"
@@ -190,60 +168,19 @@ export function EnterpriseQuoteModal({ open, onClose }: EnterpriseQuoteModalProp
               </div>
 
               <div>
-                <label htmlFor="eq-url" className="block text-sm font-medium text-[#F5EDE4]/85">
-                  Website URL
+                <label htmlFor="eq-message" className="block text-sm font-medium text-[#F5EDE4]/85">
+                  What do you need? <span className="text-red-400">*</span>
                 </label>
-                <input
-                  id="eq-url"
-                  name="websiteUrl"
+                <textarea
+                  id="eq-message"
+                  name="message"
                   required
-                  value={websiteUrl}
-                  onChange={(e) => setWebsiteUrl(e.target.value)}
-                  className="mt-1.5 w-full rounded-xl border border-[#C6A77D]/20 bg-[#14110e] px-4 py-3 text-sm text-[#F5EDE4] outline-none transition placeholder:text-zinc-600 focus:border-[#C6A77D]/50"
-                  placeholder="https://yourstore.com"
+                  rows={5}
+                  value={message}
+                  onChange={(e) => setMessage(e.target.value)}
+                  className="mt-1.5 w-full resize-y rounded-xl border border-[#C6A77D]/20 bg-[#14110e] px-4 py-3 text-sm text-[#F5EDE4] outline-none transition placeholder:text-zinc-600 focus:border-[#C6A77D]/50"
+                  placeholder="Describe your store, expected try-on volume, integrations, or anything else we should know…"
                 />
-              </div>
-
-              <div>
-                <label htmlFor="eq-visitors" className="block text-sm font-medium text-[#F5EDE4]/85">
-                  Monthly website visitors
-                </label>
-                <select
-                  id="eq-visitors"
-                  name="monthlyVisitors"
-                  required
-                  value={monthlyVisitors}
-                  onChange={(e) =>
-                    setMonthlyVisitors(e.target.value as (typeof MONTHLY_VISITORS)[number]["value"])
-                  }
-                  className="mt-1.5 w-full rounded-xl border border-[#C6A77D]/20 bg-[#14110e] px-4 py-3 text-sm text-[#F5EDE4] outline-none focus:border-[#C6A77D]/50"
-                >
-                  {MONTHLY_VISITORS.map((o) => (
-                    <option key={o.value} value={o.value} className="bg-[#14110e]">
-                      {o.label}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <div>
-                <label htmlFor="eq-platform" className="block text-sm font-medium text-[#F5EDE4]/85">
-                  What platform is your store on?
-                </label>
-                <select
-                  id="eq-platform"
-                  name="platform"
-                  required
-                  value={platform}
-                  onChange={(e) => setPlatform(e.target.value as (typeof PLATFORMS)[number]["value"])}
-                  className="mt-1.5 w-full rounded-xl border border-[#C6A77D]/20 bg-[#14110e] px-4 py-3 text-sm text-[#F5EDE4] outline-none focus:border-[#C6A77D]/50"
-                >
-                  {PLATFORMS.map((o) => (
-                    <option key={o.value} value={o.value} className="bg-[#14110e]">
-                      {o.label}
-                    </option>
-                  ))}
-                </select>
               </div>
 
               {error ? (

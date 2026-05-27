@@ -82,20 +82,22 @@ function normalizeRedisIdList(ids: unknown): string[] {
   return out;
 }
 
+export type ContactInquiryFormInput = {
+  name: string;
+  email: string;
+  message: string;
+};
+
 export type ContactInquiryInput = Omit<ContactInquiryRecord, "id" | "createdAt" | "read">;
 
 /**
  * Persist a new contact form submission (Redis list + record). Recalculates unread from indexed rows so the admin
  * badge matches what can be displayed.
  */
-export async function recordContactInquiry(fields: ContactInquiryInput): Promise<string> {
+export async function recordContactInquiry(fields: ContactInquiryFormInput): Promise<string> {
   console.log("[fit-room][contactInquiry] recordContactInquiry called", {
     name: fields.name,
     email: fields.email,
-    company: fields.company,
-    websiteDisplay: fields.websiteDisplay,
-    monthlyVisitors: fields.monthlyVisitors,
-    monthlyVisitorsLabel: fields.monthlyVisitorsLabel,
     messageLength: fields.message.length,
     messagePreview:
       fields.message.length > 160 ? `${fields.message.slice(0, 160)}…` : fields.message,
@@ -108,7 +110,13 @@ export async function recordContactInquiry(fields: ContactInquiryInput): Promise
       id,
       createdAt: new Date().toISOString(),
       read: false,
-      ...fields,
+      name: fields.name,
+      email: fields.email,
+      message: fields.message,
+      company: "—",
+      websiteDisplay: "—",
+      monthlyVisitors: "",
+      monthlyVisitorsLabel: "",
     };
     const redisRecordKey = recordKey(id);
     /** Same pattern as API key records — Upstash persists JSON-friendly objects reliably for GET/MGET. */

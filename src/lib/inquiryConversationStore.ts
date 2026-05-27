@@ -187,13 +187,15 @@ export async function seedContactInquiryThread(inquiry: ContactInquiryRecord): P
 export async function seedEnterpriseQuoteThread(quote: EnterpriseQuoteRecord): Promise<void> {
   const existing = await getInquiryThreadMessages("enterprise", quote.id);
   if (existing.length > 0) return;
-  const body = [
-    "Enterprise quote request submitted.",
-    "",
-    `Platform: ${quote.platformLabel}`,
-    `Monthly visitors: ${quote.monthlyVisitorsLabel}`,
-    `Website: ${quote.websiteUrl}`,
-  ].join("\n");
+  const body =
+    quote.message.trim() ||
+    [
+      "Enterprise quote request submitted.",
+      "",
+      ...(quote.platformLabel ? [`Platform: ${quote.platformLabel}`] : []),
+      ...(quote.monthlyVisitorsLabel ? [`Monthly visitors: ${quote.monthlyVisitorsLabel}`] : []),
+      ...(quote.websiteUrl ? [`Website: ${quote.websiteUrl}`] : []),
+    ].join("\n");
   await appendInquiryThreadMessage("enterprise", quote.id, {
     direction: "inbound",
     authorLabel: quote.storeName || quote.email,

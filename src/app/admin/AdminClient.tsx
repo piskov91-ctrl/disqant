@@ -198,11 +198,13 @@ type EnterpriseQuoteRow = {
   read: boolean;
   email: string;
   storeName: string;
-  websiteUrl: string;
-  monthlyVisitors: string;
-  monthlyVisitorsLabel: string;
-  platform: string;
-  platformLabel: string;
+  message?: string;
+  /** Legacy fields from older quote forms. */
+  websiteUrl?: string;
+  monthlyVisitors?: string;
+  monthlyVisitorsLabel?: string;
+  platform?: string;
+  platformLabel?: string;
   thread?: InquiryThreadMessageRow[];
 };
 
@@ -851,7 +853,6 @@ export default function AdminClient() {
         `Delete this contact submission from Redis?`,
         "",
         `${inq.name} · ${inq.email}`,
-        `"${inq.company}"`,
         "",
         "This cannot be undone.",
       ].join("\n"),
@@ -3104,40 +3105,46 @@ export default function AdminClient() {
                             </button>
                           </div>
                         </div>
-                        <div className="mt-3 grid gap-2 text-sm text-zinc-300 md:grid-cols-2">
-                          <div>
-                            <span className="text-zinc-500">Email </span>
-                            <a
-                              href={`mailto:${inq.email}`}
-                              className="text-sky-400 underline-offset-2 hover:underline"
-                            >
-                              {inq.email}
-                            </a>
-                          </div>
-                          <div>
-                            <span className="text-zinc-500">Store </span>
-                            {inq.company}
-                          </div>
-                          <div className="md:col-span-2">
-                            <span className="text-zinc-500">Website </span>
-                            {inq.websiteDisplay === "—" ? (
-                              "—"
-                            ) : (
-                              <a
-                                href={inq.websiteDisplay}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="break-all text-sky-400 underline-offset-2 hover:underline"
-                              >
-                                {inq.websiteDisplay}
-                              </a>
-                            )}
-                          </div>
-                          <div className="md:col-span-2">
-                            <span className="text-zinc-500">Visitors </span>
-                            {inq.monthlyVisitorsLabel}
-                          </div>
+                        <div className="mt-3 text-sm text-zinc-300">
+                          <span className="text-zinc-500">Email </span>
+                          <a
+                            href={`mailto:${inq.email}`}
+                            className="text-sky-400 underline-offset-2 hover:underline"
+                          >
+                            {inq.email}
+                          </a>
                         </div>
+                        {(inq.company !== "—" ||
+                          inq.websiteDisplay !== "—" ||
+                          inq.monthlyVisitorsLabel) && (
+                          <div className="mt-3 grid gap-2 text-sm text-zinc-400 md:grid-cols-2">
+                            {inq.company !== "—" ? (
+                              <div>
+                                <span className="text-zinc-500">Store </span>
+                                {inq.company}
+                              </div>
+                            ) : null}
+                            {inq.websiteDisplay !== "—" ? (
+                              <div className="md:col-span-2">
+                                <span className="text-zinc-500">Website </span>
+                                <a
+                                  href={inq.websiteDisplay}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="break-all text-sky-400 underline-offset-2 hover:underline"
+                                >
+                                  {inq.websiteDisplay}
+                                </a>
+                              </div>
+                            ) : null}
+                            {inq.monthlyVisitorsLabel ? (
+                              <div className="md:col-span-2">
+                                <span className="text-zinc-500">Visitors </span>
+                                {inq.monthlyVisitorsLabel}
+                              </div>
+                            ) : null}
+                          </div>
+                        )}
                         <AdminInquiryThread thread={inq.thread ?? []} />
                       </li>
                     );
@@ -3222,40 +3229,50 @@ export default function AdminClient() {
                               </button>
                             </div>
                           </div>
-                          <div className="mt-3 grid gap-2 text-sm text-zinc-300 md:grid-cols-2">
-                            <div>
-                              <span className="text-zinc-500">Email </span>
-                              {row.email ? (
-                                <a
-                                  href={`mailto:${row.email}`}
-                                  className="text-sky-400 underline-offset-2 hover:underline"
-                                >
-                                  {row.email}
-                                </a>
-                              ) : (
-                                "—"
-                              )}
-                            </div>
-                            <div>
-                              <span className="text-zinc-500">Monthly visitors </span>
-                              {row.monthlyVisitorsLabel || row.monthlyVisitors || "—"}
-                            </div>
-                            <div>
-                              <span className="text-zinc-500">Platform </span>
-                              {row.platformLabel || row.platform || "—"}
-                            </div>
-                            <div className="md:col-span-2">
-                              <span className="text-zinc-500">Website </span>
+                          <div className="mt-3 text-sm text-zinc-300">
+                            <span className="text-zinc-500">Email </span>
+                            {row.email ? (
                               <a
-                                href={row.websiteUrl}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="break-all text-sky-400 underline-offset-2 hover:underline"
+                                href={`mailto:${row.email}`}
+                                className="text-sky-400 underline-offset-2 hover:underline"
                               >
-                                {row.websiteUrl}
+                                {row.email}
                               </a>
-                            </div>
+                            ) : (
+                              "—"
+                            )}
                           </div>
+                          {(row.websiteUrl ||
+                            row.monthlyVisitorsLabel ||
+                            row.platformLabel) && (
+                            <div className="mt-3 grid gap-2 text-sm text-zinc-400 md:grid-cols-2">
+                              {row.monthlyVisitorsLabel || row.monthlyVisitors ? (
+                                <div>
+                                  <span className="text-zinc-500">Monthly visitors </span>
+                                  {row.monthlyVisitorsLabel || row.monthlyVisitors}
+                                </div>
+                              ) : null}
+                              {row.platformLabel || row.platform ? (
+                                <div>
+                                  <span className="text-zinc-500">Platform </span>
+                                  {row.platformLabel || row.platform}
+                                </div>
+                              ) : null}
+                              {row.websiteUrl ? (
+                                <div className="md:col-span-2">
+                                  <span className="text-zinc-500">Website </span>
+                                  <a
+                                    href={row.websiteUrl}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="break-all text-sky-400 underline-offset-2 hover:underline"
+                                  >
+                                    {row.websiteUrl}
+                                  </a>
+                                </div>
+                              ) : null}
+                            </div>
+                          )}
                           <AdminInquiryThread thread={row.thread ?? []} />
                         </li>
                       );
