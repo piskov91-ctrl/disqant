@@ -9,8 +9,8 @@
   var WIDGET_ATTR_PENDING = "data-fit-room-tryon-pending-load";
   var WIDGET_ATTR_SKIP = "data-fit-room-tryon-skip";
 
-  // Matches app route /api/try-on in this repo.
-  var API_ENDPOINT = "/api/try-on";
+  // Absolute URL so try-on POSTs hit Fit Room when the script runs on retailer domains.
+  var API_ENDPOINT = "https://fit-room.com/api/try-on";
   var OPEN_MODAL = null;
 
   function qs(sel, root) {
