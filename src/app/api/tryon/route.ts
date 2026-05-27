@@ -11,6 +11,29 @@ import { getRetailerSessionUser } from "@/lib/retailerAuth";
 
 export const runtime = "nodejs";
 
+/** Cross-origin widget + local test pages; `*` with API key in header (not cookies). */
+const TRY_ON_CORS_HEADERS: Record<string, string> = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Methods": "POST, OPTIONS",
+  "Access-Control-Allow-Headers": "Content-Type, x-api-key, x-tryon-trace",
+};
+
+export function OPTIONS() {
+  return new Response(null, { status: 204, headers: { ...TRY_ON_CORS_HEADERS } });
+}
+
+function withTryOnCors(response: Response): Response {
+  const headers = new Headers(response.headers);
+  for (const [k, v] of Object.entries(TRY_ON_CORS_HEADERS)) {
+    headers.set(k, v);
+  }
+  return new Response(response.body, {
+    status: response.status,
+    statusText: response.statusText,
+    headers,
+  });
+}
+
 /** Fashn virtual try-on: Try-On Max (higher fidelity than v1.6; higher credit use). @see https://docs.fashn.ai/api-reference/tryon-max */
 const FASHN_TRYON_MODEL = "tryon-max" as const;
 
@@ -173,9 +196,11 @@ export async function POST(req: Request) {
     effectiveClientApiKey = process.env.DEMO_API_KEY?.trim() || null;
   }
   if (!effectiveClientApiKey) {
-    return Response.json(
+    return withTryOnCors(
+      Response.json(
       { error: "Try It Free is not configured. Set DEMO_API_KEY for this environment." },
       { status: 503 },
+      ),
     );
   }
 
@@ -196,16 +221,18 @@ export async function POST(req: Request) {
     const msg = e instanceof Error ? e.message : "Unauthorized.";
     const isUsage = msg === "Try-on limit exceeded.";
     if (isUsage) {
-      return Response.json(
-        {
-          error: msg,
-          code: "USAGE_LIMIT",
-          keyKind: clientApiKey ? "client" : "demo",
-        },
-        { status: 403 },
+      return withTryOnCors(
+        Response.json(
+          {
+            error: msg,
+            code: "USAGE_LIMIT",
+            keyKind: clientApiKey ? "client" : "demo",
+          },
+          { status: 403 },
+        ),
       );
     }
-    return Response.json({ error: msg }, { status: 401 });
+    return withTryOnCors(Response.json({ error: msg }, { status: 401 }));
   }
 
   // Note: /demo page itself is still access-code gated, but this API now requires a client API key.
@@ -217,7 +244,7 @@ export async function POST(req: Request) {
   try {
     form = await req.formData();
   } catch {
-    return Response.json({ error: "Invalid form data." }, { status: 400 });
+    return withTryOnCors(Response.json({ error: "Invalid form data." }, { status: 400 }));
   }
 
   const modelFile = form.get("model");
@@ -231,9 +258,11 @@ export async function POST(req: Request) {
   const resolution = parseResolution(form);
 
   if (!(modelFile instanceof File) || !(garmentFile instanceof File)) {
-    return Response.json(
-      { error: "Please upload both a person photo and a garment image." },
-      { status: 400 },
+    return withTryOnCors(
+      Response.json(
+        { error: "Please upload both a person photo and a garment image." },
+        { status: 400 },
+      ),
     );
   }
 
@@ -250,7 +279,7 @@ export async function POST(req: Request) {
   });
 
   if (!first.ok) {
-    return Response.json({ error: first.error }, { status: 502 });
+    return withTryOnCors(Response.json({ error: first.error }, { status: 502 }));
   }
 
   const result = await pollUntilDone({
@@ -282,7 +311,7 @@ export async function POST(req: Request) {
       demoIp,
     });
   }
-  return result.response;
+  return withTryOnCors(result.response);
 }
 
 async function pollUntilDone(params: {
@@ -303,9 +332,11 @@ async function pollUntilDone(params: {
     if (Date.now() - startedAt > timeoutMs) {
       return {
         ok: false,
-        response: Response.json(
-        { error: "Timed out waiting for try-on result. Please try again." },
-        { status: 504 },
+        response: withTryOnCors(
+          Response.json(
+            { error: "Timed out waiting for try-on result. Please try again." },
+            { status: 504 },
+          ),
         ),
       };
     }
@@ -325,9 +356,11 @@ async function pollUntilDone(params: {
       const text = await statusRes.text().catch(() => "");
       return {
         ok: false,
-        response: Response.json(
-        { error: `FASHN /status failed (${statusRes.status}). ${text || ""}`.trim() },
-        { status: 502 },
+        response: withTryOnCors(
+          Response.json(
+            { error: `FASHN /status failed (${statusRes.status}). ${text || ""}`.trim() },
+            { status: 502 },
+          ),
         ),
       };
     }
@@ -338,24 +371,24 @@ async function pollUntilDone(params: {
       if (!out) {
         return {
           ok: false,
-          response: Response.json(
-            { error: "FASHN completed but returned no output." },
-            { status: 502 },
+          response: withTryOnCors(
+            Response.json({ error: "FASHN completed but returned no output." }, { status: 502 }),
           ),
         };
       }
       return {
         ok: true,
-        response: Response.json({ id, output: statusData.output, category }),
+        response: withTryOnCors(
+          Response.json({ id, output: statusData.output, category }),
+        ),
       };
     }
 
     if (statusData.status === "failed") {
       return {
         ok: false,
-        response: Response.json(
-          { error: serializeFashnError(statusData.error) },
-          { status: 502 },
+        response: withTryOnCors(
+          Response.json({ error: serializeFashnError(statusData.error) }, { status: 502 }),
         ),
       };
     }

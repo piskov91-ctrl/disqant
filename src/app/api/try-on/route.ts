@@ -1,5 +1,5 @@
-export { POST } from "../tryon/route";
+export { OPTIONS, POST } from "../tryon/route";
 
-/** Kept in this file (not re-exported) so Next.js static analysis applies the Node.js runtime to `/api/try-on`. */
+/** `runtime` stays here so Next applies Node.js to `/api/try-on`; handlers live in `tryon/route.ts`. */
 export const runtime = "nodejs";
 
