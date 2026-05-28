@@ -146,6 +146,7 @@ type AnalyticsSummary = {
 
 type AdminTab =
   | "clients"
+  | "retailers"
   | "contact"
   | "enterprise"
   | "enterpriseCalc"
@@ -177,6 +178,23 @@ type RecoveryAccountRow = {
   usageLimit: number | null;
   usageCount: number | null;
 };
+
+type RetailerAdminRow = {
+  userId: string;
+  storeName: string;
+  email: string;
+  createdAt: string;
+  clientId: string | null;
+  subscriptionStatus: string;
+};
+
+function retailerStatusBadgeClass(status: string): string {
+  if (status === "Subscribed") return "border-emerald-800/60 bg-emerald-950/40 text-emerald-200";
+  if (status === "Subscribed (canceling)") return "border-amber-800/60 bg-amber-950/40 text-amber-200";
+  if (status === "Subscription expired") return "border-red-900/60 bg-red-950/40 text-red-200";
+  if (status === "Manual key") return "border-sky-800/60 bg-sky-950/40 text-sky-200";
+  return "border-zinc-700 bg-zinc-900/80 text-zinc-400";
+}
 
 /** Mirrors `/api/admin/contact-inquiries` inquiry objects (no server-only imports). */
 type ContactInquiryRow = {
@@ -518,6 +536,15 @@ export default function AdminClient() {
   const [enterpriseReplyError, setEnterpriseReplyError] = useState<string | null>(null);
   const [enterpriseQuoteDeleteBusyId, setEnterpriseQuoteDeleteBusyId] = useState<string | null>(null);
   const [enterpriseCalcModalOpen, setEnterpriseCalcModalOpen] = useState(false);
+
+  const [retailers, setRetailers] = useState<RetailerAdminRow[]>([]);
+  const [retailersLoading, setRetailersLoading] = useState(false);
+  const [retailersError, setRetailersError] = useState<string | null>(null);
+  const [retailerCreateKeyTarget, setRetailerCreateKeyTarget] = useState<RetailerAdminRow | null>(null);
+  const [retailerCreateKeyLimit, setRetailerCreateKeyLimit] = useState("1000");
+  const [retailerCreateKeyFashn, setRetailerCreateKeyFashn] = useState("");
+  const [retailerCreateKeyBusy, setRetailerCreateKeyBusy] = useState(false);
+  const [retailerCreateKeyError, setRetailerCreateKeyError] = useState<string | null>(null);
 
   const [reviewsPendingBadge, setReviewsPendingBadge] = useState(0);
   const [subscriptionReviewsPending, setSubscriptionReviewsPending] = useState<SubscriptionReviewRow[]>([]);
@@ -1189,6 +1216,81 @@ export default function AdminClient() {
     }
   }
 
+  async function loadRetailers() {
+    setRetailersLoading(true);
+    setRetailersError(null);
+    try {
+      const res = await fetch("/api/admin/retailers");
+      const data = (await res.json()) as { retailers?: RetailerAdminRow[]; error?: string };
+      if (!res.ok) {
+        if (data.error === "Unauthorized.") window.location.reload();
+        setRetailersError(data.error || "Failed to load retailers.");
+        return;
+      }
+      setRetailers(Array.isArray(data.retailers) ? data.retailers : []);
+    } catch (e) {
+      setRetailersError(e instanceof Error ? e.message : "Failed to load retailers.");
+    } finally {
+      setRetailersLoading(false);
+    }
+  }
+
+  function openRetailerCreateKeyModal(row: RetailerAdminRow) {
+    setRetailerCreateKeyTarget(row);
+    setRetailerCreateKeyLimit("1000");
+    setRetailerCreateKeyFashn("");
+    setRetailerCreateKeyError(null);
+  }
+
+  function closeRetailerCreateKeyModal() {
+    setRetailerCreateKeyTarget(null);
+    setRetailerCreateKeyError(null);
+  }
+
+  async function submitRetailerCreateKey(e: React.FormEvent) {
+    e.preventDefault();
+    const target = retailerCreateKeyTarget;
+    if (!target) return;
+
+    setRetailerCreateKeyBusy(true);
+    setRetailerCreateKeyError(null);
+    try {
+      const res = await fetch("/api/admin/retailers/create-key", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          retailerUserId: target.userId,
+          usageLimit: Number(retailerCreateKeyLimit),
+          fashnApiKey: retailerCreateKeyFashn.trim(),
+        }),
+      });
+      const data = (await res.json()) as {
+        ok?: boolean;
+        key?: KeyRecord;
+        retailer?: RetailerAdminRow;
+        error?: string;
+      };
+      if (!res.ok) {
+        if (data.error === "Unauthorized.") window.location.reload();
+        setRetailerCreateKeyError(data.error || "Failed to create API key.");
+        return;
+      }
+      if (data.retailer) {
+        setRetailers((prev) =>
+          prev.map((r) => (r.userId === data.retailer!.userId ? data.retailer! : r)),
+        );
+      }
+      if (data.key) {
+        setKeys((prev) => [data.key!, ...prev.filter((k) => k.id !== data.key!.id)]);
+      }
+      closeRetailerCreateKeyModal();
+    } catch (e) {
+      setRetailerCreateKeyError(e instanceof Error ? e.message : "Failed to create API key.");
+    } finally {
+      setRetailerCreateKeyBusy(false);
+    }
+  }
+
   async function deleteRecoveryRecord(userId: string, label: string) {
     const ok = window.confirm(
       `Remove the recovery record for "${label}"? This deletes only the Redis snapshot shown in Recovery; it does not restore the retailer account.`,
@@ -1266,6 +1368,7 @@ export default function AdminClient() {
   useEffect(() => {
     if (activeTab === "analytics") void loadAnalytics();
     if (activeTab === "recovery") void loadRecovery();
+    if (activeTab === "retailers") void loadRetailers();
     if (activeTab === "contact") void loadContactInquiries();
     if (activeTab === "enterprise") void loadEnterpriseQuotes();
     if (activeTab === "reviews") void loadSubscriptionReviews();
@@ -1593,12 +1696,15 @@ export default function AdminClient() {
     else if (activeTab === "enterprise") void loadEnterpriseQuotes();
     else if (activeTab === "reviews") void loadSubscriptionReviews();
     else if (activeTab === "recovery") void loadRecovery();
+    else if (activeTab === "retailers") void loadRetailers();
   }
 
   const tabBusy =
     activeTab === "clients" || activeTab === "wearMe"
       ? loading
-      : activeTab === "analytics"
+      : activeTab === "retailers"
+        ? retailersLoading
+        : activeTab === "analytics"
         ? analyticsLoading
         : activeTab === "recovery"
           ? recoveryLoading
@@ -1927,6 +2033,97 @@ export default function AdminClient() {
         open={enterpriseCalcModalOpen}
         onClose={() => setEnterpriseCalcModalOpen(false)}
       />
+      {retailerCreateKeyTarget ? (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/65 p-4 backdrop-blur-sm sm:p-6"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="retailer-create-key-title"
+        >
+          <div className="max-h-[90dvh] w-full max-w-md overflow-y-auto rounded-2xl border border-[#C6A77D]/25 bg-[#1f1b17] p-6 shadow-xl">
+            <div className="flex items-start justify-between gap-4">
+              <div className="min-w-0">
+                <p id="retailer-create-key-title" className="text-base font-semibold text-[#F5EDE4]">
+                  Create API key
+                </p>
+                <p className="mt-1 text-sm text-zinc-400">
+                  Assign a client key to{" "}
+                  <span className="font-medium text-zinc-200">{retailerCreateKeyTarget.storeName}</span>
+                </p>
+                <p className="mt-1 text-xs text-zinc-500">{retailerCreateKeyTarget.email}</p>
+              </div>
+              <button
+                type="button"
+                disabled={retailerCreateKeyBusy}
+                onClick={closeRetailerCreateKeyModal}
+                className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-zinc-700 text-zinc-300 hover:bg-zinc-800 disabled:opacity-50"
+                aria-label="Close"
+              >
+                ✕
+              </button>
+            </div>
+            <form onSubmit={(e) => void submitRetailerCreateKey(e)} className="mt-6 space-y-4">
+              <div>
+                <label htmlFor="retailer-key-limit" className="block text-sm font-medium text-zinc-200">
+                  Try-on limit
+                </label>
+                <input
+                  id="retailer-key-limit"
+                  value={retailerCreateKeyLimit}
+                  onChange={(e) => setRetailerCreateKeyLimit(e.target.value.replace(/[^\d]/g, ""))}
+                  inputMode="numeric"
+                  required
+                  disabled={retailerCreateKeyBusy}
+                  placeholder="1000"
+                  className="mt-2 block w-full rounded-xl border border-zinc-700 bg-zinc-950 px-4 py-3 text-sm text-zinc-100 outline-none focus:border-[#C6A77D]/55"
+                />
+              </div>
+              <div>
+                <label htmlFor="retailer-key-fashn" className="block text-sm font-medium text-zinc-200">
+                  Fashn.ai API key <span className="font-normal text-zinc-500">(optional)</span>
+                </label>
+                <input
+                  id="retailer-key-fashn"
+                  type="password"
+                  autoComplete="new-password"
+                  value={retailerCreateKeyFashn}
+                  onChange={(e) => setRetailerCreateKeyFashn(e.target.value)}
+                  disabled={retailerCreateKeyBusy}
+                  placeholder="Uses server FASHN_API_KEY if blank"
+                  className="mt-2 block w-full rounded-xl border border-zinc-700 bg-zinc-950 px-4 py-3 text-sm text-zinc-100 outline-none focus:border-[#C6A77D]/55"
+                />
+              </div>
+              {retailerCreateKeyError ? (
+                <div className="rounded-xl border border-red-900/60 bg-red-950/40 px-3 py-2 text-sm text-red-200">
+                  {retailerCreateKeyError}
+                </div>
+              ) : null}
+              <div className="flex flex-wrap gap-3 pt-2">
+                <button
+                  type="button"
+                  disabled={retailerCreateKeyBusy}
+                  onClick={closeRetailerCreateKeyModal}
+                  className="rounded-xl border border-zinc-700 px-4 py-2.5 text-sm font-semibold text-zinc-300 hover:bg-zinc-800 disabled:opacity-50"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={
+                    retailerCreateKeyBusy ||
+                    retailerCreateKeyLimit.trim().length === 0 ||
+                    !Number.isFinite(Number(retailerCreateKeyLimit)) ||
+                    Number(retailerCreateKeyLimit) <= 0
+                  }
+                  className="rounded-xl border border-[#C6A77D]/45 bg-[#C6A77D]/15 px-4 py-2.5 text-sm font-semibold text-[#e8d4bc] hover:bg-[#C6A77D]/25 disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  {retailerCreateKeyBusy ? "Creating…" : "Create & assign key"}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      ) : null}
       {enterpriseReplyModalQuote ? (
         <div
           className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm sm:p-6"
@@ -2336,6 +2533,19 @@ export default function AdminClient() {
               }`}
             >
               Clients
+            </button>
+            <button
+              type="button"
+              role="tab"
+              aria-selected={activeTab === "retailers"}
+              onClick={() => setActiveTab("retailers")}
+              className={`rounded-full px-5 py-2 text-sm font-semibold transition ${
+                activeTab === "retailers"
+                  ? "bg-zinc-800 text-zinc-100 shadow-sm"
+                  : "text-zinc-500 hover:text-zinc-300"
+              }`}
+            >
+              Retailers
             </button>
             <button
               type="button"
@@ -3054,6 +3264,84 @@ export default function AdminClient() {
                 </div>
               </section>
             </>
+          ) : activeTab === "retailers" ? (
+            <section className="mt-8 w-full overflow-hidden rounded-2xl border border-zinc-800 bg-zinc-900/60 p-6 shadow-sm md:p-8">
+              <h2 className="text-base font-semibold text-zinc-100">Registered retailers</h2>
+              <p className="mt-1 text-sm text-zinc-400">
+                All active retailer dashboard accounts (including those without a Stripe subscription). Create a client
+                API key to link a plan manually.
+              </p>
+              {retailersError ? (
+                <div className="mt-6 rounded-xl border border-red-900/60 bg-red-950/40 px-4 py-3 text-sm text-red-200">
+                  {retailersError}
+                </div>
+              ) : null}
+              {retailersLoading ? (
+                <div className="mt-8 text-sm text-zinc-500">Loading retailers…</div>
+              ) : retailers.length === 0 ? (
+                <div className="mt-8 text-sm text-zinc-500">No registered retailers yet.</div>
+              ) : (
+                <div className="mt-6 w-full overflow-x-auto">
+                  <div className="min-w-[920px]">
+                    <div className="grid grid-cols-[minmax(0,1.1fr)_minmax(0,1fr)_minmax(0,0.85fr)_minmax(0,0.9fr)_auto] gap-3 border-b border-zinc-800 px-3 py-2 text-xs font-semibold uppercase tracking-wider text-zinc-500">
+                      <div>Store</div>
+                      <div>Email</div>
+                      <div>Registered</div>
+                      <div>Subscription</div>
+                      <div className="text-right">Actions</div>
+                    </div>
+                    {retailers.map((row) => {
+                      const registered = Number.isFinite(Date.parse(row.createdAt))
+                        ? new Date(row.createdAt).toLocaleString("en-GB", {
+                            timeZone: "UTC",
+                            day: "numeric",
+                            month: "short",
+                            year: "numeric",
+                            hour: "2-digit",
+                            minute: "2-digit",
+                          })
+                        : "—";
+                      const hasKey = Boolean(row.clientId);
+                      return (
+                        <div
+                          key={row.userId}
+                          className="grid grid-cols-[minmax(0,1.1fr)_minmax(0,1fr)_minmax(0,0.85fr)_minmax(0,0.9fr)_auto] items-center gap-3 border-b border-zinc-800 px-3 py-3 text-sm text-zinc-200"
+                        >
+                          <div className="min-w-0 truncate font-semibold text-zinc-100">{row.storeName}</div>
+                          <div className="min-w-0 truncate text-zinc-300">{row.email}</div>
+                          <div className="text-xs text-zinc-500">{registered} UTC</div>
+                          <div>
+                            <span
+                              className={`inline-flex rounded-full border px-2.5 py-0.5 text-xs font-medium ${retailerStatusBadgeClass(row.subscriptionStatus)}`}
+                            >
+                              {row.subscriptionStatus}
+                            </span>
+                          </div>
+                          <div className="flex justify-end">
+                            {hasKey ? (
+                              <span className="text-xs text-zinc-500">Key assigned</span>
+                            ) : (
+                              <button
+                                type="button"
+                                onClick={() => openRetailerCreateKeyModal(row)}
+                                disabled={Boolean(retailerCreateKeyTarget) || retailerCreateKeyBusy}
+                                className="inline-flex h-9 shrink-0 items-center justify-center rounded-full border border-[#C6A77D]/45 bg-[#C6A77D]/10 px-4 text-xs font-semibold uppercase tracking-wide text-[#e8d4bc] transition hover:border-[#C6A77D]/65 hover:bg-[#C6A77D]/20 disabled:cursor-not-allowed disabled:opacity-40"
+                              >
+                                Create key
+                              </button>
+                            )}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+              <p className="mt-6 text-xs text-zinc-600">
+                Redis keys: <span className="font-mono text-zinc-400">fit-room:retailer:user:*</span>,{" "}
+                <span className="font-mono text-zinc-400">fit-room:retailer:email:*</span>
+              </p>
+            </section>
           ) : activeTab === "contact" ? (
             <section className="mt-8 w-full overflow-hidden rounded-2xl border border-zinc-800 bg-zinc-900/60 p-6 shadow-sm md:p-8">
               <h2 className="text-base font-semibold text-zinc-100">Contact form submissions</h2>

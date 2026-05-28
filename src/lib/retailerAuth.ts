@@ -596,6 +596,90 @@ export async function listRetailersLinkedToClientId(
   return [...merged.values()];
 }
 
+export type RetailerAdminAccountRow = {
+  userId: string;
+  storeName: string;
+  email: string;
+  createdAt: string;
+  clientId: string | null;
+  subscriptionStatus: string;
+};
+
+/** Human-readable subscription / plan state for admin retailer list. */
+export function retailerAdminSubscriptionStatusLabel(
+  user: Pick<
+    RetailerUser,
+    "clientId" | "stripeSubscriptionId" | "subscriptionAccessUntil" | "subscriptionCanceledAt"
+  >,
+): string {
+  if (!user.clientId?.trim()) return "No subscription";
+
+  if (user.stripeSubscriptionId?.trim()) {
+    if (retailerEligibleForTryOnTopUps(user)) {
+      if (user.subscriptionCanceledAt?.trim() || user.subscriptionAccessUntil?.trim()) {
+        return "Subscribed (canceling)";
+      }
+      return "Subscribed";
+    }
+    return "Subscription expired";
+  }
+
+  return "Manual key";
+}
+
+/** Active (non-deleted) retailer dashboard accounts for admin — newest registrations first. */
+export async function listActiveRetailerAccountsForAdmin(limit = 500): Promise<RetailerAdminAccountRow[]> {
+  const redis = getRedis();
+  const byId = new Map<string, RetailerAdminAccountRow>();
+
+  type RedisScanResult = [number, string[]];
+  type RedisScanFn = (
+    cursor: number,
+    opts: { match: string; count?: number },
+  ) => Promise<RedisScanResult>;
+
+  async function scanPrefix(prefix: string) {
+    let cursor = 0;
+    while (byId.size < limit) {
+      const res = await (redis as unknown as { scan: RedisScanFn }).scan(cursor, {
+        match: `${prefix}*`,
+        count: 200,
+      });
+      cursor = res[0];
+      const keys = res[1] ?? [];
+      if (keys.length > 0) {
+        const vals = (await redis.mget(...keys)) as Array<string | RetailerUser | null>;
+        for (const raw of vals) {
+          const u = parseRetailerUserRaw(raw);
+          if (!u?.id || !u.email?.trim() || u.deletedAt) continue;
+          byId.set(u.id, {
+            userId: u.id,
+            storeName: u.storeName.trim() || u.companyName.trim() || "—",
+            email: u.email.trim(),
+            createdAt: u.createdAt,
+            clientId: u.clientId?.trim() || null,
+            subscriptionStatus: retailerAdminSubscriptionStatusLabel(u),
+          });
+          if (byId.size >= limit) break;
+        }
+      }
+      if (cursor === 0) break;
+    }
+  }
+
+  await scanPrefix(USER_PREFIX);
+  await scanPrefix(LEGACY_USER_PREFIX);
+
+  const rows = [...byId.values()];
+  rows.sort((a, b) => {
+    const ta = Date.parse(a.createdAt);
+    const tb = Date.parse(b.createdAt);
+    if (Number.isFinite(ta) && Number.isFinite(tb) && ta !== tb) return tb - ta;
+    return a.email.localeCompare(b.email);
+  });
+  return rows.slice(0, limit);
+}
+
 /** Email index stores a UUID string; Upstash may return string or (rarely) another shape. */
 function redisUserIdFromIndex(raw: unknown): string | null {
   if (raw == null) return null;
