@@ -277,8 +277,22 @@ async function fulfillPaidSubscriptionCheckoutSession(session: Stripe.Checkout.S
   );
 }
 
+function isCatalogSubscriptionCheckout(session: Stripe.Checkout.Session): boolean {
+  return parseSubscriptionPlanKey(session.metadata?.plan ?? "") != null;
+}
+
+/** Payment Link checkout: retailer_user_id without catalog plan metadata (one-time or subscription). */
+function isRetailerPaymentLinkCheckout(session: Stripe.Checkout.Session): boolean {
+  const retailerUserId = (session.metadata?.retailer_user_id ?? session.client_reference_id ?? "").trim();
+  const metadataClientId = (session.metadata?.client_id ?? "").trim();
+  if (!retailerUserId || metadataClientId) return false;
+  if (session.metadata?.checkout_kind === STRIPE_TOP_UP_CHECKOUT_KIND) return false;
+  if (isCatalogSubscriptionCheckout(session)) return false;
+  return session.mode === "payment" || session.mode === "subscription";
+}
+
 /**
- * Enterprise Payment Link: one-time payment with retailer_user_id in session metadata.
+ * Enterprise Payment Link: payment or subscription with retailer_user_id and no catalog plan key.
  * Creates (or updates) a client API key, links it to the retailer, and emails the widget snippet.
  */
 async function fulfillPaidEnterprisePaymentLinkSession(session: Stripe.Checkout.Session): Promise<void> {
@@ -345,9 +359,15 @@ async function fulfillPaidEnterprisePaymentLinkSession(session: Stripe.Checkout.
 
   await linkRetailerToClientId(user.id, clientRecord.id);
 
+  const stripeSubscriptionId = stripeExpandableId(session.subscription);
   const stripeCustomerId = stripeExpandableId(session.customer);
-  if (stripeCustomerId) {
-    await attachStripeBillingIds(user.id, { stripeCustomerId });
+
+  if (stripeSubscriptionId || stripeCustomerId) {
+    await attachStripeBillingIds(user.id, {
+      ...(stripeSubscriptionId ? { stripeSubscriptionId } : {}),
+      ...(stripeCustomerId ? { stripeCustomerId } : {}),
+      ...(stripeSubscriptionId ? { clearSubscriptionCancellationSchedule: true } : {}),
+    });
   }
 
   queueRetailerEnterprisePaymentConfirmationEmail(
@@ -399,12 +419,7 @@ export async function fulfillCheckoutSessionIfPaid(session: Stripe.Checkout.Sess
     return;
   }
 
-  const retailerUserId = (session.metadata?.retailer_user_id ?? session.client_reference_id ?? "").trim();
-  const metadataClientId = (session.metadata?.client_id ?? "").trim();
-  const isEnterprisePaymentLink =
-    session.mode === "payment" && Boolean(retailerUserId) && !metadataClientId;
-
-  if (isEnterprisePaymentLink) {
+  if (isRetailerPaymentLinkCheckout(session)) {
     const claimed = await claimStripeCheckoutProcessing(session.id);
     if (!claimed) return;
     try {
