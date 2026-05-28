@@ -200,6 +200,15 @@ function retailerStatusBadgeClass(status: RetailerAdminRow["subscriptionStatus"]
 const STRIPE_CREATE_PAYMENT_LINK_URL = "https://dashboard.stripe.com/test/payment-links/create";
 const STRIPE_WEBHOOK_URL = "https://dashboard.stripe.com/test/workbench/webhooks";
 
+const RETAILER_ENTERPRISE_PAYMENT_HELP_STEPS = [
+  "Копирай User ID на клиента с Copy бутона.",
+  "Цъкни Stripe бутона → Payment Links → Create.",
+  "Добави продукт с месечна цена.",
+  "Scroll до Metadata и добави: Key: retailer_user_id → Value: (копирания ID) и Key: try_on_limit → Value: (брой try-ons).",
+  "Създай линка и го прати с Send Email бутона.",
+  "След плащане провери с Check Webhook бутона.",
+] as const;
+
 /** Mirrors `/api/admin/contact-inquiries` inquiry objects (no server-only imports). */
 type ContactInquiryRow = {
   id: string;
@@ -556,6 +565,7 @@ export default function AdminClient() {
   const [retailerEmailPaymentLink, setRetailerEmailPaymentLink] = useState("");
   const [retailerEmailModalError, setRetailerEmailModalError] = useState<string | null>(null);
   const [retailerUserIdCopiedId, setRetailerUserIdCopiedId] = useState<string | null>(null);
+  const [retailerEnterpriseHelpOpen, setRetailerEnterpriseHelpOpen] = useState(false);
 
   const [reviewsPendingBadge, setReviewsPendingBadge] = useState(0);
   const [subscriptionReviewsPending, setSubscriptionReviewsPending] = useState<SubscriptionReviewRow[]>([]);
@@ -3484,6 +3494,39 @@ export default function AdminClient() {
                 <span className="text-zinc-500">Active</span> = API key linked;{" "}
                 <span className="text-zinc-500">No Plan</span> = registered only.
               </p>
+
+              <div className="mt-5">
+                <button
+                  type="button"
+                  onClick={() => setRetailerEnterpriseHelpOpen((open) => !open)}
+                  aria-expanded={retailerEnterpriseHelpOpen}
+                  className="flex w-full items-center gap-3 rounded-xl border border-[#C6A77D]/30 bg-[#141210]/80 px-4 py-3 text-left transition hover:border-[#C6A77D]/50 hover:bg-[#1a1612]"
+                >
+                  <span
+                    className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-[#C6A77D]/55 bg-[#C6A77D]/10 text-base font-bold leading-none text-[#C6A77D]"
+                    aria-hidden
+                  >
+                    ?
+                  </span>
+                  <span className="text-sm font-semibold text-[#e8d4bc]">How to create Enterprise payment</span>
+                  <span className="ml-auto text-lg leading-none text-zinc-500" aria-hidden>
+                    {retailerEnterpriseHelpOpen ? "−" : "+"}
+                  </span>
+                </button>
+                {retailerEnterpriseHelpOpen ? (
+                  <ol className="mt-3 space-y-2.5 rounded-xl border border-[#C6A77D]/20 bg-black/25 px-4 py-4">
+                    {RETAILER_ENTERPRISE_PAYMENT_HELP_STEPS.map((step, i) => (
+                      <li key={i} className="flex gap-3 text-sm leading-relaxed text-zinc-200">
+                        <span className="mt-0.5 inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-[#2c241f] text-[11px] font-bold text-[#C6A77D]">
+                          {i + 1}
+                        </span>
+                        <span>{step}</span>
+                      </li>
+                    ))}
+                  </ol>
+                ) : null}
+              </div>
+
               {retailersError ? (
                 <div className="mt-6 rounded-xl border border-red-900/60 bg-red-950/40 px-4 py-3 text-sm text-red-200">
                   {retailersError}
