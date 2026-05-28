@@ -189,9 +189,11 @@ type RetailerAdminRow = {
 };
 
 function retailerStatusBadgeClass(status: RetailerAdminRow["subscriptionStatus"]): string {
-  if (status === "Active") return "border-emerald-800/60 bg-emerald-950/40 text-emerald-200";
-  return "border-zinc-700 bg-zinc-900/80 text-zinc-400";
+  if (status === "Active") return "border-emerald-700/70 bg-emerald-950/50 text-emerald-300";
+  return "border-red-900/70 bg-red-950/45 text-red-300";
 }
+
+const STRIPE_PAYMENT_LINKS_URL = "https://dashboard.stripe.com/payment-links";
 
 /** Mirrors `/api/admin/contact-inquiries` inquiry objects (no server-only imports). */
 type ContactInquiryRow = {
@@ -542,6 +544,8 @@ export default function AdminClient() {
   const [retailerCreateKeyFashn, setRetailerCreateKeyFashn] = useState("");
   const [retailerCreateKeyBusy, setRetailerCreateKeyBusy] = useState(false);
   const [retailerCreateKeyError, setRetailerCreateKeyError] = useState<string | null>(null);
+  const [retailerWelcomeEmailBusyId, setRetailerWelcomeEmailBusyId] = useState<string | null>(null);
+  const [retailerWelcomeEmailNotice, setRetailerWelcomeEmailNotice] = useState<string | null>(null);
 
   const [reviewsPendingBadge, setReviewsPendingBadge] = useState(0);
   const [subscriptionReviewsPending, setSubscriptionReviewsPending] = useState<SubscriptionReviewRow[]>([]);
@@ -1253,6 +1257,37 @@ export default function AdminClient() {
     setRetailerCreateKeyError(null);
   }
 
+  async function sendRetailerWelcomeEmail(row: RetailerAdminRow) {
+    setRetailerWelcomeEmailBusyId(row.userId);
+    setRetailerWelcomeEmailNotice(null);
+    setRetailersError(null);
+    try {
+      const res = await fetch("/api/admin/retailers/welcome-email", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ retailerUserId: row.userId }),
+      });
+      const contentType = res.headers.get("content-type") ?? "";
+      let data: { ok?: boolean; error?: string; to?: string; storeName?: string };
+      if (contentType.includes("application/json")) {
+        data = (await res.json()) as typeof data;
+      } else {
+        const text = (await res.text()).trim();
+        data = { error: text.slice(0, 240) || `Request failed (${res.status})` };
+      }
+      if (!res.ok) {
+        if (data.error === "Unauthorized.") window.location.reload();
+        setRetailersError(data.error || "Failed to send welcome email.");
+        return;
+      }
+      setRetailerWelcomeEmailNotice(`Welcome email sent to ${data.to ?? row.email}.`);
+    } catch (e) {
+      setRetailersError(e instanceof Error ? e.message : "Failed to send welcome email.");
+    } finally {
+      setRetailerWelcomeEmailBusyId(null);
+    }
+  }
+
   async function submitRetailerCreateKey(e: React.FormEvent) {
     e.preventDefault();
     const target = retailerCreateKeyTarget;
@@ -1403,6 +1438,12 @@ export default function AdminClient() {
     const t = window.setTimeout(() => setSendInstallResult(null), 6200);
     return () => clearTimeout(t);
   }, [sendInstallResult]);
+
+  useEffect(() => {
+    if (retailerWelcomeEmailNotice === null) return undefined;
+    const t = window.setTimeout(() => setRetailerWelcomeEmailNotice(null), 6200);
+    return () => clearTimeout(t);
+  }, [retailerWelcomeEmailNotice]);
 
   useEffect(() => {
     if (!quotaPreviewOpen) return;
@@ -3283,14 +3324,19 @@ export default function AdminClient() {
                   {retailersError}
                 </div>
               ) : null}
+              {retailerWelcomeEmailNotice ? (
+                <div className="mt-6 rounded-xl border border-emerald-900/50 bg-emerald-950/35 px-4 py-3 text-sm text-emerald-200">
+                  {retailerWelcomeEmailNotice}
+                </div>
+              ) : null}
               {retailersLoading ? (
                 <div className="mt-8 text-sm text-zinc-500">Loading retailers…</div>
               ) : retailers.length === 0 ? (
                 <div className="mt-8 text-sm text-zinc-500">No registered retailers yet.</div>
               ) : (
                 <div className="mt-6 w-full overflow-x-auto">
-                  <div className="min-w-[920px]">
-                    <div className="grid grid-cols-[minmax(0,1.1fr)_minmax(0,1fr)_minmax(0,0.85fr)_minmax(0,0.9fr)_auto] gap-3 border-b border-zinc-800 px-3 py-2 text-xs font-semibold uppercase tracking-wider text-zinc-500">
+                  <div className="min-w-[1080px]">
+                    <div className="grid grid-cols-[minmax(0,1fr)_minmax(0,1fr)_minmax(0,0.85fr)_minmax(0,5.5rem)_minmax(0,1.4fr)] gap-3 border-b border-zinc-800 px-3 py-2 text-xs font-semibold uppercase tracking-wider text-zinc-500">
                       <div>Store</div>
                       <div>Email</div>
                       <div>Registered</div>
@@ -3309,11 +3355,12 @@ export default function AdminClient() {
                               minute: "2-digit",
                             })
                           : "—";
-                      const hasKey = Boolean(row.clientId);
+                      const isNoPlan = row.subscriptionStatus === "No Plan";
+                      const welcomeBusy = retailerWelcomeEmailBusyId === row.userId;
                       return (
                         <div
                           key={row.userId}
-                          className="grid grid-cols-[minmax(0,1.1fr)_minmax(0,1fr)_minmax(0,0.85fr)_minmax(0,0.9fr)_auto] items-center gap-3 border-b border-zinc-800 px-3 py-3 text-sm text-zinc-200"
+                          className="grid grid-cols-[minmax(0,1fr)_minmax(0,1fr)_minmax(0,0.85fr)_minmax(0,5.5rem)_minmax(0,1.4fr)] items-center gap-3 border-b border-zinc-800 px-3 py-3 text-sm text-zinc-200"
                         >
                           <div className="min-w-0 truncate font-semibold text-zinc-100">{row.storeName}</div>
                           <div className="min-w-0 truncate text-zinc-300">{row.email}</div>
@@ -3327,18 +3374,46 @@ export default function AdminClient() {
                               {row.subscriptionStatus}
                             </span>
                           </div>
-                          <div className="flex justify-end">
-                            {hasKey ? (
-                              <span className="text-xs text-zinc-500">Key assigned</span>
+                          <div className="flex flex-wrap justify-end gap-2">
+                            {isNoPlan ? (
+                              <>
+                                {!row.clientId ? (
+                                  <button
+                                    type="button"
+                                    onClick={() => openRetailerCreateKeyModal(row)}
+                                    disabled={
+                                      Boolean(retailerCreateKeyTarget) ||
+                                      retailerCreateKeyBusy ||
+                                      welcomeBusy
+                                    }
+                                    className="inline-flex h-9 shrink-0 items-center justify-center rounded-full border border-[#C6A77D]/45 bg-[#C6A77D]/10 px-3 text-xs font-semibold uppercase tracking-wide text-[#e8d4bc] transition hover:border-[#C6A77D]/65 hover:bg-[#C6A77D]/20 disabled:cursor-not-allowed disabled:opacity-40"
+                                  >
+                                    Create key
+                                  </button>
+                                ) : null}
+                                <a
+                                  href={STRIPE_PAYMENT_LINKS_URL}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="inline-flex h-9 shrink-0 items-center justify-center rounded-full border border-violet-800/60 bg-violet-950/40 px-3 text-xs font-semibold uppercase tracking-wide text-violet-200 transition hover:border-violet-600/70 hover:bg-violet-950/60"
+                                >
+                                  Stripe
+                                </a>
+                                <button
+                                  type="button"
+                                  onClick={() => void sendRetailerWelcomeEmail(row)}
+                                  disabled={
+                                    welcomeBusy ||
+                                    retailerWelcomeEmailBusyId !== null ||
+                                    row.email === "—"
+                                  }
+                                  className="inline-flex h-9 shrink-0 items-center justify-center rounded-full border border-sky-800/60 bg-sky-950/40 px-3 text-xs font-semibold uppercase tracking-wide text-sky-200 transition hover:border-sky-600/70 hover:bg-sky-950/60 disabled:cursor-not-allowed disabled:opacity-40"
+                                >
+                                  {welcomeBusy ? "Sending…" : "Send Welcome Email"}
+                                </button>
+                              </>
                             ) : (
-                              <button
-                                type="button"
-                                onClick={() => openRetailerCreateKeyModal(row)}
-                                disabled={Boolean(retailerCreateKeyTarget) || retailerCreateKeyBusy}
-                                className="inline-flex h-9 shrink-0 items-center justify-center rounded-full border border-[#C6A77D]/45 bg-[#C6A77D]/10 px-4 text-xs font-semibold uppercase tracking-wide text-[#e8d4bc] transition hover:border-[#C6A77D]/65 hover:bg-[#C6A77D]/20 disabled:cursor-not-allowed disabled:opacity-40"
-                              >
-                                Create key
-                              </button>
+                              <span className="text-xs text-zinc-500">—</span>
                             )}
                           </div>
                         </div>
