@@ -1,6 +1,12 @@
 import type Stripe from "stripe";
 import { getStripe } from "@/lib/stripeServer";
-import { fulfillCheckoutSessionIfPaid } from "@/lib/stripeFulfillment";
+import {
+  claimStripeCheckoutProcessing,
+  fulfillCheckoutSessionIfPaid,
+  fulfillPaidEnterprisePaymentLinkSession,
+  isRetailerPaymentLinkCheckout,
+  releaseStripeCheckoutProcessing,
+} from "@/lib/stripeFulfillment";
 
 export const runtime = "nodejs";
 
@@ -32,7 +38,20 @@ export async function POST(req: Request): Promise<Response> {
   try {
     if (event.type === "checkout.session.completed") {
       const session = event.data.object as Stripe.Checkout.Session;
-      await fulfillCheckoutSessionIfPaid(session);
+
+      if (session.payment_status === "paid" && isRetailerPaymentLinkCheckout(session)) {
+        const claimed = await claimStripeCheckoutProcessing(session.id);
+        if (claimed) {
+          try {
+            await fulfillPaidEnterprisePaymentLinkSession(session);
+          } catch (e) {
+            await releaseStripeCheckoutProcessing(session.id);
+            throw e;
+          }
+        }
+      } else {
+        await fulfillCheckoutSessionIfPaid(session);
+      }
     }
     return Response.json({ received: true });
   } catch (e) {

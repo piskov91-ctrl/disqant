@@ -282,7 +282,7 @@ function isCatalogSubscriptionCheckout(session: Stripe.Checkout.Session): boolea
 }
 
 /** Payment Link checkout: retailer_user_id without catalog plan metadata (one-time or subscription). */
-function isRetailerPaymentLinkCheckout(session: Stripe.Checkout.Session): boolean {
+export function isRetailerPaymentLinkCheckout(session: Stripe.Checkout.Session): boolean {
   const retailerUserId = (session.metadata?.retailer_user_id ?? session.client_reference_id ?? "").trim();
   const metadataClientId = (session.metadata?.client_id ?? "").trim();
   if (!retailerUserId || metadataClientId) return false;
@@ -294,8 +294,9 @@ function isRetailerPaymentLinkCheckout(session: Stripe.Checkout.Session): boolea
 /**
  * Enterprise Payment Link: payment or subscription with retailer_user_id and no catalog plan key.
  * Creates (or updates) a client API key, links it to the retailer, and emails the widget snippet.
+ * Idempotency lock must be claimed by the webhook handler before calling.
  */
-async function fulfillPaidEnterprisePaymentLinkSession(session: Stripe.Checkout.Session): Promise<void> {
+export async function fulfillPaidEnterprisePaymentLinkSession(session: Stripe.Checkout.Session): Promise<void> {
   const retailerUserId = (session.metadata?.retailer_user_id ?? session.client_reference_id ?? "").trim();
   const tryOnLimit = parseEnterpriseTryOnLimitFromMetadata(session);
 
@@ -412,18 +413,6 @@ export async function fulfillCheckoutSessionIfPaid(session: Stripe.Checkout.Sess
     if (!claimed) return;
     try {
       await fulfillPaidTopUpCheckoutSession(session);
-    } catch (e) {
-      await releaseStripeCheckoutProcessing(session.id);
-      throw e;
-    }
-    return;
-  }
-
-  if (isRetailerPaymentLinkCheckout(session)) {
-    const claimed = await claimStripeCheckoutProcessing(session.id);
-    if (!claimed) return;
-    try {
-      await fulfillPaidEnterprisePaymentLinkSession(session);
     } catch (e) {
       await releaseStripeCheckoutProcessing(session.id);
       throw e;
