@@ -197,7 +197,7 @@ function retailerStatusBadgeClass(status: RetailerAdminRow["subscriptionStatus"]
   return "border-red-900/70 bg-red-950/45 text-red-300";
 }
 
-const STRIPE_PAYMENT_LINKS_URL = "https://dashboard.stripe.com/payment-links";
+const STRIPE_CREATE_PAYMENT_LINK_URL = "https://dashboard.stripe.com/test/payment-links/create";
 
 /** Mirrors `/api/admin/contact-inquiries` inquiry objects (no server-only imports). */
 type ContactInquiryRow = {
@@ -2268,12 +2268,12 @@ export default function AdminClient() {
               <p className="mt-1 text-xs text-zinc-500">
                 Create a link at{" "}
                 <a
-                  href={STRIPE_PAYMENT_LINKS_URL}
+                  href={STRIPE_CREATE_PAYMENT_LINK_URL}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="text-sky-400 underline-offset-2 hover:underline"
                 >
-                  dashboard.stripe.com/payment-links
+                  dashboard.stripe.com/test/payment-links/create
                 </a>
                 , then paste the full URL below.
               </p>
@@ -3574,7 +3574,7 @@ export default function AdminClient() {
                                   </button>
                                 ) : null}
                                 <a
-                                  href={STRIPE_PAYMENT_LINKS_URL}
+                                  href={STRIPE_CREATE_PAYMENT_LINK_URL}
                                   target="_blank"
                                   rel="noopener noreferrer"
                                   className="inline-flex h-9 shrink-0 items-center justify-center rounded-full border border-violet-800/60 bg-violet-950/40 px-3 text-xs font-semibold uppercase tracking-wide text-violet-200 transition hover:border-violet-600/70 hover:bg-violet-950/60"
