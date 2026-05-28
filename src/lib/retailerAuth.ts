@@ -596,125 +596,13 @@ export async function listRetailersLinkedToClientId(
   return [...merged.values()];
 }
 
-export type RetailerAdminAccountRow = {
-  userId: string;
-  storeName: string;
-  email: string;
-  createdAt: string;
-  clientId: string | null;
-  subscriptionStatus: "Active" | "No Plan";
-};
+export type { RetailerAdminAccountRow } from "@/lib/retailerAdminList";
 
-/** Admin retailer list: Active = linked API key / plan; No Plan = registered only. */
-export function retailerAdminSubscriptionStatusLabel(
-  user: Pick<RetailerUser, "clientId">,
-): "Active" | "No Plan" {
-  return user.clientId?.trim() ? "Active" : "No Plan";
-}
-
-function parseRedisScanCursor(raw: unknown): number {
-  if (typeof raw === "string") {
-    const n = Number.parseInt(raw, 10);
-    return Number.isFinite(n) ? n : 0;
-  }
-  if (typeof raw === "number" && Number.isFinite(raw)) return raw;
-  return 0;
-}
-
-function userIdFromRetailerRedisKey(key: string): string | null {
-  if (key.startsWith(USER_PREFIX)) {
-    const id = key.slice(USER_PREFIX.length).trim();
-    return id || null;
-  }
-  if (key.startsWith(LEGACY_USER_PREFIX)) {
-    const id = key.slice(LEGACY_USER_PREFIX.length).trim();
-    return id || null;
-  }
-  return null;
-}
-
-async function scanAllKeysWithPrefix(prefix: string): Promise<string[]> {
-  const redis = getRedis();
-  const out: string[] = [];
-  let cursor = 0;
-  for (;;) {
-    const tuple = await redis.scan(cursor, { match: `${prefix}*`, count: 500 });
-    const nextCursor = parseRedisScanCursor(tuple[0]);
-    const keys = (tuple[1] ?? []) as string[];
-    for (const k of keys) {
-      if (k.startsWith(prefix)) out.push(k);
-    }
-    if (nextCursor === 0) break;
-    cursor = nextCursor;
-  }
-  return out;
-}
-
-async function mgetRetailerRecords(keys: string[]): Promise<(unknown | null)[]> {
-  if (!keys.length) return [];
-  const redis = getRedis();
-  const out: (unknown | null)[] = [];
-  const chunkSize = 100;
-  for (let i = 0; i < keys.length; i += chunkSize) {
-    const chunk = keys.slice(i, i + chunkSize);
-    const vals = (await redis.mget(...chunk)) as (unknown | null)[];
-    out.push(...vals);
-  }
-  return out;
-}
-
-function retailerRowFromRecord(
-  u: RetailerUser,
-  keyUserId: string | null,
-): RetailerAdminAccountRow | null {
-  const userId = (typeof u.id === "string" && u.id.trim()) || keyUserId || "";
-  if (!userId) return null;
-  if (u.deletedAt?.trim()) return null;
-
-  const email = typeof u.email === "string" ? u.email.trim() : "";
-  const storeName = u.storeName.trim() || u.companyName.trim() || "—";
-  const createdAt = typeof u.createdAt === "string" && u.createdAt.trim() ? u.createdAt : "";
-
-  return {
-    userId,
-    storeName,
-    email: email || "—",
-    createdAt,
-    clientId: u.clientId?.trim() || null,
-    subscriptionStatus: retailerAdminSubscriptionStatusLabel(u),
-  };
-}
-
-/** All non-deleted retailer dashboard accounts for admin — newest registrations first. */
-export async function listActiveRetailerAccountsForAdmin(limit = 10_000): Promise<RetailerAdminAccountRow[]> {
-  const keySet = new Set<string>();
-  for (const prefix of [USER_PREFIX, LEGACY_USER_PREFIX]) {
-    for (const k of await scanAllKeysWithPrefix(prefix)) {
-      keySet.add(k);
-    }
-  }
-
-  const keys = [...keySet];
-  const vals = await mgetRetailerRecords(keys);
-  const byId = new Map<string, RetailerAdminAccountRow>();
-
-  for (let i = 0; i < keys.length; i++) {
-    const u = parseRetailerUserRaw(vals[i]);
-    if (!u) continue;
-    const row = retailerRowFromRecord(u, userIdFromRetailerRedisKey(keys[i] ?? ""));
-    if (!row) continue;
-    byId.set(row.userId, row);
-  }
-
-  const rows = [...byId.values()];
-  rows.sort((a, b) => {
-    const ta = Date.parse(a.createdAt);
-    const tb = Date.parse(b.createdAt);
-    if (Number.isFinite(ta) && Number.isFinite(tb) && ta !== tb) return tb - ta;
-    return a.email.localeCompare(b.email);
-  });
-  return rows.slice(0, limit);
-}
+export {
+  listActiveRetailerAccountsForAdmin,
+  listRetailerAccountsForAdmin,
+  retailerAdminSubscriptionStatusLabel,
+} from "@/lib/retailerAdminList";
 
 /** Email index stores a UUID string; Upstash may return string or (rarely) another shape. */
 function redisUserIdFromIndex(raw: unknown): string | null {

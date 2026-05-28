@@ -4,8 +4,8 @@ import { createClientKey } from "@/lib/apiKeyStore";
 import {
   getRetailerById,
   linkRetailerToClientId,
-  retailerAdminSubscriptionStatusLabel,
 } from "@/lib/retailerAuth";
+import { retailerAdminSubscriptionStatusLabel } from "@/lib/retailerAdminList";
 
 export const runtime = "nodejs";
 

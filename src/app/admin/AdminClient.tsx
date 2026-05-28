@@ -1218,7 +1218,16 @@ export default function AdminClient() {
     setRetailersError(null);
     try {
       const res = await fetch("/api/admin/retailers");
-      const data = (await res.json()) as { retailers?: RetailerAdminRow[]; error?: string };
+      const contentType = res.headers.get("content-type") ?? "";
+      let data: { retailers?: RetailerAdminRow[]; error?: string };
+      if (contentType.includes("application/json")) {
+        data = (await res.json()) as { retailers?: RetailerAdminRow[]; error?: string };
+      } else {
+        const text = (await res.text()).trim();
+        data = {
+          error: text.slice(0, 240) || `Request failed (${res.status})`,
+        };
+      }
       if (!res.ok) {
         if (data.error === "Unauthorized.") window.location.reload();
         setRetailersError(data.error || "Failed to load retailers.");
