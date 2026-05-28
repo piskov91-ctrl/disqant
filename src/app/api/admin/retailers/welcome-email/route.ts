@@ -1,8 +1,10 @@
 import { cookies } from "next/headers";
 import { ADMIN_AUTH_COOKIE, isAdminAuthorizedCookieValue } from "@/lib/adminAuth";
 import { isFitRoomEmailConfigured, sendFitRoomMail } from "@/lib/fitRoomEmail";
-import { fitRoomMarketingOrigin } from "@/lib/fitRoomTransactionalEmailHtml";
-import { buildRetailerWelcomeEmailContent } from "@/lib/retailerWelcomeEmail";
+import {
+  buildRetailerPlanActivationEmailContent,
+  normalizeRetailerPaymentLinkUrl,
+} from "@/lib/retailerWelcomeEmail";
 import { getRetailerById } from "@/lib/retailerAuth";
 
 export const runtime = "nodejs";
@@ -16,6 +18,7 @@ async function requireAdmin() {
 
 type Body = {
   retailerUserId?: unknown;
+  paymentLinkUrl?: unknown;
 };
 
 export async function POST(req: Request) {
@@ -35,8 +38,17 @@ export async function POST(req: Request) {
   }
 
   const retailerUserId = typeof body.retailerUserId === "string" ? body.retailerUserId.trim() : "";
+  const paymentLinkRaw = typeof body.paymentLinkUrl === "string" ? body.paymentLinkUrl : "";
+  const paymentLinkUrl = normalizeRetailerPaymentLinkUrl(paymentLinkRaw);
+
   if (!retailerUserId) {
     return Response.json({ error: "Retailer user id is required." }, { status: 400 });
+  }
+  if (!paymentLinkUrl) {
+    return Response.json(
+      { error: "Paste a valid HTTPS Stripe payment link before sending." },
+      { status: 400 },
+    );
   }
 
   const user = await getRetailerById(retailerUserId);
@@ -50,21 +62,32 @@ export async function POST(req: Request) {
   }
 
   const storeName = user.storeName.trim() || user.companyName.trim() || "there";
-  const { subject, text, html } = buildRetailerWelcomeEmailContent({
-    storeName,
-    dashboardUrl: `${fitRoomMarketingOrigin()}/dashboard`,
-  });
+
+  let subject: string;
+  let text: string;
+  let html: string;
+  try {
+    ({ subject, text, html } = buildRetailerPlanActivationEmailContent({
+      storeName,
+      paymentLinkUrl,
+    }));
+  } catch (e) {
+    return Response.json(
+      { error: e instanceof Error ? e.message : "Invalid payment link." },
+      { status: 400 },
+    );
+  }
 
   try {
     await sendFitRoomMail({ to: email, subject, text, html });
   } catch (e) {
-    console.error("[fit-room][admin-retailer-welcome-email] send failed", {
+    console.error("[fit-room][admin-retailer-plan-email] send failed", {
       retailerUserId,
       email,
       message: e instanceof Error ? e.message : String(e),
     });
     return Response.json(
-      { error: e instanceof Error ? e.message : "Could not send welcome email." },
+      { error: e instanceof Error ? e.message : "Could not send email." },
       { status: 502 },
     );
   }

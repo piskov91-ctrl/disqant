@@ -21,6 +21,10 @@ import {
   parseSubscriptionPlanKey,
   planLabelFromTryOnLimit,
 } from "@/lib/subscriptionPlans";
+import {
+  buildRetailerPlanActivationEmailPreviewText,
+  normalizeRetailerPaymentLinkUrl,
+} from "@/lib/retailerWelcomeEmail";
 
 type KeyRecord = {
   id: string;
@@ -546,6 +550,9 @@ export default function AdminClient() {
   const [retailerCreateKeyError, setRetailerCreateKeyError] = useState<string | null>(null);
   const [retailerWelcomeEmailBusyId, setRetailerWelcomeEmailBusyId] = useState<string | null>(null);
   const [retailerWelcomeEmailNotice, setRetailerWelcomeEmailNotice] = useState<string | null>(null);
+  const [retailerEmailModalTarget, setRetailerEmailModalTarget] = useState<RetailerAdminRow | null>(null);
+  const [retailerEmailPaymentLink, setRetailerEmailPaymentLink] = useState("");
+  const [retailerEmailModalError, setRetailerEmailModalError] = useState<string | null>(null);
 
   const [reviewsPendingBadge, setReviewsPendingBadge] = useState(0);
   const [subscriptionReviewsPending, setSubscriptionReviewsPending] = useState<SubscriptionReviewRow[]>([]);
@@ -1257,18 +1264,56 @@ export default function AdminClient() {
     setRetailerCreateKeyError(null);
   }
 
-  async function sendRetailerWelcomeEmail(row: RetailerAdminRow) {
-    setRetailerWelcomeEmailBusyId(row.userId);
+  function openRetailerEmailModal(row: RetailerAdminRow) {
+    setRetailerEmailModalTarget(row);
+    setRetailerEmailPaymentLink("");
+    setRetailerEmailModalError(null);
+  }
+
+  function closeRetailerEmailModal() {
+    setRetailerEmailModalTarget(null);
+    setRetailerEmailPaymentLink("");
+    setRetailerEmailModalError(null);
+  }
+
+  const retailerEmailPreview = useMemo(() => {
+    if (!retailerEmailModalTarget) return null;
+    return buildRetailerPlanActivationEmailPreviewText({
+      storeName: retailerEmailModalTarget.storeName,
+      paymentLinkUrl: retailerEmailPaymentLink,
+    });
+  }, [retailerEmailModalTarget, retailerEmailPaymentLink]);
+
+  const retailerEmailPaymentLinkValid = useMemo(
+    () => normalizeRetailerPaymentLinkUrl(retailerEmailPaymentLink) !== null,
+    [retailerEmailPaymentLink],
+  );
+
+  async function submitRetailerPlanEmail() {
+    const target = retailerEmailModalTarget;
+    if (!target) return;
+
+    const paymentLinkUrl = normalizeRetailerPaymentLinkUrl(retailerEmailPaymentLink);
+    if (!paymentLinkUrl) {
+      setRetailerEmailModalError("Paste a valid HTTPS Stripe payment link before sending.");
+      return;
+    }
+
+    setRetailerWelcomeEmailBusyId(target.userId);
+    setRetailerEmailModalError(null);
     setRetailerWelcomeEmailNotice(null);
     setRetailersError(null);
     try {
       const res = await fetch("/api/admin/retailers/welcome-email", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ retailerUserId: row.userId }),
+        body: JSON.stringify({
+          retailerUserId: target.userId,
+          paymentLinkUrl,
+        }),
       });
       const contentType = res.headers.get("content-type") ?? "";
-      let data: { ok?: boolean; error?: string; to?: string; storeName?: string };
+      let data: { ok?: boolean; error?: string; to?: string };
       if (contentType.includes("application/json")) {
         data = (await res.json()) as typeof data;
       } else {
@@ -1277,12 +1322,13 @@ export default function AdminClient() {
       }
       if (!res.ok) {
         if (data.error === "Unauthorized.") window.location.reload();
-        setRetailersError(data.error || "Failed to send welcome email.");
+        setRetailerEmailModalError(data.error || "Failed to send email.");
         return;
       }
-      setRetailerWelcomeEmailNotice(`Welcome email sent to ${data.to ?? row.email}.`);
+      setRetailerWelcomeEmailNotice(`Plan email sent to ${data.to ?? target.email}.`);
+      closeRetailerEmailModal();
     } catch (e) {
-      setRetailersError(e instanceof Error ? e.message : "Failed to send welcome email.");
+      setRetailerEmailModalError(e instanceof Error ? e.message : "Failed to send email.");
     } finally {
       setRetailerWelcomeEmailBusyId(null);
     }
@@ -2168,6 +2214,111 @@ export default function AdminClient() {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      ) : null}
+      {retailerEmailModalTarget ? (
+        <div
+          className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/65 p-4 pt-[max(1rem,env(safe-area-inset-top))] backdrop-blur-sm sm:items-center sm:p-6"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="retailer-email-modal-title"
+        >
+          <div className="my-auto w-full max-w-2xl rounded-2xl border border-[#C6A77D]/25 bg-[#1f1b17] p-6 shadow-xl">
+            <div className="flex items-start justify-between gap-4">
+              <div className="min-w-0">
+                <p id="retailer-email-modal-title" className="text-base font-semibold text-[#F5EDE4]">
+                  Send plan activation email
+                </p>
+                <p className="mt-1 text-sm text-zinc-400">
+                  To{" "}
+                  <span className="font-medium text-zinc-200">{retailerEmailModalTarget.email}</span>
+                  {" · "}
+                  {retailerEmailModalTarget.storeName}
+                </p>
+              </div>
+              <button
+                type="button"
+                disabled={retailerWelcomeEmailBusyId === retailerEmailModalTarget.userId}
+                onClick={closeRetailerEmailModal}
+                className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-zinc-700 text-zinc-300 hover:bg-zinc-800 disabled:opacity-50"
+                aria-label="Close"
+              >
+                ✕
+              </button>
+            </div>
+
+            <div className="mt-6">
+              <label htmlFor="retailer-payment-link" className="block text-sm font-medium text-zinc-200">
+                Stripe payment link
+              </label>
+              <p className="mt-1 text-xs text-zinc-500">
+                Create a link at{" "}
+                <a
+                  href={STRIPE_PAYMENT_LINKS_URL}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-sky-400 underline-offset-2 hover:underline"
+                >
+                  dashboard.stripe.com/payment-links
+                </a>
+                , then paste the full URL below.
+              </p>
+              <input
+                id="retailer-payment-link"
+                type="url"
+                value={retailerEmailPaymentLink}
+                onChange={(e) => setRetailerEmailPaymentLink(e.target.value)}
+                disabled={retailerWelcomeEmailBusyId === retailerEmailModalTarget.userId}
+                placeholder="https://buy.stripe.com/..."
+                className="mt-2 block w-full rounded-xl border border-zinc-700 bg-zinc-950 px-4 py-3 text-sm text-zinc-100 outline-none placeholder:text-zinc-600 focus:border-[#C6A77D]/55"
+                autoComplete="off"
+              />
+              {!retailerEmailPaymentLinkValid && retailerEmailPaymentLink.trim().length > 0 ? (
+                <p className="mt-2 text-xs text-amber-300/90">Enter a valid HTTPS payment link.</p>
+              ) : null}
+            </div>
+
+            {retailerEmailPreview ? (
+              <div className="mt-6 rounded-xl border border-zinc-800 bg-zinc-950/80 p-4">
+                <p className="text-xs font-semibold uppercase tracking-wider text-zinc-500">Preview</p>
+                <p className="mt-3 text-sm font-medium text-zinc-200">
+                  Subject:{" "}
+                  <span className="font-normal text-[#e8d4bc]">{retailerEmailPreview.subject}</span>
+                </p>
+                <pre className="mt-4 max-h-[min(40vh,320px)] overflow-y-auto whitespace-pre-wrap font-sans text-sm leading-relaxed text-zinc-300">
+                  {retailerEmailPreview.body}
+                </pre>
+              </div>
+            ) : null}
+
+            {retailerEmailModalError ? (
+              <div className="mt-4 rounded-xl border border-red-900/60 bg-red-950/40 px-4 py-3 text-sm text-red-200">
+                {retailerEmailModalError}
+              </div>
+            ) : null}
+
+            <div className="mt-6 flex flex-wrap justify-end gap-3">
+              <button
+                type="button"
+                disabled={retailerWelcomeEmailBusyId === retailerEmailModalTarget.userId}
+                onClick={closeRetailerEmailModal}
+                className="inline-flex h-11 items-center justify-center rounded-full border border-zinc-600 bg-zinc-800 px-6 text-sm font-semibold text-zinc-100 transition hover:border-zinc-500 hover:bg-zinc-700 disabled:opacity-45"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                disabled={
+                  retailerWelcomeEmailBusyId === retailerEmailModalTarget.userId ||
+                  !retailerEmailPaymentLinkValid
+                }
+                onClick={() => void submitRetailerPlanEmail()}
+                className="btn-accent-gradient inline-flex h-11 min-w-[7rem] items-center justify-center rounded-full px-6 text-sm font-semibold disabled:cursor-not-allowed disabled:opacity-45"
+              >
+                {retailerWelcomeEmailBusyId === retailerEmailModalTarget.userId ? "Sending…" : "Send email"}
+              </button>
+            </div>
           </div>
         </div>
       ) : null}
@@ -3401,15 +3552,15 @@ export default function AdminClient() {
                                 </a>
                                 <button
                                   type="button"
-                                  onClick={() => void sendRetailerWelcomeEmail(row)}
+                                  onClick={() => openRetailerEmailModal(row)}
                                   disabled={
                                     welcomeBusy ||
-                                    retailerWelcomeEmailBusyId !== null ||
+                                    Boolean(retailerEmailModalTarget) ||
                                     row.email === "—"
                                   }
                                   className="inline-flex h-9 shrink-0 items-center justify-center rounded-full border border-sky-800/60 bg-sky-950/40 px-3 text-xs font-semibold uppercase tracking-wide text-sky-200 transition hover:border-sky-600/70 hover:bg-sky-950/60 disabled:cursor-not-allowed disabled:opacity-40"
                                 >
-                                  {welcomeBusy ? "Sending…" : "Send Welcome Email"}
+                                  Send Email
                                 </button>
                               </>
                             ) : (
