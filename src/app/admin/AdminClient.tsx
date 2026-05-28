@@ -8,6 +8,7 @@ import { Footer } from "@/components/Footer";
 import { AnalyticsInsightsModal } from "@/components/AnalyticsInsightsModal";
 import { AdminWearMeClient } from "@/app/admin/AdminWearMeClient";
 import AdminIntegrationGuide from "@/app/admin/AdminIntegrationGuide";
+import AdminPersonalGuide from "@/app/admin/AdminPersonalGuide";
 import { EnterprisePriceCalculatorModal } from "@/app/admin/EnterprisePriceCalculator";
 import { getNextMonthlyResetUtcDateForDisplay } from "@/lib/billingCycle";
 import { storedOrDerivedBasePlanLimit, totalTryOnsUsed, clientTryOnFullyBlocked } from "@/lib/clientTryOnBuckets";
@@ -158,6 +159,7 @@ type AdminTab =
   | "analytics"
   | "wearMe"
   | "integration"
+  | "guide"
   | "recovery";
 
 type AdminFashnCredits = {
@@ -2884,6 +2886,19 @@ export default function AdminClient() {
             <button
               type="button"
               role="tab"
+              aria-selected={activeTab === "guide"}
+              onClick={() => setActiveTab("guide")}
+              className={`rounded-full px-5 py-2 text-sm font-semibold transition ${
+                activeTab === "guide"
+                  ? "bg-zinc-800 text-zinc-100 shadow-sm"
+                  : "text-zinc-500 hover:text-zinc-300"
+              }`}
+            >
+              Guide
+            </button>
+            <button
+              type="button"
+              role="tab"
               aria-selected={activeTab === "integration"}
               onClick={() => setActiveTab("integration")}
               className={`rounded-full px-5 py-2 text-sm font-semibold transition ${
@@ -4088,6 +4103,8 @@ export default function AdminClient() {
                 </div>
               )}
             </section>
+          ) : activeTab === "guide" ? (
+            <AdminPersonalGuide />
           ) : activeTab === "integration" ? (
             <AdminIntegrationGuide />
           ) : (
