@@ -198,6 +198,7 @@ function retailerStatusBadgeClass(status: RetailerAdminRow["subscriptionStatus"]
 }
 
 const STRIPE_CREATE_PAYMENT_LINK_URL = "https://dashboard.stripe.com/test/payment-links/create";
+const STRIPE_WEBHOOK_URL = "https://dashboard.stripe.com/test/workbench/webhooks";
 
 /** Mirrors `/api/admin/contact-inquiries` inquiry objects (no server-only imports). */
 type ContactInquiryRow = {
@@ -3528,21 +3529,28 @@ export default function AdminClient() {
                         >
                           <div className="min-w-0">
                             <div className="truncate font-semibold text-zinc-100">{row.storeName}</div>
-                            <div className="mt-1.5 flex min-w-0 items-center gap-2">
-                              <span
-                                className="min-w-0 truncate font-mono text-[11px] text-zinc-500"
-                                title={row.userId}
-                              >
-                                {row.userId}
-                              </span>
-                              <button
-                                type="button"
-                                onClick={() => void copyRetailerUserId(row.userId)}
-                                className="inline-flex shrink-0 items-center justify-center rounded-md border border-zinc-700 bg-zinc-900/80 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-zinc-400 transition hover:border-zinc-600 hover:text-zinc-200"
-                                aria-label={`Copy user ID for ${row.storeName}`}
-                              >
-                                {retailerUserIdCopiedId === row.userId ? "Copied" : "Copy ID"}
-                              </button>
+                            <div className="mt-2">
+                              <p className="text-[10px] font-semibold uppercase tracking-wide text-zinc-500">User ID</p>
+                              <div className="mt-1 flex min-w-0 items-center gap-2">
+                                <span
+                                  className="min-w-0 truncate font-mono text-[11px] text-zinc-400"
+                                  title={row.userId}
+                                >
+                                  {row.userId}
+                                </span>
+                                <button
+                                  type="button"
+                                  onClick={() => void copyRetailerUserId(row.userId)}
+                                  className="inline-flex shrink-0 items-center justify-center rounded-md border border-zinc-700 bg-zinc-900/80 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-zinc-400 transition hover:border-zinc-600 hover:text-zinc-200"
+                                  aria-label={`Copy user ID for ${row.storeName}`}
+                                >
+                                  {retailerUserIdCopiedId === row.userId ? "Copied" : "Copy"}
+                                </button>
+                              </div>
+                              <p className="mt-1.5 text-[11px] leading-snug text-zinc-500">
+                                Copy this ID and paste it in Stripe Payment Link under Metadata: Key ={" "}
+                                <span className="font-mono text-zinc-400">retailer_user_id</span>, Value = this ID.
+                              </p>
                             </div>
                           </div>
                           <div className="min-w-0 truncate text-zinc-300">{row.email}</div>
@@ -3594,9 +3602,15 @@ export default function AdminClient() {
                                   Send Email
                                 </button>
                               </>
-                            ) : (
-                              <span className="text-xs text-zinc-500">—</span>
-                            )}
+                            ) : null}
+                            <a
+                              href={STRIPE_WEBHOOK_URL}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="inline-flex h-9 shrink-0 items-center justify-center rounded-full border border-amber-800/60 bg-amber-950/40 px-3 text-xs font-semibold uppercase tracking-wide text-amber-200 transition hover:border-amber-600/70 hover:bg-amber-950/60"
+                            >
+                              Check Webhook
+                            </a>
                           </div>
                         </div>
                       );
