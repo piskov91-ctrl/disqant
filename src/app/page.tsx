@@ -27,24 +27,58 @@ export default async function Home() {
             <div className="grid grid-cols-1 items-center gap-10 md:grid-cols-2 md:gap-10 lg:gap-14 xl:gap-16">
               <div className="order-1 flex min-w-0 flex-col justify-center">
                 <h1 className="max-w-[min(100%,34rem)] text-balance font-serif text-4xl font-normal leading-[1.12] tracking-tight text-[#C6A77D] antialiased sm:text-5xl sm:leading-[1.1] md:text-[2.875rem] md:leading-[1.08] lg:text-6xl lg:leading-[1.06] xl:text-[3.5rem]">
-                  Give your shoppers a virtual fitting room.
+                  AI Virtual Try-On for Fashion Stores
                 </h1>
 
                 <h2 className="mt-6 max-w-[40rem] text-pretty font-sans text-lg font-light leading-relaxed text-zinc-200/95 sm:mt-7 sm:text-xl sm:leading-[1.55]">
-                  The UK&apos;s first virtual try-on for online fashion stores.
+                  Give your shoppers a fitting room experience — directly on your website.
                 </h2>
 
                 <p className="mt-6 max-w-[36rem] text-pretty font-sans text-base font-normal leading-[1.75] text-zinc-300 sm:mt-8 sm:text-lg sm:leading-[1.72]">
-                  Your customers see how your clothes, shoes, jewellery and eyewear look on them — before they
-                  order. Fewer returns, more confident buyers. One line of code. Works on any website.
+                  Wear Me is the UK&apos;s first virtual try-on service built for independent fashion retailers.
+                  Your customers upload a photo and see how your clothes, shoes, bags and jewellery look on them
+                  — before they buy. One line of code. Works on any website.
                 </p>
+
+                <ul className="mt-6 max-w-[36rem] space-y-2.5 font-sans text-base leading-relaxed text-zinc-300 sm:mt-8 sm:text-[1.0625rem]">
+                  <li className="flex gap-3">
+                    <span className="shrink-0 text-[#C6A77D]" aria-hidden>
+                      ✦
+                    </span>
+                    <span>Increases conversions and purchase confidence</span>
+                  </li>
+                  <li className="flex gap-3">
+                    <span className="shrink-0 text-[#C6A77D]" aria-hidden>
+                      ✦
+                    </span>
+                    <span>Reduces product returns</span>
+                  </li>
+                  <li className="flex gap-3">
+                    <span className="shrink-0 text-[#C6A77D]" aria-hidden>
+                      ✦
+                    </span>
+                    <span>Works on clothing, shoes, bags and jewellery</span>
+                  </li>
+                  <li className="flex gap-3">
+                    <span className="shrink-0 text-[#C6A77D]" aria-hidden>
+                      ✦
+                    </span>
+                    <span>Smart analytics to track what sells</span>
+                  </li>
+                  <li className="flex gap-3">
+                    <span className="shrink-0 text-[#C6A77D]" aria-hidden>
+                      ✦
+                    </span>
+                    <span>Live on your store in under 10 minutes</span>
+                  </li>
+                </ul>
 
                 <div className="mt-8 flex flex-wrap items-center gap-3 sm:mt-10 sm:gap-4">
                   <Link
                     href="/demo"
                     className="wear-me-btn inline-flex min-h-[44px] items-center justify-center rounded-full px-7 py-3 text-center text-sm font-semibold sm:text-base"
                   >
-                    Try it yourself
+                    Try It Free
                   </Link>
                   <Link
                     href="/about"
