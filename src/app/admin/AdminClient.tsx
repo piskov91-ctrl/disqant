@@ -8,7 +8,7 @@ import { Footer } from "@/components/Footer";
 import { AnalyticsInsightsModal } from "@/components/AnalyticsInsightsModal";
 import { AdminWearMeClient } from "@/app/admin/AdminWearMeClient";
 import AdminIntegrationGuide from "@/app/admin/AdminIntegrationGuide";
-import { EnterprisePriceCalculator } from "@/app/admin/EnterprisePriceCalculator";
+import { EnterprisePriceCalculatorModal } from "@/app/admin/EnterprisePriceCalculator";
 import { getNextMonthlyResetUtcDateForDisplay } from "@/lib/billingCycle";
 import { storedOrDerivedBasePlanLimit, totalTryOnsUsed, clientTryOnFullyBlocked } from "@/lib/clientTryOnBuckets";
 import { tryOnUsageFillStyle } from "@/lib/tryOnUsageBarStyle";
@@ -148,6 +148,7 @@ type AdminTab =
   | "clients"
   | "contact"
   | "enterprise"
+  | "enterpriseCalc"
   | "reviews"
   | "analytics"
   | "wearMe"
@@ -516,6 +517,7 @@ export default function AdminClient() {
   const [enterpriseReplyBusy, setEnterpriseReplyBusy] = useState(false);
   const [enterpriseReplyError, setEnterpriseReplyError] = useState<string | null>(null);
   const [enterpriseQuoteDeleteBusyId, setEnterpriseQuoteDeleteBusyId] = useState<string | null>(null);
+  const [enterpriseCalcModalOpen, setEnterpriseCalcModalOpen] = useState(false);
 
   const [reviewsPendingBadge, setReviewsPendingBadge] = useState(0);
   const [subscriptionReviewsPending, setSubscriptionReviewsPending] = useState<SubscriptionReviewRow[]>([]);
@@ -1921,6 +1923,10 @@ export default function AdminClient() {
           </div>
         </div>
       ) : null}
+      <EnterprisePriceCalculatorModal
+        open={enterpriseCalcModalOpen}
+        onClose={() => setEnterpriseCalcModalOpen(false)}
+      />
       {enterpriseReplyModalQuote ? (
         <div
           className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm sm:p-6"
@@ -2365,7 +2371,7 @@ export default function AdminClient() {
               aria-selected={activeTab === "enterprise"}
               aria-label={
                 enterpriseQuotesUnread > 0
-                  ? `Enterprise quotes, ${enterpriseQuotesUnread} unread`
+                  ? `Enterprise enquiries, ${enterpriseQuotesUnread} unread`
                   : "Enterprise quote submissions"
               }
               onClick={() => setActiveTab("enterprise")}
@@ -2376,7 +2382,7 @@ export default function AdminClient() {
               }`}
             >
               <span className="inline-flex items-center justify-center gap-2">
-                Enterprise
+                Enterprise enquiries
                 {enterpriseQuotesUnread > 0 ? (
                   <span
                     className="inline-flex min-h-[1.125rem] min-w-[1.125rem] items-center justify-center rounded-full bg-red-600 px-1.5 text-[10px] font-bold leading-none text-white tabular-nums"
@@ -2386,6 +2392,19 @@ export default function AdminClient() {
                   </span>
                 ) : null}
               </span>
+            </button>
+            <button
+              type="button"
+              role="tab"
+              aria-selected={activeTab === "enterpriseCalc"}
+              onClick={() => setActiveTab("enterpriseCalc")}
+              className={`rounded-full px-5 py-2 text-sm font-semibold transition ${
+                activeTab === "enterpriseCalc"
+                  ? "bg-zinc-800 text-zinc-100 shadow-sm"
+                  : "text-zinc-500 hover:text-zinc-300"
+              }`}
+            >
+              Enterprise Calc
             </button>
             <button
               type="button"
@@ -3160,8 +3179,6 @@ export default function AdminClient() {
               </p>
             </section>
           ) : activeTab === "enterprise" ? (
-            <>
-            <EnterprisePriceCalculator />
             <section className="mt-8 w-full overflow-hidden rounded-2xl border border-zinc-800 bg-zinc-900/60 p-6 shadow-sm md:p-8">
                 <h2 className="text-base font-semibold text-zinc-100">Enterprise quote requests</h2>
                 <p className="mt-1 text-sm text-zinc-400">
@@ -3289,7 +3306,22 @@ export default function AdminClient() {
                   <span className="font-mono text-zinc-400">fit-room:inquiryThread:enterprise:*</span>
                 </p>
             </section>
-            </>
+          ) : activeTab === "enterpriseCalc" ? (
+            <section className="mt-8 w-full overflow-hidden rounded-2xl border border-[#C6A77D]/20 bg-gradient-to-br from-[#1f1b17]/80 via-zinc-900/60 to-[#14110e]/80 p-6 shadow-sm md:p-10">
+              <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-[#C6A77D]/75">Enterprise Calc</p>
+              <h2 className="mt-2 text-lg font-semibold text-[#F5EDE4]">Price calculator</h2>
+              <p className="mt-2 max-w-xl text-sm leading-relaxed text-zinc-400">
+                Model Fashn cost, tiered recommended pricing, mid/minimum options, and optional discounts for enterprise
+                quotes. Opens in a focused popup so you can keep the enquiries tab clear for submissions.
+              </p>
+              <button
+                type="button"
+                onClick={() => setEnterpriseCalcModalOpen(true)}
+                className="mt-8 inline-flex items-center justify-center rounded-xl border border-[#C6A77D]/45 bg-[#C6A77D]/10 px-6 py-3 text-sm font-semibold tracking-wide text-[#e8d4bc] shadow-sm shadow-black/30 transition hover:border-[#C6A77D]/70 hover:bg-[#C6A77D]/20 hover:text-[#fdf6ed]"
+              >
+                Open price calculator
+              </button>
+            </section>
           ) : activeTab === "reviews" ? (
             <section className="mt-8 w-full overflow-hidden rounded-2xl border border-zinc-800 bg-zinc-900/60 p-6 shadow-sm md:p-8">
               <h2 className="text-base font-semibold text-zinc-100">Reviews</h2>

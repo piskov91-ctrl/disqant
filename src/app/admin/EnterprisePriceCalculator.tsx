@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState, type ReactNode } from "react";
+import { useEffect, useId, useMemo, useState, type ReactNode } from "react";
 import {
   computeEnterprisePricing,
   computeEnterpriseRecommendedDiscount,
@@ -88,7 +88,7 @@ function PriceCard({
   );
 }
 
-export function EnterprisePriceCalculator() {
+export function EnterprisePriceCalculatorPanel() {
   const [rawTryOns, setRawTryOns] = useState("5000");
   const [rawDiscountPct, setRawDiscountPct] = useState("0");
 
@@ -112,19 +112,16 @@ export function EnterprisePriceCalculator() {
   const discountInvalid = rawDiscountPct.trim().length > 0 && discountPct === null;
 
   return (
-    <section className="w-full overflow-hidden rounded-2xl border border-[#C6A77D]/20 bg-gradient-to-br from-[#1f1b17] via-zinc-900/90 to-[#14110e] p-6 shadow-xl shadow-black/40 md:p-8">
-      <div className="flex flex-wrap items-start justify-between gap-4">
-        <div>
-          <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-[#C6A77D]/80">Enterprise</p>
-          <h2 className="mt-1 text-xl font-semibold tracking-tight text-[#F5EDE4]">Price calculator</h2>
-          <p className="mt-2 max-w-xl text-sm leading-relaxed text-zinc-400">
-            Estimate Fashn API cost and three quote options from a monthly try-on volume. Credits = try-ons × 2; Fashn
-            cost = credits × ${FASHN_USD_PER_CREDIT.toFixed(3)} ÷ {FASHN_USD_TO_GBP}.
-          </p>
-        </div>
+    <div className="space-y-8">
+      <div>
+        <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-[#C6A77D]/80">Enterprise</p>
+        <p className="mt-2 text-sm leading-relaxed text-zinc-400">
+          Estimate Fashn API cost and quote options from a monthly try-on volume. Credits = try-ons × 2; Fashn cost =
+          credits × ${FASHN_USD_PER_CREDIT.toFixed(3)} ÷ {FASHN_USD_TO_GBP}.
+        </p>
       </div>
 
-      <div className="mt-8 max-w-xs">
+      <div className="max-w-xs">
         <label htmlFor="enterprise-calc-tryons" className="block text-sm font-medium text-[#F5EDE4]/85">
           Number of try-ons
         </label>
@@ -145,7 +142,7 @@ export function EnterprisePriceCalculator() {
 
       {breakdown ? (
         <>
-          <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             <div className="rounded-xl border border-zinc-800/80 bg-black/25 px-4 py-4">
               <p className="text-xs font-medium uppercase tracking-wider text-zinc-500">Credits</p>
               <p className="mt-1 text-2xl font-semibold tabular-nums text-zinc-100">
@@ -165,7 +162,7 @@ export function EnterprisePriceCalculator() {
             </div>
           </div>
 
-          <div className="mt-8 grid gap-5 lg:grid-cols-3">
+          <div className="grid gap-5 lg:grid-cols-3">
             <PriceCard
               featured
               accent="gold"
@@ -202,7 +199,7 @@ export function EnterprisePriceCalculator() {
             />
           </div>
 
-          <div className="mt-8 rounded-2xl border border-[#C6A77D]/25 bg-gradient-to-br from-[#1a1612]/90 to-[#0f0d0b] p-5 md:p-6">
+          <div className="rounded-2xl border border-[#C6A77D]/25 bg-gradient-to-br from-[#1a1612]/90 to-[#0f0d0b] p-5 md:p-6">
             <div className="flex flex-wrap items-end justify-between gap-4">
               <div>
                 <h3 className="text-sm font-semibold uppercase tracking-[0.12em] text-[#e8d4bc]">Discount</h3>
@@ -276,7 +273,7 @@ export function EnterprisePriceCalculator() {
             ) : null}
           </div>
 
-          <details className="mt-8 rounded-xl border border-zinc-800/70 bg-black/20 px-4 py-3 text-sm text-zinc-400">
+          <details className="rounded-xl border border-zinc-800/70 bg-black/20 px-4 py-3 text-sm text-zinc-400">
             <summary className="cursor-pointer select-none font-medium text-zinc-300">Recommended tier table</summary>
             <table className="mt-4 w-full max-w-md text-left text-xs">
               <thead>
@@ -303,8 +300,77 @@ export function EnterprisePriceCalculator() {
           </details>
         </>
       ) : (
-        <p className="mt-8 text-sm text-zinc-500">Enter a try-on volume to see credits, cost, and price options.</p>
+        <p className="text-sm text-zinc-500">Enter a try-on volume to see credits, cost, and price options.</p>
       )}
-    </section>
+    </div>
+  );
+}
+
+type EnterprisePriceCalculatorModalProps = {
+  open: boolean;
+  onClose: () => void;
+};
+
+export function EnterprisePriceCalculatorModal({ open, onClose }: EnterprisePriceCalculatorModalProps) {
+  const titleId = useId();
+
+  useEffect(() => {
+    if (!open) return;
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = prev;
+    };
+  }, [open]);
+
+  useEffect(() => {
+    if (!open) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") onClose();
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [open, onClose]);
+
+  if (!open) return null;
+
+  return (
+    <div
+      className="fixed inset-0 z-[100] flex items-start justify-center overflow-y-auto bg-black/70 p-4 pt-[max(1rem,env(safe-area-inset-top))] backdrop-blur-sm sm:items-center sm:p-6"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby={titleId}
+    >
+      <button
+        type="button"
+        className="fixed inset-0 cursor-default"
+        aria-label="Close calculator"
+        onClick={onClose}
+      />
+      <div
+        className="relative z-[101] my-auto w-full max-w-5xl rounded-2xl border border-[#C6A77D]/30 bg-gradient-to-br from-[#1f1b17] via-[#14110e] to-[#0c0a08] shadow-2xl shadow-black/60"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="flex items-start justify-between gap-4 border-b border-[#C6A77D]/15 px-5 py-4 md:px-8 md:py-5">
+          <div>
+            <h2 id={titleId} className="text-lg font-semibold tracking-tight text-[#F5EDE4] md:text-xl">
+              Enterprise price calculator
+            </h2>
+            <p className="mt-1 text-xs text-zinc-500">Internal quoting tool — not visible to merchants.</p>
+          </div>
+          <button
+            type="button"
+            onClick={onClose}
+            className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-[#C6A77D]/35 bg-[#1a1612] text-[#F5EDE4] transition hover:border-[#C6A77D]/60 hover:bg-[#252019]"
+            aria-label="Close"
+          >
+            ✕
+          </button>
+        </div>
+        <div className="max-h-[min(78vh,900px)] overflow-y-auto px-5 py-6 md:px-8 md:py-8">
+          <EnterprisePriceCalculatorPanel />
+        </div>
+      </div>
+    </div>
   );
 }
