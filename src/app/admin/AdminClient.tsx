@@ -3547,9 +3547,8 @@ export default function AdminClient() {
                                   {retailerUserIdCopiedId === row.userId ? "Copied" : "Copy"}
                                 </button>
                               </div>
-                              <p className="mt-1.5 text-[11px] leading-snug text-zinc-500">
-                                Copy this ID and paste it in Stripe Payment Link under Metadata: Key ={" "}
-                                <span className="font-mono text-zinc-400">retailer_user_id</span>, Value = this ID.
+                              <p className="mt-1.5 text-[11px] leading-snug text-[#C6A77D]/90">
+                                Stripe → Payment Link → Metadata → Key: retailer_user_id → Value: paste here
                               </p>
                             </div>
                           </div>
