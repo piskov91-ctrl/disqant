@@ -553,6 +553,7 @@ export default function AdminClient() {
   const [retailerEmailModalTarget, setRetailerEmailModalTarget] = useState<RetailerAdminRow | null>(null);
   const [retailerEmailPaymentLink, setRetailerEmailPaymentLink] = useState("");
   const [retailerEmailModalError, setRetailerEmailModalError] = useState<string | null>(null);
+  const [retailerUserIdCopiedId, setRetailerUserIdCopiedId] = useState<string | null>(null);
 
   const [reviewsPendingBadge, setReviewsPendingBadge] = useState(0);
   const [subscriptionReviewsPending, setSubscriptionReviewsPending] = useState<SubscriptionReviewRow[]>([]);
@@ -1492,6 +1493,12 @@ export default function AdminClient() {
   }, [retailerWelcomeEmailNotice]);
 
   useEffect(() => {
+    if (retailerUserIdCopiedId === null) return undefined;
+    const t = window.setTimeout(() => setRetailerUserIdCopiedId(null), 2000);
+    return () => clearTimeout(t);
+  }, [retailerUserIdCopiedId]);
+
+  useEffect(() => {
     if (!quotaPreviewOpen) return;
     const onKey = (e: KeyboardEvent) => {
       if (e.key === "Escape") setQuotaPreviewOpen(false);
@@ -1722,6 +1729,11 @@ export default function AdminClient() {
       document.execCommand("copy");
       document.body.removeChild(ta);
     }
+  }
+
+  async function copyRetailerUserId(userId: string) {
+    await copyRawKey(userId);
+    setRetailerUserIdCopiedId(userId);
   }
 
   function openEditModal(rec: KeyRecord) {
@@ -3513,7 +3525,25 @@ export default function AdminClient() {
                           key={row.userId}
                           className="grid grid-cols-[minmax(0,1fr)_minmax(0,1fr)_minmax(0,0.85fr)_minmax(0,5.5rem)_minmax(0,1.4fr)] items-center gap-3 border-b border-zinc-800 px-3 py-3 text-sm text-zinc-200"
                         >
-                          <div className="min-w-0 truncate font-semibold text-zinc-100">{row.storeName}</div>
+                          <div className="min-w-0">
+                            <div className="truncate font-semibold text-zinc-100">{row.storeName}</div>
+                            <div className="mt-1.5 flex min-w-0 items-center gap-2">
+                              <span
+                                className="min-w-0 truncate font-mono text-[11px] text-zinc-500"
+                                title={row.userId}
+                              >
+                                {row.userId}
+                              </span>
+                              <button
+                                type="button"
+                                onClick={() => void copyRetailerUserId(row.userId)}
+                                className="inline-flex shrink-0 items-center justify-center rounded-md border border-zinc-700 bg-zinc-900/80 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-zinc-400 transition hover:border-zinc-600 hover:text-zinc-200"
+                                aria-label={`Copy user ID for ${row.storeName}`}
+                              >
+                                {retailerUserIdCopiedId === row.userId ? "Copied" : "Copy ID"}
+                              </button>
+                            </div>
+                          </div>
                           <div className="min-w-0 truncate text-zinc-300">{row.email}</div>
                           <div className="text-xs text-zinc-500">
                             {registered === "—" ? "—" : `${registered} UTC`}
