@@ -1,7 +1,9 @@
 import { isFitRoomEmailConfigured, sendFitRoomMail } from "@/lib/fitRoomEmail";
 import {
+  fitRoomMarketingOrigin,
   transactionalEscapeHtml,
   transactionalParagraph,
+  transactionalSnippetBlock,
   wrapFitRoomTransactionalHtml,
 } from "@/lib/fitRoomTransactionalEmailHtml";
 
@@ -223,6 +225,100 @@ export function queueRetailerSubscriptionConfirmationEmail(
       storeDisplayName,
       planDisplayName,
       monthlyTryOns,
+    });
+    await sendFitRoomMail({ to: email, subject, text, html });
+  });
+}
+
+export function buildWearMeWidgetSnippet(apiKey: string): string {
+  const origin = fitRoomMarketingOrigin().replace(/\/$/, "");
+  return `<script async src="${origin}/widget.js" data-fit-room-key="${apiKey}"></script>`;
+}
+
+export function buildEnterprisePaymentLinkConfirmationEmail(params: {
+  storeDisplayName: string;
+  tryOnLimit: number;
+  widgetSnippet: string;
+}): {
+  subject: string;
+  text: string;
+  html: string;
+} {
+  const subject = "Your Fit Room plan is active";
+  const label = params.storeDisplayName.trim() || "there";
+  const x = Math.floor(params.tryOnLimit);
+  const snippet = params.widgetSnippet.trim();
+
+  const para1 =
+    `Hi ${label}, Your Fit Room payment is confirmed and your plan is now active with ${x.toLocaleString()} try-ons ready to use.`;
+  const para2 =
+    "Copy your unique Wear Me code below and paste it into your store — most people finish in about five minutes.";
+  const para3 =
+    "We have also included a step-by-step installation guide below for your platform.";
+  const para4 =
+    "If you would like a hand with the setup, just reply to this email and we will help you personally.";
+
+  const installPlain = subscriptionInstallInstructionsPlain();
+
+  const text = [
+    para1,
+    "",
+    para2,
+    "",
+    "Your Wear Me code:",
+    "",
+    snippet,
+    "",
+    "Installation:",
+    "",
+    installPlain,
+    "",
+    para4,
+    "",
+    "Kind regards,",
+    "",
+    "The Fit Room Team",
+  ].join("\n");
+
+  const innerHtml =
+    transactionalParagraph(para1) +
+    transactionalParagraph(para2) +
+    transactionalParagraph("Your Wear Me code:") +
+    transactionalSnippetBlock(snippet) +
+    transactionalParagraph(para3) +
+    `<p style="margin:28px 0 14px;font-family:Georgia,'Times New Roman',serif;font-size:16px;font-weight:600;line-height:1.4;color:#C6A77D;mso-line-height-rule:exactly;mso-margin-top-alt:28px;mso-margin-bottom-alt:14px;">
+  Installation
+</p>` +
+    subscriptionInstallInstructionsHtmlInner() +
+    transactionalParagraph(para4) +
+    transactionalParagraph("Kind regards,") +
+    transactionalParagraph("The Fit Room Team");
+
+  const html = wrapFitRoomTransactionalHtml({
+    documentTitle: subject,
+    preheader: `Your plan is active — paste your Wear Me code in about five minutes.`,
+    heading: subject,
+    innerHtml,
+  });
+
+  return { subject, text, html };
+}
+
+/** Fire-and-forget enterprise Payment Link confirmation (Stripe checkout.payment + retailer_user_id). */
+export function queueRetailerEnterprisePaymentConfirmationEmail(
+  to: string,
+  storeDisplayName: string,
+  tryOnLimit: number,
+  apiKey: string,
+): void {
+  const email = to.trim().toLowerCase();
+  if (!email) return;
+
+  void safeSendStripeCheckoutTransactionalEmail(async () => {
+    const { subject, text, html } = buildEnterprisePaymentLinkConfirmationEmail({
+      storeDisplayName,
+      tryOnLimit,
+      widgetSnippet: buildWearMeWidgetSnippet(apiKey),
     });
     await sendFitRoomMail({ to: email, subject, text, html });
   });

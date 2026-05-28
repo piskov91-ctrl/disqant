@@ -11,6 +11,7 @@ import { subscriptionPlanCap } from "@/lib/clientTryOnBuckets";
 import { attachStripeBillingIds, getRetailerById, linkRetailerToClientId, type RetailerUser } from "@/lib/retailerAuth";
 import { getSubscriptionPlanDefinition, parseSubscriptionPlanKey } from "@/lib/subscriptionPlans";
 import {
+  queueRetailerEnterprisePaymentConfirmationEmail,
   queueRetailerSubscriptionConfirmationEmail,
   queueRetailerTopUpConfirmationEmail,
   retailerStoreGreetingLabel,
@@ -41,6 +42,19 @@ function parsePositiveInt(raw: string | undefined): number | null {
   const n = Number.parseInt(raw, 10);
   if (!Number.isFinite(n) || n <= 0) return null;
   return n;
+}
+
+const DEFAULT_ENTERPRISE_TRY_ON_LIMIT = 5000;
+const ENTERPRISE_TRY_ON_LIMIT_MAX = 500_000;
+
+function parseEnterpriseTryOnLimitFromMetadata(session: Stripe.Checkout.Session): number {
+  const meta = session.metadata ?? {};
+  for (const key of ["try_on_limit", "usage_limit", "tryOnLimit"]) {
+    const raw = meta[key];
+    const n = parsePositiveInt(typeof raw === "string" ? raw : undefined);
+    if (n != null) return Math.min(n, ENTERPRISE_TRY_ON_LIMIT_MAX);
+  }
+  return DEFAULT_ENTERPRISE_TRY_ON_LIMIT;
 }
 
 async function fulfillPaidTopUpCheckoutSession(session: Stripe.Checkout.Session): Promise<void> {
@@ -263,6 +277,87 @@ async function fulfillPaidSubscriptionCheckoutSession(session: Stripe.Checkout.S
   );
 }
 
+/**
+ * Enterprise Payment Link: one-time payment with retailer_user_id in session metadata.
+ * Creates (or updates) a client API key, links it to the retailer, and emails the widget snippet.
+ */
+async function fulfillPaidEnterprisePaymentLinkSession(session: Stripe.Checkout.Session): Promise<void> {
+  const retailerUserId = (session.metadata?.retailer_user_id ?? session.client_reference_id ?? "").trim();
+  const tryOnLimit = parseEnterpriseTryOnLimitFromMetadata(session);
+
+  if (!retailerUserId) {
+    console.error("[stripe] enterprise payment link missing retailer_user_id", { sessionId: session.id });
+    throw new Error("Invalid Stripe enterprise payment metadata for fulfillment.");
+  }
+
+  const user = await findRetailerIdentityForStripeSession(retailerUserId);
+  if (!user) {
+    console.error("[stripe] retailer user not found for enterprise payment link", {
+      sessionId: session.id,
+      retailerUserId,
+    });
+    throw new Error("Retailer account not found for enterprise payment.");
+  }
+
+  const clientName = (
+    user.storeName?.trim() ||
+    user.companyName?.trim() ||
+    "Store"
+  ).slice(0, 200);
+  const contactEmail = user.email.trim();
+
+  const paidAtMs =
+    typeof session.created === "number" && Number.isFinite(session.created)
+      ? session.created * 1000
+      : Date.now();
+  const anchorSourceDate = new Date(paidAtMs);
+
+  const existingClientId = user.clientId?.trim() ?? "";
+  let clientRecord: Awaited<ReturnType<typeof createClientKey>>;
+
+  if (existingClientId) {
+    const loaded = await loadClientSubscriptionSnapshotWithoutPendingApply(existingClientId);
+    if (!loaded) {
+      clientRecord = await createClientKey({
+        clientName,
+        contactEmail,
+        usageLimit: tryOnLimit,
+        anchorSourceDate,
+      });
+    } else {
+      const snap = loaded.rec;
+      clientRecord = await updateClientKey({
+        id: existingClientId,
+        clientName,
+        contactEmail,
+        monthlyPlanLimit: tryOnLimit,
+        topUpLimit: Math.floor(snap.topUpLimit ?? 0),
+      });
+    }
+  } else {
+    clientRecord = await createClientKey({
+      clientName,
+      contactEmail,
+      usageLimit: tryOnLimit,
+      anchorSourceDate,
+    });
+  }
+
+  await linkRetailerToClientId(user.id, clientRecord.id);
+
+  const stripeCustomerId = stripeExpandableId(session.customer);
+  if (stripeCustomerId) {
+    await attachStripeBillingIds(user.id, { stripeCustomerId });
+  }
+
+  queueRetailerEnterprisePaymentConfirmationEmail(
+    contactEmail,
+    retailerStoreGreetingLabel({ storeName: user.storeName, companyName: user.companyName }),
+    tryOnLimit,
+    clientRecord.key,
+  );
+}
+
 async function findRetailerIdentityForStripeSession(retailerUserId: string): Promise<RetailerUser | null> {
   return getRetailerById(retailerUserId.trim());
 }
@@ -297,6 +392,23 @@ export async function fulfillCheckoutSessionIfPaid(session: Stripe.Checkout.Sess
     if (!claimed) return;
     try {
       await fulfillPaidTopUpCheckoutSession(session);
+    } catch (e) {
+      await releaseStripeCheckoutProcessing(session.id);
+      throw e;
+    }
+    return;
+  }
+
+  const retailerUserId = (session.metadata?.retailer_user_id ?? session.client_reference_id ?? "").trim();
+  const metadataClientId = (session.metadata?.client_id ?? "").trim();
+  const isEnterprisePaymentLink =
+    session.mode === "payment" && Boolean(retailerUserId) && !metadataClientId;
+
+  if (isEnterprisePaymentLink) {
+    const claimed = await claimStripeCheckoutProcessing(session.id);
+    if (!claimed) return;
+    try {
+      await fulfillPaidEnterprisePaymentLinkSession(session);
     } catch (e) {
       await releaseStripeCheckoutProcessing(session.id);
       throw e;
