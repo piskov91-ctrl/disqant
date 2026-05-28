@@ -233,6 +233,123 @@ export default function AdminIntegrationGuide() {
         </p>
       </header>
 
+      <article
+        className="rounded-2xl border border-[#C6A77D]/20 bg-[#141210]/95 p-6 shadow-inner shadow-black/30 ring-1 ring-white/[0.04] backdrop-blur-sm md:p-8"
+        aria-labelledby="stripe-webhook-guide-title"
+      >
+        <div className="border-b border-zinc-800/80 pb-5">
+          <h3
+            id="stripe-webhook-guide-title"
+            className="text-lg font-semibold tracking-tight text-[#f3e9dc] md:text-xl"
+          >
+            Check if a Stripe webhook worked
+          </h3>
+          <p className="mt-2 max-w-prose text-sm leading-relaxed text-zinc-500">
+            After a retailer pays via a Payment Link, confirm that{" "}
+            <span className="font-mono text-[#C6A77D]/90">checkout.session.completed</span> was fulfilled
+            successfully.
+          </p>
+        </div>
+
+        <div className="mt-6 grid gap-8 lg:grid-cols-2">
+          <div>
+            <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-zinc-500">Vercel logs</p>
+            <ol className="mt-4 space-y-3 text-sm leading-relaxed text-zinc-200">
+              <li className="flex gap-3">
+                <span className="mt-0.5 inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-[#2c241f] text-[11px] font-bold text-[#C6A77D]">
+                  1
+                </span>
+                <span>
+                  Open{" "}
+                  <a
+                    href="https://vercel.com"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="font-medium text-[#C6A77D] underline decoration-[#C6A77D]/40 underline-offset-2 hover:text-[#e8d4bc]"
+                  >
+                    vercel.com
+                  </a>{" "}
+                  and open your project&apos;s logs.
+                </span>
+              </li>
+              <li className="flex gap-3">
+                <span className="mt-0.5 inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-[#2c241f] text-[11px] font-bold text-[#C6A77D]">
+                  2
+                </span>
+                <span>
+                  Look for requests to{" "}
+                  <span className="font-mono text-[#C6A77D]/90">/api/stripe/webhook</span>.
+                </span>
+              </li>
+              <li className="flex gap-3">
+                <span className="mt-0.5 inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-[#2c241f] text-[11px] font-bold text-[#C6A77D]">
+                  3
+                </span>
+                <span>
+                  <span className="font-semibold text-emerald-400/90">Status 200</span> means success — the
+                  retailer&apos;s API key should be created and linked.
+                </span>
+              </li>
+              <li className="flex gap-3">
+                <span className="mt-0.5 inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-[#2c241f] text-[11px] font-bold text-[#C6A77D]">
+                  4
+                </span>
+                <span>
+                  <span className="font-semibold text-red-400/90">Status 500</span> means fulfillment failed — use
+                  the Stripe steps on the right to resend.
+                </span>
+              </li>
+            </ol>
+          </div>
+
+          <div>
+            <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-zinc-500">
+              If the webhook failed
+            </p>
+            <ol className="mt-4 space-y-3 text-sm leading-relaxed text-zinc-200">
+              <li className="flex gap-3">
+                <span className="mt-0.5 inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-[#2c241f] text-[11px] font-bold text-[#C6A77D]">
+                  1
+                </span>
+                <span>Open the Stripe Dashboard.</span>
+              </li>
+              <li className="flex gap-3">
+                <span className="mt-0.5 inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-[#2c241f] text-[11px] font-bold text-[#C6A77D]">
+                  2
+                </span>
+                <span>
+                  Go to <span className="font-medium text-zinc-100">Workbench</span> →{" "}
+                  <span className="font-medium text-zinc-100">Webhooks</span>.
+                </span>
+              </li>
+              <li className="flex gap-3">
+                <span className="mt-0.5 inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-[#2c241f] text-[11px] font-bold text-[#C6A77D]">
+                  3
+                </span>
+                <span>
+                  Open <span className="font-mono text-[#C6A77D]/90">fit-room-webhook</span>.
+                </span>
+              </li>
+              <li className="flex gap-3">
+                <span className="mt-0.5 inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-[#2c241f] text-[11px] font-bold text-[#C6A77D]">
+                  4
+                </span>
+                <span>Find the failed event in the delivery log.</span>
+              </li>
+              <li className="flex gap-3">
+                <span className="mt-0.5 inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-[#2c241f] text-[11px] font-bold text-[#C6A77D]">
+                  5
+                </span>
+                <span>
+                  Click <span className="font-medium text-zinc-100">Resend</span> to retry delivery after fixing
+                  the underlying issue.
+                </span>
+              </li>
+            </ol>
+          </div>
+        </div>
+      </article>
+
       <div className="space-y-6">
         {PLATFORMS.map((platform) => {
           const instrCopied = copiedKey === `${platform.id}-instructions`;
