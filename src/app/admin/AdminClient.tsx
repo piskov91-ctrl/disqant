@@ -185,14 +185,11 @@ type RetailerAdminRow = {
   email: string;
   createdAt: string;
   clientId: string | null;
-  subscriptionStatus: string;
+  subscriptionStatus: "Active" | "No Plan";
 };
 
-function retailerStatusBadgeClass(status: string): string {
-  if (status === "Subscribed") return "border-emerald-800/60 bg-emerald-950/40 text-emerald-200";
-  if (status === "Subscribed (canceling)") return "border-amber-800/60 bg-amber-950/40 text-amber-200";
-  if (status === "Subscription expired") return "border-red-900/60 bg-red-950/40 text-red-200";
-  if (status === "Manual key") return "border-sky-800/60 bg-sky-950/40 text-sky-200";
+function retailerStatusBadgeClass(status: RetailerAdminRow["subscriptionStatus"]): string {
+  if (status === "Active") return "border-emerald-800/60 bg-emerald-950/40 text-emerald-200";
   return "border-zinc-700 bg-zinc-900/80 text-zinc-400";
 }
 
@@ -3268,8 +3265,9 @@ export default function AdminClient() {
             <section className="mt-8 w-full overflow-hidden rounded-2xl border border-zinc-800 bg-zinc-900/60 p-6 shadow-sm md:p-8">
               <h2 className="text-base font-semibold text-zinc-100">Registered retailers</h2>
               <p className="mt-1 text-sm text-zinc-400">
-                All active retailer dashboard accounts (including those without a Stripe subscription). Create a client
-                API key to link a plan manually.
+                Every active retailer account in Redis — with or without a plan.{" "}
+                <span className="text-zinc-500">Active</span> = API key linked;{" "}
+                <span className="text-zinc-500">No Plan</span> = registered only.
               </p>
               {retailersError ? (
                 <div className="mt-6 rounded-xl border border-red-900/60 bg-red-950/40 px-4 py-3 text-sm text-red-200">
@@ -3287,20 +3285,21 @@ export default function AdminClient() {
                       <div>Store</div>
                       <div>Email</div>
                       <div>Registered</div>
-                      <div>Subscription</div>
+                      <div>Plan</div>
                       <div className="text-right">Actions</div>
                     </div>
                     {retailers.map((row) => {
-                      const registered = Number.isFinite(Date.parse(row.createdAt))
-                        ? new Date(row.createdAt).toLocaleString("en-GB", {
-                            timeZone: "UTC",
-                            day: "numeric",
-                            month: "short",
-                            year: "numeric",
-                            hour: "2-digit",
-                            minute: "2-digit",
-                          })
-                        : "—";
+                      const registered =
+                        row.createdAt && Number.isFinite(Date.parse(row.createdAt))
+                          ? new Date(row.createdAt).toLocaleString("en-GB", {
+                              timeZone: "UTC",
+                              day: "numeric",
+                              month: "short",
+                              year: "numeric",
+                              hour: "2-digit",
+                              minute: "2-digit",
+                            })
+                          : "—";
                       const hasKey = Boolean(row.clientId);
                       return (
                         <div
@@ -3309,7 +3308,9 @@ export default function AdminClient() {
                         >
                           <div className="min-w-0 truncate font-semibold text-zinc-100">{row.storeName}</div>
                           <div className="min-w-0 truncate text-zinc-300">{row.email}</div>
-                          <div className="text-xs text-zinc-500">{registered} UTC</div>
+                          <div className="text-xs text-zinc-500">
+                            {registered === "—" ? "—" : `${registered} UTC`}
+                          </div>
                           <div>
                             <span
                               className={`inline-flex rounded-full border px-2.5 py-0.5 text-xs font-medium ${retailerStatusBadgeClass(row.subscriptionStatus)}`}

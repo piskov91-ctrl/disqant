@@ -15,7 +15,7 @@ export async function GET() {
   }
 
   try {
-    const retailers = await listActiveRetailerAccountsForAdmin(500);
+    const retailers = await listActiveRetailerAccountsForAdmin();
     return Response.json({ retailers });
   } catch (e) {
     console.error("[fit-room][admin-retailers] list failed", e);
