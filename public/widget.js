@@ -110,7 +110,7 @@
       + "border-bottom:1px solid rgba(198,167,125,.18);background:#2c241f;}"
       + ".dq-head-title{font:900 13px/1 system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;"
       + "letter-spacing:.25px;color:#f5ede4;}"
-      + ".dq-modal-close{position:absolute;top:10px;right:10px;z-index:50;}"
+      + ".dq-modal-close{position:absolute;top:10px;right:10px;z-index:50;min-width:54px;min-height:54px;font-size:22px;line-height:1;}"
       + ".dq-x{appearance:none;display:inline-flex;align-items:center;justify-content:center;"
       + "border:1px solid rgba(255,255,255,.14);background:#0f0f14;color:#fff;border-radius:999px;"
       + "min-width:44px;min-height:44px;padding:0;cursor:pointer;box-shadow:0 10px 26px rgba(0,0,0,.22);"
@@ -229,9 +229,8 @@
       + "letter-spacing:.01em;max-width:36rem;}"
 
       // Mobile + desktop close placement
-      + "@media (min-width:521px){.dq-backdrop{top:var(--site-header-height,0px);}.dq-modal{max-height:min(calc(100dvh - var(--site-header-height,0px) - 28px),calc(100vh - var(--site-header-height,0px) - 28px));}.dq-modal-close{min-width:44px;min-height:44px;font-size:20px;line-height:1;}}"
-      + "@media (max-width:520px){.dq-backdrop{align-items:flex-start;padding-top:max(22px,calc(env(safe-area-inset-top,0px) + 14px));}.dq-head{padding-right:max(56px,calc(60px + env(safe-area-inset-right, 0px)));}"
-      + ".dq-modal-close{min-width:54px;min-height:54px;font-size:22px;line-height:1}}"
+      + "@media (min-width:521px){.dq-backdrop{top:var(--site-header-height,0px);}.dq-modal{max-height:min(calc(100dvh - var(--site-header-height,0px) - 28px),calc(100vh - var(--site-header-height,0px) - 28px));}}"
+      + "@media (max-width:520px){.dq-backdrop{align-items:flex-start;padding-top:max(22px,calc(env(safe-area-inset-top,0px) + 14px));}.dq-head{padding-right:max(56px,calc(60px + env(safe-area-inset-right, 0px)));}}"
       + "@media (max-width:420px){.dq-body{padding:10px}.dq-stage{height:min(52vh,380px)}.dq-choice{min-width:100%}}";
 
     var style = document.createElement("style");
