@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { Suspense, useState } from "react";
+import { parseCheckoutIntentPlan, redirectToSubscriptionCheckout } from "@/lib/subscriptionCheckoutClient";
 
 function safeNextPath(raw: string | null): string {
   if (!raw || !raw.startsWith("/") || raw.startsWith("//")) return "/dashboard";
@@ -13,6 +14,7 @@ function safeNextPath(raw: string | null): string {
 
 function LoginFormInner() {
   const searchParams = useSearchParams();
+  const checkoutPlan = parseCheckoutIntentPlan(searchParams);
   const next = safeNextPath(searchParams.get("next"));
   const resetOk = searchParams.get("reset") === "success";
 
@@ -36,6 +38,14 @@ function LoginFormInner() {
         const data = (await res.json()) as { error?: string };
         if (!res.ok) {
           setError(data.error || "Could not log in.");
+          return;
+        }
+        if (checkoutPlan) {
+          try {
+            await redirectToSubscriptionCheckout(checkoutPlan);
+          } catch (e) {
+            setError(e instanceof Error ? e.message : "Could not start checkout.");
+          }
           return;
         }
         window.location.assign(next);

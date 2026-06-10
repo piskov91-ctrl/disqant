@@ -4,6 +4,10 @@ import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { Suspense, useCallback, useState } from "react";
 import {
+  parseCheckoutIntentPlan,
+  redirectToSubscriptionCheckout,
+} from "@/lib/subscriptionCheckoutClient";
+import {
   RETAILER_PASSWORD_MAX,
   RETAILER_PASSWORD_RULES_SUMMARY,
   validateRetailerPasswordStrength,
@@ -35,6 +39,7 @@ function validateWebsiteIfPresent(raw: string): string | null {
 
 export function SignupFormInner() {
   const searchParams = useSearchParams();
+  const checkoutPlan = parseCheckoutIntentPlan(searchParams);
   const next = safeNextPath(searchParams.get("next"));
 
   const [firstName, setFirstName] = useState("");
@@ -112,6 +117,14 @@ export function SignupFormInner() {
         const data = (await res.json()) as { error?: string };
         if (!res.ok) {
           setError(data.error || "Could not create account.");
+          return;
+        }
+        if (checkoutPlan) {
+          try {
+            await redirectToSubscriptionCheckout(checkoutPlan);
+          } catch (e) {
+            setError(e instanceof Error ? e.message : "Could not start checkout.");
+          }
           return;
         }
         window.location.assign(next);
@@ -309,13 +322,19 @@ export function SignupFormInner() {
           disabled={loading}
           className="btn-accent-gradient w-full disabled:cursor-not-allowed disabled:opacity-60"
         >
-          {loading ? "Creating account…" : "Create account"}
+          {loading ? (checkoutPlan ? "Starting checkout…" : "Creating account…") : "Create account"}
         </button>
 
         <p className="text-center text-sm text-zinc-500">
           Already have an account?{" "}
           <Link
-            href={next === "/dashboard" ? "/login" : `/login?next=${encodeURIComponent(next)}`}
+            href={
+              checkoutPlan
+                ? `/login?next=checkout&plan=${encodeURIComponent(checkoutPlan)}`
+                : next === "/dashboard"
+                  ? "/login"
+                  : `/login?next=${encodeURIComponent(next)}`
+            }
             className="font-medium text-zinc-200 underline-offset-2 hover:underline"
           >
             Log In

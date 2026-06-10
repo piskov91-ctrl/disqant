@@ -1,6 +1,10 @@
 "use client";
 
 import { useCallback, useState } from "react";
+import {
+  fetchSubscriptionCheckoutUrl,
+  registerUrlForSubscriptionCheckout,
+} from "@/lib/subscriptionCheckoutClient";
 import type { SubscriptionPlanKey } from "@/lib/subscriptionPlans";
 
 type StripeSubscribeButtonProps = {
@@ -18,18 +22,13 @@ export function StripeSubscribeButton({ planKey, className, children }: StripeSu
       setPending(true);
       setError(null);
       try {
-        const res = await fetch("/api/stripe/checkout", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ plan: planKey }),
-        });
-        if (res.status === 401) {
-          window.location.assign("/register?next=/subscriptions");
+        const result = await fetchSubscriptionCheckoutUrl(planKey);
+        if (!result.ok && "unauthorized" in result && result.unauthorized) {
+          window.location.assign(registerUrlForSubscriptionCheckout(planKey));
           return;
         }
-        const data = (await res.json()) as { url?: string };
-        if (data.url) window.location.assign(data.url);
-        else setError("Could not start checkout");
+        if (result.ok) window.location.assign(result.url);
+        else setError("error" in result ? result.error : "Could not start checkout");
       } catch {
         setError("Something went wrong. Please try again.");
       } finally {

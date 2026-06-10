@@ -72,7 +72,7 @@ export async function GET(req: Request) {
   try {
     const res = await createCheckoutSessionUrl({ req, planKey });
     if (res.kind === "unauthorized") {
-      return Response.redirect("/register?next=/subscriptions", 303);
+      return Response.redirect(`/register?next=checkout&plan=${encodeURIComponent(planKey)}`, 303);
     }
     return Response.redirect(res.url, 303);
   } catch (e) {
