@@ -110,7 +110,7 @@
       + "border-bottom:1px solid rgba(198,167,125,.18);background:#2c241f;}"
       + ".dq-head-title{font:900 13px/1 system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;"
       + "letter-spacing:.25px;color:#f5ede4;}"
-      + ".dq-modal-close{position:absolute;top:10px;right:10px;z-index:50;}"
+      + ".dq-modal-close{position:absolute!important;top:10px!important;right:10px!important;z-index:50;}"
       + ".dq-x{appearance:none;display:inline-flex;align-items:center;justify-content:center;"
       + "border:1px solid rgba(255,255,255,.14);background:#0f0f14;color:#fff;border-radius:999px;"
       + "min-width:44px;min-height:44px;padding:0;cursor:pointer;box-shadow:0 10px 26px rgba(0,0,0,.22);"
