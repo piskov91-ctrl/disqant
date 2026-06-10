@@ -93,7 +93,7 @@
       + "opacity:0;transition:opacity .18s ease;}"
       + ".dq-backdrop.dq-open{opacity:1;}"
       + ".dq-backdrop.dq-dismiss-locked{cursor:default;-webkit-user-select:none;user-select:none;}"
-      + ".dq-modal{width:min(720px,100%);min-height:0;max-height:calc(100vh - 28px);max-height:min(90vh,calc(100dvh - 28px));background:#fff;"
+      + ".dq-modal{position:relative;width:min(720px,100%);min-height:0;max-height:calc(100vh - 28px);max-height:min(90vh,calc(100dvh - 28px));background:#fff;"
       + "border:1px solid rgba(15,15,20,.08);border-radius:20px;overflow:hidden;"
       + "box-shadow:0 30px 80px rgba(0,0,0,.30);"
       + "display:flex;flex-direction:column;"
