@@ -208,7 +208,7 @@
       + ".dq-save:hover{transform:translateY(-1px);box-shadow:0 14px 30px rgba(0,0,0,.09);}"
 
       // Branding
-      + ".dq-modal-close{position:absolute;top:10px;right:10px;z-index:9999;}"
+      + ".dq-modal-close{position:absolute !important;top:10px !important;right:10px !important;z-index:9999 !important;}"
       + ".dq-brand{flex-shrink:0;margin-top:auto;padding:12px 12px;"
       + "padding-bottom:max(12px, env(safe-area-inset-bottom, 0px));border-top:1px solid rgba(15,15,20,.08);"
       + "display:flex;align-items:center;justify-content:flex-start;background:#fff;}"
