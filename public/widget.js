@@ -353,7 +353,7 @@
 
     var closeBtn = document.createElement("button");
     closeBtn.type = "button";
-    closeBtn.style.cssText = "position:absolute;top:10px;right:10px;z-index:9999;width:44px;height:44px;border-radius:50%;background:#0f0f14;color:#fff;border:none;cursor:pointer;font-size:20px;";
+    closeBtn.style.cssText = "position:fixed;top:10px;right:10px;align-self:flex-start;z-index:9999;width:44px;height:44px;border-radius:50%;background:#0f0f14;color:#fff;border:none;cursor:pointer;font-size:20px;";
     closeBtn.textContent = "✕";
     modal.appendChild(closeBtn);
     closeBtn.addEventListener("click", teardown);
