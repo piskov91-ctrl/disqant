@@ -94,7 +94,7 @@
       + ".dq-backdrop.dq-open{opacity:1;}"
       + ".dq-backdrop.dq-dismiss-locked{cursor:default;-webkit-user-select:none;user-select:none;}"
       + ".dq-modal{position:relative;width:min(720px,100%);min-height:0;max-height:calc(100vh - 28px);max-height:min(90vh,calc(100dvh - 28px));background:#2c241f;"
-      + "border:1px solid rgba(198,167,125,.22);border-radius:20px;overflow:visible;"
+      + "border:1px solid rgba(198,167,125,.22);border-radius:20px;overflow:hidden;"
       + "box-shadow:0 30px 80px rgba(0,0,0,.45);color:#f5ede4;"
       + "display:flex;flex-direction:column;"
       + "transform:translateY(10px) scale(.985);opacity:0;"
@@ -103,6 +103,10 @@
       + ".dq-backdrop.dq-closing{opacity:0;}"
       + ".dq-backdrop.dq-closing .dq-modal{transform:translateY(10px) scale(.985);opacity:0;}"
 
+      // Close button pinned to modal corner (above scrolling body)
+      + ".dq-modal-close{position:absolute;top:max(10px, env(safe-area-inset-top, 0px));"
+      + "right:max(10px, env(safe-area-inset-right, 0px));z-index:50;}"
+
       // Header
       + ".dq-head{display:flex;align-items:center;justify-content:flex-start;flex-shrink:0;"
       + "padding:12px;padding-left:max(12px, env(safe-area-inset-left, 0px));"
@@ -110,7 +114,6 @@
       + "border-bottom:1px solid rgba(198,167,125,.18);background:#2c241f;}"
       + ".dq-head-title{font:900 13px/1 system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;"
       + "letter-spacing:.25px;color:#f5ede4;}"
-      + ".dq-modal-close{position:absolute;top:10px;left:10px;z-index:50;min-width:44px;min-height:44px;font-size:20px;line-height:1;}@media(max-width:520px){.dq-modal-close{top:10px;left:10px;}}"
       + ".dq-x{appearance:none;display:inline-flex;align-items:center;justify-content:center;"
       + "border:1px solid rgba(255,255,255,.14);background:#0f0f14;color:#fff;border-radius:999px;"
       + "min-width:44px;min-height:44px;padding:0;cursor:pointer;box-shadow:0 10px 26px rgba(0,0,0,.22);"
@@ -351,19 +354,18 @@
     var modal = document.createElement("div");
     modal.className = "dq-modal";
 
-    var closeBtn = document.createElement("button");
-    closeBtn.type = "button";
-    closeBtn.style.cssText = "position:fixed;top:10px;right:10px;align-self:flex-start;z-index:9999;width:44px;height:44px;border-radius:50%;background:#0f0f14;color:#fff;border:none;cursor:pointer;font-size:20px;";
-    closeBtn.textContent = "✕";
-    modal.appendChild(closeBtn);
-    closeBtn.addEventListener("click", teardown);
-
     var head = document.createElement("div");
     head.className = "dq-head";
 
     var headTitle = document.createElement("div");
     headTitle.className = "dq-head-title";
     headTitle.textContent = "Try On";
+
+    var close = document.createElement("button");
+    close.className = "dq-x dq-modal-close";
+    close.type = "button";
+    close.setAttribute("aria-label", "Close");
+    close.textContent = "✕";
 
     head.appendChild(headTitle);
 
@@ -379,6 +381,7 @@
     brand.appendChild(brandName);
     brand.appendChild(brandSub);
 
+    modal.appendChild(close);
     modal.appendChild(head);
     modal.appendChild(body);
     modal.appendChild(brand);
@@ -398,6 +401,7 @@
       if (OPEN_MODAL && OPEN_MODAL.close === teardown) OPEN_MODAL = null;
     }
 
+    close.addEventListener("click", teardown);
     backdrop.addEventListener("click", function (e) {
       if (e.target === backdrop) teardown();
     });
