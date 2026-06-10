@@ -94,7 +94,7 @@
       + ".dq-backdrop.dq-open{opacity:1;}"
       + ".dq-backdrop.dq-dismiss-locked{cursor:default;-webkit-user-select:none;user-select:none;}"
       + ".dq-modal{position:relative;width:min(720px,100%);min-height:0;max-height:calc(100vh - 28px);max-height:min(90vh,calc(100dvh - 28px));background:#2c241f;"
-      + "border:1px solid rgba(198,167,125,.22);border-radius:20px;overflow:hidden;"
+      + "border:1px solid rgba(198,167,125,.22);border-radius:20px;overflow:visible;"
       + "box-shadow:0 30px 80px rgba(0,0,0,.45);color:#f5ede4;"
       + "display:flex;flex-direction:column;"
       + "transform:translateY(10px) scale(.985);opacity:0;"
