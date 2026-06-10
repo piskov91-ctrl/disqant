@@ -352,18 +352,19 @@
     var modal = document.createElement("div");
     modal.className = "dq-modal";
 
+    var close = document.createElement("button");
+    close.className = "dq-x dq-modal-close";
+    close.type = "button";
+    close.setAttribute("aria-label", "Close");
+    close.textContent = "✕";
+    modal.appendChild(close);
+
     var head = document.createElement("div");
     head.className = "dq-head";
 
     var headTitle = document.createElement("div");
     headTitle.className = "dq-head-title";
     headTitle.textContent = "Try On";
-
-    var close = document.createElement("button");
-    close.className = "dq-x dq-modal-close";
-    close.type = "button";
-    close.setAttribute("aria-label", "Close");
-    close.textContent = "✕";
 
     head.appendChild(headTitle);
 
@@ -382,7 +383,6 @@
     modal.appendChild(head);
     modal.appendChild(body);
     modal.appendChild(brand);
-    modal.appendChild(close);
     backdrop.appendChild(modal);
 
     function onKeyDown(e) {
