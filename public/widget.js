@@ -351,12 +351,12 @@
     var modal = document.createElement("div");
     modal.className = "dq-modal";
 
-    var close = document.createElement("button");
-    close.className = "dq-x dq-modal-close";
-    close.type = "button";
-    close.setAttribute("aria-label", "Close");
-    close.textContent = "✕";
-    modal.appendChild(close);
+    var closeBtn = document.createElement("button");
+    closeBtn.type = "button";
+    closeBtn.style.cssText = "position:absolute;top:10px;right:10px;z-index:9999;width:44px;height:44px;border-radius:50%;background:#0f0f14;color:#fff;border:none;cursor:pointer;font-size:20px;";
+    closeBtn.textContent = "✕";
+    modal.appendChild(closeBtn);
+    closeBtn.addEventListener("click", teardown);
 
     var head = document.createElement("div");
     head.className = "dq-head";
@@ -398,7 +398,6 @@
       if (OPEN_MODAL && OPEN_MODAL.close === teardown) OPEN_MODAL = null;
     }
 
-    close.addEventListener("click", teardown);
     backdrop.addEventListener("click", function (e) {
       if (e.target === backdrop) teardown();
     });
