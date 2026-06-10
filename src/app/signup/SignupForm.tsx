@@ -1,7 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { useCallback, useState } from "react";
+import { useSearchParams } from "next/navigation";
+import { Suspense, useCallback, useState } from "react";
 import {
   RETAILER_PASSWORD_MAX,
   RETAILER_PASSWORD_RULES_SUMMARY,
@@ -10,6 +11,13 @@ import {
 
 const inputClass =
   "mt-2 block w-full rounded-xl border border-zinc-600/80 bg-zinc-950/80 px-4 py-3 text-sm text-zinc-100 shadow-inner shadow-black/20 outline-none transition placeholder:text-zinc-600 focus:border-[#C6A77D]/60 focus:ring-1 focus:ring-[#C6A77D]/30";
+
+function safeNextPath(raw: string | null): string {
+  if (!raw || !raw.startsWith("/") || raw.startsWith("//")) return "/dashboard";
+  const pathOnly = raw.split(/[?#]/)[0] ?? "";
+  if (pathOnly === "/login" || pathOnly === "/register") return "/dashboard";
+  return raw;
+}
 
 function validateWebsiteIfPresent(raw: string): string | null {
   const t = raw.trim();
@@ -25,7 +33,10 @@ function validateWebsiteIfPresent(raw: string): string | null {
   }
 }
 
-export function SignupForm() {
+export function SignupFormInner() {
+  const searchParams = useSearchParams();
+  const next = safeNextPath(searchParams.get("next"));
+
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
   const [storeName, setStoreName] = useState("");
@@ -103,7 +114,7 @@ export function SignupForm() {
           setError(data.error || "Could not create account.");
           return;
         }
-        window.location.assign("/dashboard");
+        window.location.assign(next);
       } catch {
         setError("Something went wrong. Please try again.");
       } finally {
@@ -303,11 +314,22 @@ export function SignupForm() {
 
         <p className="text-center text-sm text-zinc-500">
           Already have an account?{" "}
-          <Link href="/login" className="font-medium text-zinc-200 underline-offset-2 hover:underline">
+          <Link
+            href={next === "/dashboard" ? "/login" : `/login?next=${encodeURIComponent(next)}`}
+            className="font-medium text-zinc-200 underline-offset-2 hover:underline"
+          >
             Log In
           </Link>
         </p>
       </form>
     </div>
+  );
+}
+
+export function SignupForm() {
+  return (
+    <Suspense fallback={<div className="mt-8 h-40 animate-pulse rounded-xl bg-zinc-900/50" />}>
+      <SignupFormInner />
+    </Suspense>
   );
 }

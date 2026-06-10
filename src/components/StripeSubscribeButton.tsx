@@ -23,6 +23,10 @@ export function StripeSubscribeButton({ planKey, className, children }: StripeSu
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ plan: planKey }),
         });
+        if (res.status === 401) {
+          window.location.assign("/register?next=/subscriptions");
+          return;
+        }
         const data = (await res.json()) as { url?: string };
         if (data.url) window.location.assign(data.url);
         else setError("Could not start checkout");
