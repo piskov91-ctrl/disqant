@@ -115,12 +115,6 @@
       + "border-bottom:1px solid rgba(15,15,20,.08);background:#fff;position:sticky;top:0;z-index:20;flex-shrink:0;}"
       + ".dq-head-title{font:900 13px/1 system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;"
       + "letter-spacing:.25px;color:#0f0f14;}"
-      + ".dq-x{appearance:none;display:inline-flex;align-items:center;justify-content:center;"
-      + "border:1px solid rgba(255,255,255,.14);background:#0f0f14;color:#fff;border-radius:999px;"
-      + "min-width:44px;min-height:44px;padding:0;cursor:pointer;box-shadow:0 10px 26px rgba(0,0,0,.22);"
-      + "transition:transform .16s ease, box-shadow .16s ease, background-color .16s ease;-webkit-tap-highlight-color:transparent;}"
-      + ".dq-x:hover{background:#2a2633;color:#fff;transform:translateY(-1px);box-shadow:0 14px 32px rgba(0,0,0,.26);}"
-      + ".dq-x:active{transform:translateY(0);}"
 
       // Body
       + ".dq-body{flex:1 1 auto;min-height:0;padding:12px;display:flex;flex-direction:column;gap:12px;"
@@ -208,7 +202,6 @@
       + ".dq-save:hover{transform:translateY(-1px);box-shadow:0 14px 30px rgba(0,0,0,.09);}"
 
       // Branding
-      + ".dq-modal-close{position:absolute !important;top:10px !important;right:10px !important;z-index:9999 !important;}"
       + ".dq-brand{flex-shrink:0;margin-top:auto;padding:12px 12px;"
       + "padding-bottom:max(12px, env(safe-area-inset-bottom, 0px));border-top:1px solid rgba(15,15,20,.08);"
       + "display:flex;align-items:center;justify-content:flex-start;background:#fff;}"
@@ -228,7 +221,6 @@
       + "letter-spacing:.01em;max-width:36rem;}"
 
       // Mobile tweaks
-      + "@media (max-width:520px){.dq-x{min-width:54px;min-height:54px;font-size:22px;line-height:1}}"
       + "@media (max-width:420px){.dq-body{padding:10px}.dq-stage{height:min(52vh,380px)}.dq-choice{min-width:100%}}";
 
     var style = document.createElement("style");
@@ -360,12 +352,6 @@
     headTitle.className = "dq-head-title";
     headTitle.textContent = "Try On";
 
-    var close = document.createElement("button");
-    close.className = "dq-x dq-modal-close";
-    close.type = "button";
-    close.setAttribute("aria-label", "Close");
-    close.textContent = "✕";
-
     head.appendChild(headTitle);
     
 
@@ -386,7 +372,6 @@
     modal.insertBefore(head, scroll);
     scroll.appendChild(body);
     scroll.appendChild(brand);
-    modal.appendChild(close);
     modal.appendChild(scroll);
     backdrop.appendChild(modal);
 
@@ -404,7 +389,6 @@
       if (OPEN_MODAL && OPEN_MODAL.close === teardown) OPEN_MODAL = null;
     }
 
-    close.addEventListener("click", teardown);
     backdrop.addEventListener("click", function (e) {
       if (e.target === backdrop) teardown();
     });
