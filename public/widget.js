@@ -360,7 +360,7 @@
     headTitle.textContent = "Try On";
 
     var close = document.createElement("button");
-    close.className = "dq-x";
+    close.className = "dq-x dq-modal-close";
     close.type = "button";
     close.setAttribute("aria-label", "Close");
     close.textContent = "✕";
