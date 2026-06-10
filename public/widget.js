@@ -366,7 +366,7 @@
     close.textContent = "✕";
 
     head.appendChild(headTitle);
-    head.appendChild(close);
+    
 
     var body = document.createElement("div");
     body.className = "dq-body";
@@ -385,6 +385,7 @@
     modal.insertBefore(head, scroll);
     scroll.appendChild(body);
     scroll.appendChild(brand);
+    modal.appendChild(close);
     modal.appendChild(scroll);
     backdrop.appendChild(modal);
 
