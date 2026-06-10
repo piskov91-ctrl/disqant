@@ -382,7 +382,7 @@
 
     var scroll = document.createElement("div");
     scroll.className = "dq-scroll";
-    scroll.appendChild(head);
+    modal.insertBefore(head, scroll);
     scroll.appendChild(body);
     scroll.appendChild(brand);
     modal.appendChild(scroll);
