@@ -819,17 +819,17 @@ export default function DemoClient() {
               ) : null}
 
               {wearGarmentLoading ? (
-                <p className="text-center text-xs text-zinc-500">Loading sample product…</p>
+                <p className="text-center text-xs text-[#F5EDE4]/65">Loading sample product…</p>
               ) : null}
               {wearError ? (
-                <p className="rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-center text-xs text-red-700">
+                <p className="rounded-xl border border-red-900/50 bg-red-950/40 px-3 py-2 text-center text-xs text-red-200">
                   {wearError}
                 </p>
               ) : null}
 
               <button
                 type="button"
-                className="dq-primary"
+                className="dq-wear-me"
                 disabled={
                   !wearModelFile ||
                   !wearGarmentFile ||
@@ -839,7 +839,7 @@ export default function DemoClient() {
                 }
                 onClick={() => void onWearGenerate()}
               >
-                Generate
+                Wear Me
               </button>
 
               {wearSaveVisible ? (
