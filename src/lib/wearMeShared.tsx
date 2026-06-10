@@ -89,7 +89,7 @@ export const DEMO_WEAR_MODAL_CSS =
   ".dq-flip:hover{transform:translateY(-1px);box-shadow:0 14px 30px rgba(0,0,0,.09);}" +
   ".dq-flip:disabled{opacity:.55;cursor:not-allowed;transform:none;}" +
   ".dq-cam-row .dq-primary{flex:1;min-width:0;}" +
-  "@media (min-width:521px){.dq-modal-foot{padding:20px 16px 24px;}.dq-modal-foot .dq-x{min-width:88px;min-height:58px;font-size:28px;line-height:1;box-shadow:0 14px 32px rgba(0,0,0,.2);}.dq-modal-foot .dq-x-icon{width:30px;height:30px;}}" +
+  "@media (min-width:521px){.dq-backdrop{top:var(--site-header-height,0px);}.dq-modal{max-height:min(calc(100dvh - var(--site-header-height,0px) - 28px),calc(100vh - var(--site-header-height,0px) - 28px));}.dq-modal-foot{padding:20px 16px 24px;}.dq-modal-foot .dq-x{min-width:88px;min-height:58px;font-size:28px;line-height:1;box-shadow:0 14px 32px rgba(0,0,0,.2);}.dq-modal-foot .dq-x-icon{width:30px;height:30px;}}" +
   "@media (max-width:520px){.dq-head{padding-right:max(56px,calc(60px + env(safe-area-inset-right, 0px)));}.dq-modal-foot{position:absolute;top:max(10px, env(safe-area-inset-top, 0px));right:max(10px, env(safe-area-inset-right, 0px));left:auto;bottom:auto;z-index:50;border:0;padding:0;background:transparent;}.dq-x{min-width:54px;min-height:54px;font-size:22px;line-height:1}.dq-x-icon{width:26px;height:26px}}" +
   "@media (max-width:420px){.dq-body{padding:10px}.dq-stage{height:min(52vh,380px)}.dq-choice{min-width:100%}}";
 
