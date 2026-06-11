@@ -389,8 +389,8 @@
     scroll.appendChild(head);
     scroll.appendChild(body);
     scroll.appendChild(brand);
-    modal.appendChild(close);
     modal.appendChild(scroll);
+    modal.insertBefore(close, modal.firstChild);
     backdrop.appendChild(modal);
 
     function onKeyDown(e) {
