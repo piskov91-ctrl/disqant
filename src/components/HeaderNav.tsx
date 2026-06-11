@@ -122,6 +122,9 @@ export function HeaderNav({ initialNavUser }: HeaderNavProps) {
         <Link href="/contact" className={desktopNavLinkClass("/contact")}>
           Contact
         </Link>
+        <Link href="/about-us" className={desktopNavLinkClass("/about-us")}>
+          About Us
+        </Link>
         {loggedIn && pathname !== "/dashboard" ? (
           <Link
             href="/dashboard"
@@ -204,6 +207,9 @@ export function HeaderNav({ initialNavUser }: HeaderNavProps) {
               </Link>
               <Link href="/contact" className={mobileNavLinkClass("/contact")} onClick={() => setOpen(false)}>
                 Contact
+              </Link>
+              <Link href="/about-us" className={mobileNavLinkClass("/about-us")} onClick={() => setOpen(false)}>
+                About Us
               </Link>
               {loggedIn && retailerUser ? (
                 <>
