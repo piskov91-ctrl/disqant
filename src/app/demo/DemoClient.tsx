@@ -787,6 +787,23 @@ export default function DemoClient() {
     setWearSaveLoading(true);
     setWearError(null);
     try {
+      const isLocal = wearStageUrl.startsWith("blob:") || wearStageUrl.startsWith("data:");
+
+      // Cross-origin try-on result (FASHN CDN): a direct CORS blob fetch is blocked by the
+      // browser, so route it through our same-origin proxy which forces an attachment download.
+      if (!isLocal && !wearResultBlob) {
+        const proxyUrl = `/api/demo/download-image?url=${encodeURIComponent(wearStageUrl)}&filename=fit-room-tryon`;
+        const a = document.createElement("a");
+        a.href = proxyUrl;
+        a.download = "fit-room-tryon";
+        a.rel = "noopener";
+        a.style.display = "none";
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        return;
+      }
+
       let blob = wearResultBlob;
       if (!blob) {
         blob = await fetchImageBlobFromUrl(wearStageUrl);
