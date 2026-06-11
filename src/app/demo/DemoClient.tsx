@@ -1092,10 +1092,10 @@ export default function DemoClient() {
             <div className="flex items-start justify-between gap-4">
               <div className="min-w-0">
                 <p id="own-guide-title" className="text-lg font-semibold text-[#F5EDE4]">
-                  Try your own product
+                  Try your own items
                 </p>
                 <p className="mt-1 text-sm text-[#F5EDE4]/65">
-                  Two quick steps — upload the clothing item, then a photo of yourself.
+                  Works with clothing, shoes, jewellery and eyewear — anything you wear.
                 </p>
               </div>
               <button
@@ -1130,9 +1130,9 @@ export default function DemoClient() {
                     1
                   </span>
                   <div className="min-w-0">
-                    <p className="text-sm font-semibold text-[#F5EDE4]">Upload your garment</p>
+                    <p className="text-sm font-semibold text-[#F5EDE4]">Your item</p>
                     <p className="text-xs text-[#F5EDE4]/60">
-                      A clear photo of the clothing item, ideally on a plain background.
+                      A clear photo of what you want to try on. Plain background works best.
                     </p>
                   </div>
                 </div>
@@ -1141,7 +1141,7 @@ export default function DemoClient() {
                   onClick={() => ownProductInputRef.current?.click()}
                   className="mt-3 inline-flex h-10 w-full items-center justify-center rounded-full border border-[#C6A77D]/45 bg-[#2C241F] px-4 text-sm font-semibold text-[#F5EDE4] transition hover:border-[#C6A77D] hover:bg-[#332a23]"
                 >
-                  {ownGuideGarmentFile ? "Change garment photo" : "Upload garment photo"}
+                  {ownGuideGarmentFile ? "Change item photo" : "Choose item photo"}
                 </button>
                 {ownGuideGarmentFile ? (
                   <p className="mt-2 truncate text-xs font-medium text-[#9FD3A6]">
@@ -1156,9 +1156,10 @@ export default function DemoClient() {
                     2
                   </span>
                   <div className="min-w-0">
-                    <p className="text-sm font-semibold text-[#F5EDE4]">Upload your photo</p>
+                    <p className="text-sm font-semibold text-[#F5EDE4]">Your photo</p>
                     <p className="text-xs text-[#F5EDE4]/60">
-                      A full-body photo facing forward, in good lighting (no cropping).
+                      A full-body photo of yourself facing forward. Good lighting makes a big
+                      difference.
                     </p>
                   </div>
                 </div>
@@ -1167,7 +1168,7 @@ export default function DemoClient() {
                   onClick={() => ownModelInputRef.current?.click()}
                   className="mt-3 inline-flex h-10 w-full items-center justify-center rounded-full border border-[#C6A77D]/45 bg-[#2C241F] px-4 text-sm font-semibold text-[#F5EDE4] transition hover:border-[#C6A77D] hover:bg-[#332a23]"
                 >
-                  {ownGuideModelFile ? "Change your photo" : "Upload full-body photo"}
+                  {ownGuideModelFile ? "Change your photo" : "Choose your photo"}
                 </button>
                 {ownGuideModelFile ? (
                   <p className="mt-2 truncate text-xs font-medium text-[#9FD3A6]">
