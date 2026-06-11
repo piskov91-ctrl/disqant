@@ -892,17 +892,30 @@ export default function DemoClient() {
             ) : null}
 
             <div className="dq-brand">
-              <span
+              <a
+                href="https://www.fit-room.com"
+                target="_blank"
+                rel="noopener noreferrer"
                 style={{
                   color: "#c6a77d",
                   fontSize: 12,
                   fontWeight: 600,
                   letterSpacing: "2px",
                   textTransform: "lowercase",
+                  textDecoration: "none",
+                  transition: "color .16s ease",
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.color = "#e2cfb4";
+                  e.currentTarget.style.textDecoration = "underline";
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.color = "#c6a77d";
+                  e.currentTarget.style.textDecoration = "none";
                 }}
               >
                 fit-room.com
-              </span>
+              </a>
             </div>
           </div>
         </div>

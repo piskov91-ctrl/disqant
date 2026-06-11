@@ -219,6 +219,8 @@
       + "padding-bottom:max(12px, env(safe-area-inset-bottom, 0px));border-top:1px solid rgba(15,15,20,.08);"
       + "display:flex;align-items:center;justify-content:flex-start;background:#fff;}"
       + ".dq-brand span{font:900 12px/1 system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;color:#0f0f14;letter-spacing:.25px;}"
+      + ".dq-brand a{font:900 12px/1 system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;color:#c6a77d;letter-spacing:1px;text-decoration:none;transition:color .16s ease;}"
+      + ".dq-brand a:hover{color:#a68958;text-decoration:underline;}"
       + ".dq-brand small{margin-left:8px;font:700 12px/1 system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;color:rgba(15,15,20,.55);}"
 
       // Retail try-on limit (USAGE_LIMIT) — customer-facing
@@ -373,8 +375,11 @@
 
     var brand = document.createElement("div");
     brand.className = "dq-brand";
-    var brandName = document.createElement("span");
+    var brandName = document.createElement("a");
     brandName.textContent = "Fit Room";
+    brandName.href = "https://www.fit-room.com";
+    brandName.target = "_blank";
+    brandName.rel = "noopener noreferrer";
     var brandSub = document.createElement("small");
     brandSub.textContent = "virtual try-on";
     brand.appendChild(brandName);
