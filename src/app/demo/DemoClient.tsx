@@ -25,6 +25,9 @@ import {
   fetchImageBlobFromUrl,
   fetchUrlAsFile,
   formatTryOnApiError,
+  isCameraCaptureSupported,
+  requestCameraVideoStream,
+  type CameraFacingMode,
   type TryOnResponse,
 } from "@/lib/wearMeShared";
 import { Footer } from "@/components/Footer";
@@ -96,10 +99,17 @@ export default function DemoClient() {
   const [ownGuideOpen, setOwnGuideOpen] = useState(false);
   const [ownGuideGarmentFile, setOwnGuideGarmentFile] = useState<File | null>(null);
   const [ownGuideModelFile, setOwnGuideModelFile] = useState<File | null>(null);
+  const [cameraCaptureSupported, setCameraCaptureSupported] = useState(false);
+  const [ownGuideCameraOpen, setOwnGuideCameraOpen] = useState(false);
+  const [ownGuideCameraTarget, setOwnGuideCameraTarget] = useState<"garment" | "model">("model");
+  const [ownGuideCameraFacing, setOwnGuideCameraFacing] = useState<CameraFacingMode>("user");
+  const [ownGuideCameraFlipping, setOwnGuideCameraFlipping] = useState(false);
 
   const wearGalleryInputRef = useRef<HTMLInputElement | null>(null);
   const ownProductInputRef = useRef<HTMLInputElement | null>(null);
   const ownModelInputRef = useRef<HTMLInputElement | null>(null);
+  const ownGuideVideoRef = useRef<HTMLVideoElement | null>(null);
+  const ownGuideStreamRef = useRef<MediaStream | null>(null);
   const wearVideoRef = useRef<HTMLVideoElement | null>(null);
   const wearStreamRef = useRef<MediaStream | null>(null);
   const wearProgressTimerRef = useRef<number | null>(null);
@@ -146,6 +156,10 @@ export default function DemoClient() {
         /* offline / Redis down — localStorage still gates this browser */
       }
     })();
+  }, []);
+
+  useEffect(() => {
+    setCameraCaptureSupported(isCameraCaptureSupported());
   }, []);
 
   useLayoutEffect(() => {
@@ -226,6 +240,32 @@ export default function DemoClient() {
     wearStreamRef.current = null;
     if (wearVideoRef.current) wearVideoRef.current.srcObject = null;
   }, []);
+
+  const stopOwnGuideStream = useCallback(() => {
+    const s = ownGuideStreamRef.current;
+    if (s) {
+      try {
+        s.getTracks().forEach((t) => t.stop());
+      } catch {
+        /* ignore */
+      }
+    }
+    ownGuideStreamRef.current = null;
+    if (ownGuideVideoRef.current) ownGuideVideoRef.current.srcObject = null;
+  }, []);
+
+  useLayoutEffect(() => {
+    if (!ownGuideCameraOpen) return;
+    const video = ownGuideVideoRef.current;
+    const stream = ownGuideStreamRef.current;
+    if (!video || !stream) return;
+    if (video.srcObject !== stream) {
+      video.srcObject = stream;
+    }
+    void video.play().catch(() => {
+      /* user tapped to open camera */
+    });
+  }, [ownGuideCameraOpen, ownGuideCameraFacing]);
 
   const clearWearProgressTimer = useCallback(() => {
     if (wearProgressTimerRef.current != null) {
@@ -545,19 +585,89 @@ export default function DemoClient() {
     [],
   );
 
+  const closeOwnGuideCamera = useCallback(() => {
+    stopOwnGuideStream();
+    setOwnGuideCameraOpen(false);
+    setOwnGuideCameraFlipping(false);
+  }, [stopOwnGuideStream]);
+
+  const openOwnGuideCamera = useCallback(
+    async (target: "garment" | "model") => {
+      if (!isCameraCaptureSupported()) return;
+      const facing: CameraFacingMode = target === "garment" ? "environment" : "user";
+      setOwnGuideCameraTarget(target);
+      setOwnGuideCameraFacing(facing);
+      stopOwnGuideStream();
+      try {
+        const stream = await requestCameraVideoStream(facing);
+        ownGuideStreamRef.current = stream;
+        setOwnGuideCameraOpen(true);
+      } catch {
+        setOwnGuideCameraOpen(false);
+      }
+    },
+    [stopOwnGuideStream],
+  );
+
+  const onOwnGuideFlipCamera = useCallback(async () => {
+    if (!ownGuideCameraOpen) return;
+    const previous = ownGuideCameraFacing;
+    const next: CameraFacingMode = previous === "user" ? "environment" : "user";
+    setOwnGuideCameraFlipping(true);
+    try {
+      stopOwnGuideStream();
+      const stream = await requestCameraVideoStream(next);
+      ownGuideStreamRef.current = stream;
+      setOwnGuideCameraFacing(next);
+    } catch {
+      try {
+        const stream = await requestCameraVideoStream(previous);
+        ownGuideStreamRef.current = stream;
+      } catch {
+        closeOwnGuideCamera();
+      }
+    } finally {
+      setOwnGuideCameraFlipping(false);
+    }
+  }, [ownGuideCameraOpen, ownGuideCameraFacing, stopOwnGuideStream, closeOwnGuideCamera]);
+
+  const onOwnGuideCapturePhoto = useCallback(() => {
+    const video = ownGuideVideoRef.current;
+    if (!video?.videoWidth) return;
+    const canvas = document.createElement("canvas");
+    canvas.width = video.videoWidth;
+    canvas.height = video.videoHeight;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return;
+    ctx.drawImage(video, 0, 0);
+    canvas.toBlob(
+      (blob) => {
+        if (!blob) return;
+        const name = ownGuideCameraTarget === "garment" ? "item.jpg" : "user.jpg";
+        const file = new File([blob], name, { type: blob.type || "image/jpeg" });
+        if (ownGuideCameraTarget === "garment") {
+          setOwnGuideGarmentFile(file);
+        } else {
+          setOwnGuideModelFile(file);
+        }
+        closeOwnGuideCamera();
+      },
+      "image/jpeg",
+      0.92,
+    );
+  }, [ownGuideCameraTarget, closeOwnGuideCamera]);
+
+  useEffect(() => {
+    if (!ownGuideOpen) closeOwnGuideCamera();
+  }, [ownGuideOpen, closeOwnGuideCamera]);
+
   const onWearOpenCamera = useCallback(async () => {
+    if (!isCameraCaptureSupported()) return;
     setWearError(null);
     try {
       stopWearStream();
-      const stream = await navigator.mediaDevices.getUserMedia({
-        video: { facingMode: { ideal: wearCameraFacing } },
-        audio: false,
-      });
+      const stream = await requestCameraVideoStream(wearCameraFacing);
       wearStreamRef.current = stream;
-      if (wearVideoRef.current) {
-        wearVideoRef.current.srcObject = stream;
-        void wearVideoRef.current.play();
-      }
       setWearShowVideo(true);
       if (typeof window !== "undefined" && !wearCameraFromHistoryState(window.history.state)) {
         const path = window.location.pathname + window.location.search;
@@ -568,7 +678,7 @@ export default function DemoClient() {
         window.history.pushState(next, "", path);
       }
     } catch {
-      /* user may deny; gallery still works */
+      setWearError("Could not open the camera. Try Gallery or check browser permissions.");
     }
   }, [stopWearStream, wearCameraFacing, openCatalog, wearPreset]);
 
@@ -576,31 +686,17 @@ export default function DemoClient() {
     if (!wearShowVideo) return;
     setWearError(null);
     const previous = wearCameraFacing;
-    const next: "user" | "environment" = previous === "user" ? "environment" : "user";
+    const next: CameraFacingMode = previous === "user" ? "environment" : "user";
     setWearFlippingCamera(true);
     try {
       stopWearStream();
-      const stream = await navigator.mediaDevices.getUserMedia({
-        video: { facingMode: { ideal: next } },
-        audio: false,
-      });
+      const stream = await requestCameraVideoStream(next);
       wearStreamRef.current = stream;
-      if (wearVideoRef.current) {
-        wearVideoRef.current.srcObject = stream;
-        void wearVideoRef.current.play();
-      }
       setWearCameraFacing(next);
     } catch {
       try {
-        const stream = await navigator.mediaDevices.getUserMedia({
-          video: { facingMode: { ideal: previous } },
-          audio: false,
-        });
+        const stream = await requestCameraVideoStream(previous);
         wearStreamRef.current = stream;
-        if (wearVideoRef.current) {
-          wearVideoRef.current.srcObject = stream;
-          void wearVideoRef.current.play();
-        }
       } catch {
         setWearError("Could not switch camera. Try again or use Gallery.");
       }
@@ -965,10 +1061,12 @@ export default function DemoClient() {
                   <DqIconGallery />
                   Gallery
                 </button>
-                <button type="button" className="dq-choice" onClick={onWearOpenCamera}>
-                  <DqIconCamera />
-                  Camera
-                </button>
+                {cameraCaptureSupported ? (
+                  <button type="button" className="dq-choice" onClick={() => void onWearOpenCamera()}>
+                    <DqIconCamera />
+                    Camera
+                  </button>
+                ) : null}
               </div>
 
               <input
@@ -1168,13 +1266,25 @@ export default function DemoClient() {
                     </p>
                   </div>
                 </div>
-                <button
-                  type="button"
-                  onClick={() => ownProductInputRef.current?.click()}
-                  className="mt-3 inline-flex h-10 w-full items-center justify-center rounded-full border border-[#C6A77D]/45 bg-[#2C241F] px-4 text-sm font-semibold text-[#F5EDE4] transition hover:border-[#C6A77D] hover:bg-[#332a23]"
-                >
-                  {ownGuideGarmentFile ? "Change item photo" : "Choose item photo"}
-                </button>
+                <div className="mt-3 flex flex-col gap-2 sm:flex-row">
+                  <button
+                    type="button"
+                    onClick={() => ownProductInputRef.current?.click()}
+                    className="inline-flex h-10 flex-1 items-center justify-center rounded-full border border-[#C6A77D]/45 bg-[#2C241F] px-4 text-sm font-semibold text-[#F5EDE4] transition hover:border-[#C6A77D] hover:bg-[#332a23]"
+                  >
+                    {ownGuideGarmentFile ? "Change from gallery" : "Choose from gallery"}
+                  </button>
+                  {cameraCaptureSupported ? (
+                    <button
+                      type="button"
+                      onClick={() => void openOwnGuideCamera("garment")}
+                      className="inline-flex h-10 flex-1 items-center justify-center gap-2 rounded-full border border-[#C6A77D]/45 bg-[#2C241F] px-4 text-sm font-semibold text-[#F5EDE4] transition hover:border-[#C6A77D] hover:bg-[#332a23]"
+                    >
+                      <DqIconCamera />
+                      Take photo
+                    </button>
+                  ) : null}
+                </div>
                 {ownGuideGarmentFile ? (
                   <p className="mt-2 truncate text-xs font-medium text-[#9FD3A6]">
                     ✓ {ownGuideGarmentFile.name}
@@ -1195,13 +1305,25 @@ export default function DemoClient() {
                     </p>
                   </div>
                 </div>
-                <button
-                  type="button"
-                  onClick={() => ownModelInputRef.current?.click()}
-                  className="mt-3 inline-flex h-10 w-full items-center justify-center rounded-full border border-[#C6A77D]/45 bg-[#2C241F] px-4 text-sm font-semibold text-[#F5EDE4] transition hover:border-[#C6A77D] hover:bg-[#332a23]"
-                >
-                  {ownGuideModelFile ? "Change your photo" : "Choose your photo"}
-                </button>
+                <div className="mt-3 flex flex-col gap-2 sm:flex-row">
+                  <button
+                    type="button"
+                    onClick={() => ownModelInputRef.current?.click()}
+                    className="inline-flex h-10 flex-1 items-center justify-center rounded-full border border-[#C6A77D]/45 bg-[#2C241F] px-4 text-sm font-semibold text-[#F5EDE4] transition hover:border-[#C6A77D] hover:bg-[#332a23]"
+                  >
+                    {ownGuideModelFile ? "Change from gallery" : "Choose from gallery"}
+                  </button>
+                  {cameraCaptureSupported ? (
+                    <button
+                      type="button"
+                      onClick={() => void openOwnGuideCamera("model")}
+                      className="inline-flex h-10 flex-1 items-center justify-center gap-2 rounded-full border border-[#C6A77D]/45 bg-[#2C241F] px-4 text-sm font-semibold text-[#F5EDE4] transition hover:border-[#C6A77D] hover:bg-[#332a23]"
+                    >
+                      <DqIconCamera />
+                      Take photo
+                    </button>
+                  ) : null}
+                </div>
                 {ownGuideModelFile ? (
                   <p className="mt-2 truncate text-xs font-medium text-[#9FD3A6]">
                     ✓ {ownGuideModelFile.name}
@@ -1221,6 +1343,61 @@ export default function DemoClient() {
           </div>
         </div>
       )}
+
+      {ownGuideCameraOpen ? (
+        <div
+          className="fixed inset-0 z-[60] flex items-center justify-center bg-black/80 p-4 backdrop-blur-sm"
+          role="dialog"
+          aria-modal="true"
+          aria-label="Camera"
+          onPointerDown={(e) => {
+            if (e.target === e.currentTarget) closeOwnGuideCamera();
+          }}
+        >
+          <div
+            className="relative w-full max-w-md overflow-hidden rounded-2xl border border-[#C6A77D]/30 bg-black shadow-2xl"
+            onPointerDown={(e) => e.stopPropagation()}
+          >
+            <div className="relative aspect-[3/4] w-full bg-black">
+              <video
+                ref={ownGuideVideoRef}
+                autoPlay
+                playsInline
+                muted
+                className="absolute inset-0 h-full w-full object-cover"
+              />
+            </div>
+            <div className="absolute inset-x-0 top-3 z-10 flex items-center justify-between gap-2 px-3">
+              <button
+                type="button"
+                onClick={closeOwnGuideCamera}
+                className="inline-flex min-h-10 items-center justify-center rounded-full border border-[#C6A77D]/40 bg-black/55 px-4 text-sm font-semibold text-[#F5EDE4] backdrop-blur-sm"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={() => void onOwnGuideFlipCamera()}
+                disabled={ownGuideCameraFlipping}
+                className="inline-flex min-h-10 items-center justify-center gap-2 rounded-full border border-[#C6A77D]/40 bg-black/55 px-4 text-sm font-semibold text-[#F5EDE4] backdrop-blur-sm disabled:opacity-50"
+              >
+                <SwitchCamera className="h-4 w-4" strokeWidth={2} aria-hidden />
+                Flip
+              </button>
+            </div>
+            <div className="absolute inset-x-0 bottom-4 z-10 flex justify-center px-3">
+              <button
+                type="button"
+                onClick={onOwnGuideCapturePhoto}
+                disabled={ownGuideCameraFlipping}
+                className="btn-accent-gradient inline-flex min-h-11 min-w-[11rem] items-center justify-center px-6 text-sm font-semibold disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                Capture photo
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
 
       {showUnavailableModal && (
         <div

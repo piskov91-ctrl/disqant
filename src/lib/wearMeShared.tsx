@@ -143,6 +143,82 @@ export async function compressImageToMax1000px(file: File) {
   }
 }
 
+export type CameraFacingMode = "user" | "environment";
+
+/** True when the browser can access a camera (secure context + getUserMedia API). */
+export function isCameraCaptureSupported(): boolean {
+  if (typeof window === "undefined") return false;
+  if (!window.isSecureContext) return false;
+  const md = navigator.mediaDevices;
+  if (md && typeof md.getUserMedia === "function") return true;
+  const legacy = navigator as Navigator & {
+    getUserMedia?: (
+      constraints: MediaStreamConstraints,
+      onSuccess: (stream: MediaStream) => void,
+      onError: (error: Error) => void,
+    ) => void;
+    webkitGetUserMedia?: (
+      constraints: MediaStreamConstraints,
+      onSuccess: (stream: MediaStream) => void,
+      onError: (error: Error) => void,
+    ) => void;
+  };
+  return (
+    typeof legacy.getUserMedia === "function" || typeof legacy.webkitGetUserMedia === "function"
+  );
+}
+
+/**
+ * Opens a camera stream with facingMode preference, falling back to `{ video: true }`
+ * when constraints are rejected (common on some Android / Samsung browsers).
+ */
+export async function requestCameraVideoStream(
+  facingMode: CameraFacingMode = "user",
+): Promise<MediaStream> {
+  const withFacing: MediaStreamConstraints = {
+    video: { facingMode: { ideal: facingMode } },
+    audio: false,
+  };
+  const fallback: MediaStreamConstraints = { video: true, audio: false };
+
+  const md = navigator.mediaDevices;
+  if (md?.getUserMedia) {
+    try {
+      return await md.getUserMedia(withFacing);
+    } catch {
+      return await md.getUserMedia(fallback);
+    }
+  }
+
+  const legacy = navigator as Navigator & {
+    getUserMedia?: (
+      constraints: MediaStreamConstraints,
+      onSuccess: (stream: MediaStream) => void,
+      onError: (error: Error) => void,
+    ) => void;
+    webkitGetUserMedia?: (
+      constraints: MediaStreamConstraints,
+      onSuccess: (stream: MediaStream) => void,
+      onError: (error: Error) => void,
+    ) => void;
+  };
+  const getUserMedia = legacy.getUserMedia ?? legacy.webkitGetUserMedia;
+  if (!getUserMedia) {
+    throw new Error("Camera is not supported in this browser.");
+  }
+
+  const legacyGet = (constraints: MediaStreamConstraints) =>
+    new Promise<MediaStream>((resolve, reject) => {
+      getUserMedia.call(navigator, constraints, resolve, reject);
+    });
+
+  try {
+    return await legacyGet(withFacing);
+  } catch {
+    return legacyGet(fallback);
+  }
+}
+
 export async function fetchUrlAsFile(url: string, name: string) {
   const res = await fetch(url, { mode: "cors" });
   if (!res.ok) throw new Error("Failed to fetch preset garment image.");
