@@ -697,7 +697,7 @@ export default function DemoClient() {
             onPointerDown={(e) => e.stopPropagation()}
           >
             <div className="dq-head">
-              <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+              <div style={{ display: "flex", flexDirection: "column", gap: 4, paddingRight: 52 }}>
                 <div className="dq-head-title">See yourself in it</div>
                 <div style={{ fontSize: 11, fontWeight: 600, color: "#c6a77d", letterSpacing: ".2px" }}>
                   One line of code. Works on any store. Try it on your products today.
@@ -708,7 +708,7 @@ export default function DemoClient() {
                 className="dq-x dq-modal-close"
                 aria-label="Close try-on"
                 title="Close"
-                style={{ marginLeft: "auto" }}
+                style={{ position: "absolute", top: 12, right: 12, zIndex: 30 }}
                 onClick={() => closeWearModal()}
               >
                 <X className="dq-x-icon" strokeWidth={2.5} aria-hidden />
