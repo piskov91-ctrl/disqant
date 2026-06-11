@@ -367,11 +367,29 @@
     brand.appendChild(brandName);
     brand.appendChild(brandSub);
 
+    var close = document.createElement("button");
+    close.type = "button";
+    close.setAttribute("aria-label", "Close");
+    close.textContent = "✕";
+    close.style.position = "absolute";
+    close.style.top = "10px";
+    close.style.right = "10px";
+    close.style.zIndex = "9999";
+    close.style.background = "#0f0f14";
+    close.style.color = "white";
+    close.style.border = "none";
+    close.style.borderRadius = "50%";
+    close.style.width = "44px";
+    close.style.height = "44px";
+    close.style.cursor = "pointer";
+    close.style.fontSize = "20px";
+
     var scroll = document.createElement("div");
     scroll.className = "dq-scroll";
     modal.insertBefore(head, scroll);
     scroll.appendChild(body);
     scroll.appendChild(brand);
+    modal.appendChild(close);
     modal.appendChild(scroll);
     backdrop.appendChild(modal);
 
@@ -389,6 +407,7 @@
       if (OPEN_MODAL && OPEN_MODAL.close === teardown) OPEN_MODAL = null;
     }
 
+    close.addEventListener("click", teardown);
     backdrop.addEventListener("click", function (e) {
       if (e.target === backdrop) teardown();
     });
