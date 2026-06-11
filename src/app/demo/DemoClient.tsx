@@ -1238,6 +1238,33 @@ export default function DemoClient() {
               </button>
             </div>
 
+            <div className="mt-5 rounded-xl border-l-2 border-[#C6A77D] bg-[#1f1a16]/90 py-3.5 pl-4 pr-4 text-left">
+              <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[#C6A77D]">
+                Tips for best results
+              </p>
+              <ul className="mt-2.5 space-y-1.5">
+                {[
+                  "Stand in a well-lit space with your full body visible",
+                  "Keep 2-3 metres between you and the camera",
+                  "Use the original product photo — not a screenshot",
+                  "Plain backgrounds work best for both photos",
+                ].map((tip) => (
+                  <li key={tip} className="flex gap-2 text-xs leading-relaxed text-[#F5EDE4]/75">
+                    <span aria-hidden className="text-[#C6A77D]">
+                      ✦
+                    </span>
+                    <span>{tip}</span>
+                  </li>
+                ))}
+              </ul>
+              <div className="mt-3.5">
+                <span className="inline-flex items-center gap-1.5 rounded-full border border-[#C6A77D]/30 bg-[#C6A77D]/10 px-3 py-1 text-[11px] font-medium text-[#F5EDE4]/80">
+                  <span aria-hidden>🔒</span>
+                  Your photos are not stored. They are processed instantly and deleted.
+                </span>
+              </div>
+            </div>
+
             <input
               ref={ownProductInputRef}
               type="file"
