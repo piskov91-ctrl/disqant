@@ -28,6 +28,11 @@ import {
   type TryOnResponse,
 } from "@/lib/wearMeShared";
 import { Footer } from "@/components/Footer";
+import {
+  DEMO_OWN_TRYON_LIMIT,
+  DEMO_OWN_TRYON_LS_KEY,
+  type DemoOwnTryOnLimitResponse,
+} from "@/lib/demoOwnTryOnLimit";
 
 export default function DemoClient() {
   const [selectedPresetId, setSelectedPresetId] = useState<GarmentPreset["id"]>(
@@ -78,7 +83,16 @@ export default function DemoClient() {
   const [wearResultBlob, setWearResultBlob] = useState<Blob | null>(null);
   const [wearSaveLoading, setWearSaveLoading] = useState(false);
 
+  /** "Try your own product" flow: the garment is a user upload, not a catalogue preset (rate-limited to 3). */
+  const [wearOwnProduct, setWearOwnProduct] = useState(false);
+  /** Per-IP remaining from the server (Redis); null until first fetched. */
+  const [ownServerRemaining, setOwnServerRemaining] = useState<number | null>(null);
+  /** Per-browser used count (localStorage). */
+  const [ownLocalUsed, setOwnLocalUsed] = useState(0);
+  const [ownLimitMsgVisible, setOwnLimitMsgVisible] = useState(false);
+
   const wearGalleryInputRef = useRef<HTMLInputElement | null>(null);
+  const ownProductInputRef = useRef<HTMLInputElement | null>(null);
   const wearVideoRef = useRef<HTMLVideoElement | null>(null);
   const wearStreamRef = useRef<MediaStream | null>(null);
   const wearProgressTimerRef = useRef<number | null>(null);
@@ -105,6 +119,26 @@ export default function DemoClient() {
   useEffect(() => {
     wearStageUrlRef.current = wearStageUrl;
   }, [wearStageUrl]);
+
+  /** Hydrate own-product try-on usage: localStorage (this browser) + server IP counter (Redis). */
+  useEffect(() => {
+    try {
+      const raw = Number(localStorage.getItem(DEMO_OWN_TRYON_LS_KEY) ?? "0");
+      setOwnLocalUsed(Number.isFinite(raw) && raw > 0 ? raw : 0);
+    } catch {
+      /* ignore */
+    }
+    void (async () => {
+      try {
+        const res = await fetch("/api/demo/own-product-tryon", { method: "GET" });
+        if (!res.ok) return;
+        const data = (await res.json()) as DemoOwnTryOnLimitResponse;
+        if (typeof data.remaining === "number") setOwnServerRemaining(data.remaining);
+      } catch {
+        /* offline / Redis down — localStorage still gates this browser */
+      }
+    })();
+  }, []);
 
   useLayoutEffect(() => {
     if (typeof document === "undefined") return;
@@ -294,6 +328,7 @@ export default function DemoClient() {
       setWearOpen(false);
       setWearClosing(false);
       wearLoadedPresetIdRef.current = null;
+      setWearOwnProduct(false);
       setWearPreset(null);
       setWearStageUrl(null);
       setWearHasPhoto(false);
@@ -335,6 +370,7 @@ export default function DemoClient() {
       if (prev?.startsWith("blob:")) URL.revokeObjectURL(prev);
       stopWearStream();
       clearWearProgressTimer();
+      setWearOwnProduct(false);
       setWearPreset(preset);
       setWearError(null);
       setWearSaveVisible(false);
@@ -390,6 +426,90 @@ export default function DemoClient() {
     },
     [clearWearProgressTimer, openCatalog, stopWearStream],
   );
+
+  /** Opens the try-on modal using a user-uploaded product as the garment (rate-limited own-product flow). */
+  const openWearMeOwnProduct = useCallback(
+    (productFile: File) => {
+      wearLoadedPresetIdRef.current = null;
+      const prev = wearStageUrlRef.current;
+      if (prev?.startsWith("blob:")) URL.revokeObjectURL(prev);
+      stopWearStream();
+      clearWearProgressTimer();
+      setWearOwnProduct(true);
+      setWearPreset(null);
+      setWearError(null);
+      setWearSaveVisible(false);
+      setWearModelFile(null);
+      setWearGarmentFile(null);
+      setWearStageUrl(null);
+      setWearHasPhoto(false);
+      setWearShowVideo(false);
+      setWearProcessing(false);
+      setWearShowProgress(false);
+      setWearProgressPct(0);
+      setWearGenerating(false);
+      setWearBackdropOpen(false);
+      setWearClosing(false);
+      setWearOpen(true);
+      setWearCameraFacing("user");
+      setWearFlippingCamera(false);
+      setWearResultBlob(null);
+      setWearGarmentLoading(true);
+      void (async () => {
+        try {
+          const g = await compressImageToMax1000px(productFile);
+          setWearGarmentFile(g);
+        } catch {
+          setWearError("Could not load that product image. Try a different file.");
+        } finally {
+          setWearGarmentLoading(false);
+        }
+      })();
+    },
+    [clearWearProgressTimer, stopWearStream],
+  );
+
+  const onOwnProductPick = useCallback(
+    (file: File | null) => {
+      if (!file) return;
+      openWearMeOwnProduct(file);
+    },
+    [openWearMeOwnProduct],
+  );
+
+  /** Gate the own-product flow on both the per-IP (server) and per-browser (localStorage) limits before opening the picker. */
+  const onTryOwnProduct = useCallback(async () => {
+    let serverRemaining = ownServerRemaining;
+    try {
+      const res = await fetch("/api/demo/own-product-tryon", { method: "GET" });
+      if (res.ok) {
+        const data = (await res.json()) as DemoOwnTryOnLimitResponse;
+        if (typeof data.remaining === "number") {
+          serverRemaining = data.remaining;
+          setOwnServerRemaining(data.remaining);
+        }
+      }
+    } catch {
+      /* ignore — localStorage still gates this browser */
+    }
+    let localUsed = ownLocalUsed;
+    try {
+      const raw = Number(localStorage.getItem(DEMO_OWN_TRYON_LS_KEY) ?? "0");
+      localUsed = Number.isFinite(raw) && raw > 0 ? raw : 0;
+      setOwnLocalUsed(localUsed);
+    } catch {
+      /* ignore */
+    }
+    const localRemaining = Math.max(0, DEMO_OWN_TRYON_LIMIT - localUsed);
+    const effectiveRemaining =
+      serverRemaining == null ? localRemaining : Math.min(serverRemaining, localRemaining);
+    if (effectiveRemaining <= 0) {
+      setOwnLimitMsgVisible(true);
+      return;
+    }
+    setOwnLimitMsgVisible(false);
+    ownProductInputRef.current?.click();
+  }, [ownServerRemaining, ownLocalUsed]);
 
   const onWearGalleryPick = useCallback(
     (file: File | null) => {
@@ -519,7 +639,8 @@ export default function DemoClient() {
   }, [clearWearProgressTimer]);
 
   const onWearGenerate = useCallback(async () => {
-    if (!wearModelFile || !wearGarmentFile || !wearPreset) return;
+    if (!wearModelFile || !wearGarmentFile) return;
+    if (!wearOwnProduct && !wearPreset) return;
     if (wearTryOnInFlightRef.current) return;
     wearTryOnInFlightRef.current = true;
     setWearError(null);
@@ -536,8 +657,8 @@ export default function DemoClient() {
       const fd = new FormData();
       fd.set("model", modelC);
       fd.set("garment", garmentC);
-      fd.set("productImageUrl", wearPreset.imageUrl);
-      fd.set("category", wearPreset.category);
+      fd.set("productImageUrl", wearOwnProduct ? "" : (wearPreset?.imageUrl ?? ""));
+      fd.set("category", wearOwnProduct ? "tops" : (wearPreset?.category ?? "tops"));
       fd.set("generationMode", "balanced");
       const tryOnTrace = globalThis.crypto?.randomUUID?.() ?? `tryon-${Date.now()}-${Math.random()}`;
       const reqHeaders: Record<string, string> = { "x-tryon-trace": tryOnTrace };
@@ -586,6 +707,28 @@ export default function DemoClient() {
       setWearHasPhoto(true);
       setWearProgressPct(100);
       setWearResultBlob(null);
+      if (wearOwnProduct) {
+        setOwnLocalUsed((prev) => {
+          const next = prev + 1;
+          try {
+            localStorage.setItem(DEMO_OWN_TRYON_LS_KEY, String(next));
+          } catch {
+            /* ignore */
+          }
+          return next;
+        });
+        void (async () => {
+          try {
+            const r = await fetch("/api/demo/own-product-tryon", { method: "POST" });
+            if (r.ok) {
+              const d = (await r.json()) as DemoOwnTryOnLimitResponse;
+              if (typeof d.remaining === "number") setOwnServerRemaining(d.remaining);
+            }
+          } catch {
+            /* ignore */
+          }
+        })();
+      }
       void (async () => {
         try {
           const b = await fetchImageBlobFromUrl(out);
@@ -613,6 +756,7 @@ export default function DemoClient() {
     startWearFakeProgress,
     wearGarmentFile,
     wearModelFile,
+    wearOwnProduct,
     wearPreset,
   ]);
 
@@ -662,6 +806,13 @@ export default function DemoClient() {
     () => DEMO_CATALOG.map((c) => c.title).join(" · "),
     [],
   );
+
+  const ownLocalRemaining = Math.max(0, DEMO_OWN_TRYON_LIMIT - ownLocalUsed);
+  const ownEffectiveRemaining =
+    ownServerRemaining == null
+      ? ownLocalRemaining
+      : Math.min(ownServerRemaining, ownLocalRemaining);
+  const ownLimitReached = ownEffectiveRemaining <= 0;
 
   useEffect(() => {
     if (!openCatalogDef) return;
@@ -966,7 +1117,10 @@ export default function DemoClient() {
           </p>
         </div>
 
-        <div className="mt-8 rounded-2xl border border-[#C6A77D]/25 bg-[#2C241F]/88 p-5 shadow-[0_12px_40px_rgba(0,0,0,0.35)] backdrop-blur-md">
+        <div
+          id="demo-product-catalog"
+          className="mt-8 rounded-2xl border border-[#C6A77D]/25 bg-[#2C241F]/88 p-5 shadow-[0_12px_40px_rgba(0,0,0,0.35)] backdrop-blur-md"
+        >
           {!openCatalog ? (
             <>
               <p className="text-sm font-semibold uppercase tracking-wide text-[#C6A77D]">Product catalog</p>
@@ -1009,6 +1163,58 @@ export default function DemoClient() {
               >
                 {demoCatalogTitlesOverview}
               </p>
+
+              <div className="mt-8 rounded-2xl border border-[#C6A77D]/25 bg-[#231e1a]/70 p-5 text-center">
+                <p className="text-sm font-semibold uppercase tracking-wide text-[#C6A77D]">
+                  Or try your own product
+                </p>
+                <p className="mx-auto mt-1 max-w-md text-xs text-[#F5EDE4]/65">
+                  Upload a photo of any product and see it on yourself.
+                </p>
+                <p className="mt-3 text-xs font-medium text-[#C6A77D]">
+                  {ownEffectiveRemaining} of {DEMO_OWN_TRYON_LIMIT} free try-ons with your own items
+                  left
+                </p>
+                <input
+                  ref={ownProductInputRef}
+                  type="file"
+                  accept="image/*"
+                  className="hidden"
+                  onChange={(e) => onOwnProductPick(e.target.files?.[0] ?? null)}
+                />
+                <button
+                  type="button"
+                  onClick={() => void onTryOwnProduct()}
+                  disabled={ownLimitReached}
+                  className="mt-4 inline-flex h-11 items-center justify-center rounded-full bg-gradient-to-r from-[#C6A77D] to-[#e8d4bc] px-6 text-sm font-semibold text-[#2C241F] shadow-accent-glow transition hover:opacity-[0.96] disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  Try your own product
+                </button>
+
+                {ownLimitMsgVisible || ownLimitReached ? (
+                  <div className="mx-auto mt-5 max-w-md rounded-xl border border-[#C6A77D]/30 bg-[#2C241F]/85 p-4 text-sm text-[#F5EDE4]/85">
+                    <p>
+                      You have {DEMO_OWN_TRYON_LIMIT} free try-ons with your own items. Want to keep
+                      going? Try styles from our catalogue or bring Wear Me to your store.
+                    </p>
+                    <div className="mt-3 flex flex-wrap items-center justify-center gap-3">
+                      <a
+                        href="#demo-product-catalog"
+                        onClick={() => setOwnLimitMsgVisible(false)}
+                        className="inline-flex h-9 items-center justify-center rounded-full border border-[#C6A77D]/45 px-4 text-xs font-semibold text-[#F5EDE4] transition hover:border-[#C6A77D] hover:bg-[#2C241F]"
+                      >
+                        Browse catalogue
+                      </a>
+                      <a
+                        href="/subscriptions"
+                        className="inline-flex h-9 items-center justify-center rounded-full bg-gradient-to-r from-[#C6A77D] to-[#e8d4bc] px-4 text-xs font-semibold text-[#2C241F] shadow-accent-glow transition hover:opacity-[0.96]"
+                      >
+                        Bring Wear Me to your store
+                      </a>
+                    </div>
+                  </div>
+                ) : null}
+              </div>
             </>
           ) : (
             <>
