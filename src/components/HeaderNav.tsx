@@ -7,7 +7,8 @@ import { Menu, X } from "lucide-react";
 import { RetailerAccountMenu } from "@/components/RetailerAccountMenu";
 import { retailerSessionLabel, type RetailerDisplayUser } from "@/lib/retailerDisplayName";
 
-const navAuthBtnClass = "btn-accent-gradient hidden sm:inline-flex";
+const navAuthBtnClass =
+  "btn-accent-gradient hidden sm:inline-flex !px-4 !py-2 !text-[13px]";
 
 export type HeaderNavProps = {
   /** Server-rendered retailer snapshot so auth UI matches session on first paint (no Log In flicker). */
