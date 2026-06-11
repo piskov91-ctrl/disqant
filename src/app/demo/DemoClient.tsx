@@ -697,7 +697,12 @@ export default function DemoClient() {
             onPointerDown={(e) => e.stopPropagation()}
           >
             <div className="dq-head">
-              <div className="dq-head-title">Try On</div>
+              <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+                <div className="dq-head-title">See yourself in it</div>
+                <div style={{ fontSize: 11, fontWeight: 600, color: "#c6a77d", letterSpacing: ".2px" }}>
+                  One line of code. Works on any store. Try it on your products today.
+                </div>
+              </div>
             </div>
 
             <div className="dq-body">
