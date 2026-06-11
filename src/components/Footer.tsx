@@ -21,7 +21,7 @@ export function Footer() {
           aria-label="Site and legal links"
         >
           <Link href="/about" className="nav-about-us-highlight transition hover:text-zinc-100">
-            About Us
+            Setup Guide
           </Link>
           <span className="text-zinc-700" aria-hidden>
             ·

@@ -53,7 +53,7 @@ export function WhatYouNeedToDoSteps() {
           href="/about"
           className="font-medium text-[#C6A77D] underline decoration-[#C6A77D]/60 underline-offset-[3px] transition hover:text-[#d4b896] hover:decoration-[#d4b896]"
         >
-          Visit our About Us page
+          Visit our Setup Guide page
         </Link>
       </p>
     </>

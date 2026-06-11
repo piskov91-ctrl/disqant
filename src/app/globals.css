@@ -317,7 +317,7 @@ body header.site-header nav[aria-label="Primary"] a.header-nav-link.header-nav-l
   }
 }
 
-/* Soft gold pulse (#c6a77d rgb) — “About Us” in primary nav, mobile menu, footer. */
+/* Soft gold pulse (#c6a77d rgb) — “Setup Guide” in primary nav, mobile menu, footer. */
 @keyframes nav-about-us-gold-pulse {
   0%,
   100% {

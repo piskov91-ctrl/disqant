@@ -5,7 +5,7 @@ import { Footer } from "@/components/Footer";
 import { Header } from "@/components/Header";
 
 export const metadata: Metadata = {
-  title: "About Wear Me",
+  title: "Setup Guide",
   description:
     "Virtual try-on for your store in one line of code — see how Wear Me turns hesitation into confident purchases.",
 };
@@ -18,7 +18,7 @@ export default function AboutPage() {
         <section className="border-b border-surface-border bg-white py-14 md:py-16">
           <div className="mx-auto max-w-6xl px-6">
             <p className="mb-4 inline-flex items-center gap-2 rounded-full border border-surface-border bg-surface-raised px-4 py-1.5 text-xs font-medium uppercase tracking-wider text-[#C6A77D]">
-              About Wear Me
+              Setup Guide
             </p>
             <h1 className="max-w-3xl text-balance text-4xl font-semibold tracking-tight text-zinc-900 md:text-5xl">
               The fitting room your online store never had
