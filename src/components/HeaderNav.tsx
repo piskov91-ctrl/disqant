@@ -104,7 +104,7 @@ export function HeaderNav({ initialNavUser }: HeaderNavProps) {
   }
 
   return (
-    <div className="flex min-w-0 items-center justify-end gap-2 sm:gap-3">
+    <div className="ml-auto flex min-w-0 items-center justify-end gap-2 sm:gap-3">
       <nav className="hidden items-center gap-4 md:flex md:gap-5" aria-label="Primary">
         <Link href="/" className={desktopNavLinkClass("/")}>
           Home
