@@ -884,8 +884,17 @@ export default function DemoClient() {
             ) : null}
 
             <div className="dq-brand">
-              <span>Fit Room</span>
-              <small>virtual try-on</small>
+              <span
+                style={{
+                  color: "#c6a77d",
+                  fontSize: 12,
+                  fontWeight: 600,
+                  letterSpacing: "2px",
+                  textTransform: "lowercase",
+                }}
+              >
+                fit-room.com
+              </span>
             </div>
           </div>
         </div>
