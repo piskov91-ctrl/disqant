@@ -46,7 +46,7 @@ export async function Header() {
           fixed bar lines up over the dashboard’s left tab (“My Plan”). Keep `.header-logo-lockup` sizing; constrain
           max rendered height + clip overflow to `--site-header-height` so taps never spill onto page content beneath.
         */}
-        <div className="relative z-0 ml-0 flex h-[var(--site-header-height)] min-h-0 min-w-0 shrink-0 items-center justify-self-start overflow-hidden py-0 pl-0 md:ml-[-150px]">
+        <div className="relative z-0 ml-0 flex h-[var(--site-header-height)] min-h-0 min-w-0 shrink-0 items-center justify-self-start overflow-hidden py-0 pl-0 md:ml-[-270px]">
           <Link
             href="/"
             className="inline-block w-fit max-w-[min(360px,calc(100vw-9.75rem))] sm:max-w-[min(420px,calc(100vw-11rem))] md:max-w-[min(720px,calc(100vw-26rem))]"
