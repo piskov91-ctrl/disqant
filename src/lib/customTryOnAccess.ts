@@ -10,12 +10,15 @@ export function customTryOnAccessKey(userId: string) {
   return `${CUSTOM_TRYON_ACCESS_PREFIX}${userId}`;
 }
 
+/**
+ * Strictly interprets the stored flag. Access is OFF unless the value is exactly the enabled
+ * sentinel (`"1"`, number `1`, or boolean `true`). Missing keys (`null`/`undefined`) are OFF.
+ */
 function parseEnabled(raw: unknown): boolean {
-  if (raw == null) return false;
-  if (typeof raw === "boolean") return raw;
-  if (typeof raw === "number") return raw === 1;
-  const s = String(raw).trim().toLowerCase();
-  return s === "1" || s === "true";
+  if (raw === true) return true;
+  if (raw === 1) return true;
+  if (typeof raw === "string") return raw.trim() === "1" || raw.trim().toLowerCase() === "true";
+  return false;
 }
 
 /** Whether unlimited custom try-on access is enabled for this retailer user id. */
@@ -41,21 +44,20 @@ export async function setCustomTryOnAccess(userId: string, enabled: boolean): Pr
   }
 }
 
-/** Map of userId → enabled for the given ids (single batched read). */
+/**
+ * Map of userId → enabled for the given ids. Uses per-key reads (same reliable path as
+ * {@link getCustomTryOnAccess}) so the value is interpreted identically everywhere — a key that
+ * does not exist is always OFF.
+ */
 export async function getCustomTryOnAccessMap(
   userIds: string[],
 ): Promise<Record<string, boolean>> {
-  const ids = userIds.map((u) => u.trim()).filter(Boolean);
+  const ids = [...new Set(userIds.map((u) => u.trim()).filter(Boolean))];
   const out: Record<string, boolean> = {};
   if (ids.length === 0) return out;
-  try {
-    const redis = getRedis();
-    const vals = (await redis.mget(...ids.map(customTryOnAccessKey))) as unknown[];
-    ids.forEach((id, i) => {
-      out[id] = parseEnabled(vals[i]);
-    });
-  } catch {
-    for (const id of ids) out[id] = false;
-  }
+  const results = await Promise.all(ids.map((id) => getCustomTryOnAccess(id)));
+  ids.forEach((id, i) => {
+    out[id] = results[i] ?? false;
+  });
   return out;
 }
