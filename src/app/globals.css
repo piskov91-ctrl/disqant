@@ -31,6 +31,27 @@ body {
   background: #000000;
 }
 
+/* Fitting-room photo layer. Desktop uses fixed attachment; mobile falls back to scroll
+   (background-attachment:fixed is unreliable / causes zoom-on-scroll on mobile browsers).
+   The layer already lives inside a position:fixed parent (.app-bg), so on mobile it still
+   stays put while the page scrolls. */
+.app-bg__photo {
+  position: absolute;
+  inset: 0;
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: cover;
+  background-attachment: fixed;
+}
+
+@media (max-width: 768px) {
+  .app-bg__photo {
+    background-attachment: scroll;
+    background-size: cover;
+    background-position: center;
+  }
+}
+
 .app-bg__blob {
   position: absolute;
   width: min(90vw, 50rem);

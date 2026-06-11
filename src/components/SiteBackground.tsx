@@ -9,13 +9,8 @@ export function SiteBackground() {
     <div className="app-bg pointer-events-none fixed inset-0 z-0" aria-hidden>
       <div className="app-bg__base" />
       <div
-        className="absolute inset-0 bg-no-repeat"
-        style={{
-          backgroundImage: `url("${FITTING_ROOM_BG}")`,
-          backgroundAttachment: "fixed",
-          backgroundSize: "cover",
-          backgroundPosition: "center",
-        }}
+        className="app-bg__photo"
+        style={{ backgroundImage: `url("${FITTING_ROOM_BG}")` }}
       />
       <div className="absolute inset-0 bg-gradient-to-b from-black/82 via-black/52 to-black/78 md:from-black/70 md:via-black/45 md:to-black/68" />
     </div>
