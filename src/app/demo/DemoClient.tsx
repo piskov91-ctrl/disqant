@@ -1210,7 +1210,8 @@ export default function DemoClient() {
 
       {ownGuideOpen && (
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-6 backdrop-blur-sm"
+          className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/60 p-6 backdrop-blur-sm"
+          style={{ paddingTop: "calc(var(--site-header-height) + 1rem)" }}
           role="dialog"
           aria-modal="true"
           aria-labelledby="own-guide-title"
