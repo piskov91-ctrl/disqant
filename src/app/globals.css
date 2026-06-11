@@ -45,10 +45,14 @@ body {
 }
 
 @media (max-width: 768px) {
+  .app-bg {
+    position: fixed;
+    inset: 0;
+  }
   .app-bg__photo {
     background-attachment: scroll;
     background-size: cover;
-    background-position: center;
+    background-position: center top;
   }
 }
 
