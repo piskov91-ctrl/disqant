@@ -90,9 +90,14 @@ export default function DemoClient() {
   /** Per-browser used count (localStorage). */
   const [ownLocalUsed, setOwnLocalUsed] = useState(0);
   const [ownLimitMsgVisible, setOwnLimitMsgVisible] = useState(false);
+  /** Two-step guide shown before the own-product try-on (garment first, then full-body photo). */
+  const [ownGuideOpen, setOwnGuideOpen] = useState(false);
+  const [ownGuideGarmentFile, setOwnGuideGarmentFile] = useState<File | null>(null);
+  const [ownGuideModelFile, setOwnGuideModelFile] = useState<File | null>(null);
 
   const wearGalleryInputRef = useRef<HTMLInputElement | null>(null);
   const ownProductInputRef = useRef<HTMLInputElement | null>(null);
+  const ownModelInputRef = useRef<HTMLInputElement | null>(null);
   const wearVideoRef = useRef<HTMLVideoElement | null>(null);
   const wearStreamRef = useRef<MediaStream | null>(null);
   const wearProgressTimerRef = useRef<number | null>(null);
@@ -427,9 +432,9 @@ export default function DemoClient() {
     [clearWearProgressTimer, openCatalog, stopWearStream],
   );
 
-  /** Opens the try-on modal using a user-uploaded product as the garment (rate-limited own-product flow). */
+  /** Opens the try-on modal using a user-uploaded garment + full-body photo (rate-limited own-product flow). */
   const openWearMeOwnProduct = useCallback(
-    (productFile: File) => {
+    (productFile: File, modelFile: File) => {
       wearLoadedPresetIdRef.current = null;
       const prev = wearStageUrlRef.current;
       if (prev?.startsWith("blob:")) URL.revokeObjectURL(prev);
@@ -439,10 +444,10 @@ export default function DemoClient() {
       setWearPreset(null);
       setWearError(null);
       setWearSaveVisible(false);
-      setWearModelFile(null);
+      setWearModelFile(modelFile);
       setWearGarmentFile(null);
-      setWearStageUrl(null);
-      setWearHasPhoto(false);
+      setWearStageUrl(URL.createObjectURL(modelFile));
+      setWearHasPhoto(true);
       setWearShowVideo(false);
       setWearProcessing(false);
       setWearShowProgress(false);
@@ -469,15 +474,14 @@ export default function DemoClient() {
     [clearWearProgressTimer, stopWearStream],
   );
 
-  const onOwnProductPick = useCallback(
-    (file: File | null) => {
-      if (!file) return;
-      openWearMeOwnProduct(file);
-    },
-    [openWearMeOwnProduct],
-  );
+  /** Step 2 → 3: launches the try-on modal once both the garment and the full-body photo are chosen. */
+  const onStartOwnProductTryOn = useCallback(() => {
+    if (!ownGuideGarmentFile || !ownGuideModelFile) return;
+    setOwnGuideOpen(false);
+    openWearMeOwnProduct(ownGuideGarmentFile, ownGuideModelFile);
+  }, [ownGuideGarmentFile, ownGuideModelFile, openWearMeOwnProduct]);
 
-  /** Gate the own-product flow on both the per-IP (server) and per-browser (localStorage) limits before opening the picker. */
+  /** Gate the own-product flow on both the per-IP (server) and per-browser (localStorage) limits before showing the guide. */
   const onTryOwnProduct = useCallback(async () => {
     let serverRemaining = ownServerRemaining;
     try {
@@ -508,7 +512,9 @@ export default function DemoClient() {
       return;
     }
     setOwnLimitMsgVisible(false);
-    ownProductInputRef.current?.click();
+    setOwnGuideGarmentFile(null);
+    setOwnGuideModelFile(null);
+    setOwnGuideOpen(true);
   }, [ownServerRemaining, ownLocalUsed]);
 
   const onWearGalleryPick = useCallback(
@@ -1072,6 +1078,117 @@ export default function DemoClient() {
         </div>
       )}
 
+      {ownGuideOpen && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-6 backdrop-blur-sm"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="own-guide-title"
+          onPointerDown={(e) => {
+            if (e.target === e.currentTarget) setOwnGuideOpen(false);
+          }}
+        >
+          <div className="w-full max-w-lg rounded-2xl border border-[#C6A77D]/30 bg-[#2C241F] p-6 shadow-[0_30px_80px_rgba(0,0,0,0.5)]">
+            <div className="flex items-start justify-between gap-4">
+              <div className="min-w-0">
+                <p id="own-guide-title" className="text-lg font-semibold text-[#F5EDE4]">
+                  Try your own product
+                </p>
+                <p className="mt-1 text-sm text-[#F5EDE4]/65">
+                  Two quick steps — upload the clothing item, then a photo of yourself.
+                </p>
+              </div>
+              <button
+                type="button"
+                aria-label="Close"
+                onClick={() => setOwnGuideOpen(false)}
+                className="shrink-0 rounded-full border border-[#C6A77D]/35 p-1.5 text-[#F5EDE4]/80 transition hover:border-[#C6A77D] hover:text-[#F5EDE4]"
+              >
+                <X className="h-5 w-5" strokeWidth={2} aria-hidden />
+              </button>
+            </div>
+
+            <input
+              ref={ownProductInputRef}
+              type="file"
+              accept="image/*"
+              className="hidden"
+              onChange={(e) => setOwnGuideGarmentFile(e.target.files?.[0] ?? null)}
+            />
+            <input
+              ref={ownModelInputRef}
+              type="file"
+              accept="image/*"
+              className="hidden"
+              onChange={(e) => setOwnGuideModelFile(e.target.files?.[0] ?? null)}
+            />
+
+            <div className="mt-5 space-y-3">
+              <div className="rounded-xl border border-[#C6A77D]/25 bg-[#231e1a]/80 p-4 text-left">
+                <div className="flex items-center gap-3">
+                  <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[#C6A77D] text-sm font-bold text-[#2C241F]">
+                    1
+                  </span>
+                  <div className="min-w-0">
+                    <p className="text-sm font-semibold text-[#F5EDE4]">Upload your garment</p>
+                    <p className="text-xs text-[#F5EDE4]/60">
+                      A clear photo of the clothing item, ideally on a plain background.
+                    </p>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => ownProductInputRef.current?.click()}
+                  className="mt-3 inline-flex h-10 w-full items-center justify-center rounded-full border border-[#C6A77D]/45 bg-[#2C241F] px-4 text-sm font-semibold text-[#F5EDE4] transition hover:border-[#C6A77D] hover:bg-[#332a23]"
+                >
+                  {ownGuideGarmentFile ? "Change garment photo" : "Upload garment photo"}
+                </button>
+                {ownGuideGarmentFile ? (
+                  <p className="mt-2 truncate text-xs font-medium text-[#9FD3A6]">
+                    ✓ {ownGuideGarmentFile.name}
+                  </p>
+                ) : null}
+              </div>
+
+              <div className="rounded-xl border border-[#C6A77D]/25 bg-[#231e1a]/80 p-4 text-left">
+                <div className="flex items-center gap-3">
+                  <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[#C6A77D] text-sm font-bold text-[#2C241F]">
+                    2
+                  </span>
+                  <div className="min-w-0">
+                    <p className="text-sm font-semibold text-[#F5EDE4]">Upload your photo</p>
+                    <p className="text-xs text-[#F5EDE4]/60">
+                      A full-body photo facing forward, in good lighting (no cropping).
+                    </p>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => ownModelInputRef.current?.click()}
+                  className="mt-3 inline-flex h-10 w-full items-center justify-center rounded-full border border-[#C6A77D]/45 bg-[#2C241F] px-4 text-sm font-semibold text-[#F5EDE4] transition hover:border-[#C6A77D] hover:bg-[#332a23]"
+                >
+                  {ownGuideModelFile ? "Change your photo" : "Upload full-body photo"}
+                </button>
+                {ownGuideModelFile ? (
+                  <p className="mt-2 truncate text-xs font-medium text-[#9FD3A6]">
+                    ✓ {ownGuideModelFile.name}
+                  </p>
+                ) : null}
+              </div>
+            </div>
+
+            <button
+              type="button"
+              onClick={onStartOwnProductTryOn}
+              disabled={!ownGuideGarmentFile || !ownGuideModelFile}
+              className="mt-5 inline-flex h-11 w-full items-center justify-center rounded-full bg-gradient-to-r from-[#C6A77D] to-[#e8d4bc] px-6 text-sm font-semibold text-[#2C241F] shadow-accent-glow transition hover:opacity-[0.96] disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              Start try-on
+            </button>
+          </div>
+        </div>
+      )}
+
       {showUnavailableModal && (
         <div
           className="fixed inset-0 z-50 flex items-center justify-center bg-zinc-900/40 p-6 backdrop-blur-sm"
@@ -1175,13 +1292,6 @@ export default function DemoClient() {
                   {ownEffectiveRemaining} of {DEMO_OWN_TRYON_LIMIT} free try-ons with your own items
                   left
                 </p>
-                <input
-                  ref={ownProductInputRef}
-                  type="file"
-                  accept="image/*"
-                  className="hidden"
-                  onChange={(e) => onOwnProductPick(e.target.files?.[0] ?? null)}
-                />
                 <button
                   type="button"
                   onClick={() => void onTryOwnProduct()}
