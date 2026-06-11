@@ -376,7 +376,7 @@
     var brand = document.createElement("div");
     brand.className = "dq-brand";
     var brandName = document.createElement("a");
-    brandName.textContent = "Fit Room";
+    brandName.textContent = "www.fit-room.com";
     brandName.href = "https://www.fit-room.com";
     brandName.target = "_blank";
     brandName.rel = "noopener noreferrer";

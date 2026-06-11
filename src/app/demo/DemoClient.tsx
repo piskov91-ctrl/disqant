@@ -914,7 +914,7 @@ export default function DemoClient() {
                   e.currentTarget.style.textDecoration = "none";
                 }}
               >
-                fit-room.com
+                www.fit-room.com
               </a>
             </div>
           </div>
