@@ -703,6 +703,16 @@ export default function DemoClient() {
                   One line of code. Works on any store. Try it on your products today.
                 </div>
               </div>
+              <button
+                type="button"
+                className="dq-x dq-modal-close"
+                aria-label="Close try-on"
+                title="Close"
+                style={{ marginLeft: "auto" }}
+                onClick={() => closeWearModal()}
+              >
+                <X className="dq-x-icon" strokeWidth={2.5} aria-hidden />
+              </button>
             </div>
 
             <div className="dq-body">
@@ -876,17 +886,6 @@ export default function DemoClient() {
             <div className="dq-brand">
               <span>Fit Room</span>
               <small>virtual try-on</small>
-            </div>
-            <div className="dq-modal-foot">
-              <button
-                type="button"
-                className="dq-x dq-modal-close"
-                aria-label="Close try-on"
-                title="Close"
-                onClick={() => closeWearModal()}
-              >
-                <X className="dq-x-icon" strokeWidth={2.5} aria-hidden />
-              </button>
             </div>
           </div>
         </div>
