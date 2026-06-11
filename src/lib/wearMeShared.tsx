@@ -87,6 +87,8 @@ export const DEMO_WEAR_MODAL_CSS =
   ".dq-cta:hover{transform:translateY(-2px);box-shadow:0 10px 28px rgba(198,167,125,.55),inset 0 1px 1px rgba(255,255,255,.6);}" +
   ".dq-cta:active{transform:translateY(-1px);}" +
   "@media (prefers-reduced-motion:reduce){.dq-cta{animation:none;}.dq-cta::after{animation:none;display:none;}}" +
+  ".dq-wow{text-align:center;color:#c6a77d;font-family:Georgia,ui-serif,serif;font-weight:700;font-size:16px;letter-spacing:1px;padding:2px 8px;animation:dq-wow-in .6s ease both;}" +
+  "@keyframes dq-wow-in{0%{opacity:0;transform:translateY(8px)}100%{opacity:1;transform:translateY(0)}}" +
   ".dq-primary{appearance:none;border:0;cursor:pointer;border-radius:10px;padding:14px 28px;background:#1a1612;color:#f5ede4;border:1px solid rgba(198,167,125,.28);font:600 16px/1.25 system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;letter-spacing:.5px;box-shadow:0 8px 22px rgba(0,0,0,.22);transition:background-color .3s ease,color .3s ease,transform .16s ease,border-color .16s ease;}" +
   ".dq-primary:hover{background:#c6a77d;color:#2c241f;border-color:rgba(255,255,255,.25);transform:translateY(-1px);}" +
   ".dq-primary:disabled{opacity:.55;cursor:not-allowed;transform:none;background:#1a1612;color:#f5ede4;}" +

@@ -751,6 +751,12 @@ export default function DemoClient() {
                 </div>
               </div>
 
+              {wearSaveVisible ? (
+                <div className="dq-wow" role="status" aria-live="polite">
+                  Wow, you look amazing! ✨
+                </div>
+              ) : null}
+
               <div className="dq-row">
                 <button type="button" className="dq-choice" onClick={() => wearGalleryInputRef.current?.click()}>
                   <DqIconGallery />

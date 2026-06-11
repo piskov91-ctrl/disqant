@@ -177,6 +177,10 @@
       + ".dq-progress.is-on{display:block;}"
       + ".dq-progress>span{display:block;height:100%;width:0%;background:linear-gradient(135deg,#a68958,#c6a77d,#e8d4bc);"
       + "transition:width .12s ease;}"
+      + ".dq-wow{display:none;text-align:center;color:#c6a77d;"
+      + "font-family:Georgia,ui-serif,serif;font-weight:700;font-size:16px;letter-spacing:1px;padding:2px 8px;}"
+      + ".dq-wow.is-on{display:block;animation:dq-wow-in .6s ease both;}"
+      + "@keyframes dq-wow-in{0%{opacity:0;transform:translateY(8px)}100%{opacity:1;transform:translateY(0)}}"
 
       // Controls
       + ".dq-row{display:flex;gap:10px;flex-wrap:wrap;}"
@@ -508,6 +512,10 @@
     generateBtn.type = "button";
     generateBtn.textContent = "Generate";
 
+    var wow = document.createElement("div");
+    wow.className = "dq-wow";
+    wow.textContent = "Wow, you look amazing! ✨";
+
     var saveBtn = document.createElement("button");
     saveBtn.className = "dq-save";
     saveBtn.type = "button";
@@ -515,6 +523,7 @@
     saveBtn.style.display = "none";
 
     body.appendChild(stage);
+    body.appendChild(wow);
     body.appendChild(row);
     body.appendChild(fileInput);
     body.appendChild(generateBtn);
@@ -526,6 +535,7 @@
       stageImg.src = url;
       stageImg.style.display = "block";
       stageEmpty.style.display = "none";
+      wow.classList.remove("is-on");
     }
 
     function stopStream() {
@@ -700,6 +710,7 @@
     function startLoading() {
       processing.classList.add("is-on");
       progress.classList.add("is-on");
+      wow.classList.remove("is-on");
       setProgress(0);
       if (progressTimer) window.clearInterval(progressTimer);
       progressTimer = window.setInterval(function () {
@@ -790,6 +801,7 @@
 
         setStageImage(out, "Try-on result");
         stopLoading(true);
+        wow.classList.add("is-on");
         saveBtn.style.display = "block";
       } catch (_e) {
         stopLoading(false);
