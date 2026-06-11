@@ -1,8 +1,6 @@
-import { cookies } from "next/headers";
 import { getRedis } from "@/lib/apiKeyStore";
 import { getRequestClientIp } from "@/lib/platformAnalytics";
 import { DEMO_OWN_TRYON_LIMIT } from "@/lib/demoOwnTryOnLimit";
-import { ADMIN_AUTH_COOKIE, isAdminAuthorizedCookieValue } from "@/lib/adminAuth";
 import { getRetailerSessionUser } from "@/lib/retailerAuth";
 import { getCustomTryOnAccess } from "@/lib/customTryOnAccess";
 
@@ -32,14 +30,12 @@ const UNLIMITED_PAYLOAD = {
   unlimited: true,
 } as const;
 
-/** Admin (cookie) or a retailer whose account has been granted unlimited custom try-on access. */
+/**
+ * Unlimited custom try-ons ONLY when an admin has explicitly enabled the toggle for this retailer
+ * account (Redis `fit-room:custom-tryon-access:{userId}`). Everyone else — including anonymous
+ * visitors and admins who have not toggled their own account on — gets the default 3 free try-ons.
+ */
 async function hasUnlimitedAccess(): Promise<boolean> {
-  try {
-    const jar = await cookies();
-    if (isAdminAuthorizedCookieValue(jar.get(ADMIN_AUTH_COOKIE)?.value)) return true;
-  } catch {
-    /* ignore */
-  }
   try {
     const user = await getRetailerSessionUser();
     if (user?.id && (await getCustomTryOnAccess(user.id))) return true;

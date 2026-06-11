@@ -3561,7 +3561,8 @@ export default function AdminClient() {
               <p className="mt-1 text-sm text-zinc-400">
                 Toggle <span className="text-zinc-300">unlimited</span> &ldquo;Try your own
                 product&rdquo; try-ons on the Try It Free page for a retailer account. When off, that
-                account uses the default 3 free custom try-ons. Admins always have unlimited access.
+                account uses the default 3 free custom try-ons. Unlimited applies only to accounts
+                explicitly enabled here.
               </p>
 
               {customTryOnError ? (
