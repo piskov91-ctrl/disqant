@@ -181,6 +181,15 @@
       + "font-family:Georgia,ui-serif,serif;font-weight:700;font-size:16px;letter-spacing:1px;padding:2px 8px;}"
       + ".dq-wow.is-on{display:block;animation:dq-wow-in .6s ease both;}"
       + "@keyframes dq-wow-in{0%{opacity:0;transform:translateY(8px)}100%{opacity:1;transform:translateY(0)}}"
+      + ".dq-dl{position:absolute;right:12px;bottom:12px;z-index:6;width:44px;height:44px;padding:0;border-radius:999px;"
+      + "display:inline-flex;align-items:center;justify-content:center;cursor:pointer;border:1px solid rgba(255,255,255,.4);"
+      + "background:linear-gradient(135deg,#c6a77d 0%,#e2cfb4 50%,#c6a77d 100%);color:#2c241f;"
+      + "box-shadow:0 6px 18px rgba(0,0,0,.3),inset 0 1px 1px rgba(255,255,255,.5);"
+      + "transition:transform .16s ease, box-shadow .16s ease, filter .16s ease;-webkit-tap-highlight-color:transparent;}"
+      + ".dq-dl:hover{transform:translateY(-1px);filter:brightness(1.07);box-shadow:0 10px 24px rgba(0,0,0,.34);}"
+      + ".dq-dl:active{transform:translateY(0);}"
+      + ".dq-dl:disabled{opacity:.6;cursor:not-allowed;transform:none;}"
+      + ".dq-dl-icon{width:20px;height:20px;display:block;}"
 
       // Controls
       + ".dq-row{display:flex;gap:10px;flex-wrap:wrap;}"
@@ -517,9 +526,11 @@
     wow.textContent = "Wow, you look amazing! ✨";
 
     var saveBtn = document.createElement("button");
-    saveBtn.className = "dq-save";
+    saveBtn.className = "dq-dl";
     saveBtn.type = "button";
-    saveBtn.textContent = "⬇️ Save Photo";
+    saveBtn.setAttribute("aria-label", "Download image");
+    saveBtn.title = "Download image";
+    saveBtn.innerHTML = '<svg class="dq-dl-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v12"/><path d="m7 10 5 5 5-5"/><path d="M5 21h14"/></svg>';
     saveBtn.style.display = "none";
 
     body.appendChild(stage);
@@ -527,7 +538,7 @@
     body.appendChild(row);
     body.appendChild(fileInput);
     body.appendChild(generateBtn);
-    body.appendChild(saveBtn);
+    stage.appendChild(saveBtn);
 
     function setStageImage(url, alt) {
       if (!url) return;
@@ -802,7 +813,7 @@
         setStageImage(out, "Try-on result");
         stopLoading(true);
         wow.classList.add("is-on");
-        saveBtn.style.display = "block";
+        saveBtn.style.display = "inline-flex";
       } catch (_e) {
         stopLoading(false);
       } finally {

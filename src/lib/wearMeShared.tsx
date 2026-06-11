@@ -89,6 +89,11 @@ export const DEMO_WEAR_MODAL_CSS =
   "@media (prefers-reduced-motion:reduce){.dq-cta{animation:none;}.dq-cta::after{animation:none;display:none;}}" +
   ".dq-wow{text-align:center;color:#c6a77d;font-family:Georgia,ui-serif,serif;font-weight:700;font-size:16px;letter-spacing:1px;padding:2px 8px;animation:dq-wow-in .6s ease both;}" +
   "@keyframes dq-wow-in{0%{opacity:0;transform:translateY(8px)}100%{opacity:1;transform:translateY(0)}}" +
+  ".dq-dl{position:absolute;right:12px;bottom:12px;z-index:6;width:44px;height:44px;padding:0;border-radius:999px;display:inline-flex;align-items:center;justify-content:center;cursor:pointer;border:1px solid rgba(255,255,255,.4);background:linear-gradient(135deg,#c6a77d 0%,#e2cfb4 50%,#c6a77d 100%);color:#2c241f;box-shadow:0 6px 18px rgba(0,0,0,.3),inset 0 1px 1px rgba(255,255,255,.5);transition:transform .16s ease,box-shadow .16s ease,filter .16s ease;-webkit-tap-highlight-color:transparent;}" +
+  ".dq-dl:hover{transform:translateY(-1px);filter:brightness(1.07);box-shadow:0 10px 24px rgba(0,0,0,.34);}" +
+  ".dq-dl:active{transform:translateY(0);}" +
+  ".dq-dl:disabled{opacity:.6;cursor:not-allowed;transform:none;}" +
+  ".dq-dl-icon{width:20px;height:20px;display:block;}" +
   ".dq-primary{appearance:none;border:0;cursor:pointer;border-radius:10px;padding:14px 28px;background:#1a1612;color:#f5ede4;border:1px solid rgba(198,167,125,.28);font:600 16px/1.25 system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;letter-spacing:.5px;box-shadow:0 8px 22px rgba(0,0,0,.22);transition:background-color .3s ease,color .3s ease,transform .16s ease,border-color .16s ease;}" +
   ".dq-primary:hover{background:#c6a77d;color:#2c241f;border-color:rgba(255,255,255,.25);transform:translateY(-1px);}" +
   ".dq-primary:disabled{opacity:.55;cursor:not-allowed;transform:none;background:#1a1612;color:#f5ede4;}" +

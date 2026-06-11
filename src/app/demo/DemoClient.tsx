@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
-import { ChevronLeft, SwitchCamera, X } from "lucide-react";
+import { ChevronLeft, Download, SwitchCamera, X } from "lucide-react";
 import {
   DEMO_CATALOG,
   GARMENT_PRESETS,
@@ -749,6 +749,20 @@ export default function DemoClient() {
                 <div className={`dq-progress${wearShowProgress ? " is-on" : ""}`}>
                   <span style={{ width: `${wearProgressPct}%` }} />
                 </div>
+
+                {wearSaveVisible ? (
+                  <button
+                    type="button"
+                    className="dq-dl"
+                    onClick={() => void onWearSaveToGallery()}
+                    disabled={wearSaveLoading}
+                    aria-busy={wearSaveLoading}
+                    aria-label="Download image"
+                    title="Download image"
+                  >
+                    <Download className="dq-dl-icon" strokeWidth={2.5} aria-hidden />
+                  </button>
+                ) : null}
               </div>
 
               {wearSaveVisible ? (
@@ -863,18 +877,6 @@ export default function DemoClient() {
                 Wear Me
               </button>
 
-              {wearSaveVisible ? (
-                <button
-                  type="button"
-                  className="dq-primary"
-                  onClick={() => void onWearSaveToGallery()}
-                  disabled={wearSaveLoading}
-                  aria-busy={wearSaveLoading}
-                  title="Downloads the try-on image to your device (e.g. Downloads or your default save location)"
-                >
-                  {wearSaveLoading ? "Saving…" : "Download image"}
-                </button>
-              ) : null}
             </div>
 
             {wearSaveVisible ? (
