@@ -89,6 +89,8 @@ export default function DemoClient() {
   const [ownServerRemaining, setOwnServerRemaining] = useState<number | null>(null);
   /** Per-browser used count (localStorage). */
   const [ownLocalUsed, setOwnLocalUsed] = useState(0);
+  /** Admin or access-granted retailer: unlimited custom try-ons (bypasses IP + localStorage limits). */
+  const [ownUnlimited, setOwnUnlimited] = useState(false);
   const [ownLimitMsgVisible, setOwnLimitMsgVisible] = useState(false);
   /** Two-step guide shown before the own-product try-on (garment first, then full-body photo). */
   const [ownGuideOpen, setOwnGuideOpen] = useState(false);
@@ -138,6 +140,7 @@ export default function DemoClient() {
         const res = await fetch("/api/demo/own-product-tryon", { method: "GET" });
         if (!res.ok) return;
         const data = (await res.json()) as DemoOwnTryOnLimitResponse;
+        setOwnUnlimited(Boolean(data.unlimited));
         if (typeof data.remaining === "number") setOwnServerRemaining(data.remaining);
       } catch {
         /* offline / Redis down — localStorage still gates this browser */
@@ -484,10 +487,13 @@ export default function DemoClient() {
   /** Gate the own-product flow on both the per-IP (server) and per-browser (localStorage) limits before showing the guide. */
   const onTryOwnProduct = useCallback(async () => {
     let serverRemaining = ownServerRemaining;
+    let unlimited = ownUnlimited;
     try {
       const res = await fetch("/api/demo/own-product-tryon", { method: "GET" });
       if (res.ok) {
         const data = (await res.json()) as DemoOwnTryOnLimitResponse;
+        unlimited = Boolean(data.unlimited);
+        setOwnUnlimited(unlimited);
         if (typeof data.remaining === "number") {
           serverRemaining = data.remaining;
           setOwnServerRemaining(data.remaining);
@@ -495,6 +501,13 @@ export default function DemoClient() {
       }
     } catch {
       /* ignore — localStorage still gates this browser */
+    }
+    if (unlimited) {
+      setOwnLimitMsgVisible(false);
+      setOwnGuideGarmentFile(null);
+      setOwnGuideModelFile(null);
+      setOwnGuideOpen(true);
+      return;
     }
     let localUsed = ownLocalUsed;
     try {
@@ -515,7 +528,7 @@ export default function DemoClient() {
     setOwnGuideGarmentFile(null);
     setOwnGuideModelFile(null);
     setOwnGuideOpen(true);
-  }, [ownServerRemaining, ownLocalUsed]);
+  }, [ownServerRemaining, ownLocalUsed, ownUnlimited]);
 
   const onWearGalleryPick = useCallback(
     (file: File | null) => {
@@ -713,7 +726,7 @@ export default function DemoClient() {
       setWearHasPhoto(true);
       setWearProgressPct(100);
       setWearResultBlob(null);
-      if (wearOwnProduct) {
+      if (wearOwnProduct && !ownUnlimited) {
         setOwnLocalUsed((prev) => {
           const next = prev + 1;
           try {
@@ -728,6 +741,7 @@ export default function DemoClient() {
             const r = await fetch("/api/demo/own-product-tryon", { method: "POST" });
             if (r.ok) {
               const d = (await r.json()) as DemoOwnTryOnLimitResponse;
+              setOwnUnlimited(Boolean(d.unlimited));
               if (typeof d.remaining === "number") setOwnServerRemaining(d.remaining);
             }
           } catch {
@@ -763,6 +777,7 @@ export default function DemoClient() {
     wearGarmentFile,
     wearModelFile,
     wearOwnProduct,
+    ownUnlimited,
     wearPreset,
   ]);
 
@@ -818,7 +833,7 @@ export default function DemoClient() {
     ownServerRemaining == null
       ? ownLocalRemaining
       : Math.min(ownServerRemaining, ownLocalRemaining);
-  const ownLimitReached = ownEffectiveRemaining <= 0;
+  const ownLimitReached = !ownUnlimited && ownEffectiveRemaining <= 0;
 
   useEffect(() => {
     if (!openCatalogDef) return;
@@ -1290,8 +1305,17 @@ export default function DemoClient() {
                   Upload a photo of any product and see it on yourself.
                 </p>
                 <p className="mt-3 text-xs font-medium text-[#C6A77D]">
-                  {ownEffectiveRemaining} of {DEMO_OWN_TRYON_LIMIT} free try-ons with your own items
-                  left
+                  {ownUnlimited ? (
+                    <span className="inline-flex items-center gap-1.5">
+                      <span className="inline-block h-1.5 w-1.5 rounded-full bg-emerald-400" />
+                      Unlimited custom try-ons enabled
+                    </span>
+                  ) : (
+                    <>
+                      {ownEffectiveRemaining} of {DEMO_OWN_TRYON_LIMIT} free try-ons with your own
+                      items left
+                    </>
+                  )}
                 </p>
                 <button
                   type="button"

@@ -151,6 +151,7 @@ type AnalyticsSummary = {
 type AdminTab =
   | "clients"
   | "retailers"
+  | "customTryons"
   | "contact"
   | "enterprise"
   | "enterpriseCalc"
@@ -196,6 +197,13 @@ function retailerStatusBadgeClass(status: RetailerAdminRow["subscriptionStatus"]
   if (status === "Active") return "border-emerald-700/70 bg-emerald-950/50 text-emerald-300";
   return "border-red-900/70 bg-red-950/45 text-red-300";
 }
+
+type CustomTryOnAccessRow = {
+  userId: string;
+  email: string;
+  storeName: string;
+  enabled: boolean;
+};
 
 const STRIPE_CREATE_PAYMENT_LINK_URL = "https://dashboard.stripe.com/test/payment-links/create";
 const STRIPE_WEBHOOK_URL = "https://dashboard.stripe.com/test/workbench/webhooks";
@@ -554,6 +562,11 @@ export default function AdminClient() {
   const [retailers, setRetailers] = useState<RetailerAdminRow[]>([]);
   const [retailersLoading, setRetailersLoading] = useState(false);
   const [retailersError, setRetailersError] = useState<string | null>(null);
+
+  const [customTryOnAccounts, setCustomTryOnAccounts] = useState<CustomTryOnAccessRow[]>([]);
+  const [customTryOnLoading, setCustomTryOnLoading] = useState(false);
+  const [customTryOnError, setCustomTryOnError] = useState<string | null>(null);
+  const [customTryOnBusyId, setCustomTryOnBusyId] = useState<string | null>(null);
   const [retailerCreateKeyTarget, setRetailerCreateKeyTarget] = useState<RetailerAdminRow | null>(null);
   const [retailerCreateKeyLimit, setRetailerCreateKeyLimit] = useState("1000");
   const [retailerCreateKeyFashn, setRetailerCreateKeyFashn] = useState("");
@@ -1247,6 +1260,56 @@ export default function AdminClient() {
     }
   }
 
+  async function loadCustomTryOnAccess() {
+    setCustomTryOnLoading(true);
+    setCustomTryOnError(null);
+    try {
+      const res = await fetch("/api/admin/custom-tryon-access");
+      const data = (await res.json()) as { accounts?: CustomTryOnAccessRow[]; error?: string };
+      if (!res.ok) {
+        if (data.error === "Unauthorized.") window.location.reload();
+        setCustomTryOnError(data.error || "Failed to load accounts.");
+        return;
+      }
+      setCustomTryOnAccounts(Array.isArray(data.accounts) ? data.accounts : []);
+    } catch (e) {
+      setCustomTryOnError(e instanceof Error ? e.message : "Failed to load accounts.");
+    } finally {
+      setCustomTryOnLoading(false);
+    }
+  }
+
+  async function toggleCustomTryOnAccess(userId: string, enabled: boolean) {
+    setCustomTryOnBusyId(userId);
+    setCustomTryOnError(null);
+    // Optimistic update; revert on failure.
+    setCustomTryOnAccounts((prev) =>
+      prev.map((a) => (a.userId === userId ? { ...a, enabled } : a)),
+    );
+    try {
+      const res = await fetch("/api/admin/custom-tryon-access", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ userId, enabled }),
+      });
+      const data = (await res.json()) as { ok?: boolean; error?: string };
+      if (!res.ok || !data.ok) {
+        if (data.error === "Unauthorized.") window.location.reload();
+        setCustomTryOnAccounts((prev) =>
+          prev.map((a) => (a.userId === userId ? { ...a, enabled: !enabled } : a)),
+        );
+        setCustomTryOnError(data.error || "Failed to update access.");
+      }
+    } catch (e) {
+      setCustomTryOnAccounts((prev) =>
+        prev.map((a) => (a.userId === userId ? { ...a, enabled: !enabled } : a)),
+      );
+      setCustomTryOnError(e instanceof Error ? e.message : "Failed to update access.");
+    } finally {
+      setCustomTryOnBusyId(null);
+    }
+  }
+
   function openRetailerCreateKeyModal(row: RetailerAdminRow) {
     setRetailerCreateKeyTarget(row);
     setRetailerCreateKeyLimit("1000");
@@ -1420,6 +1483,7 @@ export default function AdminClient() {
     if (activeTab === "analytics") void loadAnalytics();
     if (activeTab === "recovery") void loadRecovery();
     if (activeTab === "retailers") void loadRetailers();
+    if (activeTab === "customTryons") void loadCustomTryOnAccess();
     if (activeTab === "contact") void loadContactInquiries();
     if (activeTab === "enterprise") void loadEnterpriseQuotes();
     if (activeTab === "reviews") void loadSubscriptionReviews();
@@ -1747,6 +1811,7 @@ export default function AdminClient() {
     else if (activeTab === "reviews") void loadSubscriptionReviews();
     else if (activeTab === "recovery") void loadRecovery();
     else if (activeTab === "retailers") void loadRetailers();
+    else if (activeTab === "customTryons") void loadCustomTryOnAccess();
   }
 
   const tabBusy =
@@ -1754,6 +1819,8 @@ export default function AdminClient() {
       ? loading
       : activeTab === "retailers"
         ? retailersLoading
+        : activeTab === "customTryons"
+        ? customTryOnLoading
         : activeTab === "analytics"
         ? analyticsLoading
         : activeTab === "recovery"
@@ -2580,6 +2647,19 @@ export default function AdminClient() {
               }`}
             >
               Retailers
+            </button>
+            <button
+              type="button"
+              role="tab"
+              aria-selected={activeTab === "customTryons"}
+              onClick={() => setActiveTab("customTryons")}
+              className={`rounded-full px-5 py-2 text-sm font-semibold transition ${
+                activeTab === "customTryons"
+                  ? "bg-zinc-800 text-zinc-100 shadow-sm"
+                  : "text-zinc-500 hover:text-zinc-300"
+              }`}
+            >
+              Custom Try-ons
             </button>
             <button
               type="button"
@@ -3473,6 +3553,85 @@ export default function AdminClient() {
               <p className="mt-6 text-xs text-zinc-600">
                 Redis keys: <span className="font-mono text-zinc-400">fit-room:retailer:user:*</span>,{" "}
                 <span className="font-mono text-zinc-400">fit-room:retailer:email:*</span>
+              </p>
+            </section>
+          ) : activeTab === "customTryons" ? (
+            <section className="mt-8 w-full overflow-hidden rounded-2xl border border-zinc-800 bg-zinc-900/60 p-6 shadow-sm md:p-8">
+              <h2 className="text-base font-semibold text-zinc-100">Custom try-on access</h2>
+              <p className="mt-1 text-sm text-zinc-400">
+                Toggle <span className="text-zinc-300">unlimited</span> &ldquo;Try your own
+                product&rdquo; try-ons on the Try It Free page for a retailer account. When off, that
+                account uses the default 3 free custom try-ons. Admins always have unlimited access.
+              </p>
+
+              {customTryOnError ? (
+                <div className="mt-6 rounded-xl border border-red-900/60 bg-red-950/40 px-4 py-3 text-sm text-red-200">
+                  {customTryOnError}
+                </div>
+              ) : null}
+
+              {customTryOnLoading ? (
+                <div className="mt-8 text-sm text-zinc-500">Loading accounts…</div>
+              ) : customTryOnAccounts.length === 0 ? (
+                <div className="mt-8 text-sm text-zinc-500">No registered retailers yet.</div>
+              ) : (
+                <div className="mt-6 w-full overflow-x-auto">
+                  <div className="min-w-[640px]">
+                    <div className="grid grid-cols-[minmax(0,1fr)_minmax(0,1fr)_minmax(0,9rem)] gap-3 border-b border-zinc-800 px-3 py-2 text-xs font-semibold uppercase tracking-wider text-zinc-500">
+                      <div>Store</div>
+                      <div>Email</div>
+                      <div className="text-right">Unlimited</div>
+                    </div>
+                    {customTryOnAccounts.map((row) => {
+                      const busy = customTryOnBusyId === row.userId;
+                      return (
+                        <div
+                          key={row.userId}
+                          className="grid grid-cols-[minmax(0,1fr)_minmax(0,1fr)_minmax(0,9rem)] items-center gap-3 border-b border-zinc-800 px-3 py-3 text-sm text-zinc-200"
+                        >
+                          <div className="min-w-0">
+                            <div className="truncate font-semibold text-zinc-100">{row.storeName}</div>
+                            <div
+                              className="mt-1 truncate font-mono text-[11px] text-zinc-500"
+                              title={row.userId}
+                            >
+                              {row.userId}
+                            </div>
+                          </div>
+                          <div className="min-w-0 truncate text-zinc-300">{row.email}</div>
+                          <div className="flex items-center justify-end gap-3">
+                            <span
+                              className={`text-xs font-medium ${row.enabled ? "text-emerald-400" : "text-zinc-500"}`}
+                            >
+                              {row.enabled ? "On" : "Off"}
+                            </span>
+                            <button
+                              type="button"
+                              role="switch"
+                              aria-checked={row.enabled}
+                              aria-label={`Toggle unlimited custom try-ons for ${row.storeName}`}
+                              disabled={busy}
+                              onClick={() => void toggleCustomTryOnAccess(row.userId, !row.enabled)}
+                              className={`relative inline-flex h-6 w-11 shrink-0 items-center rounded-full transition-colors disabled:opacity-50 ${
+                                row.enabled ? "bg-emerald-500" : "bg-zinc-600"
+                              }`}
+                            >
+                              <span
+                                className={`inline-block h-5 w-5 transform rounded-full bg-white shadow transition-transform ${
+                                  row.enabled ? "translate-x-[22px]" : "translate-x-0.5"
+                                }`}
+                              />
+                            </button>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+              <p className="mt-6 text-xs text-zinc-600">
+                Redis key:{" "}
+                <span className="font-mono text-zinc-400">fit-room:custom-tryon-access:&#123;userId&#125;</span>
               </p>
             </section>
           ) : activeTab === "contact" ? (

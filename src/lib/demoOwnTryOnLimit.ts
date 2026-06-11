@@ -8,4 +8,6 @@ export type DemoOwnTryOnLimitResponse = {
   used: number;
   remaining: number;
   limit: number;
+  /** True when the caller (admin, or a retailer granted access) has unlimited custom try-ons. */
+  unlimited?: boolean;
 };
