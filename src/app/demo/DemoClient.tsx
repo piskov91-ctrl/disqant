@@ -861,6 +861,18 @@ export default function DemoClient() {
               ) : null}
             </div>
 
+            {wearSaveVisible ? (
+              <div style={{ padding: "0 12px 4px" }}>
+                <button
+                  type="button"
+                  className="dq-cta"
+                  onClick={() => window.open("/subscriptions", "_blank", "noopener,noreferrer")}
+                >
+                  Add Wear Me to your store →
+                </button>
+              </div>
+            ) : null}
+
             <div className="dq-brand">
               <span>Fit Room</span>
               <small>virtual try-on</small>
