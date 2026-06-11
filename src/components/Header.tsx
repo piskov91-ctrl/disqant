@@ -38,7 +38,7 @@ export async function Header() {
 
   return (
     <header className="site-header fixed top-0 left-0 right-0 z-[60] overflow-visible border-b border-white/10 bg-transparent backdrop-blur-md">
-      <div className="mx-auto grid h-[var(--site-header-height)] max-h-[var(--site-header-height)] min-h-[var(--site-header-height)] w-full max-w-5xl shrink-0 grid-cols-[auto_1fr] items-center justify-items-stretch gap-x-16 overflow-visible pl-0 pr-4 md:gap-x-24 md:pr-5">
+      <div className="mx-auto grid h-[var(--site-header-height)] max-h-[var(--site-header-height)] min-h-[var(--site-header-height)] w-full max-w-6xl shrink-0 grid-cols-[auto_1fr] items-center justify-items-stretch gap-x-16 overflow-visible pl-0 pr-4 md:gap-x-24 md:pr-5">
         {/*
           Use shrink-wrapped link (`inline-block w-fit`) so the hit target is the logo, not an oversized grid column.
 
