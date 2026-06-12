@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 
 import { Footer } from "@/components/Footer";
@@ -7,6 +8,11 @@ import {
   listApprovedSubscriptionsFeedback,
   mapApprovedSubscriptionsFeedbackToSlides,
 } from "@/lib/subscriptionsFeedbackStore";
+
+export const metadata: Metadata = {
+  description:
+    "What if your shoppers could try before they buy? Wear Me adds AI virtual try-on to any UK fashion store in minutes. One line of code — works on any website. No developer needed.",
+};
 
 /** Approved merchant reviews come from Redis — same source as the subscriptions page carousel. */
 export const dynamic = "force-dynamic";
