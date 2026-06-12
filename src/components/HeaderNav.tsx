@@ -113,20 +113,18 @@ export function HeaderNav({ initialNavUser }: HeaderNavProps) {
         <Link href="/subscriptions" className={desktopNavLinkClass("/subscriptions")}>
           Subscriptions
         </Link>
-        <div className="flex items-center gap-0">
-          <Link href="/demo" className={desktopNavLinkClass("/demo")}>
-            Try It Free
-          </Link>
-          <Link href="/about" className={`${desktopNavLinkClass("/about")} nav-about-us-highlight`}>
-            Setup Guide
-          </Link>
-          <Link href="/contact" className={desktopNavLinkClass("/contact")}>
-            Contact
-          </Link>
-          <Link href="/about-us" className={desktopNavLinkClass("/about-us")}>
-            About Us
-          </Link>
-        </div>
+        <Link href="/demo" className={desktopNavLinkClass("/demo")}>
+          Try It Free
+        </Link>
+        <Link href="/about" className={`${desktopNavLinkClass("/about")} nav-about-us-highlight`}>
+          Setup Guide
+        </Link>
+        <Link href="/contact" className={desktopNavLinkClass("/contact")}>
+          Contact
+        </Link>
+        <Link href="/about-us" className={desktopNavLinkClass("/about-us")}>
+          About Us
+        </Link>
         {loggedIn && pathname !== "/dashboard" ? (
           <Link
             href="/dashboard"
