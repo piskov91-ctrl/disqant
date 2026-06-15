@@ -80,17 +80,9 @@ function LoginFormInner() {
         />
       </div>
       <div>
-        <div className="flex items-baseline justify-between gap-3">
-          <label htmlFor="li-password" className="block text-sm font-medium text-zinc-200">
-            Password
-          </label>
-          <Link
-            href="/forgot-password"
-            className="shrink-0 text-sm font-medium text-zinc-400 underline-offset-2 transition hover:text-zinc-200 hover:underline"
-          >
-            Forgot password?
-          </Link>
-        </div>
+        <label htmlFor="li-password" className="block text-sm font-medium text-zinc-200">
+          Password
+        </label>
         <input
           id="li-password"
           name="password"
@@ -101,6 +93,14 @@ function LoginFormInner() {
           required
           className="mt-2 block w-full rounded-xl border border-zinc-700 bg-zinc-950 px-4 py-3 text-sm text-zinc-100 outline-none transition focus:border-accent/60"
         />
+        <div className="mt-2 flex justify-end">
+          <Link
+            href="/forgot-password"
+            className="shrink-0 text-sm font-medium text-zinc-400 underline-offset-2 transition hover:text-zinc-200 hover:underline"
+          >
+            Forgot password?
+          </Link>
+        </div>
       </div>
 
       {error ? (
