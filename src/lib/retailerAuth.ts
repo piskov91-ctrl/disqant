@@ -959,6 +959,26 @@ export async function createRetailerPasswordResetToken(userId: string): Promise<
   return token;
 }
 
+/** Password-reset Redis value is `{ userId }`; Upstash may return a JSON string or a parsed object. */
+function parsePasswordResetUserId(raw: unknown): string | null {
+  if (raw == null) return null;
+  if (typeof raw === "string") {
+    const s = raw.trim();
+    if (!s) return null;
+    try {
+      const p = JSON.parse(s) as { userId?: unknown };
+      return typeof p.userId === "string" && p.userId.trim() ? p.userId.trim() : null;
+    } catch {
+      return null;
+    }
+  }
+  if (typeof raw === "object" && raw !== null && "userId" in raw) {
+    const u = (raw as { userId: unknown }).userId;
+    return typeof u === "string" && u.trim() ? u.trim() : null;
+  }
+  return null;
+}
+
 /**
  * Sets a new password using a valid token, then deletes the token.
  */
@@ -970,16 +990,9 @@ export async function resetRetailerPasswordWithToken(token: string, newPassword:
   const key = `${PASSWORD_RESET_PREFIX}${t}`;
   const redis = getRedis();
   const raw = await redis.get(key);
-  if (raw == null || typeof raw !== "string") {
+  const userId = parsePasswordResetUserId(raw);
+  if (!userId) {
     throw new Error("This reset link is invalid or has expired. Request a new one from the login page.");
-  }
-  let userId: string;
-  try {
-    const p = JSON.parse(raw) as { userId?: unknown };
-    if (typeof p.userId !== "string" || !p.userId.trim()) throw new Error("bad");
-    userId = p.userId.trim();
-  } catch {
-    throw new Error("This reset link is invalid or has expired.");
   }
 
   const pwdErr = validateRetailerPasswordStrength(newPassword);
