@@ -44,36 +44,38 @@ export async function POST(req: Request) {
       const token = await createRetailerPasswordResetToken(user.id);
       const origin = checkoutSiteOrigin(req);
       const resetUrl = `${origin}/reset-password?token=${encodeURIComponent(token)}`;
-      const greeting = user.firstName?.trim() || "there";
       const text = [
-        `Hi ${greeting},`,
+        "Hi,",
         "",
-        "Someone asked to reset your Fit Room retailer password. Totally normal if Chrome forgot it for you.",
+        "We got a request to reset your Fit Room password.",
         "",
-        "Use this link within the hour — we keep it sharp on purpose:",
+        "If that was you, click the button below and you will be taken straight to a page where you can set a new one.",
         resetUrl,
         "",
-        "If you've never tapped \"forgot password\", ignore everything here. Nothing changes otherwise.",
+        "If you did not ask for this, you can ignore this email — your password will stay the same.",
         "",
-        "Warmly,",
-        "The Fit Room team",
+        "The reset link is valid for 24 hours.",
+        "",
+        "Kind regards,",
+        "The Fit Room Team",
       ].join("\n");
       const html = wrapFitRoomTransactionalHtml({
         documentTitle: "Reset password",
-        preheader: "Link expires in an hour.",
-        heading: "Let's reset access",
+        preheader: "Reset your Fit Room password.",
+        heading: "Reset your password",
         innerHtml:
-          transactionalParagraph(`Hi ${greeting},`) +
+          transactionalParagraph("Hi,") +
+          transactionalParagraph("We got a request to reset your Fit Room password.") +
           transactionalParagraph(
-            "We spotted a retailer password reset for your inbox. Happens when memory fails or someone hands off the laptop.",
+            "If that was you, click the button below and you will be taken straight to a page where you can set a new one.",
           ) +
-          transactionalParagraph("Grab a fresh passphrase while the invitation is alive (one hour):") +
-          transactionalCtaHtml(resetUrl, "Choose a new password") +
+          transactionalCtaHtml(resetUrl, "Reset my password") +
           transactionalParagraph(
-            "Didn't poke that button yourself? Toss this mail in the junk folder — the old password stubbornly refuses to budge.",
+            "If you did not ask for this, you can ignore this email — your password will stay the same.",
           ) +
-          transactionalParagraph("Warmly,") +
-          transactionalParagraph("The Fit Room team"),
+          transactionalParagraph("The reset link is valid for 24 hours.") +
+          transactionalParagraph("Kind regards,") +
+          transactionalParagraph("The Fit Room Team"),
       });
       await sendFitRoomMail({
         to: user.email,

@@ -944,10 +944,10 @@ export async function clearRetailerSessionCookie() {
 }
 
 const PASSWORD_RESET_PREFIX = "fit-room:retailer:pwd-reset:";
-const PASSWORD_RESET_TTL_SEC = 60 * 60;
+const PASSWORD_RESET_TTL_SEC = 60 * 60 * 24;
 
 /**
- * Stores a one-time token (1 hour) for self-service password reset. Does not reveal whether the user exists.
+ * Stores a one-time token (24 hours) for self-service password reset. Does not reveal whether the user exists.
  */
 export async function createRetailerPasswordResetToken(userId: string): Promise<string> {
   const id = userId.trim();
