@@ -18,9 +18,9 @@ export const metadata: Metadata = {
   description:
     "Let shoppers see products on themselves with AI-powered virtual try-on. Launch faster, convert more, and reduce returns.",
   icons: {
-    icon: "/favicon.png",
-    shortcut: "/favicon.png",
-    apple: "/favicon.png",
+    icon: "/web-app-manifest-512x512.png",
+    shortcut: "/web-app-manifest-512x512.png",
+    apple: "/web-app-manifest-512x512.png",
   },
 };
 
