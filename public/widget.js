@@ -115,6 +115,8 @@
       + "border-bottom:1px solid rgba(15,15,20,.08);background:#fff;position:sticky;top:0;z-index:20;flex-shrink:0;}"
       + ".dq-head-title{font:900 13px/1 system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;"
       + "letter-spacing:.25px;color:#0f0f14;}"
+      + ".dq-head-brand{display:flex;align-items:center;gap:8px;min-width:0;}"
+      + ".dq-head-logo{width:26px;height:26px;object-fit:contain;flex-shrink:0;opacity:.92;}"
 
       // Body
       + ".dq-body{flex:1 1 auto;min-height:0;padding:12px;display:flex;flex-direction:column;gap:12px;"
@@ -363,11 +365,24 @@
     var head = document.createElement("div");
     head.className = "dq-head";
 
+    var headBrand = document.createElement("div");
+    headBrand.className = "dq-head-brand";
+
+    var headLogo = document.createElement("img");
+    headLogo.className = "dq-head-logo";
+    headLogo.src = "https://fit-room.com/logo.png";
+    headLogo.alt = "Fit Room";
+    headLogo.width = 26;
+    headLogo.height = 26;
+    headLogo.decoding = "async";
+
     var headTitle = document.createElement("div");
     headTitle.className = "dq-head-title";
     headTitle.textContent = "Try On";
 
-    head.appendChild(headTitle);
+    headBrand.appendChild(headLogo);
+    headBrand.appendChild(headTitle);
+    head.appendChild(headBrand);
     
 
     var body = document.createElement("div");
