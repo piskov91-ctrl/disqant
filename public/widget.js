@@ -116,7 +116,8 @@
       + ".dq-head-title{font:900 13px/1 system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;"
       + "letter-spacing:.25px;color:#0f0f14;}"
       + ".dq-head-brand{display:flex;align-items:center;gap:8px;min-width:0;}"
-      + ".dq-head-logo{width:26px;height:26px;object-fit:contain;flex-shrink:0;opacity:.92;}"
+      + ".dq-head-name{font-family:Georgia,ui-serif,serif;font-size:14px;font-weight:700;line-height:1;"
+      + "color:#C6A77D;letter-spacing:.02em;flex-shrink:0;}"
 
       // Body
       + ".dq-body{flex:1 1 auto;min-height:0;padding:12px;display:flex;flex-direction:column;gap:12px;"
@@ -368,19 +369,15 @@
     var headBrand = document.createElement("div");
     headBrand.className = "dq-head-brand";
 
-    var headLogo = document.createElement("img");
-    headLogo.className = "dq-head-logo";
-    headLogo.src = "https://fit-room.com/logo.png";
-    headLogo.alt = "Fit Room";
-    headLogo.width = 26;
-    headLogo.height = 26;
-    headLogo.decoding = "async";
+    var headName = document.createElement("span");
+    headName.className = "dq-head-name";
+    headName.textContent = "Fit Room";
 
     var headTitle = document.createElement("div");
     headTitle.className = "dq-head-title";
     headTitle.textContent = "Try On";
 
-    headBrand.appendChild(headLogo);
+    headBrand.appendChild(headName);
     headBrand.appendChild(headTitle);
     head.appendChild(headBrand);
     
