@@ -109,15 +109,14 @@
       + "overscroll-behavior:contain;touch-action:pan-y;}"
 
       // Header
-      + ".dq-head{display:flex;align-items:center;justify-content:space-between;"
+      + ".dq-head{display:flex;align-items:center;justify-content:flex-start;gap:10px;"
       + "padding:12px 12px;padding-left:max(12px, env(safe-area-inset-left, 0px));"
-      + "padding-right:max(12px, env(safe-area-inset-right, 0px));padding-top:max(12px, env(safe-area-inset-top, 0px));"
+      + "padding-right:max(56px, calc(12px + env(safe-area-inset-right, 0px)));padding-top:max(12px, env(safe-area-inset-top, 0px));"
       + "border-bottom:1px solid rgba(15,15,20,.08);background:#fff;position:sticky;top:0;z-index:20;flex-shrink:0;}"
       + ".dq-head-title{font:900 13px/1 system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;"
-      + "letter-spacing:.25px;color:#0f0f14;}"
-      + ".dq-head-brand{display:flex;align-items:center;gap:8px;min-width:0;}"
-      + ".dq-head-name{font-family:Georgia,ui-serif,serif;font-size:14px;font-weight:700;line-height:1;"
-      + "color:#C6A77D;letter-spacing:.02em;flex-shrink:0;}"
+      + "letter-spacing:.25px;color:#0f0f14;flex-shrink:0;}"
+      + ".dq-head-name{display:inline-block;font-family:Georgia,ui-serif,serif;font-size:14px;font-weight:700;line-height:1.2;"
+      + "color:#C6A77D;letter-spacing:.02em;flex-shrink:0;white-space:nowrap;}"
 
       // Body
       + ".dq-body{flex:1 1 auto;min-height:0;padding:12px;display:flex;flex-direction:column;gap:12px;"
@@ -366,20 +365,16 @@
     var head = document.createElement("div");
     head.className = "dq-head";
 
-    var headBrand = document.createElement("div");
-    headBrand.className = "dq-head-brand";
-
     var headName = document.createElement("span");
     headName.className = "dq-head-name";
     headName.textContent = "Fit Room";
 
-    var headTitle = document.createElement("div");
+    var headTitle = document.createElement("span");
     headTitle.className = "dq-head-title";
     headTitle.textContent = "Try On";
 
-    headBrand.appendChild(headName);
-    headBrand.appendChild(headTitle);
-    head.appendChild(headBrand);
+    head.appendChild(headName);
+    head.appendChild(headTitle);
     
 
     var body = document.createElement("div");
