@@ -1,0 +1,717 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Hawthorne Lane — Contemporary British Fashion</title>
+  <meta name="description" content="Hawthorne Lane — understated luxury womenswear from our London atelier." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,600;1,400&family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;1,9..40,400&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --bg: #12100e;
+      --bg-elevated: #1c1916;
+      --bg-card: #221e1a;
+      --border: rgba(198, 167, 125, 0.18);
+      --gold: #c6a77d;
+      --gold-soft: #e2cfb4;
+      --cream: #f5ede4;
+      --muted: rgba(245, 237, 228, 0.62);
+      --serif: "Cormorant Garamond", Georgia, "Times New Roman", serif;
+      --sans: "DM Sans", system-ui, -apple-system, sans-serif;
+      --max: 1180px;
+    }
+
+    *, *::before, *::after { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      font-family: var(--sans);
+      font-size: 15px;
+      line-height: 1.55;
+      color: var(--cream);
+      background: var(--bg);
+      -webkit-font-smoothing: antialiased;
+    }
+
+    a { color: inherit; text-decoration: none; }
+
+    .view { display: none; }
+    .view.is-active { display: block; }
+
+    .announce {
+      text-align: center;
+      padding: 10px 16px;
+      font-size: 12px;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--gold-soft);
+      background: linear-gradient(90deg, transparent, rgba(198, 167, 125, 0.08), transparent);
+      border-bottom: 1px solid var(--border);
+    }
+
+    header {
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      backdrop-filter: blur(14px);
+      background: rgba(18, 16, 14, 0.88);
+      border-bottom: 1px solid var(--border);
+    }
+
+    .header-inner {
+      max-width: var(--max);
+      margin: 0 auto;
+      padding: 18px 24px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 24px;
+    }
+
+    .logo {
+      font-family: var(--serif);
+      font-size: clamp(1.35rem, 3vw, 1.75rem);
+      font-weight: 600;
+      letter-spacing: 0.04em;
+      color: var(--cream);
+    }
+
+    .logo span { color: var(--gold); font-style: italic; font-weight: 400; }
+
+    nav {
+      display: flex;
+      gap: 28px;
+      font-size: 13px;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--muted);
+    }
+
+    nav a:hover { color: var(--gold); }
+
+    .header-actions {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      font-size: 13px;
+      color: var(--muted);
+    }
+
+    .cart-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 14px;
+      border-radius: 999px;
+      border: 1px solid var(--border);
+      background: var(--bg-elevated);
+      color: var(--cream);
+      cursor: pointer;
+    }
+
+    .cart-count {
+      min-width: 20px;
+      height: 20px;
+      display: grid;
+      place-items: center;
+      border-radius: 999px;
+      background: var(--gold);
+      color: var(--bg);
+      font-size: 11px;
+      font-weight: 600;
+    }
+
+    /* —— Listing —— */
+    .listing-hero {
+      max-width: var(--max);
+      margin: 0 auto;
+      padding: 48px 24px 32px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .listing-hero h1 {
+      font-family: var(--serif);
+      font-size: clamp(2rem, 4vw, 2.75rem);
+      font-weight: 400;
+      margin: 0 0 12px;
+    }
+
+    .listing-hero p {
+      margin: 0;
+      color: var(--muted);
+      max-width: 52ch;
+    }
+
+    .section {
+      max-width: var(--max);
+      margin: 0 auto;
+      padding: 40px 24px 72px;
+    }
+
+    .product-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 28px 22px;
+    }
+
+    @media (max-width: 900px) {
+      .product-grid { grid-template-columns: repeat(2, 1fr); }
+      nav { display: none; }
+    }
+
+    @media (max-width: 520px) {
+      .product-grid { grid-template-columns: 1fr; }
+    }
+
+    .product-card {
+      display: block;
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      overflow: hidden;
+      cursor: pointer;
+      transition: border-color 0.25s, transform 0.25s, box-shadow 0.25s;
+    }
+
+    .product-card:hover {
+      border-color: rgba(198, 167, 125, 0.38);
+      transform: translateY(-4px);
+      box-shadow: 0 20px 48px rgba(0, 0, 0, 0.35);
+    }
+
+    .product-card-media {
+      aspect-ratio: 3 / 4;
+      background-size: cover;
+      background-position: center top;
+      background-color: #2a2520;
+    }
+
+    .product-card-body {
+      padding: 18px 18px 20px;
+    }
+
+    .product-card-tag {
+      font-size: 10px;
+      font-weight: 600;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--gold-soft);
+      margin-bottom: 8px;
+    }
+
+    .product-card-name {
+      font-family: var(--serif);
+      font-size: 1.2rem;
+      font-weight: 600;
+      margin: 0 0 10px;
+      line-height: 1.25;
+    }
+
+    .product-card-price {
+      font-size: 15px;
+      font-weight: 600;
+    }
+
+    /* —— Product detail —— */
+    .pdp {
+      max-width: var(--max);
+      margin: 0 auto;
+      padding: 28px 24px 72px;
+    }
+
+    .pdp-back {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 28px;
+      font-size: 13px;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      color: var(--muted);
+      background: none;
+      border: none;
+      padding: 0;
+      cursor: pointer;
+      font-family: var(--sans);
+    }
+
+    .pdp-back:hover { color: var(--gold); }
+
+    .pdp-grid {
+      display: grid;
+      grid-template-columns: 1.05fr 0.95fr;
+      gap: 48px;
+      align-items: start;
+    }
+
+    @media (max-width: 860px) {
+      .pdp-grid { grid-template-columns: 1fr; gap: 32px; }
+    }
+
+    .pdp-media {
+      position: relative;
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      overflow: hidden;
+      background: #2a2520;
+    }
+
+    .pdp-media img {
+      display: block;
+      width: 100%;
+      height: auto;
+      vertical-align: top;
+    }
+
+    .pdp-tag {
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: var(--gold-soft);
+      margin-bottom: 10px;
+    }
+
+    .pdp-name {
+      font-family: var(--serif);
+      font-size: clamp(1.85rem, 4vw, 2.5rem);
+      font-weight: 400;
+      margin: 0 0 16px;
+      line-height: 1.15;
+    }
+
+    .pdp-price {
+      font-size: 1.25rem;
+      font-weight: 600;
+      margin-bottom: 20px;
+    }
+
+    .pdp-price small {
+      display: block;
+      font-size: 12px;
+      font-weight: 400;
+      color: var(--muted);
+      margin-top: 4px;
+    }
+
+    .pdp-desc {
+      margin: 0 0 28px;
+      color: var(--muted);
+      font-size: 15px;
+      line-height: 1.65;
+      max-width: 46ch;
+    }
+
+    .pdp-label {
+      display: block;
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-bottom: 12px;
+    }
+
+    .size-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-bottom: 28px;
+    }
+
+    .size-btn {
+      min-width: 48px;
+      padding: 12px 14px;
+      border-radius: 2px;
+      border: 1px solid var(--border);
+      background: var(--bg-elevated);
+      color: var(--cream);
+      font-family: var(--sans);
+      font-size: 13px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: border-color 0.2s, background 0.2s, color 0.2s;
+    }
+
+    .size-btn:hover { border-color: var(--gold); }
+
+    .size-btn.is-selected {
+      border-color: var(--gold);
+      background: rgba(198, 167, 125, 0.14);
+      color: var(--gold-soft);
+    }
+
+    .pdp-actions {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .btn-primary {
+      width: 100%;
+      padding: 16px 24px;
+      border: none;
+      border-radius: 2px;
+      background: linear-gradient(135deg, var(--gold) 0%, var(--gold-soft) 50%, var(--gold) 100%);
+      color: var(--bg);
+      font-family: var(--sans);
+      font-size: 12px;
+      font-weight: 600;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      cursor: pointer;
+      transition: transform 0.2s, box-shadow 0.2s;
+    }
+
+    .btn-primary:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 12px 32px rgba(198, 167, 125, 0.25);
+    }
+
+    .btn-wear {
+      width: 100%;
+      padding: 16px 24px;
+      border-radius: 2px;
+      border: 1px solid var(--gold);
+      background: transparent;
+      color: var(--gold);
+      font-family: Georgia, ui-serif, serif;
+      font-size: 14px;
+      font-weight: 700;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      cursor: pointer;
+      transition: background 0.2s, color 0.2s;
+    }
+
+    .btn-wear:hover {
+      background: rgba(198, 167, 125, 0.12);
+    }
+
+    .pdp-note {
+      margin-top: 20px;
+      font-size: 13px;
+      color: var(--muted);
+      line-height: 1.5;
+    }
+
+    footer {
+      border-top: 1px solid var(--border);
+      padding: 40px 24px 32px;
+      text-align: center;
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    footer .logo-foot {
+      font-family: var(--serif);
+      font-size: 1.35rem;
+      color: var(--cream);
+      margin-bottom: 12px;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="announce">Complimentary UK delivery on orders over £150</div>
+
+  <header>
+    <div class="header-inner">
+      <a href="/store-demo" class="logo" id="logo-link">Hawthorne <span>Lane</span></a>
+      <nav aria-label="Primary">
+        <a href="/store-demo">Shop</a>
+        <a href="/store-demo">Dresses</a>
+        <a href="/store-demo">Outerwear</a>
+        <a href="/store-demo">Tops</a>
+      </nav>
+      <div class="header-actions">
+        <span>GBP £</span>
+        <button type="button" class="cart-pill" aria-label="Shopping bag">
+          Bag
+          <span class="cart-count" id="cart-count">0</span>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Listing view -->
+  <div id="view-listing" class="view is-active">
+    <div class="listing-hero">
+      <h1>The Edit</h1>
+      <p>Six considered pieces from our Marylebone atelier — tap a product to view details and try on with Wear Me.</p>
+    </div>
+    <section class="section">
+      <div class="product-grid" id="product-grid"></div>
+    </section>
+  </div>
+
+  <!-- Product detail view -->
+  <div id="view-product" class="view" data-fit-room-product-view>
+    <div class="pdp">
+      <button type="button" class="pdp-back" id="pdp-back">← Back to shop</button>
+      <div class="pdp-grid">
+        <div class="pdp-media">
+          <img
+            id="pdp-image"
+            src=""
+            alt=""
+            width="800"
+            height="1067"
+          />
+        </div>
+        <div class="pdp-info">
+          <div class="pdp-tag" id="pdp-tag"></div>
+          <h1 class="pdp-name" id="pdp-name"></h1>
+          <div class="pdp-price" id="pdp-price"></div>
+          <p class="pdp-desc" id="pdp-desc"></p>
+
+          <span class="pdp-label">Select size</span>
+          <div class="size-row" id="size-row">
+            <button type="button" class="size-btn" data-size="XS">XS</button>
+            <button type="button" class="size-btn" data-size="S">S</button>
+            <button type="button" class="size-btn is-selected" data-size="M">M</button>
+            <button type="button" class="size-btn" data-size="L">L</button>
+            <button type="button" class="size-btn" data-size="XL">XL</button>
+          </div>
+
+          <div class="pdp-actions">
+            <button type="button" class="btn-primary" id="pdp-add-cart">Add to bag</button>
+            <button type="button" class="btn-wear" id="pdp-wear-me">Wear Me ✨</button>
+          </div>
+          <p class="pdp-note">Free UK returns within 30 days · Ships in 2–4 working days</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <footer>
+    <div class="logo-foot">Hawthorne Lane</div>
+    <p>14 Chiltern Street, Marylebone, London W1U 7PF</p>
+    <p style="margin-top:8px; font-size:12px;">Demo storefront for Fit Room widget testing</p>
+  </footer>
+
+  <script>
+    (function () {
+      var PRODUCTS = [
+        {
+          slug: "somerset-linen-midi-dress",
+          name: "Somerset Linen Midi Dress",
+          tag: "Dress",
+          price: 165,
+          image: "https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?w=1000&q=85",
+          alt: "Somerset Linen Midi Dress — terracotta linen midi dress on model",
+          description: "Relaxed A-line in washed Italian linen with adjustable straps and deep side pockets. Designed for warm city weekends and layered under our Highland coat when the temperature drops."
+        },
+        {
+          slug: "cotswold-silk-slip-dress",
+          name: "Cotswold Silk Slip Dress",
+          tag: "Dress",
+          price: 245,
+          image: "https://images.unsplash.com/photo-1566174053879-31528523f8ae?w=1000&q=85",
+          alt: "Cotswold Silk Slip Dress — champagne silk evening dress",
+          description: "Bias-cut mulberry silk with a subtle cowl neckline and delicate adjustable straps. Wear alone for evening occasions or layered with the Devon shirt for a softer daytime silhouette."
+        },
+        {
+          slug: "highland-wool-wrap-coat",
+          name: "Highland Wool Wrap Coat",
+          tag: "Jacket",
+          price: 395,
+          image: "https://images.unsplash.com/photo-1539533018447-63fcce2678e3?w=1000&q=85",
+          alt: "Highland Wool Wrap Coat — charcoal wool wrap coat",
+          description: "Double-faced merino wool with a generous tie belt and hidden press studs. Fully lined in cupro for crisp British winters without bulk."
+        },
+        {
+          slug: "mayfair-tailored-blazer",
+          name: "Mayfair Tailored Blazer",
+          tag: "Jacket",
+          price: 285,
+          image: "https://images.unsplash.com/photo-1591047139829-d91aecb6caea?w=1000&q=85",
+          alt: "Mayfair Tailored Blazer — navy structured blazer",
+          description: "Single-breasted in brushed wool crepe with a soft shoulder and peak lapel. Fully canvassed for a refined drape that improves with wear."
+        },
+        {
+          slug: "devon-cotton-poplin-shirt",
+          name: "Devon Cotton Poplin Shirt",
+          tag: "Top",
+          price: 89,
+          image: "https://images.unsplash.com/photo-1596755094514-f87e34085b2c?w=1000&q=85",
+          alt: "Devon Cotton Poplin Shirt — crisp white cotton shirt",
+          description: "Classic Oxford collar with mother-of-pearl buttons and a curved hem. Woven from organic long-staple cotton in a Portuguese mill we have worked with since 2018."
+        },
+        {
+          slug: "kensington-cashmere-knit",
+          name: "Kensington Cashmere Knit",
+          tag: "Top",
+          price: 175,
+          image: "https://images.unsplash.com/photo-1434389677669-e08b4cac3105?w=1000&q=85",
+          alt: "Kensington Cashmere Knit — oatmeal cashmere crew neck jumper",
+          description: "Fine-gauge Scottish cashmere in a relaxed crew-neck fit with ribbed cuffs and hem. Light enough for layering, substantial enough to wear alone."
+        }
+      ];
+
+      var cartCount = 0;
+      var currentProduct = null;
+      var selectedSize = "M";
+
+      var viewListing = document.getElementById("view-listing");
+      var viewProduct = document.getElementById("view-product");
+      var productGrid = document.getElementById("product-grid");
+      var pdpImage = document.getElementById("pdp-image");
+      var cartCountEl = document.getElementById("cart-count");
+
+      function formatPrice(pounds) {
+        return "£" + pounds.toFixed(2);
+      }
+
+      function productBySlug(slug) {
+        for (var i = 0; i < PRODUCTS.length; i++) {
+          if (PRODUCTS[i].slug === slug) return PRODUCTS[i];
+        }
+        return null;
+      }
+
+      function parseProductSlugFromHash() {
+        var hash = (window.location.hash || "").replace(/^#/, "");
+        var match = hash.match(/^\/?products\/([^/?#]+)/i);
+        return match ? decodeURIComponent(match[1]).toLowerCase() : null;
+      }
+
+      function showListing() {
+        currentProduct = null;
+        viewListing.classList.add("is-active");
+        viewProduct.classList.remove("is-active");
+        document.title = "Hawthorne Lane — Contemporary British Fashion";
+        window.scrollTo(0, 0);
+      }
+
+      function showProduct(product) {
+        currentProduct = product;
+        viewListing.classList.remove("is-active");
+        viewProduct.classList.add("is-active");
+
+        document.title = product.name + " — Hawthorne Lane";
+        document.getElementById("pdp-tag").textContent = product.tag;
+        document.getElementById("pdp-name").textContent = product.name;
+        document.getElementById("pdp-price").innerHTML =
+          formatPrice(product.price) + '<small>inc. VAT</small>';
+        document.getElementById("pdp-desc").textContent = product.description;
+        pdpImage.src = product.image;
+        pdpImage.alt = product.alt;
+
+        window.scrollTo(0, 0);
+        window.setTimeout(function () {
+          window.dispatchEvent(new Event("fit-room-rescan"));
+        }, 80);
+      }
+
+      function navigateToProduct(slug) {
+        window.location.hash = "#/products/" + slug;
+      }
+
+      function navigateToListing() {
+        if (window.location.hash) {
+          history.pushState(null, "", window.location.pathname + window.location.search);
+        }
+        showListing();
+      }
+
+      function renderGrid() {
+        productGrid.innerHTML = "";
+        PRODUCTS.forEach(function (p) {
+          var card = document.createElement("a");
+          card.className = "product-card";
+          card.href = "#/products/" + p.slug;
+          card.setAttribute("aria-label", "View " + p.name);
+
+          card.innerHTML =
+            '<div class="product-card-media" style="background-image:url(\'' + p.image + '\')"></div>' +
+            '<div class="product-card-body">' +
+              '<div class="product-card-tag">' + p.tag + '</div>' +
+              '<h2 class="product-card-name">' + p.name + '</h2>' +
+              '<div class="product-card-price">' + formatPrice(p.price) + '</div>' +
+            '</div>';
+
+          card.addEventListener("click", function (e) {
+            e.preventDefault();
+            navigateToProduct(p.slug);
+          });
+
+          productGrid.appendChild(card);
+        });
+      }
+
+      function routeFromHash() {
+        var slug = parseProductSlugFromHash();
+        if (!slug) {
+          showListing();
+          return;
+        }
+        var product = productBySlug(slug);
+        if (!product) {
+          showListing();
+          return;
+        }
+        showProduct(product);
+      }
+
+      document.getElementById("pdp-back").addEventListener("click", navigateToListing);
+      document.getElementById("logo-link").addEventListener("click", function (e) {
+        e.preventDefault();
+        navigateToListing();
+      });
+
+      document.querySelectorAll(".size-btn").forEach(function (btn) {
+        btn.addEventListener("click", function () {
+          document.querySelectorAll(".size-btn").forEach(function (b) {
+            b.classList.remove("is-selected");
+          });
+          btn.classList.add("is-selected");
+          selectedSize = btn.getAttribute("data-size") || "M";
+        });
+      });
+
+      document.getElementById("pdp-add-cart").addEventListener("click", function () {
+        if (!currentProduct) return;
+        cartCount += 1;
+        cartCountEl.textContent = String(cartCount);
+        var btn = document.getElementById("pdp-add-cart");
+        var original = btn.textContent;
+        btn.textContent = "Added — size " + selectedSize;
+        window.setTimeout(function () {
+          btn.textContent = original;
+        }, 1800);
+      });
+
+      document.getElementById("pdp-wear-me").addEventListener("click", function () {
+        var wrap = pdpImage.closest(".pdp-media");
+        if (!wrap) return;
+        var wearBtn = wrap.querySelector(".dq-wear-btn");
+        if (wearBtn) {
+          wearBtn.click();
+          return;
+        }
+        window.dispatchEvent(new Event("fit-room-rescan"));
+        window.setTimeout(function () {
+          var retry = wrap.querySelector(".dq-wear-btn");
+          if (retry) retry.click();
+        }, 200);
+      });
+
+      window.addEventListener("hashchange", routeFromHash);
+      window.addEventListener("popstate", routeFromHash);
+
+      renderGrid();
+      routeFromHash();
+    })();
+  </script>
+
+  <script
+    async
+    src="/widget.js"
+    data-fit-room-key="KgU7HRdnv-TjExraQsyI0Hjanzhh3P-BgG4mguLP4lM"
+  ></script>
+
+</body>
+</html>

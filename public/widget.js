@@ -61,6 +61,19 @@
     }
   }
 
+  /** SPA demos may use `#/products/{slug}` on a single static page (e.g. `/store-demo`). */
+  function effectivePagePath() {
+    var path = normalizePagePath();
+    try {
+      var hash = (window.location.hash || "").replace(/^#/, "").split("?")[0];
+      if (!hash) return path;
+      var hashPath = hash.charAt(0) === "/" ? hash : "/" + hash;
+      hashPath = hashPath.replace(/\/+/g, "/").replace(/\/$/, "") || "/";
+      if (hashPath.indexOf("/products/") === 0) return hashPath.toLowerCase();
+    } catch (_e) { }
+    return path;
+  }
+
   /** `data-fit-room-bind="all"` on the script tag skips URL checks (test pages, demos). */
   function widgetBindMode() {
     var s = getCurrentScript();
@@ -113,7 +126,7 @@
 
   function shouldBindOnThisPage() {
     if (widgetBindMode() === "all") return true;
-    return isProductPagePath(normalizePagePath());
+    return isProductPagePath(effectivePagePath());
   }
 
   function isVisibleEnough(img) {
@@ -1006,6 +1019,8 @@
     scanAndBind();
     observe();
     window.addEventListener("load", function () { scanAndBind(); });
+    window.addEventListener("hashchange", function () { scanAndBind(); });
+    window.addEventListener("fit-room-rescan", function () { scanAndBind(); });
   }
 
   if (document.readyState === "loading") {
