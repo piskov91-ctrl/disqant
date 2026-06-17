@@ -9,8 +9,19 @@
   var WIDGET_ATTR_PENDING = "data-fit-room-tryon-pending-load";
   var WIDGET_ATTR_SKIP = "data-fit-room-tryon-skip";
 
-  // Matches app route /api/try-on in this repo.
-  var API_ENDPOINT = "/api/try-on";
+  /** Fit Room API origin — derived from widget script src so embeds on retailer pages POST to fit-room.com, not the host page. */
+  function getWidgetApiOrigin() {
+    var s = getCurrentScript();
+    var src = s && s.getAttribute("src") ? s.getAttribute("src") : "";
+    try {
+      var u = new URL(src, window.location.href);
+      if (u.origin && u.origin !== "null") return u.origin;
+    } catch (_e) { }
+    return window.location.origin;
+  }
+
+  // Matches app route /api/try-on in this repo (same POST handler as /api/tryon).
+  var API_ENDPOINT = getWidgetApiOrigin() + "/api/try-on";
   var OPEN_MODAL = null;
 
   function qs(sel, root) {
@@ -204,6 +215,34 @@
     } catch (_e) {
       blob.name = name;
       return blob;
+    }
+  }
+
+  /** Match demo `/api/tryon` uploads — keeps multipart bodies under platform limits. */
+  async function compressImageToMax1000px(file) {
+    try {
+      var bitmap = await createImageBitmap(file);
+      var maxDim = 1000;
+      var scale = Math.min(1, maxDim / Math.max(bitmap.width, bitmap.height));
+      var targetW = Math.max(1, Math.round(bitmap.width * scale));
+      var targetH = Math.max(1, Math.round(bitmap.height * scale));
+      var canvas = document.createElement("canvas");
+      canvas.width = targetW;
+      canvas.height = targetH;
+      var ctx = canvas.getContext("2d");
+      if (!ctx) return file;
+      ctx.drawImage(bitmap, 0, 0, targetW, targetH);
+      if (bitmap.close) bitmap.close();
+      var blob = await new Promise(function (resolve, reject) {
+        canvas.toBlob(function (b) {
+          if (b) resolve(b);
+          else reject(new Error("Image compression failed."));
+        }, "image/jpeg", 0.86);
+      });
+      var nameBase = String(file.name || "image").replace(/\.[^/.]+$/, "");
+      return fileFromBlob(blob, (nameBase || "image") + "-1000.jpg");
+    } catch (_e) {
+      return file;
     }
   }
 
@@ -738,9 +777,11 @@
       startLoading();
 
       try {
+        var modelC = await compressImageToMax1000px(modelFile);
+        var garmentC = await compressImageToMax1000px(garmentFile);
         var fd = new FormData();
-        fd.append("model", modelFile);
-        fd.append("garment", garmentFile);
+        fd.append("model", modelC);
+        fd.append("garment", garmentC);
         fd.append("category", selectedCategory);
         fd.append("generationMode", "balanced");
 
@@ -885,10 +926,10 @@
   function beaconClientVisit(key) {
     if (!key) return;
     try {
-      fetch("/api/client-visit", {
+      fetch(getWidgetApiOrigin() + "/api/client-visit", {
         method: "POST",
         headers: { "x-api-key": key },
-        credentials: "same-origin",
+        credentials: "omit",
       }).catch(function () {});
     } catch (_e) {}
   }
