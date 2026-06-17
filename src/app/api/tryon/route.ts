@@ -16,6 +16,8 @@ import {
 
 export const runtime = "nodejs";
 
+/** Multipart body limit for model + garment uploads — configured in next.config.ts (`50mb`). */
+
 export function OPTIONS(request: Request) {
   return tryOnEmbedOptionsResponse(request);
 }

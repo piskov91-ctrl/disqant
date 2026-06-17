@@ -10,6 +10,13 @@ const nextConfig: NextConfig = {
       },
     ],
   },
+  /** Widget + demo try-on POST multipart bodies (model + garment images). See /api/tryon. */
+  experimental: {
+    serverActions: {
+      bodySizeLimit: "50mb",
+    },
+    middlewareClientMaxBodySize: "50mb",
+  },
   async redirects() {
     return [{ source: "/pricing", destination: "/subscriptions", permanent: true }];
   },
