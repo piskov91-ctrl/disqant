@@ -228,11 +228,9 @@
       + ".dq-primary{appearance:none;border:0;cursor:pointer;border-radius:10px;padding:14px 28px;background:#1a1612;color:#f5ede4;border:1px solid rgba(198,167,125,.28);font:600 16px/1.25 system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;letter-spacing:.5px;box-shadow:0 8px 22px rgba(0,0,0,.22);transition:background-color .3s ease,color .3s ease,transform .16s ease,border-color .16s ease;}"
       + ".dq-primary:hover{background:#c6a77d;color:#2c241f;border-color:rgba(255,255,255,.25);transform:translateY(-1px);}"
       + ".dq-primary:disabled{opacity:.55;cursor:not-allowed;transform:none;background:#1a1612;color:#f5ede4;}"
-      + ".dq-brand{flex-shrink:0;padding:12px 12px;padding-bottom:max(12px, env(safe-area-inset-bottom, 0px));border-top:1px solid rgba(198,167,125,.18);display:flex;flex-direction:column;align-items:flex-start;justify-content:flex-start;gap:6px;background:#2c241f;}"
-      + ".dq-brand-site{color:#c6a77d;font-size:12px;font-weight:600;letter-spacing:2px;text-transform:lowercase;text-decoration:none;transition:color .16s ease;}"
-      + ".dq-brand-site:hover{color:#e2cfb4;text-decoration:underline;}"
-      + ".dq-brand-promo{color:rgba(198,167,125,.62);font-size:9px;font-weight:500;letter-spacing:.02em;line-height:1.45;text-decoration:none;transition:color .16s ease;max-width:100%;}"
-      + ".dq-brand-promo:hover{color:rgba(226,207,180,.88);text-decoration:underline;}"
+      + ".dq-brand{flex-shrink:0;padding:12px 12px;padding-bottom:max(12px, env(safe-area-inset-bottom, 0px));border-top:1px solid rgba(198,167,125,.18);display:flex;align-items:flex-start;justify-content:flex-start;background:#2c241f;}"
+      + ".dq-brand-promo{color:#c6a77d;font-size:13px;font-weight:600;letter-spacing:.02em;line-height:1.45;text-decoration:none;transition:color .16s ease;max-width:100%;}"
+      + ".dq-brand-promo:hover{color:#e2cfb4;text-decoration:underline;}"
 
       // Camera view + flip button
       + ".dq-camview{position:relative;width:100%;}"
@@ -459,14 +457,6 @@
 
     var brand = document.createElement("div");
     brand.className = "dq-brand";
-    var brandLink = document.createElement("a");
-    brandLink.className = "dq-brand-site";
-    brandLink.textContent = "www.fit-room.com";
-    brandLink.href = "https://www.fit-room.com";
-    brandLink.target = "_blank";
-    brandLink.rel = "noopener noreferrer";
-    brand.appendChild(brandLink);
-
     var brandPromo = document.createElement("a");
     brandPromo.className = "dq-brand-promo";
     brandPromo.textContent = "Wear Me is available for any fashion store — click to learn more: fit-room.com";
