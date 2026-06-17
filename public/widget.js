@@ -5,6 +5,7 @@
   var WIDGET_SCRIPT_EL = document.currentScript || null;
 
   var WIDGET_ATTR_KEY = "data-fit-room-key";
+  var WIDGET_ATTR_BIND = "data-fit-room-bind";
   var WIDGET_ATTR_BOUND = "data-fit-room-tryon-bound";
   var WIDGET_ATTR_PENDING = "data-fit-room-tryon-pending-load";
   var WIDGET_ATTR_SKIP = "data-fit-room-tryon-skip";
@@ -48,6 +49,71 @@
     } catch (_e) {
       return null;
     }
+  }
+
+  function normalizePagePath() {
+    try {
+      var path = window.location.pathname || "/";
+      path = path.replace(/\/+/g, "/").replace(/\/$/, "") || "/";
+      return path.toLowerCase();
+    } catch (_e) {
+      return "/";
+    }
+  }
+
+  /** `data-fit-room-bind="all"` on the script tag skips URL checks (test pages, demos). */
+  function widgetBindMode() {
+    var s = getCurrentScript();
+    if (!s) return "auto";
+    var mode = (s.getAttribute(WIDGET_ATTR_BIND) || "").trim().toLowerCase();
+    return mode === "all" ? "all" : "auto";
+  }
+
+  function isListingPagePath(path) {
+    if (path === "/collections" || path.indexOf("/collections/") !== -1) return true;
+    if (path === "/collection" || path.indexOf("/collection/") !== -1) return true;
+    if (path === "/category" || path.indexOf("/category/") !== -1) return true;
+    if (path === "/categories" || path.indexOf("/categories/") !== -1) return true;
+
+    if (path === "/shop") return true;
+    if (path.indexOf("/shop/") !== 0) return false;
+
+    var afterShop = path.slice("/shop/".length);
+    if (!afterShop) return true;
+
+    var segments = afterShop.split("/").filter(function (seg) { return !!seg; });
+    if (!segments.length) return true;
+
+    var first = segments[0];
+    if (
+      first === "category" ||
+      first === "categories" ||
+      first === "collection" ||
+      first === "collections"
+    ) {
+      return true;
+    }
+
+    // /shop/{category} — listing; /shop/{category}/{product-slug} — PDP.
+    return segments.length < 2;
+  }
+
+  function isProductPagePath(path) {
+    if (isListingPagePath(path)) return false;
+    if (/^\/products\/[^/]+/.test(path)) return true;
+    if (/^\/product\/[^/]+/.test(path)) return true;
+    if (/^\/p\/[^/]+/.test(path)) return true;
+    if (/^\/item\/[^/]+/.test(path)) return true;
+    if (path.indexOf("/shop/") === 0) {
+      var segments = path.slice("/shop/".length).split("/").filter(function (seg) { return !!seg; });
+      if (segments.length >= 2) return true;
+    }
+    return false;
+  }
+
+  function shouldBindOnThisPage() {
+    if (widgetBindMode() === "all") return true;
+    return isProductPagePath(normalizePagePath());
   }
 
   function isVisibleEnough(img) {
@@ -888,6 +954,7 @@
   }
 
   function scanAndBind() {
+    if (!shouldBindOnThisPage()) return;
     injectStyles();
     var imgs = Array.prototype.slice.call(document.images || []);
     imgs.forEach(function (img) {
