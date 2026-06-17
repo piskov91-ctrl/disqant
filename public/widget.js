@@ -84,7 +84,7 @@
       // Overlay wrapping
       + ".dq-wrap{display:inline-block;position:relative;vertical-align:top;line-height:0;max-width:100%;}"
       + ".dq-wrap>img{display:block;max-width:100%;height:auto;vertical-align:top;}"
-      + ".dq-overlay{position:absolute;inset:auto 12px 12px auto;z-index:2147483646;display:flex;align-items:center;pointer-events:auto;}"
+      + ".dq-overlay{position:absolute;inset:auto 12px 12px auto;z-index:2147483645;display:flex;align-items:center;pointer-events:auto;}"
 
       // Wear button
       + ".dq-wear-btn{position:relative;appearance:none;box-sizing:border-box;cursor:pointer;"
@@ -99,7 +99,7 @@
       + ".dq-wear-btn:active{transform:translateY(-1px);filter:brightness(1.05);}"
 
       // Backdrop + modal (dark theme — matches DemoClient / wearMeShared DEMO_WEAR_MODAL_CSS)
-      + ".dq-backdrop{position:fixed;inset:0;z-index:2147483000;background:rgba(15,23,42,.45);display:flex;align-items:center;justify-content:center;padding:14px;opacity:0;transition:opacity .18s ease;}"
+      + ".dq-backdrop{position:fixed;inset:0;z-index:2147483646;background:rgba(15,23,42,.45);display:flex;align-items:center;justify-content:center;padding:14px;opacity:0;transition:opacity .18s ease;}"
       + ".dq-backdrop.dq-open{opacity:1;}"
       + ".dq-backdrop.dq-dismiss-locked{cursor:default;-webkit-user-select:none;user-select:none;}"
       + ".dq-modal{position:relative;width:min(720px,100%);min-height:0;max-height:calc(100vh - 28px);max-height:min(90vh,calc(100dvh - 28px));background:#2c241f;border:1px solid rgba(198,167,125,.22);border-radius:20px;overflow:hidden;box-shadow:0 30px 80px rgba(0,0,0,.45);display:flex;flex-direction:column;color:#f5ede4;transform:translateY(10px) scale(.985);opacity:0;transition:transform .18s ease, opacity .18s ease;}"
