@@ -6,16 +6,17 @@ export type RetailerWidgetAdRecord = {
   kind: RetailerWidgetAdKind;
   /** Promo lines shown during widget generation (text kind). */
   messages?: string[];
-  /** JPEG/PNG/WebP data URL or https URL (banner kind). */
-  bannerUrl?: string;
+  /** JPEG/PNG/WebP data URLs or https URLs (banner kind), up to {@link RETAILER_WIDGET_AD_MAX_BANNERS}. */
+  bannerUrls?: string[];
   updatedAt: string;
 };
 
-/** Max stored banner payload (~300KB image as data URL). */
+/** Max stored banner payload per image (~300KB as data URL). */
 export const RETAILER_WIDGET_AD_MAX_BANNER_CHARS = 420_000;
 
 export const RETAILER_WIDGET_AD_MAX_MESSAGES = 5;
 export const RETAILER_WIDGET_AD_MAX_MESSAGE_CHARS = 220;
+export const RETAILER_WIDGET_AD_MAX_BANNERS = 5;
 
 export const RETAILER_WIDGET_AD_REDIS_PREFIX = "fit-room:retailer:widget-ad:";
 
@@ -23,9 +24,17 @@ export function retailerWidgetAdKey(clientId: string) {
   return `${RETAILER_WIDGET_AD_REDIS_PREFIX}${clientId.trim()}`;
 }
 
+function parseBannerUrlsFromRaw(raw: Record<string, unknown>): string[] {
+  if (Array.isArray(raw.bannerUrls)) {
+    return raw.bannerUrls.map((u) => String(u ?? "").trim()).filter(Boolean);
+  }
+  const legacy = typeof raw.bannerUrl === "string" ? raw.bannerUrl.trim() : "";
+  return legacy ? [legacy] : [];
+}
+
 export function parseRetailerWidgetAdRecord(raw: unknown): RetailerWidgetAdRecord | null {
   if (!raw || typeof raw !== "object") return null;
-  const o = raw as Partial<RetailerWidgetAdRecord>;
+  const o = raw as Partial<RetailerWidgetAdRecord> & { bannerUrl?: string };
   const kind = o.kind === "text" || o.kind === "banner" ? o.kind : null;
   if (!kind || typeof o.updatedAt !== "string" || !o.updatedAt.trim()) return null;
 
@@ -37,9 +46,9 @@ export function parseRetailerWidgetAdRecord(raw: unknown): RetailerWidgetAdRecor
     return { kind: "text", messages, updatedAt: o.updatedAt.trim() };
   }
 
-  const bannerUrl = typeof o.bannerUrl === "string" ? o.bannerUrl.trim() : "";
-  if (!bannerUrl) return null;
-  return { kind: "banner", bannerUrl, updatedAt: o.updatedAt.trim() };
+  const bannerUrls = parseBannerUrlsFromRaw(o as Record<string, unknown>);
+  if (!bannerUrls.length) return null;
+  return { kind: "banner", bannerUrls, updatedAt: o.updatedAt.trim() };
 }
 
 export function normalizeWidgetAdMessages(raw: string[]): string[] {
@@ -65,6 +74,17 @@ export function normalizeWidgetAdBannerUrl(raw: string): string {
   throw new Error("Banner must be a JPEG, PNG, or WebP image.");
 }
 
+export function normalizeWidgetAdBannerUrls(raw: string[]): string[] {
+  const out: string[] = [];
+  for (const item of raw) {
+    const url = normalizeWidgetAdBannerUrl(item);
+    out.push(url);
+    if (out.length >= RETAILER_WIDGET_AD_MAX_BANNERS) break;
+  }
+  if (!out.length) throw new Error("Add at least one banner image.");
+  return out;
+}
+
 export type RetailerAdsEligibilityUser = {
   clientId?: string | null;
   subscriptionAccessUntil?: string | null;
@@ -87,5 +107,5 @@ export function widgetAdEmbedPayload(record: RetailerWidgetAdRecord | null) {
   if (record.kind === "text") {
     return { kind: "text" as const, messages: record.messages ?? [] };
   }
-  return { kind: "banner" as const, bannerUrl: record.bannerUrl ?? "" };
+  return { kind: "banner" as const, bannerUrls: record.bannerUrls ?? [] };
 }

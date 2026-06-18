@@ -1,7 +1,9 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { X } from "lucide-react";
 import {
+  RETAILER_WIDGET_AD_MAX_BANNERS,
   RETAILER_WIDGET_AD_MAX_MESSAGE_CHARS,
   RETAILER_WIDGET_AD_MAX_MESSAGES,
   type RetailerWidgetAdRecord,
@@ -16,7 +18,7 @@ type WidgetAdApiResponse = {
   embed?: {
     kind: "none" | "text" | "banner";
     messages?: string[];
-    bannerUrl?: string;
+    bannerUrls?: string[];
   };
 };
 
@@ -35,11 +37,11 @@ async function fileToDataUrl(file: File): Promise<string> {
 function WidgetAdLoadingPreview({
   kind,
   messages,
-  bannerUrl,
+  bannerUrls,
 }: {
   kind: AdEditorKind;
   messages: string[];
-  bannerUrl: string;
+  bannerUrls: string[];
 }) {
   const [tick, setTick] = useState(0);
   const [loadingIndex, setLoadingIndex] = useState(0);
@@ -51,8 +53,16 @@ function WidgetAdLoadingPreview({
     () => messages.map((m) => m.trim()).filter(Boolean).slice(0, RETAILER_WIDGET_AD_MAX_MESSAGES),
     [messages],
   );
+  const banners = useMemo(
+    () => bannerUrls.map((u) => u.trim()).filter(Boolean).slice(0, RETAILER_WIDGET_AD_MAX_BANNERS),
+    [bannerUrls],
+  );
   const hasTextPromo = kind === "text" && promoLines.length > 0;
-  const hasBanner = kind === "banner" && bannerUrl.trim().length > 0;
+  const hasBanner = kind === "banner" && banners.length > 0;
+
+  const bannerIndex = hasBanner
+    ? Math.floor(Math.max(0, tick) / 2) % banners.length
+    : 0;
 
   useEffect(() => {
     if (!hasTextPromo && !hasBanner) {
@@ -91,6 +101,7 @@ function WidgetAdLoadingPreview({
 
   const loadingText = WEAR_LOADING_MESSAGES[loadingIndex] ?? WEAR_LOADING_MESSAGES[0];
   const promoText = promoLines[promoIndex] ?? promoLines[0] ?? "";
+  const activeBanner = banners[bannerIndex] ?? banners[0] ?? "";
 
   return (
     <div className="overflow-hidden rounded-2xl border border-[#c6a77d]/28 bg-[#0f0f14]">
@@ -100,6 +111,7 @@ function WidgetAdLoadingPreview({
         </p>
         <p className="mt-1 text-xs text-zinc-500">
           Shoppers see this on the loading overlay while AI generates their look.
+          {hasBanner && banners.length > 1 ? ` Rotates through ${banners.length} banners.` : null}
         </p>
       </div>
       <div className="relative aspect-[4/3] min-h-[220px] bg-[#0f0f14]">
@@ -113,10 +125,11 @@ function WidgetAdLoadingPreview({
               className="h-[34px] w-[34px] animate-spin rounded-full border-[3px] border-[rgba(15,15,20,0.14)] border-t-[#c6a77d]"
               aria-hidden
             />
-            {hasBanner && showPromo ? (
+            {hasBanner && showPromo && activeBanner ? (
               // eslint-disable-next-line @next/next/no-img-element -- retailer-uploaded banner preview
               <img
-                src={bannerUrl}
+                key={activeBanner}
+                src={activeBanner}
                 alt=""
                 className="max-h-40 max-w-[min(420px,92%)] rounded-[10px] border border-[#c6a77d]/35 object-contain shadow-[0_8px_24px_rgba(0,0,0,0.35)]"
               />
@@ -149,8 +162,7 @@ export function DashboardAdsPanel() {
   const [editorKind, setEditorKind] = useState<AdEditorKind>("text");
   const [messageDraft, setMessageDraft] = useState("");
   const [savedMessages, setSavedMessages] = useState<string[]>([]);
-  const [bannerPreviewUrl, setBannerPreviewUrl] = useState("");
-  const [bannerDraftDataUrl, setBannerDraftDataUrl] = useState<string | null>(null);
+  const [bannerUrls, setBannerUrls] = useState<string[]>([]);
   const [hasSavedAd, setHasSavedAd] = useState(false);
 
   const previewMessages = useMemo(() => {
@@ -165,8 +177,7 @@ export function DashboardAdsPanel() {
     return savedMessages;
   }, [editorKind, messageDraft, savedMessages]);
 
-  const previewBannerUrl =
-    editorKind === "banner" ? bannerDraftDataUrl || bannerPreviewUrl : bannerPreviewUrl;
+  const previewBannerUrls = editorKind === "banner" ? bannerUrls : [];
 
   const loadAd = useCallback(async () => {
     setLoading(true);
@@ -183,8 +194,7 @@ export function DashboardAdsPanel() {
       if (!ad) {
         setHasSavedAd(false);
         setSavedMessages([]);
-        setBannerPreviewUrl("");
-        setBannerDraftDataUrl(null);
+        setBannerUrls([]);
         setMessageDraft("");
         setEditorKind("text");
         return;
@@ -196,13 +206,11 @@ export function DashboardAdsPanel() {
         const msgs = ad.messages ?? [];
         setSavedMessages(msgs);
         setMessageDraft(msgs.join("\n"));
-        setBannerPreviewUrl("");
-        setBannerDraftDataUrl(null);
+        setBannerUrls([]);
       } else {
         setSavedMessages([]);
         setMessageDraft("");
-        setBannerPreviewUrl(ad.bannerUrl ?? "");
-        setBannerDraftDataUrl(null);
+        setBannerUrls(ad.bannerUrls ?? []);
       }
     } catch {
       setError("Something went wrong. Please try again.");
@@ -215,22 +223,38 @@ export function DashboardAdsPanel() {
     void loadAd();
   }, [loadAd]);
 
-  const onBannerFile = useCallback(async (file: File | null) => {
+  const onBannerFiles = useCallback(async (files: FileList | null) => {
     setError(null);
     setSavedNotice(null);
-    if (!file) return;
-    if (!file.type.startsWith("image/")) {
-      setError("Choose a JPEG, PNG, or WebP image.");
+    if (!files?.length) return;
+
+    const remaining = RETAILER_WIDGET_AD_MAX_BANNERS - bannerUrls.length;
+    if (remaining <= 0) {
+      setError(`You can upload up to ${RETAILER_WIDGET_AD_MAX_BANNERS} banner images.`);
       return;
     }
+
+    const toProcess = Array.from(files).slice(0, remaining);
+    const nextUrls: string[] = [];
+
     try {
-      const compressed = await compressImageToMax1000px(file);
-      const dataUrl = await fileToDataUrl(compressed);
-      setBannerDraftDataUrl(dataUrl);
+      for (const file of toProcess) {
+        if (!file.type.startsWith("image/")) {
+          setError("Choose JPEG, PNG, or WebP images only.");
+          return;
+        }
+        const compressed = await compressImageToMax1000px(file);
+        nextUrls.push(await fileToDataUrl(compressed));
+      }
       setEditorKind("banner");
+      setBannerUrls((prev) => [...prev, ...nextUrls].slice(0, RETAILER_WIDGET_AD_MAX_BANNERS));
     } catch {
-      setError("Could not process that image.");
+      setError("Could not process one or more images.");
     }
+  }, [bannerUrls.length]);
+
+  const removeBannerAt = useCallback((index: number) => {
+    setBannerUrls((prev) => prev.filter((_, i) => i !== index));
   }, []);
 
   const saveAd = useCallback(async () => {
@@ -250,7 +274,7 @@ export function DashboardAdsPanel() {
             }
           : {
               kind: "banner" as const,
-              bannerDataUrl: bannerDraftDataUrl || bannerPreviewUrl,
+              bannerDataUrls: bannerUrls,
             };
 
       const res = await fetch("/api/retailer/widget-ad", {
@@ -271,15 +295,14 @@ export function DashboardAdsPanel() {
         setSavedMessages(data.ad.messages ?? []);
         setMessageDraft((data.ad.messages ?? []).join("\n"));
       } else if (data.ad?.kind === "banner") {
-        setBannerPreviewUrl(data.ad.bannerUrl ?? "");
-        setBannerDraftDataUrl(null);
+        setBannerUrls(data.ad.bannerUrls ?? []);
       }
     } catch {
       setError("Something went wrong. Please try again.");
     } finally {
       setSaving(false);
     }
-  }, [bannerDraftDataUrl, bannerPreviewUrl, editorKind, messageDraft]);
+  }, [bannerUrls, editorKind, messageDraft]);
 
   const clearAd = useCallback(async () => {
     setClearing(true);
@@ -298,8 +321,7 @@ export function DashboardAdsPanel() {
       setHasSavedAd(false);
       setSavedMessages([]);
       setMessageDraft("");
-      setBannerPreviewUrl("");
-      setBannerDraftDataUrl(null);
+      setBannerUrls([]);
       setEditorKind("text");
       setSavedNotice("Ad removed from your widget.");
     } catch {
@@ -311,10 +333,10 @@ export function DashboardAdsPanel() {
 
   const canSave =
     editorKind === "text"
-      ? messageDraft
-          .split("\n")
-          .some((l) => l.trim().length > 0)
-      : Boolean(bannerDraftDataUrl || bannerPreviewUrl);
+      ? messageDraft.split("\n").some((l) => l.trim().length > 0)
+      : bannerUrls.length > 0;
+
+  const bannerSlotsLeft = RETAILER_WIDGET_AD_MAX_BANNERS - bannerUrls.length;
 
   return (
     <div className="mt-10 max-w-4xl space-y-10">
@@ -363,7 +385,7 @@ export function DashboardAdsPanel() {
                   : "border border-transparent text-zinc-500 hover:border-[#c6a77d]/35 hover:text-zinc-200"
               }`}
             >
-              Banner image
+              Banner images
             </button>
           </div>
 
@@ -393,30 +415,65 @@ export function DashboardAdsPanel() {
               ) : (
                 <>
                   <div>
-                    <p className="text-sm font-semibold text-zinc-100">Banner image</p>
+                    <p className="text-sm font-semibold text-zinc-100">Banner images</p>
                     <p className="mt-1 text-xs leading-relaxed text-zinc-500">
-                      Upload a wide promotional banner (JPEG/PNG/WebP). It alternates with loading
-                      messages during generation.
+                      Upload up to {RETAILER_WIDGET_AD_MAX_BANNERS} promotional banners (JPEG/PNG/WebP).
+                      They alternate with loading messages and rotate during generation.
                     </p>
                   </div>
-                  <label className="flex cursor-pointer flex-col items-center justify-center gap-2 rounded-xl border border-dashed border-[#c6a77d]/35 bg-zinc-950/50 px-4 py-8 text-center transition hover:border-[#c6a77d]/55 hover:bg-zinc-950/80">
-                    <span className="text-sm font-semibold text-[#d4bc94]">Choose image</span>
-                    <span className="text-xs text-zinc-500">Recommended: wide format, under 300KB</span>
-                    <input
-                      type="file"
-                      accept="image/jpeg,image/png,image/webp,image/*"
-                      className="sr-only"
-                      onChange={(e) => void onBannerFile(e.target.files?.[0] ?? null)}
-                    />
-                  </label>
-                  {previewBannerUrl ? (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img
-                      src={previewBannerUrl}
-                      alt="Banner preview"
-                      className="max-h-36 w-full rounded-lg border border-white/10 object-contain"
-                    />
+                  {bannerUrls.length > 0 ? (
+                    <ul className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+                      {bannerUrls.map((url, index) => (
+                        <li
+                          key={`${index}-${url.slice(0, 48)}`}
+                          className="group relative overflow-hidden rounded-lg border border-white/10 bg-zinc-950/60"
+                        >
+                          {/* eslint-disable-next-line @next/next/no-img-element */}
+                          <img
+                            src={url}
+                            alt={`Banner ${index + 1}`}
+                            className="aspect-[5/3] w-full object-contain p-1"
+                          />
+                          <button
+                            type="button"
+                            onClick={() => removeBannerAt(index)}
+                            className="absolute right-1.5 top-1.5 inline-flex h-7 w-7 items-center justify-center rounded-full border border-white/15 bg-black/70 text-zinc-200 opacity-0 transition hover:bg-black/90 group-hover:opacity-100 focus:opacity-100"
+                            aria-label={`Remove banner ${index + 1}`}
+                          >
+                            <X className="h-3.5 w-3.5" aria-hidden />
+                          </button>
+                          <span className="absolute bottom-1.5 left-1.5 rounded bg-black/60 px-1.5 py-0.5 text-[10px] font-semibold text-zinc-300">
+                            {index + 1}
+                          </span>
+                        </li>
+                      ))}
+                    </ul>
                   ) : null}
+                  {bannerSlotsLeft > 0 ? (
+                    <label className="flex cursor-pointer flex-col items-center justify-center gap-2 rounded-xl border border-dashed border-[#c6a77d]/35 bg-zinc-950/50 px-4 py-8 text-center transition hover:border-[#c6a77d]/55 hover:bg-zinc-950/80">
+                      <span className="text-sm font-semibold text-[#d4bc94]">
+                        {bannerUrls.length ? "Add more banners" : "Choose images"}
+                      </span>
+                      <span className="text-xs text-zinc-500">
+                        {bannerSlotsLeft} slot{bannerSlotsLeft === 1 ? "" : "s"} left · wide format, under
+                        300KB each
+                      </span>
+                      <input
+                        type="file"
+                        accept="image/jpeg,image/png,image/webp,image/*"
+                        multiple
+                        className="sr-only"
+                        onChange={(e) => {
+                          void onBannerFiles(e.target.files);
+                          e.target.value = "";
+                        }}
+                      />
+                    </label>
+                  ) : (
+                    <p className="text-xs text-zinc-500">
+                      Maximum of {RETAILER_WIDGET_AD_MAX_BANNERS} banners reached. Remove one to add another.
+                    </p>
+                  )}
                 </>
               )}
 
@@ -445,7 +502,7 @@ export function DashboardAdsPanel() {
             <WidgetAdLoadingPreview
               kind={editorKind}
               messages={previewMessages}
-              bannerUrl={previewBannerUrl}
+              bannerUrls={previewBannerUrls}
             />
           </div>
         </>

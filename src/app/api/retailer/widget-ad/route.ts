@@ -1,7 +1,7 @@
 import { getClientKeyRecordById } from "@/lib/apiKeyStore";
 import { getRetailerSessionUser } from "@/lib/retailerAuth";
 import {
-  normalizeWidgetAdBannerUrl,
+  normalizeWidgetAdBannerUrls,
   normalizeWidgetAdMessages,
   retailerHasActiveSubscriptionForAds,
   widgetAdEmbedPayload,
@@ -62,7 +62,17 @@ export async function DELETE() {
 }
 
 type TextBody = { kind: "text"; messages: string[] };
-type BannerBody = { kind: "banner"; bannerDataUrl: string };
+type BannerBody = { kind: "banner"; bannerDataUrls?: string[]; bannerDataUrl?: string };
+
+function bannerDataUrlsFromBody(body: BannerBody): string[] {
+  if (Array.isArray(body.bannerDataUrls) && body.bannerDataUrls.length) {
+    return body.bannerDataUrls;
+  }
+  if (typeof body.bannerDataUrl === "string" && body.bannerDataUrl.trim()) {
+    return [body.bannerDataUrl];
+  }
+  return [];
+}
 
 export async function POST(req: Request) {
   const gate = await requireAdsRetailer();
@@ -91,12 +101,8 @@ export async function POST(req: Request) {
     }
 
     if (kind === "banner") {
-      const bannerDataUrl =
-        typeof (body as BannerBody).bannerDataUrl === "string"
-          ? (body as BannerBody).bannerDataUrl
-          : "";
-      const bannerUrl = normalizeWidgetAdBannerUrl(bannerDataUrl);
-      const record = await setRetailerWidgetAd(gate.clientId!, { kind: "banner", bannerUrl });
+      const bannerUrls = normalizeWidgetAdBannerUrls(bannerDataUrlsFromBody(body as BannerBody));
+      const record = await setRetailerWidgetAd(gate.clientId!, { kind: "banner", bannerUrls });
       return Response.json({ ok: true as const, ad: record, embed: widgetAdEmbedPayload(record) });
     }
 

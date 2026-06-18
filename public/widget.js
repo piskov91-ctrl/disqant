@@ -45,8 +45,14 @@
       .then(function (data) {
         if (data && data.kind === "text" && Array.isArray(data.messages) && data.messages.length) {
           cachedWidgetAdEmbed = { kind: "text", messages: data.messages };
-        } else if (data && data.kind === "banner" && data.bannerUrl) {
-          cachedWidgetAdEmbed = { kind: "banner", bannerUrl: String(data.bannerUrl) };
+        } else if (data && data.kind === "banner") {
+          var urls = [];
+          if (Array.isArray(data.bannerUrls)) {
+            urls = data.bannerUrls.map(function (x) { return String(x || "").trim(); }).filter(Boolean);
+          } else if (data.bannerUrl) {
+            urls = [String(data.bannerUrl)];
+          }
+          if (urls.length) cachedWidgetAdEmbed = { kind: "banner", bannerUrls: urls };
         } else {
           cachedWidgetAdEmbed = null;
         }
@@ -1057,7 +1063,7 @@
     var loadingMsgIndex = 0;
     var promoMsgIndex = 0;
     var retailerPromoMessages = getRetailerPromoMessages();
-    var widgetAdBannerUrl = null;
+    var widgetAdBannerUrls = [];
     var showingProcessingBanner = false;
     var processingFadeTimer = null;
 
@@ -1067,9 +1073,17 @@
         retailerPromoMessages = ad.messages
           .map(function (x) { return String(x || "").trim(); })
           .filter(Boolean);
-      } else if (ad.kind === "banner" && ad.bannerUrl) {
-        widgetAdBannerUrl = String(ad.bannerUrl);
-        processingBannerImg.src = widgetAdBannerUrl;
+      } else if (ad.kind === "banner") {
+        var urls = [];
+        if (Array.isArray(ad.bannerUrls) && ad.bannerUrls.length) {
+          urls = ad.bannerUrls.map(function (x) { return String(x || "").trim(); }).filter(Boolean);
+        } else if (ad.bannerUrl) {
+          urls = [String(ad.bannerUrl)];
+        }
+        if (urls.length) {
+          widgetAdBannerUrls = urls;
+          processingBannerImg.src = widgetAdBannerUrls[0];
+        }
       }
     }
 
@@ -1131,8 +1145,10 @@
 
       loadingMsgTimer = window.setInterval(function () {
         loadingMsgTick += 1;
-        if (widgetAdBannerUrl) {
+        if (widgetAdBannerUrls.length) {
           if (loadingMsgTick % 2 === 1) {
+            var bannerIdx = Math.floor(loadingMsgTick / 2) % widgetAdBannerUrls.length;
+            processingBannerImg.src = widgetAdBannerUrls[bannerIdx];
             setProcessingBannerVisible(true, false);
           } else {
             setProcessingBannerVisible(false, false);
