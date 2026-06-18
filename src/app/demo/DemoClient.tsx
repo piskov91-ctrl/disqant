@@ -116,6 +116,7 @@ export default function DemoClient() {
   const wearStreamRef = useRef<MediaStream | null>(null);
   const wearProgressTimerRef = useRef<number | null>(null);
   const wearStageUrlRef = useRef<string | null>(null);
+  const wearStageImgRef = useRef<HTMLImageElement | null>(null);
   /** Sync guard: `wearGenerating` updates after render, so double-clicks can fire two `/api/tryon` → two Fashn /run. */
   const wearTryOnInFlightRef = useRef(false);
   /** Avoid refetching the sample garment on every popstate when the same preset is already loaded. */
@@ -1014,6 +1015,7 @@ export default function DemoClient() {
                 {wearStageUrl ? (
                   // eslint-disable-next-line @next/next/no-img-element
                   <img
+                    ref={wearStageImgRef}
                     src={wearStageUrl}
                     alt={wearSaveVisible ? "Try-on result" : "Preview"}
                     style={{ display: wearHasPhoto || wearProcessing ? "block" : "none" }}
@@ -1039,7 +1041,11 @@ export default function DemoClient() {
                 </div>
 
                 {wearSaveVisible && wearStageUrl ? (
-                  <WearMeResultFullscreen imageUrl={wearStageUrl} active={wearSaveVisible} />
+                  <WearMeResultFullscreen
+                    imageUrl={wearStageUrl}
+                    active={wearSaveVisible}
+                    stageImageRef={wearStageImgRef}
+                  />
                 ) : null}
 
                 {wearSaveVisible ? (

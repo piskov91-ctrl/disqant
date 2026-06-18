@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useLayoutEffect, useState } from "react";
+import { useCallback, useEffect, useLayoutEffect, useRef, useState, type RefObject } from "react";
 
 /** Echoed from FormData; the API route uses Fashn Try-On Max. */
 export type GarmentCategoryHint = "tops" | "bottoms";
@@ -63,14 +63,29 @@ export function WearMeTipsPrivacy() {
 
 export const WEAR_ME_FULLSCREEN_STYLE_ID = "fit-room-wear-fullscreen-style";
 
+/** Restore stage preview/result image to default contain fit after fullscreen closes. */
+export function resetWearMeStageImageFit(img: HTMLImageElement | null | undefined) {
+  if (!img) return;
+  img.style.removeProperty("transform");
+  img.style.removeProperty("scale");
+  img.style.removeProperty("zoom");
+  img.style.width = "100%";
+  img.style.height = "100%";
+  img.style.maxWidth = "100%";
+  img.style.maxHeight = "100%";
+  img.style.objectFit = "contain";
+  img.style.objectPosition = "center center";
+  void img.offsetHeight;
+}
+
 /** Fullscreen expand control + overlay (matches `public/widget.js`). */
 export const WEAR_ME_FULLSCREEN_CSS =
-  ".dq-fs{position:absolute;top:12px;left:12px;z-index:6;width:40px;height:40px;padding:0;border-radius:999px;display:inline-flex;align-items:center;justify-content:center;cursor:pointer;border:1px solid rgba(255,255,255,.35);background:rgba(26,22,18,.82);color:#f5ede4;box-shadow:0 6px 18px rgba(0,0,0,.35);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);transition:transform .16s ease,filter .16s ease;-webkit-tap-highlight-color:transparent;}" +
+  ".dq-fs{position:absolute;top:12px;right:12px;z-index:8;width:40px;height:40px;padding:0;border-radius:999px;display:inline-flex;align-items:center;justify-content:center;cursor:pointer;border:1px solid rgba(255,255,255,.4);background:linear-gradient(135deg,#c6a77d 0%,#e2cfb4 50%,#c6a77d 100%);color:#2c241f;box-shadow:0 6px 18px rgba(0,0,0,.3),inset 0 1px 1px rgba(255,255,255,.5);transition:transform .16s ease,filter .16s ease;-webkit-tap-highlight-color:transparent;}" +
   ".dq-fs:hover{transform:translateY(-1px);filter:brightness(1.08);}" +
   ".dq-fs:active{transform:translateY(0);}" +
   ".dq-fs-icon{width:18px;height:18px;display:block;}" +
-  ".dq-fs-overlay{position:fixed;inset:0;z-index:2147483648;background:rgba(12,10,8,.94);display:flex;align-items:center;justify-content:center;padding:max(16px,env(safe-area-inset-top,0px)) max(16px,env(safe-area-inset-right,0px)) max(16px,env(safe-area-inset-bottom,0px)) max(16px,env(safe-area-inset-left,0px));}" +
-  ".dq-fs-overlay img{max-width:100%;max-height:100%;width:auto;height:auto;object-fit:contain;display:block;}" +
+  ".dq-fs-overlay{position:fixed;inset:0;z-index:2147483648;background:rgba(12,10,8,.94);display:flex;align-items:center;justify-content:center;padding:max(16px,env(safe-area-inset-top,0px)) max(16px,env(safe-area-inset-right,0px)) max(16px,env(safe-area-inset-bottom,0px)) max(16px,env(safe-area-inset-left,0px));touch-action:none;overscroll-behavior:none;}" +
+  ".dq-fs-overlay img{max-width:100%;max-height:100%;width:auto;height:auto;object-fit:contain;object-position:center center;display:block;transform:none !important;touch-action:none;-webkit-user-drag:none;user-select:none;}" +
   ".dq-fs-close{position:absolute;top:max(16px,env(safe-area-inset-top,0px));right:max(16px,env(safe-area-inset-right,0px));appearance:none;display:inline-flex;align-items:center;justify-content:center;border:1px solid rgba(255,255,255,.14);background:#0f0f14;color:#fff;border-radius:999px;min-width:44px;min-height:44px;padding:0;cursor:pointer;box-shadow:0 10px 26px rgba(0,0,0,.22);transition:transform .16s ease,box-shadow .16s ease,background-color .16s ease;z-index:1;-webkit-tap-highlight-color:transparent;}" +
   ".dq-fs-close:hover{background:#2a2633;transform:translateY(-1px);}" +
   ".dq-fs-close:active{transform:translateY(0);}" +
@@ -109,28 +124,50 @@ function DqExpandIcon() {
 export function WearMeResultFullscreen({
   imageUrl,
   active,
+  stageImageRef,
 }: {
   imageUrl: string | null;
   active: boolean;
+  stageImageRef?: RefObject<HTMLImageElement | null>;
 }) {
   const [open, setOpen] = useState(false);
+  const bodyOverflowRef = useRef<string | null>(null);
 
   useLayoutEffect(() => {
     ensureWearMeFullscreenStyles();
   }, []);
 
+  const closeFullscreen = useCallback(() => {
+    setOpen(false);
+    if (typeof document !== "undefined" && bodyOverflowRef.current !== null) {
+      document.body.style.overflow = bodyOverflowRef.current;
+      bodyOverflowRef.current = null;
+    }
+    requestAnimationFrame(() => {
+      resetWearMeStageImageFit(stageImageRef?.current ?? null);
+    });
+  }, [stageImageRef]);
+
+  const openFullscreen = useCallback(() => {
+    if (typeof document !== "undefined") {
+      bodyOverflowRef.current = document.body.style.overflow;
+      document.body.style.overflow = "hidden";
+    }
+    setOpen(true);
+  }, []);
+
   useEffect(() => {
     if (!open) return;
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") setOpen(false);
+      if (e.key === "Escape") closeFullscreen();
     };
     document.addEventListener("keydown", onKey);
     return () => document.removeEventListener("keydown", onKey);
-  }, [open]);
+  }, [open, closeFullscreen]);
 
   useEffect(() => {
-    if (!active) setOpen(false);
-  }, [active]);
+    if (!active) closeFullscreen();
+  }, [active, closeFullscreen]);
 
   if (!active || !imageUrl) return null;
 
@@ -139,7 +176,7 @@ export function WearMeResultFullscreen({
       <button
         type="button"
         className="dq-fs"
-        onClick={() => setOpen(true)}
+        onClick={openFullscreen}
         aria-label="View fullscreen"
         title="Fullscreen"
       >
@@ -152,13 +189,13 @@ export function WearMeResultFullscreen({
           aria-modal="true"
           aria-label="Try-on result fullscreen"
           onClick={(e) => {
-            if (e.target === e.currentTarget) setOpen(false);
+            if (e.target === e.currentTarget) closeFullscreen();
           }}
         >
           <button
             type="button"
             className="dq-fs-close"
-            onClick={() => setOpen(false)}
+            onClick={closeFullscreen}
             aria-label="Close fullscreen"
             title="Close"
           >
@@ -215,7 +252,7 @@ export const DEMO_WEAR_MODAL_CSS =
   ".dq-tips-mark{flex-shrink:0;color:#c6a77d;font-size:10px;line-height:1.55;font-weight:600;}" +
   ".dq-tips-privacy{margin:0;padding:12px 14px;border-radius:12px;border:1px solid rgba(198,167,125,.5);background:#1a1612;font:500 13px/1.5 system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;color:rgba(245,237,228,.92);letter-spacing:.02em;box-shadow:inset 0 1px 0 rgba(198,167,125,.08);}" +
   ".dq-stage{position:relative;width:100%;height:min(80vh,640px);border-radius:18px;border:1px solid rgba(198,167,125,.2);background:linear-gradient(180deg,#1a1612,#141210);box-shadow:inset 0 1px 0 rgba(198,167,125,.08);overflow:hidden;}" +
-  ".dq-stage img{width:100%;height:100%;display:block;background:#0f0f14;object-fit:contain;object-position:center center;}" +
+  ".dq-stage img{width:100%;height:100%;display:block;background:#0f0f14;object-fit:contain;object-position:center center;transform:none !important;max-width:100%;max-height:100%;}" +
   ".dq-empty{height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;color:rgba(245,237,228,.65);text-align:center;padding:18px;}" +
   ".dq-empty strong{color:#f5ede4;font:900 14px/1.2 system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;}" +
   ".dq-empty span{font:600 12px/1.3 system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;}" +
