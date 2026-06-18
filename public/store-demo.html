@@ -156,6 +156,34 @@
       gap: 28px 22px;
     }
 
+    .category-heading {
+      grid-column: 1 / -1;
+      margin: 8px 0 4px;
+      padding-top: 16px;
+      border-top: 1px solid var(--border);
+      font-family: var(--serif);
+      font-size: 1.5rem;
+      font-weight: 400;
+      color: var(--cream);
+    }
+
+    .category-heading:first-child {
+      margin-top: 0;
+      padding-top: 0;
+      border-top: 0;
+    }
+
+    .category-heading span {
+      display: block;
+      margin-top: 4px;
+      font-family: var(--sans);
+      font-size: 12px;
+      font-weight: 500;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--muted);
+    }
+
     @media (max-width: 900px) {
       .product-grid { grid-template-columns: repeat(2, 1fr); }
       nav { display: none; }
@@ -167,6 +195,10 @@
 
     .product-card {
       display: block;
+      width: 100%;
+      text-align: left;
+      font: inherit;
+      color: inherit;
       background: var(--bg-card);
       border: 1px solid var(--border);
       border-radius: 4px;
@@ -244,6 +276,10 @@
       grid-template-columns: 1.05fr 0.95fr;
       gap: 48px;
       align-items: start;
+    }
+
+    .pdp-col-image {
+      min-width: 0;
     }
 
     @media (max-width: 860px) {
@@ -421,10 +457,10 @@
     <div class="header-inner">
       <a href="/store-demo.html" class="logo" id="logo-link">Hawthorne <span>Lane</span></a>
       <nav aria-label="Primary">
-        <a href="/store-demo.html">Shop</a>
-        <a href="/store-demo.html">Dresses</a>
-        <a href="/store-demo.html">Outerwear</a>
-        <a href="/store-demo.html">Tops</a>
+        <a href="/store-demo.html#clothing">Clothing</a>
+        <a href="/store-demo.html#accessories">Accessories</a>
+        <a href="/store-demo.html#swimwear">Swimwear</a>
+        <a href="/store-demo.html#footwear">Footwear</a>
       </nav>
       <div class="header-actions">
         <span>GBP £</span>
@@ -440,7 +476,7 @@
   <div id="view-listing" class="view is-active">
     <div class="listing-hero">
       <h1>The Edit</h1>
-      <p>Six considered pieces from our Marylebone atelier — tap a product to view details and try on with Wear Me.</p>
+      <p>Clothing, accessories, swimwear and footwear from our Marylebone atelier — tap a product to view details and try on with Wear Me.</p>
     </div>
     <section class="section">
       <div class="product-grid" id="product-grid"></div>
@@ -452,14 +488,16 @@
     <div class="pdp">
       <button type="button" class="pdp-back" id="pdp-back">← Back to shop</button>
       <div class="pdp-grid">
-        <div class="pdp-media">
-          <img
-            id="pdp-image"
-            src=""
-            alt=""
-            width="800"
-            height="1067"
-          />
+        <div class="pdp-col-image">
+          <div class="pdp-media">
+            <img
+              id="pdp-image"
+              src=""
+              alt=""
+              width="800"
+              height="1067"
+            />
+          </div>
         </div>
         <div class="pdp-info">
           <div class="pdp-tag" id="pdp-tag"></div>
@@ -494,9 +532,12 @@
 
   <script>
     (function () {
+      var CATEGORIES = ["Clothing", "Accessories", "Swimwear", "Footwear"];
+
       var PRODUCTS = [
         {
           slug: "somerset-linen-midi-dress",
+          category: "Clothing",
           name: "Somerset Linen Midi Dress",
           tag: "Dress",
           price: 165,
@@ -506,6 +547,7 @@
         },
         {
           slug: "cotswold-silk-slip-dress",
+          category: "Clothing",
           name: "Cotswold Silk Slip Dress",
           tag: "Dress",
           price: 245,
@@ -515,6 +557,7 @@
         },
         {
           slug: "highland-wool-wrap-coat",
+          category: "Clothing",
           name: "Highland Wool Wrap Coat",
           tag: "Jacket",
           price: 395,
@@ -524,6 +567,7 @@
         },
         {
           slug: "mayfair-tailored-blazer",
+          category: "Clothing",
           name: "Mayfair Tailored Blazer",
           tag: "Jacket",
           price: 285,
@@ -533,6 +577,7 @@
         },
         {
           slug: "devon-cotton-poplin-shirt",
+          category: "Clothing",
           name: "Devon Cotton Poplin Shirt",
           tag: "Top",
           price: 89,
@@ -542,12 +587,93 @@
         },
         {
           slug: "kensington-cashmere-knit",
+          category: "Clothing",
           name: "Kensington Cashmere Knit",
           tag: "Top",
           price: 175,
           image: "https://images.unsplash.com/photo-1434389677669-e08b4cac3105?w=1000&q=85",
           alt: "Kensington Cashmere Knit — oatmeal cashmere crew neck jumper",
           description: "Fine-gauge Scottish cashmere in a relaxed crew-neck fit with ribbed cuffs and hem. Light enough for layering, substantial enough to wear alone."
+        },
+        {
+          slug: "riviera-aviator-frames",
+          category: "Accessories",
+          name: "Riviera Aviator Frames",
+          tag: "Eyewear",
+          price: 145,
+          image: "https://images.unsplash.com/photo-1511499767150-a48a237f0083?w=1000&q=85",
+          alt: "Riviera Aviator Frames — gold metal aviator eyewear on marble",
+          description: "Hand-finished metal frames with gradient lenses and adjustable nose pads. A timeless holiday essential with a soft case included."
+        },
+        {
+          slug: "mayfair-gold-chain-bracelet",
+          category: "Accessories",
+          name: "Mayfair Gold Chain Bracelet",
+          tag: "Jewellery",
+          price: 120,
+          image: "https://images.unsplash.com/photo-1611591437281-460bf5971556?w=1000&q=85",
+          alt: "Mayfair Gold Chain Bracelet — delicate gold chain on wrist",
+          description: "Fine 18-carat gold-plated links with a secure lobster clasp. Designed to layer with our pendant necklace or wear alone."
+        },
+        {
+          slug: "pearl-drop-earrings",
+          category: "Accessories",
+          name: "Pearl Drop Earrings",
+          tag: "Jewellery",
+          price: 95,
+          image: "https://images.unsplash.com/photo-1535632066927-ab7c9ab60908?w=1000&q=85",
+          alt: "Pearl Drop Earrings — freshwater pearl drops on gold hooks",
+          description: "Freshwater pearls on hypoallergenic gold hooks with a gentle sway. An elegant finish for day-to-night dressing."
+        },
+        {
+          slug: "layered-gold-pendant",
+          category: "Accessories",
+          name: "Layered Gold Pendant",
+          tag: "Jewellery",
+          price: 110,
+          image: "https://images.unsplash.com/photo-1599643478518-a784e5dc4c6f?w=1000&q=85",
+          alt: "Layered Gold Pendant — fine gold necklace with disc pendant",
+          description: "A fine trace chain with a brushed disc pendant that catches the light. Adjustable extender for your preferred drop length."
+        },
+        {
+          slug: "amalfi-triangle-bikini",
+          category: "Swimwear",
+          name: "Amalfi Triangle Bikini",
+          tag: "Bikini",
+          price: 135,
+          image: "https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=1000&q=85",
+          alt: "Amalfi Triangle Bikini — terracotta two-piece swim set",
+          description: "Triangle top with removable padding and high-cut briefs in sculpting recycled nylon. Fully lined for comfort and support."
+        },
+        {
+          slug: "costa-sculpted-swimsuit",
+          category: "Swimwear",
+          name: "Costa Sculpted Swimsuit",
+          tag: "Swimsuit",
+          price: 155,
+          image: "https://images.unsplash.com/photo-1565084888279-aca607ecce8c?w=1000&q=85",
+          alt: "Costa Sculpted Swimsuit — black one-piece with square neckline",
+          description: "Square neckline one-piece with subtle ruching through the waist. UPF 50+ fabric with a soft matte finish."
+        },
+        {
+          slug: "kensington-leather-trainers",
+          category: "Footwear",
+          name: "Kensington Leather Trainers",
+          tag: "Trainers",
+          price: 185,
+          image: "https://images.unsplash.com/photo-1549298916-b41d501d3772?w=1000&q=85",
+          alt: "Kensington Leather Trainers — white leather low-top trainers",
+          description: "Minimal low-top trainers in supple white leather with a cushioned sole. Pairs with denim, tailoring and weekend linen alike."
+        },
+        {
+          slug: "street-runner-sneakers",
+          category: "Footwear",
+          name: "Street Runner Sneakers",
+          tag: "Sneakers",
+          price: 165,
+          image: "https://images.unsplash.com/photo-1606107556682-da32a28a5883?w=1000&q=85",
+          alt: "Street Runner Sneakers — green and white running-style sneakers",
+          description: "Lightweight mesh and suede panels with a responsive foam midsole. Built for all-day city wear with a contemporary silhouette."
         }
       ];
 
@@ -586,6 +712,10 @@
         window.scrollTo(0, 0);
       }
 
+      function triggerWearMeRescan() {
+        window.dispatchEvent(new Event("fit-room-rescan"));
+      }
+
       function showProduct(product) {
         currentProduct = product;
         viewListing.classList.remove("is-active");
@@ -597,18 +727,29 @@
         document.getElementById("pdp-price").innerHTML =
           formatPrice(product.price) + '<small>inc. VAT</small>';
         document.getElementById("pdp-desc").textContent = product.description;
+
+        pdpImage.removeAttribute("data-fit-room-tryon-bound");
+        pdpImage.removeAttribute("data-fit-room-tryon-skip");
+        pdpImage.removeAttribute("data-fit-room-tryon-pending-load");
+        pdpImage.onload = function () {
+          triggerWearMeRescan();
+        };
         pdpImage.src = product.image;
         pdpImage.alt = product.alt;
 
         window.scrollTo(0, 0);
-        window.setTimeout(function () {
-          window.dispatchEvent(new Event("fit-room-rescan"));
-        }, 80);
+        window.setTimeout(triggerWearMeRescan, 120);
+        window.setTimeout(triggerWearMeRescan, 600);
       }
 
       function navigateToProduct(slug) {
-        window.location.hash = "#/products/" + slug;
-        routeFromHash();
+        var product = productBySlug(slug);
+        if (!product) return;
+        var targetHash = "#/products/" + slug;
+        if (window.location.hash !== targetHash) {
+          window.location.hash = targetHash;
+        }
+        showProduct(product);
       }
 
       function navigateToListing() {
@@ -620,26 +761,39 @@
 
       function renderGrid() {
         productGrid.innerHTML = "";
-        PRODUCTS.forEach(function (p) {
-          var card = document.createElement("a");
-          card.className = "product-card";
-          card.href = "#/products/" + p.slug;
-          card.setAttribute("aria-label", "View " + p.name);
+        CATEGORIES.forEach(function (category) {
+          var heading = document.createElement("h2");
+          heading.className = "category-heading";
+          heading.id = category.toLowerCase();
+          heading.innerHTML = category + '<span>' + productsInCategory(category).length + " pieces</span>";
+          productGrid.appendChild(heading);
 
-          card.innerHTML =
-            '<div class="product-card-media" style="background-image:url(\'' + p.image + '\')"></div>' +
-            '<div class="product-card-body">' +
-              '<div class="product-card-tag">' + p.tag + '</div>' +
-              '<h2 class="product-card-name">' + p.name + '</h2>' +
-              '<div class="product-card-price">' + formatPrice(p.price) + '</div>' +
-            '</div>';
+          productsInCategory(category).forEach(function (p) {
+            var card = document.createElement("button");
+            card.type = "button";
+            card.className = "product-card";
+            card.setAttribute("aria-label", "View " + p.name);
 
-          card.addEventListener("click", function (e) {
-            e.preventDefault();
-            navigateToProduct(p.slug);
+            card.innerHTML =
+              '<div class="product-card-media" style="background-image:url(\'' + p.image + '\')"></div>' +
+              '<div class="product-card-body">' +
+                '<div class="product-card-tag">' + p.tag + '</div>' +
+                '<h3 class="product-card-name">' + p.name + '</h3>' +
+                '<div class="product-card-price">' + formatPrice(p.price) + '</div>' +
+              '</div>';
+
+            card.addEventListener("click", function () {
+              navigateToProduct(p.slug);
+            });
+
+            productGrid.appendChild(card);
           });
+        });
+      }
 
-          productGrid.appendChild(card);
+      function productsInCategory(category) {
+        return PRODUCTS.filter(function (p) {
+          return p.category === category;
         });
       }
 
@@ -712,6 +866,7 @@
     async
     src="/widget.js"
     data-fit-room-key="KgU7HRdnv-TjExraQsyI0Hjanzhh3P-BgG4mguLP4lM"
+    data-fit-room-bind="all"
   ></script>
 
 </body>
