@@ -27,6 +27,7 @@ import {
   formatTryOnApiError,
   isCameraCaptureSupported,
   requestCameraVideoStream,
+  WearMeTipsPrivacy,
   type CameraFacingMode,
   type TryOnResponse,
 } from "@/lib/wearMeShared";
@@ -1001,6 +1002,7 @@ export default function DemoClient() {
             </div>
 
             <div className="dq-body">
+              <WearMeTipsPrivacy />
               <div className="dq-stage">
                 {!wearHasPhoto && !wearProcessing ? (
                   <div className="dq-empty">

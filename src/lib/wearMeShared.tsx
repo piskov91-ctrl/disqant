@@ -30,6 +30,21 @@ export const WEAR_LOADING_MESSAGES: readonly string[] = [
   "AI is processing your look... usually ready in 20-30 seconds",
 ];
 
+/** Tips + privacy block — first child of Wear Me modal body (matches `public/widget.js`). */
+export function WearMeTipsPrivacy() {
+  return (
+    <div className="dq-tips">
+      <p className="dq-tips-copy">
+        ✦ Stand in good lighting with your full body visible ✦ Keep 1-2 metres from the camera ✦ Plain
+        backgrounds work best
+      </p>
+      <p className="dq-tips-privacy">
+        🔒 Your photos are not stored — processed instantly and deleted.
+      </p>
+    </div>
+  );
+}
+
 export const DEMO_WEAR_MODAL_STYLE_ID = "fit-room-demo-wear-modal-style";
 
 /** Matches `public/widget.js` injectStyles (Wear Me + modal) for pixel-consistent modal. */
@@ -55,6 +70,9 @@ export const DEMO_WEAR_MODAL_CSS =
   ".dq-x:active{transform:translateY(0);}" +
   ".dq-x-icon{width:22px;height:22px;display:block;flex-shrink:0;}" +
   ".dq-body{flex:1 1 0%;min-height:0;padding:12px;display:flex;flex-direction:column;gap:12px;overflow-x:hidden;overflow-y:auto;-webkit-overflow-scrolling:touch;overscroll-behavior:contain;touch-action:pan-y;background:#2c241f;}" +
+  ".dq-tips{flex-shrink:0;padding:10px 12px 10px 14px;border-radius:12px;border-left:2px solid #c6a77d;background:#1f1a16;}" +
+  ".dq-tips-copy{margin:0 0 8px;font:500 11px/1.55 system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;color:rgba(245,237,228,.72);}" +
+  ".dq-tips-privacy{margin:0;display:inline-flex;align-items:center;gap:4px;padding:5px 10px;border-radius:999px;border:1px solid rgba(198,167,125,.28);background:rgba(198,167,125,.08);font:500 10px/1.45 system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;color:rgba(245,237,228,.75);}" +
   ".dq-stage{position:relative;width:100%;height:min(72vh,560px);border-radius:18px;border:1px solid rgba(198,167,125,.2);background:linear-gradient(180deg,#1a1612,#141210);box-shadow:inset 0 1px 0 rgba(198,167,125,.08);overflow:hidden;}" +
   ".dq-stage img{width:100%;height:100%;display:block;background:#0f0f14;object-fit:contain;object-position:center center;}" +
   ".dq-empty{height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;color:rgba(245,237,228,.65);text-align:center;padding:18px;}" +
