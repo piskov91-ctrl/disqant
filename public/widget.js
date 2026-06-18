@@ -193,9 +193,12 @@
       + ".dq-x:active{transform:translateY(0);}"
       + ".dq-x-icon{width:22px;height:22px;display:block;flex-shrink:0;}"
       + ".dq-body{flex:1 1 0%;min-height:0;padding:12px;display:flex;flex-direction:column;gap:12px;overflow-x:hidden;overflow-y:auto;-webkit-overflow-scrolling:touch;overscroll-behavior:contain;touch-action:pan-y;background:#2c241f;}"
-      + ".dq-tips{flex-shrink:0;padding:10px 12px 10px 14px;border-radius:12px;border-left:2px solid #c6a77d;background:#1f1a16;}"
-      + ".dq-tips-copy{margin:0 0 8px;font:500 11px/1.55 system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;color:rgba(245,237,228,.72);}"
-      + ".dq-tips-privacy{margin:0;display:inline-flex;align-items:center;gap:4px;padding:5px 10px;border-radius:999px;border:1px solid rgba(198,167,125,.28);background:rgba(198,167,125,.08);font:500 10px/1.45 system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;color:rgba(245,237,228,.75);}"
+      + ".dq-tips-block{flex-shrink:0;display:flex;flex-direction:column;gap:8px;}"
+      + ".dq-tips{padding:12px;border-radius:12px;border-left:3px solid #c6a77d;background:rgba(198,167,125,.08);}"
+      + ".dq-tips-list{margin:0;padding:0;list-style:none;display:flex;flex-direction:column;gap:6px;}"
+      + ".dq-tips-list li{display:flex;align-items:flex-start;gap:8px;font:400 13px/1.5 system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;color:rgba(245,237,228,.88);letter-spacing:.01em;}"
+      + ".dq-tips-mark{flex-shrink:0;color:#c6a77d;font-size:12px;line-height:1.55;font-weight:600;}"
+      + ".dq-tips-privacy{margin:0;padding:0 2px;font:400 12px/1.5 system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;color:rgba(198,167,125,.72);letter-spacing:.02em;}"
       + ".dq-stage{position:relative;width:100%;height:min(72vh,560px);border-radius:18px;border:1px solid rgba(198,167,125,.2);background:linear-gradient(180deg,#1a1612,#141210);box-shadow:inset 0 1px 0 rgba(198,167,125,.08);overflow:hidden;}"
       + ".dq-stage img{width:100%;height:100%;display:block;background:#0f0f14;object-fit:contain;object-position:center center;}"
       + ".dq-empty{height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;color:rgba(245,237,228,.65);text-align:center;padding:18px;}"
@@ -522,17 +525,43 @@
 
     var body = m.body;
 
+    var tipsBlock = document.createElement("div");
+    tipsBlock.className = "dq-tips-block";
+
     var tipsBox = document.createElement("div");
     tipsBox.className = "dq-tips";
-    var tipsCopy = document.createElement("p");
-    tipsCopy.className = "dq-tips-copy";
-    tipsCopy.textContent = "✦ Stand in good lighting with your full body visible ✦ Keep 1-2 metres from the camera ✦ Plain backgrounds work best";
+
+    var tipsList = document.createElement("ul");
+    tipsList.className = "dq-tips-list";
+
+    var tipLines = [
+      "Stand in good lighting with your full body visible",
+      "Keep 1-2 metres from the camera",
+      "Plain backgrounds work best"
+    ];
+
+    tipLines.forEach(function (line) {
+      var li = document.createElement("li");
+      var mark = document.createElement("span");
+      mark.className = "dq-tips-mark";
+      mark.setAttribute("aria-hidden", "true");
+      mark.textContent = "✦";
+      var text = document.createElement("span");
+      text.textContent = line;
+      li.appendChild(mark);
+      li.appendChild(text);
+      tipsList.appendChild(li);
+    });
+
+    tipsBox.appendChild(tipsList);
+    tipsBlock.appendChild(tipsBox);
+
     var tipsPrivacy = document.createElement("p");
     tipsPrivacy.className = "dq-tips-privacy";
     tipsPrivacy.textContent = "🔒 Your photos are not stored — processed instantly and deleted.";
-    tipsBox.appendChild(tipsCopy);
-    tipsBox.appendChild(tipsPrivacy);
-    body.appendChild(tipsBox);
+    tipsBlock.appendChild(tipsPrivacy);
+
+    body.appendChild(tipsBlock);
 
     var limitBanner = document.createElement("div");
     limitBanner.className = "dq-limit-banner";
