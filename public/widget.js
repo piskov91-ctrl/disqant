@@ -198,7 +198,7 @@
       + ".dq-tips-list{margin:0;padding:0;list-style:none;display:flex;flex-direction:column;gap:6px;}"
       + ".dq-tips-list li{display:flex;align-items:flex-start;gap:8px;font:400 13px/1.5 system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;color:rgba(245,237,228,.88);letter-spacing:.01em;}"
       + ".dq-tips-mark{flex-shrink:0;color:#c6a77d;font-size:12px;line-height:1.55;font-weight:600;}"
-      + ".dq-tips-privacy{margin:0;padding:0 2px;font:400 12px/1.5 system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;color:rgba(198,167,125,.72);letter-spacing:.02em;}"
+      + ".dq-tips-privacy{margin:0;padding:12px 14px;border-radius:12px;border:1px solid rgba(198,167,125,.5);background:#1a1612;font:500 13px/1.5 system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;color:rgba(245,237,228,.92);letter-spacing:.02em;box-shadow:inset 0 1px 0 rgba(198,167,125,.08);}"
       + ".dq-stage{position:relative;width:100%;height:min(72vh,560px);border-radius:18px;border:1px solid rgba(198,167,125,.2);background:linear-gradient(180deg,#1a1612,#141210);box-shadow:inset 0 1px 0 rgba(198,167,125,.08);overflow:hidden;}"
       + ".dq-stage img{width:100%;height:100%;display:block;background:#0f0f14;object-fit:contain;object-position:center center;}"
       + ".dq-empty{height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;color:rgba(245,237,228,.65);text-align:center;padding:18px;}"
@@ -556,9 +556,9 @@
     tipsBox.appendChild(tipsList);
     tipsBlock.appendChild(tipsBox);
 
-    var tipsPrivacy = document.createElement("p");
+    var tipsPrivacy = document.createElement("div");
     tipsPrivacy.className = "dq-tips-privacy";
-    tipsPrivacy.textContent = "🔒 Your photos are not stored — processed instantly and deleted.";
+    tipsPrivacy.textContent = "🔒 Your privacy is protected. Photos are processed instantly and permanently deleted.";
     tipsBlock.appendChild(tipsPrivacy);
 
     body.appendChild(tipsBlock);
