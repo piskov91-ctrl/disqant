@@ -9,6 +9,19 @@
   var WIDGET_ATTR_BOUND = "data-fit-room-tryon-bound";
   var WIDGET_ATTR_PENDING = "data-fit-room-tryon-pending-load";
   var WIDGET_ATTR_SKIP = "data-fit-room-tryon-skip";
+  var WIDGET_ATTR_PROMO = "data-fit-room-promo";
+  var WIDGET_ATTR_PROMOS = "data-fit-room-promos";
+
+  var LOADING_MESSAGES = [
+    "AI is styling your outfit...",
+    "Almost ready...",
+    "Adding final touches...",
+    "Blending the look on you...",
+    "Tuning the fit and colors...",
+    "AI is processing your look... usually ready in 20-30 seconds"
+  ];
+  var LOADING_MSG_INTERVAL_MS = 3000;
+  var LOADING_MSG_FADE_MS = 480;
 
   /** Fit Room API origin — derived from widget script src so embeds on retailer pages POST to fit-room.com, not the host page. */
   function getWidgetApiOrigin() {
@@ -49,6 +62,32 @@
     } catch (_e) {
       return null;
     }
+  }
+
+  /** Retailer promo copy during generation — `data-fit-room-promo` or JSON/pipe list in `data-fit-room-promos`. */
+  function getRetailerPromoMessages() {
+    var s = getCurrentScript();
+    if (!s) return [];
+
+    var promos = [];
+    var multi = s.getAttribute(WIDGET_ATTR_PROMOS);
+    if (multi && multi.trim()) {
+      try {
+        var parsed = JSON.parse(multi);
+        if (Array.isArray(parsed)) {
+          promos = parsed.map(function (x) { return String(x || "").trim(); }).filter(Boolean);
+        }
+      } catch (_e1) {
+        promos = multi.split("|").map(function (x) { return x.trim(); }).filter(Boolean);
+      }
+    }
+
+    if (!promos.length) {
+      var single = s.getAttribute(WIDGET_ATTR_PROMO);
+      if (single && single.trim()) promos = [single.trim()];
+    }
+
+    return promos;
   }
 
   function normalizePagePath() {
@@ -207,7 +246,9 @@
       + ".dq-processing-inner{display:flex;flex-direction:column;align-items:center;gap:14px;min-height:4.5rem;justify-content:center;}"
       + ".dq-spin{width:34px;height:34px;border-radius:999px;border:3px solid rgba(15,15,20,.14);border-top-color:#c6a77d;animation:dqspin 1s linear infinite;}"
       + "@keyframes dqspin{to{transform:rotate(360deg);}}"
-      + ".dq-processing-text{font:900 14px/1.35 system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;color:#f5ede4;text-align:center;max-width:420px;padding:0 16px;}"
+      + ".dq-processing-text{font:900 14px/1.35 system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;color:#f5ede4;text-align:center;max-width:420px;padding:0 16px;min-height:2.7rem;display:flex;align-items:center;justify-content:center;transition:opacity .48s ease,color .48s ease;opacity:1;}"
+      + ".dq-processing-text.is-fading{opacity:0;}"
+      + ".dq-processing-text.is-promo{color:#c6a77d;font-weight:700;}"
       + ".dq-progress{position:absolute;left:12px;right:12px;bottom:12px;z-index:5;height:10px;border-radius:999px;background:rgba(245,237,228,.12);overflow:hidden;display:none;}"
       + ".dq-progress.is-on{display:block;}"
       + ".dq-progress>span{display:block;height:100%;width:0%;background:linear-gradient(135deg,#a68958,#c6a77d 45%,#e8d4bc 100%);background-size:200% 100%;transition:width .12s ease;position:relative;animation:dq-bar-pulse 1.9s ease-in-out infinite;}"
@@ -619,7 +660,9 @@
     spin.className = "dq-spin";
     var processingText = document.createElement("div");
     processingText.className = "dq-processing-text";
-    processingText.textContent = "AI is styling your outfit...";
+    processingText.setAttribute("role", "status");
+    processingText.setAttribute("aria-live", "polite");
+    processingText.textContent = LOADING_MESSAGES[0];
     processingInner.appendChild(spin);
     processingInner.appendChild(processingText);
     processing.appendChild(processingInner);
@@ -968,6 +1011,66 @@
     var progressTimer = null;
     var currentPct = 0;
     var tryOnFetchInFlight = false;
+    var loadingMsgTimer = null;
+    var loadingMsgTick = 0;
+    var loadingMsgIndex = 0;
+    var promoMsgIndex = 0;
+    var retailerPromoMessages = getRetailerPromoMessages();
+    var processingFadeTimer = null;
+
+    function setProcessingDisplay(text, isPromo, instant) {
+      if (processingFadeTimer) {
+        window.clearTimeout(processingFadeTimer);
+        processingFadeTimer = null;
+      }
+      if (instant) {
+        processingText.classList.remove("is-fading", "is-promo");
+        processingText.textContent = text;
+        if (isPromo) processingText.classList.add("is-promo");
+        return;
+      }
+      processingText.classList.add("is-fading");
+      processingFadeTimer = window.setTimeout(function () {
+        processingFadeTimer = null;
+        processingText.textContent = text;
+        processingText.classList.toggle("is-promo", !!isPromo);
+        processingText.classList.remove("is-fading");
+      }, LOADING_MSG_FADE_MS);
+    }
+
+    function startLoadingMessageRotation() {
+      stopLoadingMessageRotation();
+      loadingMsgTick = 0;
+      loadingMsgIndex = 0;
+      promoMsgIndex = 0;
+      setProcessingDisplay(LOADING_MESSAGES[0], false, true);
+
+      loadingMsgTimer = window.setInterval(function () {
+        loadingMsgTick += 1;
+        if (retailerPromoMessages.length) {
+          if (loadingMsgTick % 2 === 1) {
+            setProcessingDisplay(retailerPromoMessages[promoMsgIndex], true, false);
+            promoMsgIndex = (promoMsgIndex + 1) % retailerPromoMessages.length;
+          } else {
+            loadingMsgIndex = (loadingMsgIndex + 1) % LOADING_MESSAGES.length;
+            setProcessingDisplay(LOADING_MESSAGES[loadingMsgIndex], false, false);
+          }
+        } else {
+          loadingMsgIndex = (loadingMsgIndex + 1) % LOADING_MESSAGES.length;
+          setProcessingDisplay(LOADING_MESSAGES[loadingMsgIndex], false, false);
+        }
+      }, LOADING_MSG_INTERVAL_MS);
+    }
+
+    function stopLoadingMessageRotation() {
+      if (loadingMsgTimer) window.clearInterval(loadingMsgTimer);
+      loadingMsgTimer = null;
+      if (processingFadeTimer) {
+        window.clearTimeout(processingFadeTimer);
+        processingFadeTimer = null;
+      }
+      processingText.classList.remove("is-fading", "is-promo");
+    }
 
     function setProgress(pct) {
       currentPct = Math.max(0, Math.min(100, Math.round(pct)));
@@ -980,6 +1083,7 @@
       wow.classList.remove("is-on");
       setStageActionsVisible(false);
       setProgress(0);
+      startLoadingMessageRotation();
       if (progressTimer) window.clearInterval(progressTimer);
       progressTimer = window.setInterval(function () {
         if (currentPct < 92) {
@@ -992,6 +1096,7 @@
     function stopLoading(ok) {
       if (progressTimer) window.clearInterval(progressTimer);
       progressTimer = null;
+      stopLoadingMessageRotation();
       if (ok) setProgress(100);
       window.setTimeout(function () {
         processing.classList.remove("is-on");
