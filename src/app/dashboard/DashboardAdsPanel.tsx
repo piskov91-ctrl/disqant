@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { X } from "lucide-react";
 import {
   RETAILER_WIDGET_AD_MAX_BANNERS,
+  RETAILER_WIDGET_AD_MAX_BANNER_BYTES,
   RETAILER_WIDGET_AD_MAX_MESSAGE_CHARS,
   RETAILER_WIDGET_AD_MAX_MESSAGES,
   type RetailerWidgetAdRecord,
@@ -243,6 +244,10 @@ export function DashboardAdsPanel() {
           setError("Choose JPEG, PNG, or WebP images only.");
           return;
         }
+        if (file.size > RETAILER_WIDGET_AD_MAX_BANNER_BYTES) {
+          setError("Each banner must be 30MB or smaller.");
+          return;
+        }
         const compressed = await compressImageToMax1000px(file);
         nextUrls.push(await fileToDataUrl(compressed));
       }
@@ -455,8 +460,7 @@ export function DashboardAdsPanel() {
                         {bannerUrls.length ? "Add more banners" : "Choose images"}
                       </span>
                       <span className="text-xs text-zinc-500">
-                        {bannerSlotsLeft} slot{bannerSlotsLeft === 1 ? "" : "s"} left · wide format, under
-                        300KB each
+                        {bannerSlotsLeft} slot{bannerSlotsLeft === 1 ? "" : "s"} left · up to 30MB each
                       </span>
                       <input
                         type="file"

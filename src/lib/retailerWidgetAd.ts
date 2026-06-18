@@ -11,8 +11,12 @@ export type RetailerWidgetAdRecord = {
   updatedAt: string;
 };
 
-/** Max stored banner payload per image (~300KB as data URL). */
-export const RETAILER_WIDGET_AD_MAX_BANNER_CHARS = 420_000;
+/** Max banner file size per image (30 MiB). */
+export const RETAILER_WIDGET_AD_MAX_BANNER_BYTES = 30 * 1024 * 1024;
+
+/** Max stored payload per banner (base64 data URLs are ~4/3 the binary size). */
+export const RETAILER_WIDGET_AD_MAX_BANNER_CHARS =
+  Math.ceil(RETAILER_WIDGET_AD_MAX_BANNER_BYTES * (4 / 3)) + 128;
 
 export const RETAILER_WIDGET_AD_MAX_MESSAGES = 5;
 export const RETAILER_WIDGET_AD_MAX_MESSAGE_CHARS = 220;
@@ -67,7 +71,7 @@ export function normalizeWidgetAdBannerUrl(raw: string): string {
   const url = String(raw ?? "").trim();
   if (!url) throw new Error("Banner image is required.");
   if (url.length > RETAILER_WIDGET_AD_MAX_BANNER_CHARS) {
-    throw new Error("Banner image is too large. Use a smaller image (max ~300KB).");
+    throw new Error("Banner image is too large. Maximum size is 30MB.");
   }
   if (url.startsWith("https://") || url.startsWith("http://")) return url;
   if (/^data:image\/(jpeg|jpg|png|webp);base64,/i.test(url)) return url;
