@@ -70,14 +70,9 @@
     return queue;
   }
 
-  var cachedWidgetAdEmbed = undefined;
-  var widgetAdFetchPromise = null;
-
-  function fetchWidgetAdEmbed(clientKey) {
+  function fetchWidgetAds(clientKey) {
     if (!clientKey) return Promise.resolve(null);
-    if (cachedWidgetAdEmbed !== undefined) return Promise.resolve(cachedWidgetAdEmbed);
-    if (widgetAdFetchPromise) return widgetAdFetchPromise;
-    widgetAdFetchPromise = fetch(getWidgetApiOrigin() + "/api/embed/widget-ad", {
+    return fetch(getWidgetApiOrigin() + "/api/retailer/widget-ads", {
       method: "GET",
       headers: { "x-api-key": clientKey },
       credentials: "omit",
@@ -90,17 +85,16 @@
         return null;
       })
       .then(function (data) {
-        if (data && data.kind === "text" && Array.isArray(data.messages) && data.messages.length) {
-          cachedWidgetAdEmbed = { kind: "text", messages: data.messages };
-        } else if (data && data.kind === "banner") {
-          var slides = parseWidgetAdBannerSlides(data);
-          if (slides.length) cachedWidgetAdEmbed = { kind: "banner", banners: slides };
-        } else {
-          cachedWidgetAdEmbed = null;
+        if (!data || data.kind === "none") return null;
+        if (data.kind === "text" && Array.isArray(data.messages) && data.messages.length) {
+          return { kind: "text", messages: data.messages };
         }
-        return cachedWidgetAdEmbed;
+        if (data.kind === "banner") {
+          var slides = parseWidgetAdBannerSlides(data);
+          if (slides.length) return { kind: "banner", banners: slides };
+        }
+        return null;
       });
-    return widgetAdFetchPromise;
   }
 
   /** Fit Room API origin — derived from widget script src so embeds on retailer pages POST to fit-room.com, not the host page. */
@@ -1156,7 +1150,33 @@
       }, Math.max(500, Math.round(slide.durationSec * 1000)));
     }
 
-    void fetchWidgetAdEmbed(opts.clientKey || getClientKey()).then(applyWidgetAdEmbed);
+    function runLoadingContentRotation() {
+      if (rotationPhaseTimer) window.clearTimeout(rotationPhaseTimer);
+      rotationPhaseTimer = null;
+      if (loadingMsgTimer) window.clearInterval(loadingMsgTimer);
+      loadingMsgTimer = null;
+
+      if (widgetAdBanners.length) {
+        bannerShuffleQueue = shuffleWidgetAdBannerIndices(widgetAdBanners.length);
+        rotationPhaseTimer = window.setTimeout(scheduleBannerRotationPhase, LOADING_MSG_INTERVAL_MS);
+      } else if (retailerPromoMessages.length) {
+        loadingMsgTimer = window.setInterval(function () {
+          loadingMsgTick += 1;
+          if (loadingMsgTick % 2 === 1) {
+            setProcessingDisplay(retailerPromoMessages[promoMsgIndex], true, false);
+            promoMsgIndex = (promoMsgIndex + 1) % retailerPromoMessages.length;
+          } else {
+            loadingMsgIndex = (loadingMsgIndex + 1) % LOADING_MESSAGES.length;
+            setProcessingDisplay(LOADING_MESSAGES[loadingMsgIndex], false, false);
+          }
+        }, LOADING_MSG_INTERVAL_MS);
+      } else {
+        loadingMsgTimer = window.setInterval(function () {
+          loadingMsgIndex = (loadingMsgIndex + 1) % LOADING_MESSAGES.length;
+          setProcessingDisplay(LOADING_MESSAGES[loadingMsgIndex], false, false);
+        }, LOADING_MSG_INTERVAL_MS);
+      }
+    }
 
     function setProcessingBannerVisible(show, instant) {
       if (processingFadeTimer) {
@@ -1209,29 +1229,24 @@
       loadingMsgTick = 0;
       loadingMsgIndex = 0;
       promoMsgIndex = 0;
+      widgetAdBanners = [];
+      bannerShuffleQueue = [];
       setProcessingBannerVisible(false, true);
       setProcessingDisplay(LOADING_MESSAGES[0], false, true);
 
-      if (widgetAdBanners.length) {
-        bannerShuffleQueue = shuffleWidgetAdBannerIndices(widgetAdBanners.length);
-        rotationPhaseTimer = window.setTimeout(scheduleBannerRotationPhase, LOADING_MSG_INTERVAL_MS);
-      } else if (retailerPromoMessages.length) {
-        loadingMsgTimer = window.setInterval(function () {
-          loadingMsgTick += 1;
-          if (loadingMsgTick % 2 === 1) {
-            setProcessingDisplay(retailerPromoMessages[promoMsgIndex], true, false);
-            promoMsgIndex = (promoMsgIndex + 1) % retailerPromoMessages.length;
-          } else {
-            loadingMsgIndex = (loadingMsgIndex + 1) % LOADING_MESSAGES.length;
-            setProcessingDisplay(LOADING_MESSAGES[loadingMsgIndex], false, false);
-          }
-        }, LOADING_MSG_INTERVAL_MS);
-      } else {
-        loadingMsgTimer = window.setInterval(function () {
-          loadingMsgIndex = (loadingMsgIndex + 1) % LOADING_MESSAGES.length;
-          setProcessingDisplay(LOADING_MESSAGES[loadingMsgIndex], false, false);
-        }, LOADING_MSG_INTERVAL_MS);
-      }
+      runLoadingContentRotation();
+
+      var adsKey = opts.clientKey || getClientKey();
+      if (!adsKey) return;
+
+      fetchWidgetAds(adsKey).then(function (ad) {
+        if (!ad) return;
+        applyWidgetAdEmbed(ad);
+        if (!widgetAdBanners.length && !retailerPromoMessages.length) return;
+        setProcessingBannerVisible(false, true);
+        setProcessingDisplay(LOADING_MESSAGES[loadingMsgIndex], false, true);
+        runLoadingContentRotation();
+      });
     }
 
     function stopLoadingMessageRotation() {
@@ -1470,9 +1485,7 @@
   }
 
   function boot() {
-    var key = getClientKey();
-    beaconClientVisit(key);
-    if (key) void fetchWidgetAdEmbed(key);
+    beaconClientVisit(getClientKey());
     scanAndBind();
     observe();
     window.addEventListener("load", function () { scanAndBind(); });
