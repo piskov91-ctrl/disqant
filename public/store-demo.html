@@ -253,6 +253,18 @@
 
       function gbp(n) { return "£" + n.toFixed(2); }
 
+      /** Remove widget overlay wrapper so rebinding does not nest .dq-wrap forever. */
+      function resetWidgetBinding(img) {
+        var wrap = img.closest(".dq-wrap");
+        if (wrap && wrap.parentNode) {
+          wrap.parentNode.insertBefore(img, wrap);
+          wrap.parentNode.removeChild(wrap);
+        }
+        img.removeAttribute("data-fit-room-tryon-bound");
+        img.removeAttribute("data-fit-room-tryon-skip");
+        img.removeAttribute("data-fit-room-tryon-pending-load");
+      }
+
       function openShop() {
         shopEl.classList.add("is-open");
         productEl.classList.remove("is-open");
@@ -266,9 +278,7 @@
         document.getElementById("pdp-price").textContent = gbp(p.price);
         document.getElementById("pdp-desc").textContent = p.desc;
 
-        pdpImg.removeAttribute("data-fit-room-tryon-bound");
-        pdpImg.removeAttribute("data-fit-room-tryon-skip");
-        pdpImg.removeAttribute("data-fit-room-tryon-pending-load");
+        resetWidgetBinding(pdpImg);
         pdpImg.alt = p.alt;
         pdpImg.src = p.img;
 
@@ -277,9 +287,9 @@
         document.title = p.name + " — Hawthorne Lane";
         window.scrollTo(0, 0);
 
-        setTimeout(function () {
+        window.requestAnimationFrame(function () {
           window.dispatchEvent(new Event("fit-room-rescan"));
-        }, 150);
+        });
       }
 
       CATS.forEach(function (cat) {
@@ -298,13 +308,32 @@
           var btn = document.createElement("button");
           btn.type = "button";
           btn.className = "card";
-          btn.innerHTML =
-            '<div class="card-img" style="background-image:url(\'' + p.img + '\')"></div>' +
-            '<div class="card-body">' +
-            '<div class="card-tag">' + p.tag + '</div>' +
-            '<div class="card-name">' + p.name + '</div>' +
-            '<div class="card-price">' + gbp(p.price) + '</div>' +
-            '</div>';
+          btn.setAttribute("aria-label", "View " + p.name);
+
+          var media = document.createElement("div");
+          media.className = "card-img";
+          media.style.backgroundImage = "url(" + p.img + ")";
+
+          var body = document.createElement("div");
+          body.className = "card-body";
+
+          var tag = document.createElement("div");
+          tag.className = "card-tag";
+          tag.textContent = p.tag;
+
+          var name = document.createElement("div");
+          name.className = "card-name";
+          name.textContent = p.name;
+
+          var price = document.createElement("div");
+          price.className = "card-price";
+          price.textContent = gbp(p.price);
+
+          body.appendChild(tag);
+          body.appendChild(name);
+          body.appendChild(price);
+          btn.appendChild(media);
+          btn.appendChild(body);
           btn.addEventListener("click", function () { openProduct(p); });
           grid.appendChild(btn);
         });
@@ -330,7 +359,7 @@
   </script>
 
   <script
-    async
+    defer
     src="/widget.js"
     data-fit-room-key="KgU7HRdnv-TjExraQsyI0Hjanzhh3P-BgG4mguLP4lM"
     data-fit-room-bind="all"
