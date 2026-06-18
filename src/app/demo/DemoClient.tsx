@@ -1004,13 +1004,8 @@ export default function DemoClient() {
             </div>
 
             <div className="dq-body" style={{ display: "flex", flexDirection: "column", flex: 1, minHeight: 0 }}>
+              <WearMeTipsPrivacy />
               <div className="dq-stage" style={{ flex: 1, minHeight: 0, height: "100%" }}>
-                {!wearHasPhoto && !wearProcessing && !wearSaveVisible && !wearShowVideo ? (
-                  <div className="dq-tips-overlay">
-                    <WearMeTipsPrivacy />
-                  </div>
-                ) : null}
-
                 {!wearHasPhoto && !wearProcessing ? (
                   <div className="dq-empty">
                     <strong>Upload a full-body photo</strong>

@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useLayoutEffect, useRef, useState, type RefObject } from "react";
+import { createPortal } from "react-dom";
 
 /** Echoed from FormData; the API route uses Fashn Try-On Max. */
 export type GarmentCategoryHint = "tops" | "bottoms";
@@ -84,7 +85,7 @@ export const WEAR_ME_FULLSCREEN_CSS =
   ".dq-fs:hover{transform:translateY(-1px);filter:brightness(1.08);}" +
   ".dq-fs:active{transform:translateY(0);}" +
   ".dq-fs-icon{width:18px;height:18px;display:block;}" +
-  ".dq-fs-overlay{position:fixed;inset:0;z-index:2147483648;background:rgba(12,10,8,.94);display:flex;align-items:center;justify-content:center;padding:max(16px,env(safe-area-inset-top,0px)) max(16px,env(safe-area-inset-right,0px)) max(16px,env(safe-area-inset-bottom,0px)) max(16px,env(safe-area-inset-left,0px));touch-action:none;overscroll-behavior:none;}" +
+  ".dq-fs-overlay{position:fixed;inset:0;width:100vw;height:100vh;max-width:100vw;max-height:100vh;z-index:2147483648;background:rgba(12,10,8,.94);display:flex;align-items:center;justify-content:center;padding:max(16px,env(safe-area-inset-top,0px)) max(16px,env(safe-area-inset-right,0px)) max(16px,env(safe-area-inset-bottom,0px)) max(16px,env(safe-area-inset-left,0px));touch-action:none;overscroll-behavior:none;box-sizing:border-box;}" +
   ".dq-fs-overlay img{max-width:100%;max-height:100%;width:auto;height:auto;object-fit:contain;object-position:center center;display:block;transform:none !important;touch-action:none;-webkit-user-drag:none;user-select:none;}" +
   ".dq-fs-close{position:absolute;top:max(16px,env(safe-area-inset-top,0px));right:max(16px,env(safe-area-inset-right,0px));appearance:none;display:inline-flex;align-items:center;justify-content:center;border:1px solid rgba(255,255,255,.14);background:#0f0f14;color:#fff;border-radius:999px;min-width:44px;min-height:44px;padding:0;cursor:pointer;box-shadow:0 10px 26px rgba(0,0,0,.22);transition:transform .16s ease,box-shadow .16s ease,background-color .16s ease;z-index:1;-webkit-tap-highlight-color:transparent;}" +
   ".dq-fs-close:hover{background:#2a2633;transform:translateY(-1px);}" +
@@ -182,40 +183,43 @@ export function WearMeResultFullscreen({
       >
         <DqExpandIcon />
       </button>
-      {open ? (
-        <div
-          className="dq-fs-overlay"
-          role="dialog"
-          aria-modal="true"
-          aria-label="Try-on result fullscreen"
-          onClick={(e) => {
-            if (e.target === e.currentTarget) closeFullscreen();
-          }}
-        >
-          <button
-            type="button"
-            className="dq-fs-close"
-            onClick={closeFullscreen}
-            aria-label="Close fullscreen"
-            title="Close"
-          >
-            <svg
-              className="dq-fs-close-icon"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2.5"
-              strokeLinecap="round"
-              aria-hidden
+      {open && typeof document !== "undefined"
+        ? createPortal(
+            <div
+              className="dq-fs-overlay"
+              role="dialog"
+              aria-modal="true"
+              aria-label="Try-on result fullscreen"
+              onClick={(e) => {
+                if (e.target === e.currentTarget) closeFullscreen();
+              }}
             >
-              <path d="M18 6 6 18" />
-              <path d="m6 6 12 12" />
-            </svg>
-          </button>
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={imageUrl} alt="Try-on result" />
-        </div>
-      ) : null}
+              <button
+                type="button"
+                className="dq-fs-close"
+                onClick={closeFullscreen}
+                aria-label="Close fullscreen"
+                title="Close"
+              >
+                <svg
+                  className="dq-fs-close-icon"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2.5"
+                  strokeLinecap="round"
+                  aria-hidden
+                >
+                  <path d="M18 6 6 18" />
+                  <path d="m6 6 12 12" />
+                </svg>
+              </button>
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src={imageUrl} alt="Try-on result" />
+            </div>,
+            document.body,
+          )
+        : null}
     </>
   );
 }
@@ -233,7 +237,7 @@ export const DEMO_WEAR_MODAL_CSS =
   ".dq-backdrop{position:fixed;inset:0;z-index:50;background:rgba(15,23,42,.45);display:flex;align-items:center;justify-content:center;padding:14px;opacity:0;transition:opacity .18s ease;}" +
   ".dq-backdrop.dq-open{opacity:1;}" +
   ".dq-backdrop.dq-dismiss-locked{cursor:default;-webkit-user-select:none;user-select:none;}" +
-  ".dq-modal{position:relative;width:min(720px,100%);min-height:0;height:min(90vh,calc(100dvh - 28px));max-height:min(90vh,calc(100dvh - 28px));background:#2c241f;border:1px solid rgba(198,167,125,.22);border-radius:20px;overflow:hidden;box-shadow:0 30px 80px rgba(0,0,0,.45);display:flex;flex-direction:column;color:#f5ede4;transform:translateY(10px) scale(.985);opacity:0;transition:transform .18s ease, opacity .18s ease;}" +
+  ".dq-modal{position:relative;width:min(720px,100%);min-height:0;height:min(95vh,calc(100dvh - 28px));max-height:min(95vh,calc(100dvh - 28px));background:#2c241f;border:1px solid rgba(198,167,125,.22);border-radius:20px;overflow:hidden;box-shadow:0 30px 80px rgba(0,0,0,.45);display:flex;flex-direction:column;color:#f5ede4;transform:translateY(10px) scale(.985);opacity:0;transition:transform .18s ease, opacity .18s ease;}" +
   ".dq-backdrop.dq-open .dq-modal{transform:translateY(0) scale(1);opacity:1;}" +
   ".dq-backdrop.dq-closing{opacity:0;}" +
   ".dq-backdrop.dq-closing .dq-modal{transform:translateY(10px) scale(.985);opacity:0;}" +
@@ -244,18 +248,16 @@ export const DEMO_WEAR_MODAL_CSS =
   ".dq-x:hover{background:#2a2633;color:#fff;transform:translateY(-1px);box-shadow:0 14px 32px rgba(0,0,0,.26);}" +
   ".dq-x:active{transform:translateY(0);}" +
   ".dq-x-icon{width:22px;height:22px;display:block;flex-shrink:0;}" +
-  ".dq-body{flex:1 1 0%;min-height:0;padding:0;display:flex;flex-direction:column;gap:0;overflow:hidden;background:#2c241f;}" +
+  ".dq-body{flex:1 1 0%;min-height:0;padding:4px;display:flex;flex-direction:column;gap:4px;overflow:hidden;background:#2c241f;}" +
   ".dq-tips-block{flex-shrink:0;display:flex;flex-direction:column;gap:4px;}" +
   ".dq-tips{padding:8px;border-radius:10px;border-left:3px solid #c6a77d;background:rgba(198,167,125,.08);}" +
   ".dq-tips-list{margin:0;padding:0;list-style:none;display:flex;flex-direction:column;gap:4px;}" +
   ".dq-tips-list li{display:flex;align-items:flex-start;gap:8px;font:400 11px/1.5 system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;color:rgba(245,237,228,.88);letter-spacing:.01em;}" +
   ".dq-tips-mark{flex-shrink:0;color:#c6a77d;font-size:10px;line-height:1.55;font-weight:600;}" +
   ".dq-tips-privacy{margin:0;padding:8px 10px;border-radius:10px;border:1px solid rgba(198,167,125,.5);background:#1a1612;font:500 13px/1.5 system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;color:rgba(245,237,228,.92);letter-spacing:.02em;box-shadow:inset 0 1px 0 rgba(198,167,125,.08);}" +
-  ".dq-stage{position:relative;width:100%;flex:1 1 0%;min-height:0;height:100%;border-radius:0;border:none;background:#0f0f14;overflow:hidden;}" +
+  ".dq-stage{position:relative;width:100%;flex:1 1 0%;min-height:min(75vh,780px);height:100%;border-radius:12px;border:1px solid rgba(198,167,125,.2);background:#0f0f14;overflow:hidden;}" +
   ".dq-stage img,.dq-stage-photo{position:absolute;inset:0;width:100%;height:100%;display:block;background:#0f0f14;object-fit:contain;object-position:center center;transform:none !important;max-width:none;max-height:none;z-index:1;}" +
   ".dq-stage-video{position:absolute;inset:0;width:100%;height:100%;display:block;object-fit:cover;object-position:center center;background:#0f0f14;z-index:3;}" +
-  ".dq-tips-overlay{position:absolute;top:0;left:0;right:0;z-index:6;padding:8px;pointer-events:none;}" +
-  ".dq-tips-overlay .dq-tips-block{pointer-events:auto;}" +
   ".dq-empty{position:absolute;inset:0;z-index:2;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;color:rgba(245,237,228,.65);text-align:center;padding:18px;pointer-events:none;}" +
   ".dq-empty strong{color:#f5ede4;font:900 14px/1.2 system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;}" +
   ".dq-empty span{font:600 12px/1.3 system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;}" +
