@@ -1127,7 +1127,7 @@ export default function DemoClient() {
                       boxShadow: "0 18px 50px rgba(0,0,0,.08)",
                     }}
                   />
-                  <div style={{ height: 10 }} />
+                  <div style={{ height: 4 }} />
                   <div className="dq-cam-row">
                     <button
                       type="button"
@@ -1179,7 +1179,7 @@ export default function DemoClient() {
                 <p className="text-center text-xs text-[#F5EDE4]/65">Loading sample product…</p>
               ) : null}
               {wearError ? (
-                <p className="rounded-xl border border-red-900/50 bg-red-950/40 px-3 py-2 text-center text-xs text-red-200">
+                <p className="rounded-xl border border-red-900/50 bg-red-950/40 px-2 py-1 text-center text-xs text-red-200">
                   {wearError}
                 </p>
               ) : null}
@@ -1187,7 +1187,7 @@ export default function DemoClient() {
             </div>
 
             {wearSaveVisible ? (
-              <div style={{ padding: "0 12px 4px" }}>
+              <div style={{ padding: "0 4px 4px" }}>
                 <button
                   type="button"
                   className="dq-cta"
