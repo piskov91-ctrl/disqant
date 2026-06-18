@@ -217,14 +217,14 @@
       + ".dq-wow{display:none;text-align:center;color:#c6a77d;font-family:Georgia,ui-serif,serif;font-weight:700;font-size:16px;letter-spacing:1px;padding:2px 8px;}"
       + ".dq-wow.is-on{display:block;animation:dq-wow-in .6s ease both;}"
       + "@keyframes dq-wow-in{0%{opacity:0;transform:translateY(8px)}100%{opacity:1;transform:translateY(0)}}"
-      + ".dq-dl{position:absolute;right:12px;bottom:12px;z-index:6;width:44px;height:44px;padding:0;border-radius:999px;display:none;align-items:center;justify-content:center;cursor:pointer;border:1px solid rgba(255,255,255,.4);background:linear-gradient(135deg,#c6a77d 0%,#e2cfb4 50%,#c6a77d 100%);color:#2c241f;box-shadow:0 6px 18px rgba(0,0,0,.3),inset 0 1px 1px rgba(255,255,255,.5);transition:transform .16s ease,box-shadow .16s ease,filter .16s ease;-webkit-tap-highlight-color:transparent;}"
-      + ".dq-dl.is-on{display:inline-flex;}"
+      + ".dq-dl{position:absolute;right:12px;bottom:12px;z-index:8;width:44px;height:44px;padding:0;border-radius:999px;display:none;align-items:center;justify-content:center;cursor:pointer;border:1px solid rgba(255,255,255,.4);background:linear-gradient(135deg,#c6a77d 0%,#e2cfb4 50%,#c6a77d 100%);color:#2c241f;box-shadow:0 6px 18px rgba(0,0,0,.3),inset 0 1px 1px rgba(255,255,255,.5);transition:transform .16s ease,box-shadow .16s ease,filter .16s ease;-webkit-tap-highlight-color:transparent;}"
+      + ".dq-dl.is-on{display:inline-flex !important;}"
       + ".dq-dl:hover{transform:translateY(-1px);filter:brightness(1.07);box-shadow:0 10px 24px rgba(0,0,0,.34);}"
       + ".dq-dl:active{transform:translateY(0);}"
       + ".dq-dl:disabled{opacity:.6;cursor:not-allowed;transform:none;}"
       + ".dq-dl-icon{width:20px;height:20px;display:block;}"
-      + ".dq-fs{position:absolute;top:12px;left:12px;z-index:6;width:40px;height:40px;padding:0;border-radius:999px;display:none;align-items:center;justify-content:center;cursor:pointer;border:1px solid rgba(255,255,255,.35);background:rgba(26,22,18,.82);color:#f5ede4;box-shadow:0 6px 18px rgba(0,0,0,.35);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);transition:transform .16s ease,filter .16s ease;-webkit-tap-highlight-color:transparent;}"
-      + ".dq-fs.is-on{display:inline-flex;}"
+      + ".dq-fs{position:absolute;top:12px;right:12px;z-index:8;width:40px;height:40px;padding:0;border-radius:999px;display:none;align-items:center;justify-content:center;cursor:pointer;border:1px solid rgba(255,255,255,.4);background:linear-gradient(135deg,#c6a77d 0%,#e2cfb4 50%,#c6a77d 100%);color:#2c241f;box-shadow:0 6px 18px rgba(0,0,0,.3),inset 0 1px 1px rgba(255,255,255,.5);transition:transform .16s ease,filter .16s ease;-webkit-tap-highlight-color:transparent;}"
+      + ".dq-fs.is-on{display:inline-flex !important;}"
       + ".dq-fs:hover{transform:translateY(-1px);filter:brightness(1.08);}"
       + ".dq-fs:active{transform:translateY(0);}"
       + ".dq-fs-icon{width:18px;height:18px;display:block;}"
@@ -666,6 +666,7 @@
     saveBtn.setAttribute("aria-label", "Download image");
     saveBtn.title = "Download image";
     saveBtn.innerHTML = '<svg class="dq-dl-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v12"/><path d="m7 10 5 5 5-5"/><path d="M5 21h14"/></svg>';
+    saveBtn.style.display = "none";
 
     var fsBtn = document.createElement("button");
     fsBtn.className = "dq-fs";
@@ -673,6 +674,7 @@
     fsBtn.setAttribute("aria-label", "View fullscreen");
     fsBtn.title = "Fullscreen";
     fsBtn.innerHTML = '<svg class="dq-fs-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 3H5a2 2 0 0 0-2 2v3"/><path d="M21 8V5a2 2 0 0 0-2-2h-3"/><path d="M3 16v3a2 2 0 0 0 2 2h3"/><path d="M16 21h3a2 2 0 0 0 2-2v-3"/></svg>';
+    fsBtn.style.display = "none";
 
     var fsOverlay = null;
 
@@ -680,7 +682,6 @@
     body.appendChild(wow);
     body.appendChild(row);
     body.appendChild(fileInput);
-    body.appendChild(generateBtn);
     body.appendChild(generateBtn);
     stage.appendChild(saveBtn);
     stage.appendChild(fsBtn);
@@ -731,24 +732,30 @@
       openFullscreen(src);
     });
 
-    function hideDownload() {
+    function hideResultActions() {
       saveBtn.classList.remove("is-on");
       fsBtn.classList.remove("is-on");
+      saveBtn.style.display = "none";
+      fsBtn.style.display = "none";
     }
 
-    function showDownload() {
+    function showResultActions() {
       saveBtn.classList.add("is-on");
       fsBtn.classList.add("is-on");
+      saveBtn.style.display = "inline-flex";
+      fsBtn.style.display = "inline-flex";
     }
 
-    function setStageImage(url, alt) {
+    function setStageImage(url, alt, isTryOnResult) {
       if (!url) return;
       stageImg.alt = alt || "Preview";
       stageImg.src = url;
       stageImg.style.display = "block";
       stageEmpty.style.display = "none";
-      wow.classList.remove("is-on");
-      hideDownload();
+      if (!isTryOnResult) {
+        wow.classList.remove("is-on");
+        hideResultActions();
+      }
     }
 
     function stopStream() {
@@ -868,7 +875,7 @@
         var dataUrl = canvas.toDataURL("image/jpeg", 0.92);
         var blob = dataUrlToBlob(dataUrl);
         if (blob) modelFile = fileFromBlob(blob, "user.jpg");
-        hideDownload();
+        hideResultActions();
         setStageImage(dataUrl, "Your photo");
         closeOverlay();
       });
@@ -891,7 +898,7 @@
       var f = fileInput.files && fileInput.files[0];
       if (!f) return;
       modelFile = f;
-      hideDownload();
+      hideResultActions();
       setStageImage(URL.createObjectURL(f), "Your photo");
     });
 
@@ -967,7 +974,7 @@
       if (!garmentFile) return;
       tryOnFetchInFlight = true;
 
-      hideDownload();
+      hideResultActions();
       generateBtn.disabled = true;
       startLoading();
 
@@ -1015,10 +1022,10 @@
           return;
         }
 
-        setStageImage(out, "Try-on result");
+        setStageImage(out, "Try-on result", true);
         stopLoading(true);
         wow.classList.add("is-on");
-        showDownload();
+        showResultActions();
       } catch (_e) {
         stopLoading(false);
       } finally {
