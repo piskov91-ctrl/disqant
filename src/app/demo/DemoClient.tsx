@@ -1061,6 +1061,25 @@ export default function DemoClient() {
                     <Download className="dq-dl-icon" strokeWidth={2.5} aria-hidden />
                   </button>
                 ) : null}
+
+                {!wearProcessing && !wearSaveVisible && !wearShowVideo ? (
+                  <div className="dq-stage-actions">
+                    <button
+                      type="button"
+                      className="dq-choice"
+                      onClick={() => wearGalleryInputRef.current?.click()}
+                    >
+                      <DqIconGallery />
+                      Gallery
+                    </button>
+                    {cameraCaptureSupported ? (
+                      <button type="button" className="dq-choice" onClick={() => void onWearOpenCamera()}>
+                        <DqIconCamera />
+                        Camera
+                      </button>
+                    ) : null}
+                  </div>
+                ) : null}
               </div>
 
               {wearSaveVisible ? (
@@ -1068,19 +1087,6 @@ export default function DemoClient() {
                   Wow, you look amazing! ✨
                 </div>
               ) : null}
-
-              <div className="dq-row">
-                <button type="button" className="dq-choice" onClick={() => wearGalleryInputRef.current?.click()}>
-                  <DqIconGallery />
-                  Gallery
-                </button>
-                {cameraCaptureSupported ? (
-                  <button type="button" className="dq-choice" onClick={() => void onWearOpenCamera()}>
-                    <DqIconCamera />
-                    Camera
-                  </button>
-                ) : null}
-              </div>
 
               <input
                 ref={wearGalleryInputRef}
