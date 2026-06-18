@@ -1003,9 +1003,9 @@ export default function DemoClient() {
               </button>
             </div>
 
-            <div className="dq-body">
+            <div className="dq-body" style={{ display: "flex", flexDirection: "column", flex: 1, minHeight: 0 }}>
               <WearMeTipsPrivacy />
-              <div className="dq-stage">
+              <div className="dq-stage" style={{ flex: 1, minHeight: 0, height: "100%" }}>
                 {!wearHasPhoto && !wearProcessing ? (
                   <div className="dq-empty">
                     <strong>Upload a full-body photo</strong>
@@ -1113,7 +1113,7 @@ export default function DemoClient() {
               />
 
               {wearShowVideo ? (
-                <div>
+                <div className="dq-body-after">
                   <video
                     ref={wearVideoRef}
                     autoPlay
@@ -1176,10 +1176,10 @@ export default function DemoClient() {
               ) : null}
 
               {wearGarmentLoading ? (
-                <p className="text-center text-xs text-[#F5EDE4]/65">Loading sample product…</p>
+                <p className="dq-body-after text-center text-xs text-[#F5EDE4]/65">Loading sample product…</p>
               ) : null}
               {wearError ? (
-                <p className="rounded-xl border border-red-900/50 bg-red-950/40 px-2 py-1 text-center text-xs text-red-200">
+                <p className="dq-body-after rounded-xl border border-red-900/50 bg-red-950/40 px-2 py-1 text-center text-xs text-red-200">
                   {wearError}
                 </p>
               ) : null}
