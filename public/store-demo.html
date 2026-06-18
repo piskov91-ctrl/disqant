@@ -492,7 +492,6 @@
           <div class="pdp-media">
             <img
               id="pdp-image"
-              src=""
               alt=""
               width="800"
               height="1067"
@@ -691,19 +690,6 @@
         return "£" + pounds.toFixed(2);
       }
 
-      function productBySlug(slug) {
-        for (var i = 0; i < PRODUCTS.length; i++) {
-          if (PRODUCTS[i].slug === slug) return PRODUCTS[i];
-        }
-        return null;
-      }
-
-      function parseProductSlugFromHash() {
-        var hash = (window.location.hash || "").replace(/^#/, "");
-        var match = hash.match(/^\/?products\/([^/?#]+)/i);
-        return match ? decodeURIComponent(match[1]).toLowerCase() : null;
-      }
-
       function showListing() {
         currentProduct = null;
         viewListing.classList.add("is-active");
@@ -712,11 +698,8 @@
         window.scrollTo(0, 0);
       }
 
-      function triggerWearMeRescan() {
-        window.dispatchEvent(new Event("fit-room-rescan"));
-      }
-
       function showProduct(product) {
+        if (!product) return;
         currentProduct = product;
         viewListing.classList.remove("is-active");
         viewProduct.classList.add("is-active");
@@ -725,38 +708,19 @@
         document.getElementById("pdp-tag").textContent = product.tag;
         document.getElementById("pdp-name").textContent = product.name;
         document.getElementById("pdp-price").innerHTML =
-          formatPrice(product.price) + '<small>inc. VAT</small>';
+          formatPrice(product.price) + "<small>inc. VAT</small>";
         document.getElementById("pdp-desc").textContent = product.description;
 
         pdpImage.removeAttribute("data-fit-room-tryon-bound");
         pdpImage.removeAttribute("data-fit-room-tryon-skip");
         pdpImage.removeAttribute("data-fit-room-tryon-pending-load");
-        pdpImage.onload = function () {
-          triggerWearMeRescan();
-        };
-        pdpImage.src = product.image;
         pdpImage.alt = product.alt;
+        pdpImage.src = product.image;
 
         window.scrollTo(0, 0);
-        window.setTimeout(triggerWearMeRescan, 120);
-        window.setTimeout(triggerWearMeRescan, 600);
-      }
-
-      function navigateToProduct(slug) {
-        var product = productBySlug(slug);
-        if (!product) return;
-        var targetHash = "#/products/" + slug;
-        if (window.location.hash !== targetHash) {
-          window.location.hash = targetHash;
-        }
-        showProduct(product);
-      }
-
-      function navigateToListing() {
-        if (window.location.hash) {
-          history.pushState(null, "", window.location.pathname + window.location.search);
-        }
-        showListing();
+        window.setTimeout(function () {
+          window.dispatchEvent(new Event("fit-room-rescan"));
+        }, 150);
       }
 
       function renderGrid() {
@@ -765,7 +729,8 @@
           var heading = document.createElement("h2");
           heading.className = "category-heading";
           heading.id = category.toLowerCase();
-          heading.innerHTML = category + '<span>' + productsInCategory(category).length + " pieces</span>";
+          heading.innerHTML =
+            category + "<span>" + productsInCategory(category).length + " pieces</span>";
           productGrid.appendChild(heading);
 
           productsInCategory(category).forEach(function (p) {
@@ -775,15 +740,23 @@
             card.setAttribute("aria-label", "View " + p.name);
 
             card.innerHTML =
-              '<div class="product-card-media" style="background-image:url(\'' + p.image + '\')"></div>' +
-              '<div class="product-card-body">' +
-                '<div class="product-card-tag">' + p.tag + '</div>' +
-                '<h3 class="product-card-name">' + p.name + '</h3>' +
-                '<div class="product-card-price">' + formatPrice(p.price) + '</div>' +
-              '</div>';
+              "<div class=\"product-card-media\" style=\"background-image:url('" +
+              p.image +
+              "')\"></div>" +
+              "<div class=\"product-card-body\">" +
+              "<div class=\"product-card-tag\">" +
+              p.tag +
+              "</div>" +
+              "<h3 class=\"product-card-name\">" +
+              p.name +
+              "</h3>" +
+              "<div class=\"product-card-price\">" +
+              formatPrice(p.price) +
+              "</div>" +
+              "</div>";
 
             card.addEventListener("click", function () {
-              navigateToProduct(p.slug);
+              showProduct(p);
             });
 
             productGrid.appendChild(card);
@@ -797,24 +770,27 @@
         });
       }
 
-      function routeFromHash() {
-        var slug = parseProductSlugFromHash();
-        if (!slug) {
-          showListing();
-          return;
-        }
-        var product = productBySlug(slug);
-        if (!product) {
-          showListing();
-          return;
-        }
-        showProduct(product);
-      }
+      document.getElementById("pdp-back").addEventListener("click", showListing);
 
-      document.getElementById("pdp-back").addEventListener("click", navigateToListing);
       document.getElementById("logo-link").addEventListener("click", function (e) {
         e.preventDefault();
-        navigateToListing();
+        showListing();
+      });
+
+      document.querySelectorAll("nav a").forEach(function (link) {
+        link.addEventListener("click", function (e) {
+          e.preventDefault();
+          showListing();
+          var href = link.getAttribute("href") || "";
+          var hashIndex = href.indexOf("#");
+          if (hashIndex === -1) return;
+          var target = document.getElementById(href.slice(hashIndex + 1));
+          if (target) {
+            window.setTimeout(function () {
+              target.scrollIntoView({ behavior: "smooth", block: "start" });
+            }, 50);
+          }
+        });
       });
 
       document.querySelectorAll(".size-btn").forEach(function (btn) {
@@ -854,11 +830,8 @@
         }, 200);
       });
 
-      window.addEventListener("hashchange", routeFromHash);
-      window.addEventListener("popstate", routeFromHash);
-
       renderGrid();
-      routeFromHash();
+      showListing();
     })();
   </script>
 
