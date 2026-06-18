@@ -419,12 +419,12 @@
 
   <header>
     <div class="header-inner">
-      <a href="/store-demo" class="logo" id="logo-link">Hawthorne <span>Lane</span></a>
+      <a href="/store-demo.html" class="logo" id="logo-link">Hawthorne <span>Lane</span></a>
       <nav aria-label="Primary">
-        <a href="/store-demo">Shop</a>
-        <a href="/store-demo">Dresses</a>
-        <a href="/store-demo">Outerwear</a>
-        <a href="/store-demo">Tops</a>
+        <a href="/store-demo.html">Shop</a>
+        <a href="/store-demo.html">Dresses</a>
+        <a href="/store-demo.html">Outerwear</a>
+        <a href="/store-demo.html">Tops</a>
       </nav>
       <div class="header-actions">
         <span>GBP £</span>
@@ -608,6 +608,7 @@
 
       function navigateToProduct(slug) {
         window.location.hash = "#/products/" + slug;
+        routeFromHash();
       }
 
       function navigateToListing() {
