@@ -1064,20 +1064,36 @@ export default function DemoClient() {
 
                 {!wearProcessing && !wearSaveVisible && !wearShowVideo ? (
                   <div className="dq-stage-actions">
+                    <div className="dq-stage-actions-row">
+                      <button
+                        type="button"
+                        className="dq-choice"
+                        onClick={() => wearGalleryInputRef.current?.click()}
+                      >
+                        <DqIconGallery />
+                        Gallery
+                      </button>
+                      {cameraCaptureSupported ? (
+                        <button type="button" className="dq-choice" onClick={() => void onWearOpenCamera()}>
+                          <DqIconCamera />
+                          Camera
+                        </button>
+                      ) : null}
+                    </div>
                     <button
                       type="button"
-                      className="dq-choice"
-                      onClick={() => wearGalleryInputRef.current?.click()}
+                      className="dq-wear-me"
+                      disabled={
+                        !wearModelFile ||
+                        !wearGarmentFile ||
+                        wearGarmentLoading ||
+                        wearGenerating ||
+                        wearProcessing
+                      }
+                      onClick={() => void onWearGenerate()}
                     >
-                      <DqIconGallery />
-                      Gallery
+                      Wear Me
                     </button>
-                    {cameraCaptureSupported ? (
-                      <button type="button" className="dq-choice" onClick={() => void onWearOpenCamera()}>
-                        <DqIconCamera />
-                        Camera
-                      </button>
-                    ) : null}
                   </div>
                 ) : null}
               </div>
@@ -1167,21 +1183,6 @@ export default function DemoClient() {
                   {wearError}
                 </p>
               ) : null}
-
-              <button
-                type="button"
-                className="dq-wear-me"
-                disabled={
-                  !wearModelFile ||
-                  !wearGarmentFile ||
-                  wearGarmentLoading ||
-                  wearGenerating ||
-                  wearProcessing
-                }
-                onClick={() => void onWearGenerate()}
-              >
-                Wear Me
-              </button>
 
             </div>
 
