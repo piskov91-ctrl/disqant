@@ -11,18 +11,20 @@ import { LOCAL_OR_UNKNOWN_PRODUCT } from "@/lib/tryOnConstants";
 import type { RetailerDashboardSubscriptionClientUsagePayload } from "@/lib/retailerSubscriptionClients";
 import { tryOnUsageFillStyle } from "@/lib/tryOnUsageBarStyle";
 import { retailerDashboardPlanFromBaseLimit, maxTopUpPurchasesPerBillingCycleForCatalogBaseLimit } from "@/lib/subscriptionPlans";
+import { DashboardAdsPanel } from "./DashboardAdsPanel";
 import { DashboardEmailDeveloperPanel } from "./DashboardEmailDeveloperPanel";
 import { DashboardInstallPlatformGuide } from "./DashboardInstallPlatformGuide";
 import { DashboardInstallPreviewAnimation } from "./DashboardInstallPreviewAnimation";
 import { DashboardPlanSubscriptions, type DashboardPlanSubscriptionsProps } from "./DashboardPlanSubscriptions";
 import { DashboardTopUpPanel } from "./DashboardTopUpPanel";
 
-type DashboardTab = "overview" | "getCode" | "analytics";
+type DashboardTab = "overview" | "getCode" | "analytics" | "ads";
 
 function parseDashboardTab(searchParams: Pick<URLSearchParams, "get">): DashboardTab {
   const raw = searchParams.get("tab");
   if (raw === "get-code" || raw === "getCode") return "getCode";
   if (raw === "analytics") return "analytics";
+  if (raw === "ads") return "ads";
   if (raw === "overview") return "overview";
   return "overview";
 }
@@ -31,6 +33,7 @@ function searchParamsStringForTab(tab: DashboardTab): string {
   const qs = new URLSearchParams();
   if (tab === "getCode") qs.set("tab", "get-code");
   else if (tab === "analytics") qs.set("tab", "analytics");
+  else if (tab === "ads") qs.set("tab", "ads");
   else qs.set("tab", "overview");
   return qs.toString();
 }
@@ -301,6 +304,8 @@ export type RetailerDashboardShellProps = {
   plansPanel: DashboardPlanSubscriptionsProps;
   /** When false, dashboard hides top-up purchases; requires active Stripe-backed access window in Redis state. */
   topUpEligible: boolean;
+  /** When true, retailer can manage widget loading ads (active subscription). */
+  adsEligible: boolean;
   apiKey: string;
   subscriptionClientsUsage: RetailerDashboardSubscriptionClientUsagePayload[];
 };
@@ -337,6 +342,7 @@ function RetailerDashboardShellInner({
   planSummary,
   plansPanel,
   topUpEligible,
+  adsEligible,
   apiKey,
   subscriptionClientsUsage,
 }: RetailerDashboardShellProps) {
@@ -546,6 +552,17 @@ function RetailerDashboardShellInner({
           >
             Wear Me Stats
           </button>
+          {adsEligible ? (
+            <button
+              type="button"
+              role="tab"
+              aria-selected={tab === "ads"}
+              onClick={() => selectTab("ads")}
+              className={`${tabBase} ${tab === "ads" ? tabActive : tabInactive}`}
+            >
+              Ads
+            </button>
+          ) : null}
         </div>
 
         {tab === "overview" ? (
@@ -861,6 +878,8 @@ function RetailerDashboardShellInner({
             ) : null}
           </div>
         ) : null}
+
+        {tab === "ads" && adsEligible ? <DashboardAdsPanel /> : null}
       </div>
     </div>
   );

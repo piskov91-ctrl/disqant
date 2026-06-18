@@ -6,6 +6,7 @@ import { Header } from "@/components/Header";
 import { getClientKeyRecordById } from "@/lib/apiKeyStore";
 import { retailerWelcomeGreetingName } from "@/lib/retailerDisplayName";
 import { getRetailerSessionUser, retailerEligibleForTryOnTopUps } from "@/lib/retailerAuth";
+import { retailerHasActiveSubscriptionForAds } from "@/lib/retailerWidgetAd";
 import { storedOrDerivedBasePlanLimit } from "@/lib/clientTryOnBuckets";
 import { getNextMonthlyResetUtcDateForDisplay, resolveBillingAnchorDay } from "@/lib/billingCycle";
 import {
@@ -176,6 +177,7 @@ export default async function DashboardPage() {
     !hasStripeSubscription || Boolean(canceledAtStored) || subscriptionAccessEnded;
 
   const topUpEligible = retailerEligibleForTryOnTopUps(user);
+  const adsEligible = retailerHasActiveSubscriptionForAds(user);
 
   const linkedTrim = user.clientId?.trim() ?? "";
   const subscriptionClientRecords = await listSubscriptionClientRecordsForRetailerDashboard(user);
@@ -241,6 +243,7 @@ export default async function DashboardPage() {
           planSummary={planSummary}
           plansPanel={plansPanel}
           topUpEligible={topUpEligible}
+          adsEligible={adsEligible}
           apiKey={client.key}
           subscriptionClientsUsage={subscriptionClientsUsage}
         />

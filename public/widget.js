@@ -23,6 +23,38 @@
   var LOADING_MSG_INTERVAL_MS = 3000;
   var LOADING_MSG_FADE_MS = 480;
 
+  var cachedWidgetAdEmbed = undefined;
+  var widgetAdFetchPromise = null;
+
+  function fetchWidgetAdEmbed(clientKey) {
+    if (!clientKey) return Promise.resolve(null);
+    if (cachedWidgetAdEmbed !== undefined) return Promise.resolve(cachedWidgetAdEmbed);
+    if (widgetAdFetchPromise) return widgetAdFetchPromise;
+    widgetAdFetchPromise = fetch(getWidgetApiOrigin() + "/api/embed/widget-ad", {
+      method: "GET",
+      headers: { "x-api-key": clientKey },
+      credentials: "omit",
+    })
+      .then(function (r) {
+        if (!r.ok) return null;
+        return r.json();
+      })
+      .catch(function () {
+        return null;
+      })
+      .then(function (data) {
+        if (data && data.kind === "text" && Array.isArray(data.messages) && data.messages.length) {
+          cachedWidgetAdEmbed = { kind: "text", messages: data.messages };
+        } else if (data && data.kind === "banner" && data.bannerUrl) {
+          cachedWidgetAdEmbed = { kind: "banner", bannerUrl: String(data.bannerUrl) };
+        } else {
+          cachedWidgetAdEmbed = null;
+        }
+        return cachedWidgetAdEmbed;
+      });
+    return widgetAdFetchPromise;
+  }
+
   /** Fit Room API origin — derived from widget script src so embeds on retailer pages POST to fit-room.com, not the host page. */
   function getWidgetApiOrigin() {
     var s = getCurrentScript();
@@ -249,6 +281,9 @@
       + ".dq-processing-text{font:900 14px/1.35 system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;color:#f5ede4;text-align:center;max-width:420px;padding:0 16px;min-height:2.7rem;display:flex;align-items:center;justify-content:center;transition:opacity .48s ease,color .48s ease;opacity:1;}"
       + ".dq-processing-text.is-fading{opacity:0;}"
       + ".dq-processing-text.is-promo{color:#c6a77d;font-weight:700;}"
+      + ".dq-processing-banner{display:none;flex-direction:column;align-items:center;justify-content:center;gap:14px;max-width:min(420px,92%);transition:opacity .48s ease;opacity:1;}"
+      + ".dq-processing-banner.is-fading{opacity:0;}"
+      + ".dq-processing-banner img{max-width:100%;max-height:160px;border-radius:10px;border:1px solid rgba(198,167,125,.35);box-shadow:0 8px 24px rgba(0,0,0,.35);object-fit:contain;display:block;}"
       + ".dq-progress{position:absolute;left:12px;right:12px;bottom:12px;z-index:5;height:10px;border-radius:999px;background:rgba(245,237,228,.12);overflow:hidden;display:none;}"
       + ".dq-progress.is-on{display:block;}"
       + ".dq-progress>span{display:block;height:100%;width:0%;background:linear-gradient(135deg,#a68958,#c6a77d 45%,#e8d4bc 100%);background-size:200% 100%;transition:width .12s ease;position:relative;animation:dq-bar-pulse 1.9s ease-in-out infinite;}"
@@ -663,8 +698,14 @@
     processingText.setAttribute("role", "status");
     processingText.setAttribute("aria-live", "polite");
     processingText.textContent = LOADING_MESSAGES[0];
+    var processingBanner = document.createElement("div");
+    processingBanner.className = "dq-processing-banner";
+    var processingBannerImg = document.createElement("img");
+    processingBannerImg.alt = "";
+    processingBanner.appendChild(processingBannerImg);
     processingInner.appendChild(spin);
     processingInner.appendChild(processingText);
+    processingInner.appendChild(processingBanner);
     processing.appendChild(processingInner);
 
     var progress = document.createElement("div");
@@ -1016,9 +1057,51 @@
     var loadingMsgIndex = 0;
     var promoMsgIndex = 0;
     var retailerPromoMessages = getRetailerPromoMessages();
+    var widgetAdBannerUrl = null;
+    var showingProcessingBanner = false;
     var processingFadeTimer = null;
 
+    function applyWidgetAdEmbed(ad) {
+      if (!ad) return;
+      if (ad.kind === "text" && ad.messages && ad.messages.length) {
+        retailerPromoMessages = ad.messages
+          .map(function (x) { return String(x || "").trim(); })
+          .filter(Boolean);
+      } else if (ad.kind === "banner" && ad.bannerUrl) {
+        widgetAdBannerUrl = String(ad.bannerUrl);
+        processingBannerImg.src = widgetAdBannerUrl;
+      }
+    }
+
+    void fetchWidgetAdEmbed(opts.clientKey || getClientKey()).then(applyWidgetAdEmbed);
+
+    function setProcessingBannerVisible(show, instant) {
+      if (processingFadeTimer) {
+        window.clearTimeout(processingFadeTimer);
+        processingFadeTimer = null;
+      }
+      if (instant) {
+        processingBanner.classList.remove("is-fading");
+        processingText.classList.remove("is-fading");
+        showingProcessingBanner = !!show;
+        processingText.style.display = show ? "none" : "flex";
+        processingBanner.style.display = show ? "flex" : "none";
+        return;
+      }
+      var fadeEl = show ? processingText : processingBanner;
+      fadeEl.classList.add("is-fading");
+      processingFadeTimer = window.setTimeout(function () {
+        processingFadeTimer = null;
+        showingProcessingBanner = !!show;
+        processingText.style.display = show ? "none" : "flex";
+        processingBanner.style.display = show ? "flex" : "none";
+        processingBanner.classList.remove("is-fading");
+        processingText.classList.remove("is-fading");
+      }, LOADING_MSG_FADE_MS);
+    }
+
     function setProcessingDisplay(text, isPromo, instant) {
+      if (showingProcessingBanner) return;
       if (processingFadeTimer) {
         window.clearTimeout(processingFadeTimer);
         processingFadeTimer = null;
@@ -1043,11 +1126,20 @@
       loadingMsgTick = 0;
       loadingMsgIndex = 0;
       promoMsgIndex = 0;
+      setProcessingBannerVisible(false, true);
       setProcessingDisplay(LOADING_MESSAGES[0], false, true);
 
       loadingMsgTimer = window.setInterval(function () {
         loadingMsgTick += 1;
-        if (retailerPromoMessages.length) {
+        if (widgetAdBannerUrl) {
+          if (loadingMsgTick % 2 === 1) {
+            setProcessingBannerVisible(true, false);
+          } else {
+            setProcessingBannerVisible(false, false);
+            loadingMsgIndex = (loadingMsgIndex + 1) % LOADING_MESSAGES.length;
+            setProcessingDisplay(LOADING_MESSAGES[loadingMsgIndex], false, false);
+          }
+        } else if (retailerPromoMessages.length) {
           if (loadingMsgTick % 2 === 1) {
             setProcessingDisplay(retailerPromoMessages[promoMsgIndex], true, false);
             promoMsgIndex = (promoMsgIndex + 1) % retailerPromoMessages.length;
@@ -1069,7 +1161,11 @@
         window.clearTimeout(processingFadeTimer);
         processingFadeTimer = null;
       }
+      showingProcessingBanner = false;
+      processingText.style.display = "flex";
+      processingBanner.style.display = "none";
       processingText.classList.remove("is-fading", "is-promo");
+      processingBanner.classList.remove("is-fading");
     }
 
     function setProgress(pct) {
@@ -1292,7 +1388,9 @@
   }
 
   function boot() {
-    beaconClientVisit(getClientKey());
+    var key = getClientKey();
+    beaconClientVisit(key);
+    if (key) void fetchWidgetAdEmbed(key);
     scanAndBind();
     observe();
     window.addEventListener("load", function () { scanAndBind(); });
