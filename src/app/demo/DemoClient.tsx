@@ -167,11 +167,13 @@ export default function DemoClient() {
 
   useLayoutEffect(() => {
     if (typeof document === "undefined") return;
-    if (document.getElementById(DEMO_WEAR_MODAL_STYLE_ID)) return;
-    const el = document.createElement("style");
-    el.id = DEMO_WEAR_MODAL_STYLE_ID;
+    let el = document.getElementById(DEMO_WEAR_MODAL_STYLE_ID) as HTMLStyleElement | null;
+    if (!el) {
+      el = document.createElement("style");
+      el.id = DEMO_WEAR_MODAL_STYLE_ID;
+      document.head.appendChild(el);
+    }
     el.textContent = DEMO_WEAR_MODAL_CSS;
-    document.head.appendChild(el);
   }, []);
 
   useEffect(() => {
@@ -1005,7 +1007,7 @@ export default function DemoClient() {
 
             <div className="dq-body" style={{ display: "flex", flexDirection: "column", flex: 1, minHeight: 0 }}>
               <WearMeTipsPrivacy />
-              <div className="dq-stage" style={{ flex: 1, minHeight: 0, height: "100%" }}>
+              <div className="dq-stage">
                 {!wearHasPhoto && !wearProcessing ? (
                   <div className="dq-empty">
                     <strong>Upload a full-body photo</strong>
@@ -1185,7 +1187,7 @@ export default function DemoClient() {
             </div>
 
             {wearSaveVisible ? (
-              <div style={{ padding: "0 4px 4px" }}>
+              <div className="dq-modal-cta">
                 <button
                   type="button"
                   className="dq-cta"

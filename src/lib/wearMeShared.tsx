@@ -237,7 +237,7 @@ export const DEMO_WEAR_MODAL_CSS =
   ".dq-backdrop{position:fixed;inset:0;z-index:50;background:rgba(15,23,42,.45);display:flex;align-items:center;justify-content:center;padding:14px;opacity:0;transition:opacity .18s ease;}" +
   ".dq-backdrop.dq-open{opacity:1;}" +
   ".dq-backdrop.dq-dismiss-locked{cursor:default;-webkit-user-select:none;user-select:none;}" +
-  ".dq-modal{position:relative;width:min(720px,100%);min-height:0;height:min(95vh,calc(100dvh - 28px));max-height:min(95vh,calc(100dvh - 28px));background:#2c241f;border:1px solid rgba(198,167,125,.22);border-radius:20px;overflow:hidden;box-shadow:0 30px 80px rgba(0,0,0,.45);display:flex;flex-direction:column;color:#f5ede4;transform:translateY(10px) scale(.985);opacity:0;transition:transform .18s ease, opacity .18s ease;}" +
+  ".dq-modal{position:relative;width:min(720px,100%);min-height:0;height:min(calc(100dvh - var(--site-header-height,0px) - 28px),calc(100vh - var(--site-header-height,0px) - 28px));max-height:min(calc(100dvh - var(--site-header-height,0px) - 28px),calc(100vh - var(--site-header-height,0px) - 28px));background:#2c241f;border:1px solid rgba(198,167,125,.22);border-radius:20px;overflow:hidden;box-shadow:0 30px 80px rgba(0,0,0,.45);display:flex;flex-direction:column;color:#f5ede4;transform:translateY(10px) scale(.985);opacity:0;transition:transform .18s ease, opacity .18s ease;}" +
   ".dq-backdrop.dq-open .dq-modal{transform:translateY(0) scale(1);opacity:1;}" +
   ".dq-backdrop.dq-closing{opacity:0;}" +
   ".dq-backdrop.dq-closing .dq-modal{transform:translateY(10px) scale(.985);opacity:0;}" +
@@ -248,14 +248,14 @@ export const DEMO_WEAR_MODAL_CSS =
   ".dq-x:hover{background:#2a2633;color:#fff;transform:translateY(-1px);box-shadow:0 14px 32px rgba(0,0,0,.26);}" +
   ".dq-x:active{transform:translateY(0);}" +
   ".dq-x-icon{width:22px;height:22px;display:block;flex-shrink:0;}" +
-  ".dq-body{flex:1 1 0%;min-height:0;padding:4px;display:flex;flex-direction:column;gap:4px;overflow:hidden;background:#2c241f;}" +
+  ".dq-body{flex:1 1 auto;min-height:0;padding:4px;display:flex;flex-direction:column;gap:4px;overflow:hidden;background:#2c241f;}" +
   ".dq-tips-block{flex-shrink:0;display:flex;flex-direction:column;gap:4px;}" +
   ".dq-tips{padding:8px;border-radius:10px;border-left:3px solid #c6a77d;background:rgba(198,167,125,.08);}" +
   ".dq-tips-list{margin:0;padding:0;list-style:none;display:flex;flex-direction:column;gap:4px;}" +
   ".dq-tips-list li{display:flex;align-items:flex-start;gap:8px;font:400 11px/1.5 system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;color:rgba(245,237,228,.88);letter-spacing:.01em;}" +
   ".dq-tips-mark{flex-shrink:0;color:#c6a77d;font-size:10px;line-height:1.55;font-weight:600;}" +
   ".dq-tips-privacy{margin:0;padding:8px 10px;border-radius:10px;border:1px solid rgba(198,167,125,.5);background:#1a1612;font:500 13px/1.5 system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;color:rgba(245,237,228,.92);letter-spacing:.02em;box-shadow:inset 0 1px 0 rgba(198,167,125,.08);}" +
-  ".dq-stage{position:relative;width:100%;flex:1 1 0%;min-height:min(85vh,900px);height:100%;border-radius:12px;border:1px solid rgba(198,167,125,.2);background:#0f0f14;overflow:hidden;}" +
+  ".dq-stage{position:relative;width:100%;flex:1 1 auto;min-height:0;align-self:stretch;border-radius:12px;border:1px solid rgba(198,167,125,.2);background:#0f0f14;overflow:hidden;}" +
   ".dq-stage img,.dq-stage-photo{position:absolute;inset:0;width:100%;height:100%;display:block;background:#0f0f14;object-fit:contain;object-position:center center;transform:none !important;max-width:none;max-height:none;z-index:1;}" +
   ".dq-stage-video{position:absolute;inset:0;width:100%;height:100%;display:block;object-fit:cover;object-position:center center;background:#0f0f14;z-index:3;}" +
   ".dq-empty{position:absolute;inset:0;z-index:2;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;color:rgba(245,237,228,.65);text-align:center;padding:18px;pointer-events:none;}" +
@@ -307,6 +307,7 @@ export const DEMO_WEAR_MODAL_CSS =
   ".dq-save{appearance:none;border:1px solid rgba(198,167,125,.28);background:#1a1612;color:#f5ede4;cursor:pointer;border-radius:16px;padding:12px 12px;font:900 13px/1 system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;box-shadow:0 8px 22px rgba(0,0,0,.22);transition:transform .16s ease, box-shadow .16s ease;}" +
   ".dq-save:hover{transform:translateY(-1px);box-shadow:0 12px 28px rgba(0,0,0,.28);}" +
   ".dq-brand{flex-shrink:0;padding:12px 12px;padding-bottom:max(12px, env(safe-area-inset-bottom, 0px));border-top:1px solid rgba(198,167,125,.18);display:flex;align-items:center;justify-content:flex-start;background:#2c241f;}" +
+  ".dq-modal-cta{flex-shrink:0;padding:0 4px 4px;}" +
   ".dq-brand span{font:900 12px/1 system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;color:#f5ede4;letter-spacing:.25px;}" +
   ".dq-brand small{margin-left:8px;font:700 12px/1 system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;color:rgba(245,237,228,.6);}" +
   ".dq-body-after{flex-shrink:0;}" +
