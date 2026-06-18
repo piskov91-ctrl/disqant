@@ -1005,7 +1005,7 @@ export default function DemoClient() {
               </button>
             </div>
 
-            <div className="dq-body" style={{ display: "flex", flexDirection: "column", flex: 1, minHeight: 0 }}>
+            <div className="dq-body">
               <WearMeTipsPrivacy />
               <div className="dq-stage">
                 {!wearHasPhoto && !wearProcessing ? (
