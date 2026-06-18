@@ -681,14 +681,12 @@
 
     function resetStageImageFit() {
       if (!stageImg) return;
-      stageImg.style.removeProperty("transform");
-      stageImg.style.removeProperty("scale");
-      stageImg.style.removeProperty("zoom");
+      stageImg.style.transform = "none";
+      stageImg.style.objectFit = "contain";
       stageImg.style.width = "100%";
       stageImg.style.height = "100%";
       stageImg.style.maxWidth = "100%";
       stageImg.style.maxHeight = "100%";
-      stageImg.style.objectFit = "contain";
       stageImg.style.objectPosition = "center center";
       void stageImg.offsetHeight;
     }
@@ -709,9 +707,12 @@
         document.body.style.overflow = bodyOverflowBeforeFs;
         bodyOverflowBeforeFs = null;
       }
-      window.requestAnimationFrame(function () {
-        resetStageImageFit();
-      });
+      if (stageImg) {
+        stageImg.style.transform = "none";
+        stageImg.style.objectFit = "contain";
+        stageImg.style.width = "100%";
+        stageImg.style.height = "100%";
+      }
     }
 
     function onFullscreenKeyDown(e) {
