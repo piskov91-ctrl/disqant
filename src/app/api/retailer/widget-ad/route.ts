@@ -1,14 +1,16 @@
 import { getClientKeyRecordById } from "@/lib/apiKeyStore";
 import { getRetailerSessionUser } from "@/lib/retailerAuth";
 import {
-  deleteRetailerWidgetAd,
-  getRetailerWidgetAd,
   normalizeWidgetAdBannerUrl,
   normalizeWidgetAdMessages,
   retailerHasActiveSubscriptionForAds,
-  setRetailerWidgetAd,
   widgetAdEmbedPayload,
 } from "@/lib/retailerWidgetAd";
+import {
+  deleteRetailerWidgetAd,
+  getRetailerWidgetAd,
+  setRetailerWidgetAd,
+} from "@/lib/retailerWidgetAdStore";
 
 export const runtime = "nodejs";
 

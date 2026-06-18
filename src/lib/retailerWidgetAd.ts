@@ -1,5 +1,4 @@
-import { getRedis } from "@/lib/apiKeyStore";
-import type { RetailerUser } from "@/lib/retailerAuth";
+/** Client-safe types, limits, and helpers — no Redis or auth imports. */
 
 export type RetailerWidgetAdKind = "text" | "banner";
 
@@ -12,19 +11,19 @@ export type RetailerWidgetAdRecord = {
   updatedAt: string;
 };
 
-const WIDGET_AD_PREFIX = "fit-room:retailer:widget-ad:";
-
 /** Max stored banner payload (~300KB image as data URL). */
 export const RETAILER_WIDGET_AD_MAX_BANNER_CHARS = 420_000;
 
 export const RETAILER_WIDGET_AD_MAX_MESSAGES = 5;
 export const RETAILER_WIDGET_AD_MAX_MESSAGE_CHARS = 220;
 
+export const RETAILER_WIDGET_AD_REDIS_PREFIX = "fit-room:retailer:widget-ad:";
+
 export function retailerWidgetAdKey(clientId: string) {
-  return `${WIDGET_AD_PREFIX}${clientId.trim()}`;
+  return `${RETAILER_WIDGET_AD_REDIS_PREFIX}${clientId.trim()}`;
 }
 
-function parseRecord(raw: unknown): RetailerWidgetAdRecord | null {
+export function parseRetailerWidgetAdRecord(raw: unknown): RetailerWidgetAdRecord | null {
   if (!raw || typeof raw !== "object") return null;
   const o = raw as Partial<RetailerWidgetAdRecord>;
   const kind = o.kind === "text" || o.kind === "banner" ? o.kind : null;
@@ -41,54 +40,6 @@ function parseRecord(raw: unknown): RetailerWidgetAdRecord | null {
   const bannerUrl = typeof o.bannerUrl === "string" ? o.bannerUrl.trim() : "";
   if (!bannerUrl) return null;
   return { kind: "banner", bannerUrl, updatedAt: o.updatedAt.trim() };
-}
-
-export async function getRetailerWidgetAd(clientId: string): Promise<RetailerWidgetAdRecord | null> {
-  const id = clientId.trim();
-  if (!id) return null;
-  try {
-    const raw = await getRedis().get(retailerWidgetAdKey(id));
-    if (!raw) return null;
-    if (typeof raw === "string") {
-      try {
-        return parseRecord(JSON.parse(raw) as unknown);
-      } catch {
-        return null;
-      }
-    }
-    return parseRecord(raw);
-  } catch {
-    return null;
-  }
-}
-
-export async function setRetailerWidgetAd(
-  clientId: string,
-  record: Omit<RetailerWidgetAdRecord, "updatedAt"> & { updatedAt?: string },
-): Promise<RetailerWidgetAdRecord> {
-  const id = clientId.trim();
-  if (!id) throw new Error("Client id is required.");
-
-  const next: RetailerWidgetAdRecord = {
-    kind: record.kind,
-    updatedAt: record.updatedAt?.trim() || new Date().toISOString(),
-    ...(record.kind === "text"
-      ? {
-          messages: normalizeWidgetAdMessages(record.messages ?? []),
-        }
-      : {
-          bannerUrl: normalizeWidgetAdBannerUrl(record.bannerUrl ?? ""),
-        }),
-  };
-
-  await getRedis().set(retailerWidgetAdKey(id), JSON.stringify(next));
-  return next;
-}
-
-export async function deleteRetailerWidgetAd(clientId: string): Promise<void> {
-  const id = clientId.trim();
-  if (!id) throw new Error("Client id is required.");
-  await getRedis().del(retailerWidgetAdKey(id));
 }
 
 export function normalizeWidgetAdMessages(raw: string[]): string[] {
@@ -114,10 +65,13 @@ export function normalizeWidgetAdBannerUrl(raw: string): string {
   throw new Error("Banner must be a JPEG, PNG, or WebP image.");
 }
 
+export type RetailerAdsEligibilityUser = {
+  clientId?: string | null;
+  subscriptionAccessUntil?: string | null;
+};
+
 /** Dashboard + embed: active plan with access window not expired. */
-export function retailerHasActiveSubscriptionForAds(
-  user: Pick<RetailerUser, "clientId" | "subscriptionAccessUntil">,
-): boolean {
+export function retailerHasActiveSubscriptionForAds(user: RetailerAdsEligibilityUser): boolean {
   if (!user.clientId?.trim()) return false;
   const until = user.subscriptionAccessUntil?.trim();
   if (until) {

@@ -1,5 +1,6 @@
 import { getClientByApiKey } from "@/lib/apiKeyStore";
-import { getRetailerWidgetAd, widgetAdEmbedPayload } from "@/lib/retailerWidgetAd";
+import { widgetAdEmbedPayload } from "@/lib/retailerWidgetAd";
+import { getRetailerWidgetAd } from "@/lib/retailerWidgetAdStore";
 import { resolveEmbedCorsAllowOrigin } from "@/lib/embedCors";
 
 export const runtime = "nodejs";
