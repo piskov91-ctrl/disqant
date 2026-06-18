@@ -1004,18 +1004,25 @@ export default function DemoClient() {
             </div>
 
             <div className="dq-body" style={{ display: "flex", flexDirection: "column", flex: 1, minHeight: 0 }}>
-              <WearMeTipsPrivacy />
               <div className="dq-stage" style={{ flex: 1, minHeight: 0, height: "100%" }}>
+                {!wearHasPhoto && !wearProcessing && !wearSaveVisible && !wearShowVideo ? (
+                  <div className="dq-tips-overlay">
+                    <WearMeTipsPrivacy />
+                  </div>
+                ) : null}
+
                 {!wearHasPhoto && !wearProcessing ? (
                   <div className="dq-empty">
                     <strong>Upload a full-body photo</strong>
                     <span>We’ll keep your full body visible (no cropping).</span>
                   </div>
                 ) : null}
+
                 {wearStageUrl ? (
                   // eslint-disable-next-line @next/next/no-img-element
                   <img
                     ref={wearStageImgRef}
+                    className="dq-stage-photo"
                     src={wearStageUrl}
                     alt={wearSaveVisible ? "Try-on result" : "Preview"}
                     style={{ display: wearHasPhoto || wearProcessing ? "block" : "none" }}
@@ -1049,17 +1056,81 @@ export default function DemoClient() {
                 ) : null}
 
                 {wearSaveVisible ? (
-                  <button
-                    type="button"
-                    className="dq-dl"
-                    onClick={() => void onWearSaveToGallery()}
-                    disabled={wearSaveLoading}
-                    aria-busy={wearSaveLoading}
-                    aria-label="Download image"
-                    title="Download image"
-                  >
-                    <Download className="dq-dl-icon" strokeWidth={2.5} aria-hidden />
-                  </button>
+                  <>
+                    <div className="dq-wow dq-stage-wow" role="status" aria-live="polite">
+                      Wow, you look amazing! ✨
+                    </div>
+                    <button
+                      type="button"
+                      className="dq-dl"
+                      onClick={() => void onWearSaveToGallery()}
+                      disabled={wearSaveLoading}
+                      aria-busy={wearSaveLoading}
+                      aria-label="Download image"
+                      title="Download image"
+                    >
+                      <Download className="dq-dl-icon" strokeWidth={2.5} aria-hidden />
+                    </button>
+                  </>
+                ) : null}
+
+                {wearShowVideo ? (
+                  <>
+                    <video
+                      ref={wearVideoRef}
+                      className="dq-stage-video"
+                      autoPlay
+                      playsInline
+                      muted
+                      title="Camera preview"
+                    />
+                    <div className="dq-stage-actions">
+                      <div className="dq-cam-row" style={{ width: "100%", pointerEvents: "auto" }}>
+                        <button
+                          type="button"
+                          className="dq-flip"
+                          onClick={onWearCameraBack}
+                          disabled={wearFlippingCamera}
+                          aria-label="Back to try-on"
+                          title="Back"
+                        >
+                          <ChevronLeft className="h-5 w-5 shrink-0 opacity-90" strokeWidth={2} aria-hidden />
+                          <span>Back</span>
+                        </button>
+                        <button
+                          type="button"
+                          className="dq-flip"
+                          onClick={() => void onWearFlipCamera()}
+                          disabled={wearFlippingCamera}
+                          aria-label={
+                            wearCameraFacing === "user"
+                              ? "Switch to back camera"
+                              : "Switch to front camera"
+                          }
+                          title={
+                            wearCameraFacing === "user"
+                              ? "Use back camera"
+                              : "Use front camera"
+                          }
+                        >
+                          <SwitchCamera
+                            className="h-5 w-5 shrink-0 opacity-90"
+                            strokeWidth={2}
+                            aria-hidden
+                          />
+                          <span>Flip</span>
+                        </button>
+                        <button
+                          type="button"
+                          className="dq-primary"
+                          onClick={onWearCapturePhoto}
+                          disabled={wearFlippingCamera}
+                        >
+                          Capture photo
+                        </button>
+                      </div>
+                    </div>
+                  </>
                 ) : null}
 
                 {!wearProcessing && !wearSaveVisible && !wearShowVideo ? (
@@ -1096,13 +1167,18 @@ export default function DemoClient() {
                     </button>
                   </div>
                 ) : null}
-              </div>
 
-              {wearSaveVisible ? (
-                <div className="dq-wow" role="status" aria-live="polite">
-                  Wow, you look amazing! ✨
-                </div>
-              ) : null}
+                {wearGarmentLoading ? (
+                  <p className="dq-stage-toast text-center text-xs text-[#F5EDE4]/65">
+                    Loading sample product…
+                  </p>
+                ) : null}
+                {wearError ? (
+                  <p className="dq-stage-toast rounded-xl border border-red-900/50 bg-red-950/80 px-2 py-1 text-center text-xs text-red-200 backdrop-blur-sm">
+                    {wearError}
+                  </p>
+                ) : null}
+              </div>
 
               <input
                 ref={wearGalleryInputRef}
@@ -1111,79 +1187,6 @@ export default function DemoClient() {
                 className="hidden"
                 onChange={(e) => onWearGalleryPick(e.target.files?.[0] ?? null)}
               />
-
-              {wearShowVideo ? (
-                <div className="dq-body-after">
-                  <video
-                    ref={wearVideoRef}
-                    autoPlay
-                    playsInline
-                    muted
-                    title="Camera preview"
-                    style={{
-                      width: "100%",
-                      borderRadius: "16px",
-                      border: "1px solid rgba(15,15,20,.10)",
-                      boxShadow: "0 18px 50px rgba(0,0,0,.08)",
-                    }}
-                  />
-                  <div style={{ height: 4 }} />
-                  <div className="dq-cam-row">
-                    <button
-                      type="button"
-                      className="dq-flip"
-                      onClick={onWearCameraBack}
-                      disabled={wearFlippingCamera}
-                      aria-label="Back to try-on"
-                      title="Back"
-                    >
-                      <ChevronLeft className="h-5 w-5 shrink-0 opacity-90" strokeWidth={2} aria-hidden />
-                      <span>Back</span>
-                    </button>
-                    <button
-                      type="button"
-                      className="dq-flip"
-                      onClick={() => void onWearFlipCamera()}
-                      disabled={wearFlippingCamera}
-                      aria-label={
-                        wearCameraFacing === "user"
-                          ? "Switch to back camera"
-                          : "Switch to front camera"
-                      }
-                      title={
-                        wearCameraFacing === "user"
-                          ? "Use back camera"
-                          : "Use front camera"
-                      }
-                    >
-                      <SwitchCamera
-                        className="h-5 w-5 shrink-0 opacity-90"
-                        strokeWidth={2}
-                        aria-hidden
-                      />
-                      <span>Flip</span>
-                    </button>
-                    <button
-                      type="button"
-                      className="dq-primary"
-                      onClick={onWearCapturePhoto}
-                      disabled={wearFlippingCamera}
-                    >
-                      Capture photo
-                    </button>
-                  </div>
-                </div>
-              ) : null}
-
-              {wearGarmentLoading ? (
-                <p className="dq-body-after text-center text-xs text-[#F5EDE4]/65">Loading sample product…</p>
-              ) : null}
-              {wearError ? (
-                <p className="dq-body-after rounded-xl border border-red-900/50 bg-red-950/40 px-2 py-1 text-center text-xs text-red-200">
-                  {wearError}
-                </p>
-              ) : null}
-
             </div>
 
             {wearSaveVisible ? (
