@@ -3,367 +3,112 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Hawthorne Lane — UK Fashion Test Store</title>
+  <title>Store Demo — Fit Room Test</title>
   <style>
-    *, *::before, *::after { box-sizing: border-box; }
-    body {
-      margin: 0;
-      font-family: Georgia, "Times New Roman", serif;
-      background: #141210;
-      color: #f5ede4;
-      line-height: 1.5;
-    }
-    .wrap { max-width: 1100px; margin: 0 auto; padding: 24px 20px 64px; }
-    header {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 16px;
-      padding-bottom: 20px;
-      border-bottom: 1px solid rgba(198, 167, 125, 0.25);
-      margin-bottom: 32px;
-    }
-    .logo { font-size: 1.5rem; letter-spacing: 0.04em; }
-    .logo span { color: #c6a77d; font-style: italic; }
-    .tagline { font-family: system-ui, sans-serif; font-size: 13px; color: rgba(245, 237, 228, 0.6); }
-    .view { display: none; }
-    .view.is-open { display: block; }
-    h1 { font-weight: 400; font-size: 1.75rem; margin: 0 0 8px; }
-    .intro {
-      font-family: system-ui, sans-serif;
-      color: rgba(245, 237, 228, 0.65);
-      margin: 0 0 28px;
-      max-width: 48ch;
-    }
-    .cat {
-      font-family: system-ui, sans-serif;
-      font-size: 11px;
-      letter-spacing: 0.14em;
-      text-transform: uppercase;
-      color: #c6a77d;
-      margin: 28px 0 14px;
-      padding-top: 20px;
-      border-top: 1px solid rgba(198, 167, 125, 0.2);
-    }
-    .cat:first-of-type { margin-top: 0; padding-top: 0; border-top: 0; }
-    .grid {
-      display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      gap: 20px;
-    }
-    @media (max-width: 760px) { .grid { grid-template-columns: repeat(2, 1fr); } }
-    @media (max-width: 480px) { .grid { grid-template-columns: 1fr; } }
+    body { font-family: system-ui, sans-serif; margin: 0; padding: 24px; background: #111; color: #eee; }
+    h1 { font-size: 1.5rem; margin: 0 0 20px; }
+    .page { display: none; }
+    .page.active { display: block; }
+    .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 16px; }
     .card {
-      display: block;
-      width: 100%;
-      padding: 0;
-      border: 1px solid rgba(198, 167, 125, 0.2);
-      border-radius: 4px;
-      background: #1e1a17;
-      color: inherit;
-      font: inherit;
-      text-align: left;
-      cursor: pointer;
-      overflow: hidden;
+      background: #222; border: 1px solid #444; border-radius: 8px; padding: 0;
+      cursor: pointer; text-align: left; color: inherit; font: inherit; overflow: hidden;
     }
-    .card:hover { border-color: #c6a77d; }
-    .card-img {
-      aspect-ratio: 3 / 4;
-      background-size: cover;
-      background-position: center;
-      background-color: #2a2520;
-    }
-    .card-body { padding: 14px 16px 16px; }
-    .card-tag {
-      font-family: system-ui, sans-serif;
-      font-size: 10px;
-      letter-spacing: 0.1em;
-      text-transform: uppercase;
-      color: #c6a77d;
-    }
-    .card-name { font-size: 1.05rem; margin: 6px 0 4px; }
-    .card-price { font-family: system-ui, sans-serif; font-weight: 600; }
-    .back {
-      font-family: system-ui, sans-serif;
-      font-size: 14px;
-      background: none;
-      border: 0;
-      color: #c6a77d;
-      cursor: pointer;
-      padding: 0;
-      margin-bottom: 24px;
-    }
-    .back:hover { text-decoration: underline; }
-    .pdp {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 36px;
-      align-items: start;
-    }
-    @media (max-width: 760px) { .pdp { grid-template-columns: 1fr; } }
-    .pdp-media img {
-      display: block;
-      width: 100%;
-      height: auto;
-      border-radius: 4px;
-      background: #2a2520;
-    }
-    .pdp-tag {
-      font-family: system-ui, sans-serif;
-      font-size: 11px;
-      letter-spacing: 0.12em;
-      text-transform: uppercase;
-      color: #c6a77d;
-    }
-    .pdp-name { font-size: 1.75rem; font-weight: 400; margin: 8px 0 12px; }
-    .pdp-price {
-      font-family: system-ui, sans-serif;
-      font-size: 1.25rem;
-      font-weight: 600;
-      margin-bottom: 16px;
-    }
-    .pdp-desc {
-      font-family: system-ui, sans-serif;
-      color: rgba(245, 237, 228, 0.7);
-      margin: 0 0 24px;
-    }
-    .btn-wear {
-      font-family: system-ui, sans-serif;
-      font-size: 15px;
-      font-weight: 600;
-      padding: 14px 28px;
-      border: 0;
-      border-radius: 4px;
-      cursor: pointer;
-      background: linear-gradient(135deg, #c6a77d, #a8895c);
-      color: #141210;
-    }
-    .btn-wear:hover { filter: brightness(1.08); }
-    footer {
-      margin-top: 48px;
-      padding-top: 24px;
-      border-top: 1px solid rgba(198, 167, 125, 0.2);
-      font-family: system-ui, sans-serif;
-      font-size: 12px;
-      color: rgba(245, 237, 228, 0.5);
-      text-align: center;
-    }
+    .card-thumb { width: 100%; aspect-ratio: 3/4; background-size: cover; background-position: center; background-color: #333; }
+    .card-info { padding: 12px; }
+    .card-name { font-weight: 600; margin: 0 0 4px; }
+    .card-price { color: #c6a77d; margin: 0; }
+    .back { background: none; border: 0; color: #c6a77d; cursor: pointer; font-size: 14px; margin-bottom: 20px; padding: 0; }
+    .pdp { display: grid; grid-template-columns: 1fr 1fr; gap: 32px; max-width: 900px; }
+    @media (max-width: 700px) { .pdp { grid-template-columns: 1fr; } }
+    .pdp img { width: 100%; border-radius: 8px; background: #333; }
+    .pdp-name { font-size: 1.5rem; margin: 0 0 8px; }
+    .pdp-price { color: #c6a77d; font-size: 1.2rem; margin: 0 0 16px; }
+    .pdp-desc { color: #aaa; line-height: 1.5; margin: 0; }
   </style>
 </head>
 <body>
 
-  <div class="wrap">
-    <header>
-      <div class="logo">Hawthorne <span>Lane</span></div>
-      <div class="tagline">Demo UK fashion store · Fit Room widget test</div>
-    </header>
+  <div id="shop-page" class="page active">
+    <h1>Shop</h1>
+    <div class="grid" id="grid"></div>
+  </div>
 
-    <!-- Shop grid -->
-    <div id="shop" class="view is-open">
-      <h1>The Edit</h1>
-      <p class="intro">Tap any piece to view details and try it on with Wear Me.</p>
-      <div id="catalog"></div>
-    </div>
-
-    <!-- Product detail -->
-    <div id="product" class="view">
-      <button type="button" class="back" id="btn-back">← Back to shop</button>
-      <div class="pdp">
-        <div class="pdp-media">
-          <img id="pdp-img" alt="" width="600" height="800" />
-        </div>
-        <div>
-          <div class="pdp-tag" id="pdp-tag"></div>
-          <h2 class="pdp-name" id="pdp-name"></h2>
-          <div class="pdp-price" id="pdp-price"></div>
-          <p class="pdp-desc" id="pdp-desc"></p>
-          <button type="button" class="btn-wear" id="btn-wear">Wear Me ✨</button>
-        </div>
+  <div id="product-page" class="page">
+    <button type="button" class="back" id="back-btn">← Back</button>
+    <div class="pdp">
+      <div>
+        <img id="pdp-img" alt="" />
+      </div>
+      <div>
+        <h2 class="pdp-name" id="pdp-name"></h2>
+        <p class="pdp-price" id="pdp-price"></p>
+        <p class="pdp-desc" id="pdp-desc"></p>
       </div>
     </div>
-
-    <footer>Demo storefront for Fit Room · Marylebone, London</footer>
   </div>
 
   <script>
-    (function () {
-      var PRODUCTS = [
-        { id: 1, cat: "Clothing", tag: "Dress", name: "Somerset Linen Midi", price: 165,
-          img: "https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=900&q=85",
-          alt: "Terracotta dress on wooden hanger in boutique",
-          desc: "Relaxed A-line in washed Italian linen. Adjustable straps and side pockets." },
-        { id: 2, cat: "Clothing", tag: "Coat", name: "Highland Wool Wrap Coat", price: 395,
-          img: "https://images.unsplash.com/photo-1539533018447-63fcce2678e3?w=900&q=85",
-          alt: "Charcoal wool coat on mannequin",
-          desc: "Double-faced merino wool with tie belt. Fully lined for British winters." },
-        { id: 3, cat: "Clothing", tag: "Blazer", name: "Mayfair Tailored Blazer", price: 285,
-          img: "https://images.unsplash.com/photo-1591047139829-d91aecb6caea?w=900&q=85",
-          alt: "Navy blazer on mannequin in shop window",
-          desc: "Single-breasted brushed wool crepe with soft shoulder and peak lapel." },
-        { id: 4, cat: "Clothing", tag: "Shirt", name: "Devon Cotton Poplin Shirt", price: 89,
-          img: "https://images.unsplash.com/photo-1626497764749-6b77a20f2a1b?w=900&q=85",
-          alt: "White cotton shirt on hanger against neutral wall",
-          desc: "Classic Oxford collar with mother-of-pearl buttons and curved hem." },
-        { id: 5, cat: "Clothing", tag: "Knit", name: "Kensington Cashmere Knit", price: 175,
-          img: "https://images.unsplash.com/photo-1434389677669-e08b4cac3105?w=900&q=85",
-          alt: "Oatmeal cashmere jumper on hanger",
-          desc: "Fine-gauge Scottish cashmere crew neck with ribbed cuffs and hem." },
-        { id: 6, cat: "Clothing", tag: "Dress", name: "Cotswold Silk Slip", price: 245,
-          img: "https://images.unsplash.com/photo-1566174053879-31528523f8ae?w=900&q=85",
-          alt: "Champagne silk dress on mannequin",
-          desc: "Bias-cut mulberry silk with cowl neckline and adjustable straps." },
+    var products = [
+      { name: "Linen Dress", price: 165, img: "https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=600&q=80", desc: "Relaxed linen midi dress on hanger." },
+      { name: "Wool Coat", price: 395, img: "https://images.unsplash.com/photo-1539533018447-63fcce2678e3?w=600&q=80", desc: "Charcoal wrap coat on mannequin." },
+      { name: "Cotton Shirt", price: 89, img: "https://images.unsplash.com/photo-1626497764749-6b77a20f2a1b?w=600&q=80", desc: "Crisp white shirt on hanger." },
+      { name: "Cashmere Knit", price: 175, img: "https://images.unsplash.com/photo-1434389677669-e08b4cac3105?w=600&q=80", desc: "Soft cashmere jumper on hanger." },
+      { name: "Gold Chain", price: 120, img: "https://images.unsplash.com/photo-1611591437281-460bf5971556?w=600&q=80", desc: "Fine gold chain bracelet." },
+      { name: "Bikini Set", price: 135, img: "https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=600&q=80", desc: "Terracotta two-piece swimwear." },
+      { name: "White Trainers", price: 185, img: "https://images.unsplash.com/photo-1549298916-b41d501d3772?w=600&q=80", desc: "Leather trainers on display." }
+    ];
 
-        { id: 7, cat: "Accessories", tag: "Eyewear", name: "Riviera Aviator Frames", price: 145,
-          img: "https://images.unsplash.com/photo-1572635196233-14b4f7fb7b26?w=900&q=85",
-          alt: "Gold aviator eyewear on display stand",
-          desc: "Hand-finished metal frames with gradient lenses and soft case included." },
-        { id: 8, cat: "Accessories", tag: "Jewellery", name: "Mayfair Gold Chain", price: 120,
-          img: "https://images.unsplash.com/photo-1611591437281-460bf5971556?w=900&q=85",
-          alt: "Delicate gold chain bracelet on velvet display",
-          desc: "Fine 18-carat gold-plated links with secure lobster clasp." },
-        { id: 9, cat: "Accessories", tag: "Jewellery", name: "Pearl Drop Earrings", price: 95,
-          img: "https://images.unsplash.com/photo-1535632066927-ab7c9ab60908?w=900&q=85",
-          alt: "Pearl drop earrings on jewellery stand",
-          desc: "Freshwater pearls on hypoallergenic gold hooks with a gentle sway." },
+    var shopPage = document.getElementById("shop-page");
+    var productPage = document.getElementById("product-page");
+    var grid = document.getElementById("grid");
+    var pdpImg = document.getElementById("pdp-img");
 
-        { id: 10, cat: "Swimwear", tag: "Bikini", name: "Amalfi Triangle Bikini", price: 135,
-          img: "https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=900&q=85",
-          alt: "Terracotta bikini on mannequin torso",
-          desc: "Triangle top with removable padding and high-cut recycled nylon briefs." },
-        { id: 11, cat: "Swimwear", tag: "Swimsuit", name: "Costa Sculpted Suit", price: 155,
-          img: "https://images.unsplash.com/photo-1565084888279-aca607ecce8c?w=900&q=85",
-          alt: "Black one-piece swimsuit on mannequin",
-          desc: "Square neckline with subtle ruching. UPF 50+ matte finish fabric." },
+    function showShop() {
+      shopPage.classList.add("active");
+      productPage.classList.remove("active");
+    }
 
-        { id: 12, cat: "Footwear", tag: "Trainers", name: "Kensington Leather Trainers", price: 185,
-          img: "https://images.unsplash.com/photo-1549298916-b41d501d3772?w=900&q=85",
-          alt: "White leather trainers on display shelf",
-          desc: "Minimal low-top in supple white leather with cushioned sole." },
-        { id: 13, cat: "Footwear", tag: "Trainers", name: "Street Runner Sneakers", price: 165,
-          img: "https://images.unsplash.com/photo-1606107556682-da32a28a5883?w=900&q=85",
-          alt: "Green and white sneakers on mannequin feet",
-          desc: "Lightweight mesh and suede with responsive foam midsole." }
-      ];
+    function showProduct(p) {
+      document.getElementById("pdp-name").textContent = p.name;
+      document.getElementById("pdp-price").textContent = "£" + p.price.toFixed(2);
+      document.getElementById("pdp-desc").textContent = p.desc;
+      pdpImg.alt = p.name;
+      pdpImg.src = p.img;
+      shopPage.classList.remove("active");
+      productPage.classList.add("active");
+      window.dispatchEvent(new Event("fit-room-rescan"));
+    }
 
-      var CATS = ["Clothing", "Accessories", "Swimwear", "Footwear"];
-      var shopEl = document.getElementById("shop");
-      var productEl = document.getElementById("product");
-      var catalogEl = document.getElementById("catalog");
-      var pdpImg = document.getElementById("pdp-img");
+    for (var i = 0; i < products.length; i++) {
+      (function (p) {
+        var card = document.createElement("button");
+        card.type = "button";
+        card.className = "card";
+        var thumb = document.createElement("div");
+        thumb.className = "card-thumb";
+        thumb.style.backgroundImage = "url(" + p.img + ")";
+        var info = document.createElement("div");
+        info.className = "card-info";
+        var name = document.createElement("p");
+        name.className = "card-name";
+        name.textContent = p.name;
+        var price = document.createElement("p");
+        price.className = "card-price";
+        price.textContent = "£" + p.price.toFixed(2);
+        info.appendChild(name);
+        info.appendChild(price);
+        card.appendChild(thumb);
+        card.appendChild(info);
+        card.onclick = function () { showProduct(p); };
+        grid.appendChild(card);
+      })(products[i]);
+    }
 
-      function gbp(n) { return "£" + n.toFixed(2); }
-
-      /** Remove widget overlay wrapper so rebinding does not nest .dq-wrap forever. */
-      function resetWidgetBinding(img) {
-        var wrap = img.closest(".dq-wrap");
-        if (wrap && wrap.parentNode) {
-          wrap.parentNode.insertBefore(img, wrap);
-          wrap.parentNode.removeChild(wrap);
-        }
-        img.removeAttribute("data-fit-room-tryon-bound");
-        img.removeAttribute("data-fit-room-tryon-skip");
-        img.removeAttribute("data-fit-room-tryon-pending-load");
-      }
-
-      function openShop() {
-        shopEl.classList.add("is-open");
-        productEl.classList.remove("is-open");
-        document.title = "Hawthorne Lane — UK Fashion Test Store";
-        window.scrollTo(0, 0);
-      }
-
-      function openProduct(p) {
-        document.getElementById("pdp-tag").textContent = p.tag;
-        document.getElementById("pdp-name").textContent = p.name;
-        document.getElementById("pdp-price").textContent = gbp(p.price);
-        document.getElementById("pdp-desc").textContent = p.desc;
-
-        resetWidgetBinding(pdpImg);
-        pdpImg.alt = p.alt;
-        pdpImg.src = p.img;
-
-        shopEl.classList.remove("is-open");
-        productEl.classList.add("is-open");
-        document.title = p.name + " — Hawthorne Lane";
-        window.scrollTo(0, 0);
-
-        window.requestAnimationFrame(function () {
-          window.dispatchEvent(new Event("fit-room-rescan"));
-        });
-      }
-
-      CATS.forEach(function (cat) {
-        var items = PRODUCTS.filter(function (p) { return p.cat === cat; });
-        if (!items.length) return;
-
-        var heading = document.createElement("h2");
-        heading.className = "cat";
-        heading.textContent = cat;
-        catalogEl.appendChild(heading);
-
-        var grid = document.createElement("div");
-        grid.className = "grid";
-
-        items.forEach(function (p) {
-          var btn = document.createElement("button");
-          btn.type = "button";
-          btn.className = "card";
-          btn.setAttribute("aria-label", "View " + p.name);
-
-          var media = document.createElement("div");
-          media.className = "card-img";
-          media.style.backgroundImage = "url(" + p.img + ")";
-
-          var body = document.createElement("div");
-          body.className = "card-body";
-
-          var tag = document.createElement("div");
-          tag.className = "card-tag";
-          tag.textContent = p.tag;
-
-          var name = document.createElement("div");
-          name.className = "card-name";
-          name.textContent = p.name;
-
-          var price = document.createElement("div");
-          price.className = "card-price";
-          price.textContent = gbp(p.price);
-
-          body.appendChild(tag);
-          body.appendChild(name);
-          body.appendChild(price);
-          btn.appendChild(media);
-          btn.appendChild(body);
-          btn.addEventListener("click", function () { openProduct(p); });
-          grid.appendChild(btn);
-        });
-
-        catalogEl.appendChild(grid);
-      });
-
-      document.getElementById("btn-back").addEventListener("click", openShop);
-
-      document.getElementById("btn-wear").addEventListener("click", function () {
-        var wearBtn = document.querySelector(".pdp-media .dq-wear-btn");
-        if (wearBtn) {
-          wearBtn.click();
-        } else {
-          window.dispatchEvent(new Event("fit-room-rescan"));
-          setTimeout(function () {
-            var retry = document.querySelector(".pdp-media .dq-wear-btn");
-            if (retry) retry.click();
-          }, 200);
-        }
-      });
-    })();
+    document.getElementById("back-btn").onclick = showShop;
   </script>
 
-  <script
-    defer
-    src="/widget.js"
-    data-fit-room-key="KgU7HRdnv-TjExraQsyI0Hjanzhh3P-BgG4mguLP4lM"
-    data-fit-room-bind="all"
-  ></script>
+  <script defer src="/widget.js" data-fit-room-key="KgU7HRdnv-TjExraQsyI0Hjanzhh3P-BgG4mguLP4lM" data-fit-room-bind="all"></script>
 
 </body>
 </html>
