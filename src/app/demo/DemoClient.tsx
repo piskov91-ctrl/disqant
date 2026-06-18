@@ -174,7 +174,7 @@ export default function DemoClient() {
       document.head.appendChild(el);
     }
     el.textContent = DEMO_WEAR_MODAL_CSS;
-  }, []);
+  }, [DEMO_WEAR_MODAL_CSS]);
 
   useEffect(() => {
     if (!wearOpen || wearClosing) return;
