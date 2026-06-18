@@ -1,17 +1,27 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
-import { X } from "lucide-react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { Plus, X } from "lucide-react";
 import {
-  RETAILER_WIDGET_AD_MAX_BANNERS,
+  RETAILER_WIDGET_AD_DEFAULT_BANNER_DURATION_SEC,
   RETAILER_WIDGET_AD_MAX_BANNER_BYTES,
+  RETAILER_WIDGET_AD_MAX_BANNER_DURATION_SEC,
   RETAILER_WIDGET_AD_MAX_MESSAGE_CHARS,
   RETAILER_WIDGET_AD_MAX_MESSAGES,
+  RETAILER_WIDGET_AD_MIN_BANNER_DURATION_SEC,
+  normalizeWidgetAdBannerDuration,
+  type RetailerWidgetAdBannerSlide,
   type RetailerWidgetAdRecord,
 } from "@/lib/retailerWidgetAd";
 import { WEAR_LOADING_MESSAGES, compressImageToMax1000px } from "@/lib/wearMeShared";
 
 type AdEditorKind = "text" | "banner";
+
+type BannerSlideDraft = {
+  id: string;
+  url: string;
+  durationSec: number;
+};
 
 type WidgetAdApiResponse = {
   error?: string;
@@ -19,9 +29,16 @@ type WidgetAdApiResponse = {
   embed?: {
     kind: "none" | "text" | "banner";
     messages?: string[];
-    bannerUrls?: string[];
+    banners?: RetailerWidgetAdBannerSlide[];
   };
 };
+
+function newSlideId() {
+  return typeof crypto !== "undefined" && crypto.randomUUID
+    ? crypto.randomUUID()
+    : `slide-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
+}
+
 
 async function fileToDataUrl(file: File): Promise<string> {
   return new Promise((resolve, reject) => {
@@ -35,74 +52,344 @@ async function fileToDataUrl(file: File): Promise<string> {
   });
 }
 
+function slidesFromRecord(banners: RetailerWidgetAdBannerSlide[]): BannerSlideDraft[] {
+  return banners.map((b) => ({
+    id: newSlideId(),
+    url: b.url,
+    durationSec: b.durationSec,
+  }));
+}
+
+function BannerTimelineClip({
+  slide,
+  index,
+  onDurationChange,
+  onRemove,
+}: {
+  slide: BannerSlideDraft;
+  index: number;
+  onDurationChange: (id: string, durationSec: number) => void;
+  onRemove: (id: string) => void;
+}) {
+  const durationPct =
+    (slide.durationSec / RETAILER_WIDGET_AD_MAX_BANNER_DURATION_SEC) * 100;
+
+  return (
+    <li className="relative flex w-[148px] shrink-0 flex-col rounded-xl border border-white/10 bg-[#121018] shadow-sm transition-shadow hover:border-[#c6a77d]/35">
+      <div className="relative overflow-hidden rounded-t-xl border-b border-white/8 bg-[#0f0f14]">
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          src={slide.url}
+          alt={`Banner ${index + 1}`}
+          className="aspect-[4/3] w-full object-contain p-1"
+        />
+        <button
+          type="button"
+          onClick={() => onRemove(slide.id)}
+          className="absolute right-1.5 top-1.5 inline-flex h-6 w-6 items-center justify-center rounded-full border border-white/15 bg-black/75 text-zinc-200 transition hover:bg-black/90"
+          aria-label={`Remove banner ${index + 1}`}
+        >
+          <X className="h-3 w-3" aria-hidden />
+        </button>
+        <span className="absolute bottom-1.5 left-1.5 rounded bg-black/65 px-1.5 py-0.5 text-[10px] font-bold tabular-nums text-zinc-300">
+          {index + 1}
+        </span>
+      </div>
+
+      <div className="space-y-2 px-2.5 py-2.5">
+        <label className="flex items-center justify-between gap-2">
+          <span className="text-[10px] font-semibold uppercase tracking-[0.14em] text-zinc-500">
+            Duration
+          </span>
+          <span className="flex items-center gap-1">
+            <input
+              type="number"
+              min={RETAILER_WIDGET_AD_MIN_BANNER_DURATION_SEC}
+              max={RETAILER_WIDGET_AD_MAX_BANNER_DURATION_SEC}
+              step={1}
+              value={slide.durationSec}
+              onChange={(e) => {
+                const parsed = Number.parseInt(e.target.value, 10);
+                onDurationChange(
+                  slide.id,
+                  Number.isFinite(parsed)
+                    ? parsed
+                    : RETAILER_WIDGET_AD_DEFAULT_BANNER_DURATION_SEC,
+                );
+              }}
+              onBlur={() =>
+                onDurationChange(slide.id, normalizeWidgetAdBannerDuration(slide.durationSec))
+              }
+              className="w-12 rounded-md border border-white/12 bg-zinc-950/80 px-1.5 py-1 text-center text-xs font-semibold tabular-nums text-zinc-100 focus:border-[#c6a77d]/45 focus:outline-none focus:ring-1 focus:ring-[#c6a77d]/30"
+            />
+            <span className="text-[11px] font-medium text-zinc-500">sec</span>
+          </span>
+        </label>
+
+        <div
+          className="h-1.5 overflow-hidden rounded-full bg-zinc-800/90"
+          title={`${slide.durationSec}s of ${RETAILER_WIDGET_AD_MAX_BANNER_DURATION_SEC}s max`}
+          aria-hidden
+        >
+          <div
+            className="h-full rounded-full bg-gradient-to-r from-[#a68958]/80 via-[#c6a77d]/80 to-[#e8d4bc]/80"
+            style={{ width: `${Math.min(100, Math.max(4, durationPct))}%` }}
+          />
+        </div>
+      </div>
+    </li>
+  );
+}
+
+function BannerTimeline({
+  slides,
+  onDurationChange,
+  onRemove,
+  onAddFiles,
+  uploading,
+}: {
+  slides: BannerSlideDraft[];
+  onDurationChange: (id: string, durationSec: number) => void;
+  onRemove: (id: string) => void;
+  onAddFiles: (files: FileList | null) => void;
+  uploading: boolean;
+}) {
+  const rulerMarks = [0, 15, 30, 45];
+
+  return (
+    <div className="overflow-hidden rounded-2xl border border-[#c6a77d]/22 bg-[#14111a] shadow-inner shadow-black/40">
+      <div className="flex items-center justify-between gap-3 border-b border-white/8 px-4 py-3">
+        <div>
+          <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-[#d4bc94]/90">
+            Timeline
+          </p>
+          <p className="mt-0.5 text-xs text-zinc-500">
+            Set how long each banner shows · random order in the widget · max{" "}
+            {RETAILER_WIDGET_AD_MAX_BANNER_DURATION_SEC}s each
+          </p>
+        </div>
+        <label className="inline-flex shrink-0 cursor-pointer items-center gap-1.5 rounded-full border border-[#c6a77d]/40 bg-[#c6a77d]/10 px-3 py-1.5 text-xs font-semibold text-[#e8dcc8] transition hover:border-[#c6a77d]/60 hover:bg-[#c6a77d]/16">
+          <Plus className="h-3.5 w-3.5" aria-hidden />
+          {uploading ? "Adding…" : "Add images"}
+          <input
+            type="file"
+            accept="image/jpeg,image/png,image/webp,image/*"
+            multiple
+            className="sr-only"
+            disabled={uploading}
+            onChange={(e) => {
+              onAddFiles(e.target.files);
+              e.target.value = "";
+            }}
+          />
+        </label>
+      </div>
+
+      <div className="relative border-b border-white/6 px-4 py-2">
+        <div className="relative h-5">
+          {rulerMarks.map((sec) => (
+            <span
+              key={sec}
+              className="absolute top-0 -translate-x-1/2 text-[10px] tabular-nums text-zinc-600"
+              style={{ left: `${(sec / RETAILER_WIDGET_AD_MAX_BANNER_DURATION_SEC) * 100}%` }}
+            >
+              {sec}s
+            </span>
+          ))}
+          <div className="absolute bottom-0 left-0 right-0 flex justify-between px-0.5">
+            {rulerMarks.map((sec) => (
+              <span
+                key={`tick-${sec}`}
+                className="h-2 w-px bg-zinc-700"
+                style={{
+                  position: "absolute",
+                  left: `${(sec / RETAILER_WIDGET_AD_MAX_BANNER_DURATION_SEC) * 100}%`,
+                  transform: "translateX(-50%)",
+                }}
+              />
+            ))}
+          </div>
+        </div>
+      </div>
+
+      <div className="overflow-x-auto px-4 py-4">
+        {slides.length ? (
+          <ul className="flex min-w-min gap-3 pb-1">
+            {slides.map((slide, index) => (
+              <BannerTimelineClip
+                key={slide.id}
+                slide={slide}
+                index={index}
+                onDurationChange={onDurationChange}
+                onRemove={onRemove}
+              />
+            ))}
+            <li className="flex w-[120px] shrink-0 items-center justify-center">
+              <label className="flex h-full min-h-[168px] w-full cursor-pointer flex-col items-center justify-center gap-2 rounded-xl border border-dashed border-[#c6a77d]/30 bg-zinc-950/40 text-center transition hover:border-[#c6a77d]/50 hover:bg-zinc-950/70">
+                <Plus className="h-5 w-5 text-[#c6a77d]/80" aria-hidden />
+                <span className="text-[11px] font-semibold text-zinc-400">Add clip</span>
+                <input
+                  type="file"
+                  accept="image/jpeg,image/png,image/webp,image/*"
+                  multiple
+                  className="sr-only"
+                  disabled={uploading}
+                  onChange={(e) => {
+                    onAddFiles(e.target.files);
+                    e.target.value = "";
+                  }}
+                />
+              </label>
+            </li>
+          </ul>
+        ) : (
+          <label className="flex cursor-pointer flex-col items-center justify-center gap-2 rounded-xl border border-dashed border-[#c6a77d]/35 bg-zinc-950/40 px-4 py-12 text-center transition hover:border-[#c6a77d]/55 hover:bg-zinc-950/60">
+            <Plus className="h-6 w-6 text-[#c6a77d]/80" aria-hidden />
+            <span className="text-sm font-semibold text-[#d4bc94]">Add banner images to the timeline</span>
+            <span className="text-xs text-zinc-500">Unlimited uploads · up to 30MB each · default 10s per clip</span>
+            <input
+              type="file"
+              accept="image/jpeg,image/png,image/webp,image/*"
+              multiple
+              className="sr-only"
+              disabled={uploading}
+              onChange={(e) => {
+                onAddFiles(e.target.files);
+                e.target.value = "";
+              }}
+            />
+          </label>
+        )}
+      </div>
+    </div>
+  );
+}
+
 function WidgetAdLoadingPreview({
   kind,
   messages,
-  bannerUrls,
+  bannerSlides,
 }: {
   kind: AdEditorKind;
   messages: string[];
-  bannerUrls: string[];
+  bannerSlides: BannerSlideDraft[];
 }) {
-  const [tick, setTick] = useState(0);
   const [loadingIndex, setLoadingIndex] = useState(0);
   const [promoIndex, setPromoIndex] = useState(0);
   const [showPromo, setShowPromo] = useState(false);
   const [fading, setFading] = useState(false);
+  const [activeSlideId, setActiveSlideId] = useState<string | null>(null);
+  const phaseTimerRef = useRef<number | null>(null);
 
   const promoLines = useMemo(
     () => messages.map((m) => m.trim()).filter(Boolean).slice(0, RETAILER_WIDGET_AD_MAX_MESSAGES),
     [messages],
   );
-  const banners = useMemo(
-    () => bannerUrls.map((u) => u.trim()).filter(Boolean).slice(0, RETAILER_WIDGET_AD_MAX_BANNERS),
-    [bannerUrls],
+  const slides = useMemo(
+    () => bannerSlides.filter((s) => s.url.trim()),
+    [bannerSlides],
   );
   const hasTextPromo = kind === "text" && promoLines.length > 0;
-  const hasBanner = kind === "banner" && banners.length > 0;
+  const hasBanner = kind === "banner" && slides.length > 0;
 
-  const bannerIndex = hasBanner
-    ? Math.floor(Math.max(0, tick) / 2) % banners.length
-    : 0;
+  const activeSlide = slides.find((s) => s.id === activeSlideId) ?? null;
 
   useEffect(() => {
-    if (!hasTextPromo && !hasBanner) {
-      setShowPromo(false);
-      return;
+    if (phaseTimerRef.current) window.clearTimeout(phaseTimerRef.current);
+    phaseTimerRef.current = null;
+    setShowPromo(false);
+    setActiveSlideId(null);
+    setLoadingIndex(0);
+    setPromoIndex(0);
+
+    if (!hasTextPromo && !hasBanner) return;
+
+    const LOADING_MS = 3000;
+    const FADE_MS = 480;
+    const bannerQueue: number[] = [];
+
+    function shuffleQueue() {
+      bannerQueue.length = 0;
+      for (let i = 0; i < slides.length; i++) bannerQueue.push(i);
+      for (let i = bannerQueue.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [bannerQueue[i], bannerQueue[j]] = [bannerQueue[j], bannerQueue[i]];
+      }
     }
 
-    const id = window.setInterval(() => {
+    function popSlide(): BannerSlideDraft | null {
+      if (!slides.length) return null;
+      if (!bannerQueue.length) shuffleQueue();
+      const idx = bannerQueue.shift();
+      if (idx == null) return slides[0] ?? null;
+      return slides[idx] ?? slides[0] ?? null;
+    }
+
+    function runLoadingPhase(isFirst: boolean) {
+      setActiveSlideId(null);
+      if (!isFirst) {
+        setFading(true);
+        window.setTimeout(() => {
+          setShowPromo(false);
+          setLoadingIndex((i) => (i + 1) % WEAR_LOADING_MESSAGES.length);
+          setFading(false);
+        }, FADE_MS);
+      }
+      phaseTimerRef.current = window.setTimeout(runBannerPhase, LOADING_MS);
+    }
+
+    function runBannerPhase() {
+      const slide = popSlide();
+      if (!slide) {
+        runLoadingPhase(false);
+        return;
+      }
       setFading(true);
       window.setTimeout(() => {
-        setTick((t) => t + 1);
+        setShowPromo(true);
+        setActiveSlideId(slide.id);
         setFading(false);
-      }, 480);
-    }, 3000);
+      }, FADE_MS);
+      phaseTimerRef.current = window.setTimeout(
+        () => runLoadingPhase(false),
+        slide.durationSec * 1000,
+      );
+    }
 
-    return () => window.clearInterval(id);
-  }, [hasTextPromo, hasBanner]);
+    function runTextPromoPhase() {
+      setFading(true);
+      window.setTimeout(() => {
+        setShowPromo(true);
+        setPromoIndex((i) => (i + 1) % promoLines.length);
+        setFading(false);
+      }, FADE_MS);
+      phaseTimerRef.current = window.setTimeout(runTextLoadingPhase, LOADING_MS);
+    }
 
-  useEffect(() => {
-    if (!hasTextPromo && !hasBanner) return;
-    if (tick === 0) return;
+    function runTextLoadingPhase() {
+      setFading(true);
+      window.setTimeout(() => {
+        setShowPromo(false);
+        setLoadingIndex((i) => (i + 1) % WEAR_LOADING_MESSAGES.length);
+        setFading(false);
+      }, FADE_MS);
+      phaseTimerRef.current = window.setTimeout(runTextPromoPhase, LOADING_MS);
+    }
 
     if (hasBanner) {
-      setShowPromo((prev) => !prev);
-      return;
+      shuffleQueue();
+      phaseTimerRef.current = window.setTimeout(runBannerPhase, LOADING_MS);
+    } else if (hasTextPromo) {
+      phaseTimerRef.current = window.setTimeout(runTextPromoPhase, LOADING_MS);
     }
 
-    if (tick % 2 === 1) {
-      setShowPromo(true);
-      setPromoIndex((i) => (i + 1) % promoLines.length);
-    } else {
-      setShowPromo(false);
-      setLoadingIndex((i) => (i + 1) % WEAR_LOADING_MESSAGES.length);
-    }
-  }, [tick, hasBanner, hasTextPromo, promoLines.length]);
+    return () => {
+      if (phaseTimerRef.current) window.clearTimeout(phaseTimerRef.current);
+    };
+  }, [hasBanner, hasTextPromo, slides, promoLines.length]);
 
   const loadingText = WEAR_LOADING_MESSAGES[loadingIndex] ?? WEAR_LOADING_MESSAGES[0];
   const promoText = promoLines[promoIndex] ?? promoLines[0] ?? "";
-  const activeBanner = banners[bannerIndex] ?? banners[0] ?? "";
 
   return (
     <div className="overflow-hidden rounded-2xl border border-[#c6a77d]/28 bg-[#0f0f14]">
@@ -112,7 +399,7 @@ function WidgetAdLoadingPreview({
         </p>
         <p className="mt-1 text-xs text-zinc-500">
           Shoppers see this on the loading overlay while AI generates their look.
-          {hasBanner && banners.length > 1 ? ` Rotates through ${banners.length} banners.` : null}
+          {hasBanner ? " Banners play in random order." : null}
         </p>
       </div>
       <div className="relative aspect-[4/3] min-h-[220px] bg-[#0f0f14]">
@@ -126,11 +413,11 @@ function WidgetAdLoadingPreview({
               className="h-[34px] w-[34px] animate-spin rounded-full border-[3px] border-[rgba(15,15,20,0.14)] border-t-[#c6a77d]"
               aria-hidden
             />
-            {hasBanner && showPromo && activeBanner ? (
-              // eslint-disable-next-line @next/next/no-img-element -- retailer-uploaded banner preview
+            {hasBanner && showPromo && activeSlide ? (
+              // eslint-disable-next-line @next/next/no-img-element
               <img
-                key={activeBanner}
-                src={activeBanner}
+                key={activeSlide.id}
+                src={activeSlide.url}
                 alt=""
                 className="max-h-40 max-w-[min(420px,92%)] rounded-[10px] border border-[#c6a77d]/35 object-contain shadow-[0_8px_24px_rgba(0,0,0,0.35)]"
               />
@@ -157,13 +444,14 @@ export function DashboardAdsPanel() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [clearing, setClearing] = useState(false);
+  const [uploading, setUploading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [savedNotice, setSavedNotice] = useState<string | null>(null);
 
   const [editorKind, setEditorKind] = useState<AdEditorKind>("text");
   const [messageDraft, setMessageDraft] = useState("");
   const [savedMessages, setSavedMessages] = useState<string[]>([]);
-  const [bannerUrls, setBannerUrls] = useState<string[]>([]);
+  const [bannerSlides, setBannerSlides] = useState<BannerSlideDraft[]>([]);
   const [hasSavedAd, setHasSavedAd] = useState(false);
 
   const previewMessages = useMemo(() => {
@@ -178,7 +466,7 @@ export function DashboardAdsPanel() {
     return savedMessages;
   }, [editorKind, messageDraft, savedMessages]);
 
-  const previewBannerUrls = editorKind === "banner" ? bannerUrls : [];
+  const previewBannerSlides = editorKind === "banner" ? bannerSlides : [];
 
   const loadAd = useCallback(async () => {
     setLoading(true);
@@ -195,7 +483,7 @@ export function DashboardAdsPanel() {
       if (!ad) {
         setHasSavedAd(false);
         setSavedMessages([]);
-        setBannerUrls([]);
+        setBannerSlides([]);
         setMessageDraft("");
         setEditorKind("text");
         return;
@@ -207,11 +495,11 @@ export function DashboardAdsPanel() {
         const msgs = ad.messages ?? [];
         setSavedMessages(msgs);
         setMessageDraft(msgs.join("\n"));
-        setBannerUrls([]);
+        setBannerSlides([]);
       } else {
         setSavedMessages([]);
         setMessageDraft("");
-        setBannerUrls(ad.bannerUrls ?? []);
+        setBannerSlides(slidesFromRecord(ad.banners ?? []));
       }
     } catch {
       setError("Something went wrong. Please try again.");
@@ -229,14 +517,9 @@ export function DashboardAdsPanel() {
     setSavedNotice(null);
     if (!files?.length) return;
 
-    const remaining = RETAILER_WIDGET_AD_MAX_BANNERS - bannerUrls.length;
-    if (remaining <= 0) {
-      setError(`You can upload up to ${RETAILER_WIDGET_AD_MAX_BANNERS} banner images.`);
-      return;
-    }
-
-    const toProcess = Array.from(files).slice(0, remaining);
-    const nextUrls: string[] = [];
+    setUploading(true);
+    const toProcess = Array.from(files);
+    const nextSlides: BannerSlideDraft[] = [];
 
     try {
       for (const file of toProcess) {
@@ -249,17 +532,31 @@ export function DashboardAdsPanel() {
           return;
         }
         const compressed = await compressImageToMax1000px(file);
-        nextUrls.push(await fileToDataUrl(compressed));
+        const url = await fileToDataUrl(compressed);
+        nextSlides.push({
+          id: newSlideId(),
+          url,
+          durationSec: RETAILER_WIDGET_AD_DEFAULT_BANNER_DURATION_SEC,
+        });
       }
       setEditorKind("banner");
-      setBannerUrls((prev) => [...prev, ...nextUrls].slice(0, RETAILER_WIDGET_AD_MAX_BANNERS));
+      setBannerSlides((prev) => [...prev, ...nextSlides]);
     } catch {
       setError("Could not process one or more images.");
+    } finally {
+      setUploading(false);
     }
-  }, [bannerUrls.length]);
+  }, []);
 
-  const removeBannerAt = useCallback((index: number) => {
-    setBannerUrls((prev) => prev.filter((_, i) => i !== index));
+  const updateSlideDuration = useCallback((id: string, durationSec: number) => {
+    const next = normalizeWidgetAdBannerDuration(durationSec);
+    setBannerSlides((prev) =>
+      prev.map((slide) => (slide.id === id ? { ...slide, durationSec: next } : slide)),
+    );
+  }, []);
+
+  const removeSlide = useCallback((id: string) => {
+    setBannerSlides((prev) => prev.filter((slide) => slide.id !== id));
   }, []);
 
   const saveAd = useCallback(async () => {
@@ -279,7 +576,10 @@ export function DashboardAdsPanel() {
             }
           : {
               kind: "banner" as const,
-              bannerDataUrls: bannerUrls,
+              banners: bannerSlides.map(({ url, durationSec }) => ({
+                url,
+                durationSec: normalizeWidgetAdBannerDuration(durationSec),
+              })),
             };
 
       const res = await fetch("/api/retailer/widget-ad", {
@@ -300,14 +600,14 @@ export function DashboardAdsPanel() {
         setSavedMessages(data.ad.messages ?? []);
         setMessageDraft((data.ad.messages ?? []).join("\n"));
       } else if (data.ad?.kind === "banner") {
-        setBannerUrls(data.ad.bannerUrls ?? []);
+        setBannerSlides(slidesFromRecord(data.ad.banners ?? []));
       }
     } catch {
       setError("Something went wrong. Please try again.");
     } finally {
       setSaving(false);
     }
-  }, [bannerUrls, editorKind, messageDraft]);
+  }, [bannerSlides, editorKind, messageDraft]);
 
   const clearAd = useCallback(async () => {
     setClearing(true);
@@ -326,7 +626,7 @@ export function DashboardAdsPanel() {
       setHasSavedAd(false);
       setSavedMessages([]);
       setMessageDraft("");
-      setBannerUrls([]);
+      setBannerSlides([]);
       setEditorKind("text");
       setSavedNotice("Ad removed from your widget.");
     } catch {
@@ -339,18 +639,15 @@ export function DashboardAdsPanel() {
   const canSave =
     editorKind === "text"
       ? messageDraft.split("\n").some((l) => l.trim().length > 0)
-      : bannerUrls.length > 0;
-
-  const bannerSlotsLeft = RETAILER_WIDGET_AD_MAX_BANNERS - bannerUrls.length;
+      : bannerSlides.length > 0;
 
   return (
-    <div className="mt-10 max-w-4xl space-y-10">
+    <div className="mt-10 max-w-5xl space-y-10">
       <div>
         <h2 className="text-lg font-semibold text-zinc-50">Widget ads</h2>
         <p className="mt-2 max-w-2xl text-sm leading-relaxed text-zinc-400">
-          Promote a sale or message while shoppers wait for their AI try-on. Content appears in the
-          Wear Me widget loading overlay — alternating with the standard progress messages every few
-          seconds.
+          Promote a sale or message while shoppers wait for their AI try-on. Banner clips play in
+          random order with the duration you set on each thumbnail.
         </p>
       </div>
 
@@ -390,125 +687,92 @@ export function DashboardAdsPanel() {
                   : "border border-transparent text-zinc-500 hover:border-[#c6a77d]/35 hover:text-zinc-200"
               }`}
             >
-              Banner images
+              Banner timeline
             </button>
           </div>
 
-          <div className="grid gap-8 lg:grid-cols-2">
-            <section className="space-y-5 rounded-2xl border border-white/10 bg-zinc-900/40 p-6 backdrop-blur-sm">
-              {editorKind === "text" ? (
-                <>
-                  <div>
-                    <label htmlFor="widget-ad-messages" className="text-sm font-semibold text-zinc-100">
-                      Promotional messages
-                    </label>
-                    <p className="mt-1 text-xs leading-relaxed text-zinc-500">
-                      One message per line (up to {RETAILER_WIDGET_AD_MAX_MESSAGES}, max{" "}
-                      {RETAILER_WIDGET_AD_MAX_MESSAGE_CHARS} characters each). Multiple lines rotate
-                      during loading.
-                    </p>
-                  </div>
-                  <textarea
-                    id="widget-ad-messages"
-                    rows={6}
-                    value={messageDraft}
-                    onChange={(e) => setMessageDraft(e.target.value)}
-                    placeholder={"Summer sale — 20% off dresses\nFree shipping this weekend"}
-                    className="w-full rounded-xl border border-white/10 bg-zinc-950/70 px-4 py-3 text-sm text-zinc-100 placeholder:text-zinc-600 focus:border-[#c6a77d]/45 focus:outline-none focus:ring-2 focus:ring-[#c6a77d]/25"
-                  />
-                </>
-              ) : (
-                <>
-                  <div>
-                    <p className="text-sm font-semibold text-zinc-100">Banner images</p>
-                    <p className="mt-1 text-xs leading-relaxed text-zinc-500">
-                      Upload up to {RETAILER_WIDGET_AD_MAX_BANNERS} promotional banners (JPEG/PNG/WebP).
-                      They alternate with loading messages and rotate during generation.
-                    </p>
-                  </div>
-                  {bannerUrls.length > 0 ? (
-                    <ul className="grid grid-cols-2 gap-3 sm:grid-cols-3">
-                      {bannerUrls.map((url, index) => (
-                        <li
-                          key={`${index}-${url.slice(0, 48)}`}
-                          className="group relative overflow-hidden rounded-lg border border-white/10 bg-zinc-950/60"
-                        >
-                          {/* eslint-disable-next-line @next/next/no-img-element */}
-                          <img
-                            src={url}
-                            alt={`Banner ${index + 1}`}
-                            className="aspect-[5/3] w-full object-contain p-1"
-                          />
-                          <button
-                            type="button"
-                            onClick={() => removeBannerAt(index)}
-                            className="absolute right-1.5 top-1.5 inline-flex h-7 w-7 items-center justify-center rounded-full border border-white/15 bg-black/70 text-zinc-200 opacity-0 transition hover:bg-black/90 group-hover:opacity-100 focus:opacity-100"
-                            aria-label={`Remove banner ${index + 1}`}
-                          >
-                            <X className="h-3.5 w-3.5" aria-hidden />
-                          </button>
-                          <span className="absolute bottom-1.5 left-1.5 rounded bg-black/60 px-1.5 py-0.5 text-[10px] font-semibold text-zinc-300">
-                            {index + 1}
-                          </span>
-                        </li>
-                      ))}
-                    </ul>
-                  ) : null}
-                  {bannerSlotsLeft > 0 ? (
-                    <label className="flex cursor-pointer flex-col items-center justify-center gap-2 rounded-xl border border-dashed border-[#c6a77d]/35 bg-zinc-950/50 px-4 py-8 text-center transition hover:border-[#c6a77d]/55 hover:bg-zinc-950/80">
-                      <span className="text-sm font-semibold text-[#d4bc94]">
-                        {bannerUrls.length ? "Add more banners" : "Choose images"}
-                      </span>
-                      <span className="text-xs text-zinc-500">
-                        {bannerSlotsLeft} slot{bannerSlotsLeft === 1 ? "" : "s"} left · up to 30MB each
-                      </span>
-                      <input
-                        type="file"
-                        accept="image/jpeg,image/png,image/webp,image/*"
-                        multiple
-                        className="sr-only"
-                        onChange={(e) => {
-                          void onBannerFiles(e.target.files);
-                          e.target.value = "";
-                        }}
-                      />
-                    </label>
-                  ) : (
-                    <p className="text-xs text-zinc-500">
-                      Maximum of {RETAILER_WIDGET_AD_MAX_BANNERS} banners reached. Remove one to add another.
-                    </p>
-                  )}
-                </>
-              )}
-
-              <div className="flex flex-wrap gap-3 pt-2">
-                <button
-                  type="button"
-                  disabled={!canSave || saving}
-                  onClick={() => void saveAd()}
-                  className="inline-flex h-10 items-center justify-center rounded-full bg-[#c6a77d] px-5 text-sm font-semibold text-zinc-950 transition hover:bg-[#d4b896] disabled:cursor-not-allowed disabled:opacity-45"
-                >
-                  {saving ? "Saving…" : "Save ad"}
-                </button>
-                {hasSavedAd ? (
+          {editorKind === "text" ? (
+            <div className="grid gap-8 lg:grid-cols-2">
+              <section className="space-y-5 rounded-2xl border border-white/10 bg-zinc-900/40 p-6 backdrop-blur-sm">
+                <div>
+                  <label htmlFor="widget-ad-messages" className="text-sm font-semibold text-zinc-100">
+                    Promotional messages
+                  </label>
+                  <p className="mt-1 text-xs leading-relaxed text-zinc-500">
+                    One message per line (up to {RETAILER_WIDGET_AD_MAX_MESSAGES}, max{" "}
+                    {RETAILER_WIDGET_AD_MAX_MESSAGE_CHARS} characters each). Multiple lines rotate
+                    during loading.
+                  </p>
+                </div>
+                <textarea
+                  id="widget-ad-messages"
+                  rows={6}
+                  value={messageDraft}
+                  onChange={(e) => setMessageDraft(e.target.value)}
+                  placeholder={"Summer sale — 20% off dresses\nFree shipping this weekend"}
+                  className="w-full rounded-xl border border-white/10 bg-zinc-950/70 px-4 py-3 text-sm text-zinc-100 placeholder:text-zinc-600 focus:border-[#c6a77d]/45 focus:outline-none focus:ring-2 focus:ring-[#c6a77d]/25"
+                />
+                <div className="flex flex-wrap gap-3 pt-2">
                   <button
                     type="button"
-                    disabled={clearing}
-                    onClick={() => void clearAd()}
-                    className="inline-flex h-10 items-center justify-center rounded-full border border-white/15 bg-zinc-950/50 px-5 text-sm font-semibold text-zinc-300 transition hover:border-white/25 hover:bg-zinc-900/80 disabled:opacity-45"
+                    disabled={!canSave || saving}
+                    onClick={() => void saveAd()}
+                    className="inline-flex h-10 items-center justify-center rounded-full bg-[#c6a77d] px-5 text-sm font-semibold text-zinc-950 transition hover:bg-[#d4b896] disabled:cursor-not-allowed disabled:opacity-45"
                   >
-                    {clearing ? "Removing…" : "Remove ad"}
+                    {saving ? "Saving…" : "Save ad"}
                   </button>
-                ) : null}
+                  {hasSavedAd ? (
+                    <button
+                      type="button"
+                      disabled={clearing}
+                      onClick={() => void clearAd()}
+                      className="inline-flex h-10 items-center justify-center rounded-full border border-white/15 bg-zinc-950/50 px-5 text-sm font-semibold text-zinc-300 transition hover:border-white/25 hover:bg-zinc-900/80 disabled:opacity-45"
+                    >
+                      {clearing ? "Removing…" : "Remove ad"}
+                    </button>
+                  ) : null}
+                </div>
+              </section>
+              <WidgetAdLoadingPreview kind="text" messages={previewMessages} bannerSlides={[]} />
+            </div>
+          ) : (
+            <div className="space-y-8">
+              <BannerTimeline
+                slides={bannerSlides}
+                onDurationChange={updateSlideDuration}
+                onRemove={removeSlide}
+                onAddFiles={(files) => void onBannerFiles(files)}
+                uploading={uploading}
+              />
+              <div className="grid gap-8 lg:grid-cols-2">
+                <div className="flex flex-wrap gap-3">
+                  <button
+                    type="button"
+                    disabled={!canSave || saving}
+                    onClick={() => void saveAd()}
+                    className="inline-flex h-10 items-center justify-center rounded-full bg-[#c6a77d] px-5 text-sm font-semibold text-zinc-950 transition hover:bg-[#d4b896] disabled:cursor-not-allowed disabled:opacity-45"
+                  >
+                    {saving ? "Saving…" : "Save ad"}
+                  </button>
+                  {hasSavedAd ? (
+                    <button
+                      type="button"
+                      disabled={clearing}
+                      onClick={() => void clearAd()}
+                      className="inline-flex h-10 items-center justify-center rounded-full border border-white/15 bg-zinc-950/50 px-5 text-sm font-semibold text-zinc-300 transition hover:border-white/25 hover:bg-zinc-900/80 disabled:opacity-45"
+                    >
+                      {clearing ? "Removing…" : "Remove ad"}
+                    </button>
+                  ) : null}
+                </div>
+                <WidgetAdLoadingPreview
+                  kind="banner"
+                  messages={previewMessages}
+                  bannerSlides={previewBannerSlides}
+                />
               </div>
-            </section>
-
-            <WidgetAdLoadingPreview
-              kind={editorKind}
-              messages={previewMessages}
-              bannerUrls={previewBannerUrls}
-            />
-          </div>
+            </div>
+          )}
         </>
       )}
     </div>

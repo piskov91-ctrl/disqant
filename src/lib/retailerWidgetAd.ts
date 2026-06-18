@@ -2,12 +2,17 @@
 
 export type RetailerWidgetAdKind = "text" | "banner";
 
+export type RetailerWidgetAdBannerSlide = {
+  url: string;
+  durationSec: number;
+};
+
 export type RetailerWidgetAdRecord = {
   kind: RetailerWidgetAdKind;
   /** Promo lines shown during widget generation (text kind). */
   messages?: string[];
-  /** JPEG/PNG/WebP data URLs or https URLs (banner kind), up to {@link RETAILER_WIDGET_AD_MAX_BANNERS}. */
-  bannerUrls?: string[];
+  /** Banner slides with per-image display duration (banner kind). */
+  banners?: RetailerWidgetAdBannerSlide[];
   updatedAt: string;
 };
 
@@ -20,7 +25,10 @@ export const RETAILER_WIDGET_AD_MAX_BANNER_CHARS =
 
 export const RETAILER_WIDGET_AD_MAX_MESSAGES = 5;
 export const RETAILER_WIDGET_AD_MAX_MESSAGE_CHARS = 220;
-export const RETAILER_WIDGET_AD_MAX_BANNERS = 5;
+
+export const RETAILER_WIDGET_AD_DEFAULT_BANNER_DURATION_SEC = 10;
+export const RETAILER_WIDGET_AD_MIN_BANNER_DURATION_SEC = 1;
+export const RETAILER_WIDGET_AD_MAX_BANNER_DURATION_SEC = 45;
 
 export const RETAILER_WIDGET_AD_REDIS_PREFIX = "fit-room:retailer:widget-ad:";
 
@@ -28,17 +36,44 @@ export function retailerWidgetAdKey(clientId: string) {
   return `${RETAILER_WIDGET_AD_REDIS_PREFIX}${clientId.trim()}`;
 }
 
-function parseBannerUrlsFromRaw(raw: Record<string, unknown>): string[] {
-  if (Array.isArray(raw.bannerUrls)) {
-    return raw.bannerUrls.map((u) => String(u ?? "").trim()).filter(Boolean);
+export function normalizeWidgetAdBannerDuration(raw: unknown): number {
+  const n = typeof raw === "number" ? raw : Number.parseInt(String(raw ?? ""), 10);
+  if (!Number.isFinite(n)) return RETAILER_WIDGET_AD_DEFAULT_BANNER_DURATION_SEC;
+  return Math.min(
+    RETAILER_WIDGET_AD_MAX_BANNER_DURATION_SEC,
+    Math.max(RETAILER_WIDGET_AD_MIN_BANNER_DURATION_SEC, Math.round(n)),
+  );
+}
+
+function parseBannersFromRaw(raw: Record<string, unknown>): RetailerWidgetAdBannerSlide[] {
+  if (Array.isArray(raw.banners)) {
+    const out: RetailerWidgetAdBannerSlide[] = [];
+    for (const item of raw.banners) {
+      if (!item || typeof item !== "object") continue;
+      const o = item as { url?: unknown; durationSec?: unknown };
+      const url = typeof o.url === "string" ? o.url.trim() : "";
+      if (!url) continue;
+      out.push({ url, durationSec: normalizeWidgetAdBannerDuration(o.durationSec) });
+    }
+    if (out.length) return out;
   }
-  const legacy = typeof raw.bannerUrl === "string" ? raw.bannerUrl.trim() : "";
-  return legacy ? [legacy] : [];
+
+  const legacyUrls: string[] = [];
+  if (Array.isArray(raw.bannerUrls)) {
+    legacyUrls.push(...raw.bannerUrls.map((u) => String(u ?? "").trim()).filter(Boolean));
+  } else if (typeof raw.bannerUrl === "string" && raw.bannerUrl.trim()) {
+    legacyUrls.push(raw.bannerUrl.trim());
+  }
+
+  return legacyUrls.map((url) => ({
+    url,
+    durationSec: RETAILER_WIDGET_AD_DEFAULT_BANNER_DURATION_SEC,
+  }));
 }
 
 export function parseRetailerWidgetAdRecord(raw: unknown): RetailerWidgetAdRecord | null {
   if (!raw || typeof raw !== "object") return null;
-  const o = raw as Partial<RetailerWidgetAdRecord> & { bannerUrl?: string };
+  const o = raw as Partial<RetailerWidgetAdRecord>;
   const kind = o.kind === "text" || o.kind === "banner" ? o.kind : null;
   if (!kind || typeof o.updatedAt !== "string" || !o.updatedAt.trim()) return null;
 
@@ -50,9 +85,9 @@ export function parseRetailerWidgetAdRecord(raw: unknown): RetailerWidgetAdRecor
     return { kind: "text", messages, updatedAt: o.updatedAt.trim() };
   }
 
-  const bannerUrls = parseBannerUrlsFromRaw(o as Record<string, unknown>);
-  if (!bannerUrls.length) return null;
-  return { kind: "banner", bannerUrls, updatedAt: o.updatedAt.trim() };
+  const banners = parseBannersFromRaw(o as Record<string, unknown>);
+  if (!banners.length) return null;
+  return { kind: "banner", banners, updatedAt: o.updatedAt.trim() };
 }
 
 export function normalizeWidgetAdMessages(raw: string[]): string[] {
@@ -78,15 +113,31 @@ export function normalizeWidgetAdBannerUrl(raw: string): string {
   throw new Error("Banner must be a JPEG, PNG, or WebP image.");
 }
 
-export function normalizeWidgetAdBannerUrls(raw: string[]): string[] {
-  const out: string[] = [];
+export type WidgetAdBannerInput = {
+  url?: string;
+  durationSec?: unknown;
+};
+
+export function normalizeWidgetAdBanners(raw: WidgetAdBannerInput[]): RetailerWidgetAdBannerSlide[] {
+  const out: RetailerWidgetAdBannerSlide[] = [];
   for (const item of raw) {
-    const url = normalizeWidgetAdBannerUrl(item);
-    out.push(url);
-    if (out.length >= RETAILER_WIDGET_AD_MAX_BANNERS) break;
+    const url = normalizeWidgetAdBannerUrl(String(item?.url ?? ""));
+    out.push({
+      url,
+      durationSec: normalizeWidgetAdBannerDuration(item?.durationSec),
+    });
   }
   if (!out.length) throw new Error("Add at least one banner image.");
   return out;
+}
+
+export function normalizeWidgetAdBannersFromUrls(urls: string[]): RetailerWidgetAdBannerSlide[] {
+  return normalizeWidgetAdBanners(
+    urls.map((url) => ({
+      url,
+      durationSec: RETAILER_WIDGET_AD_DEFAULT_BANNER_DURATION_SEC,
+    })),
+  );
 }
 
 export type RetailerAdsEligibilityUser = {
@@ -111,5 +162,5 @@ export function widgetAdEmbedPayload(record: RetailerWidgetAdRecord | null) {
   if (record.kind === "text") {
     return { kind: "text" as const, messages: record.messages ?? [] };
   }
-  return { kind: "banner" as const, bannerUrls: record.bannerUrls ?? [] };
+  return { kind: "banner" as const, banners: record.banners ?? [] };
 }

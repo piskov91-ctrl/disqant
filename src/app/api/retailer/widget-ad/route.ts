@@ -1,10 +1,12 @@
 import { getClientKeyRecordById } from "@/lib/apiKeyStore";
 import { getRetailerSessionUser } from "@/lib/retailerAuth";
 import {
-  normalizeWidgetAdBannerUrls,
+  normalizeWidgetAdBanners,
+  normalizeWidgetAdBannersFromUrls,
   normalizeWidgetAdMessages,
   retailerHasActiveSubscriptionForAds,
   widgetAdEmbedPayload,
+  type WidgetAdBannerInput,
 } from "@/lib/retailerWidgetAd";
 import {
   deleteRetailerWidgetAd,
@@ -62,16 +64,24 @@ export async function DELETE() {
 }
 
 type TextBody = { kind: "text"; messages: string[] };
-type BannerBody = { kind: "banner"; bannerDataUrls?: string[]; bannerDataUrl?: string };
+type BannerBody = {
+  kind: "banner";
+  banners?: WidgetAdBannerInput[];
+  bannerDataUrls?: string[];
+  bannerDataUrl?: string;
+};
 
-function bannerDataUrlsFromBody(body: BannerBody): string[] {
+function bannersFromBody(body: BannerBody): WidgetAdBannerInput[] {
+  if (Array.isArray(body.banners) && body.banners.length) {
+    return body.banners;
+  }
+  const urls: string[] = [];
   if (Array.isArray(body.bannerDataUrls) && body.bannerDataUrls.length) {
-    return body.bannerDataUrls;
+    urls.push(...body.bannerDataUrls);
+  } else if (typeof body.bannerDataUrl === "string" && body.bannerDataUrl.trim()) {
+    urls.push(body.bannerDataUrl);
   }
-  if (typeof body.bannerDataUrl === "string" && body.bannerDataUrl.trim()) {
-    return [body.bannerDataUrl];
-  }
-  return [];
+  return urls.map((url) => ({ url, durationSec: undefined }));
 }
 
 export async function POST(req: Request) {
@@ -101,8 +111,15 @@ export async function POST(req: Request) {
     }
 
     if (kind === "banner") {
-      const bannerUrls = normalizeWidgetAdBannerUrls(bannerDataUrlsFromBody(body as BannerBody));
-      const record = await setRetailerWidgetAd(gate.clientId!, { kind: "banner", bannerUrls });
+      const bannerBody = body as BannerBody;
+      const bannersInput = bannersFromBody(bannerBody);
+      const banners =
+        Array.isArray(bannerBody.banners) && bannerBody.banners.length
+          ? normalizeWidgetAdBanners(bannersInput)
+          : normalizeWidgetAdBannersFromUrls(
+              bannersInput.map((b) => String(b.url ?? "")).filter(Boolean),
+            );
+      const record = await setRetailerWidgetAd(gate.clientId!, { kind: "banner", banners });
       return Response.json({ ok: true as const, ad: record, embed: widgetAdEmbedPayload(record) });
     }
 

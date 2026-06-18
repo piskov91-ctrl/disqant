@@ -22,6 +22,53 @@
   ];
   var LOADING_MSG_INTERVAL_MS = 3000;
   var LOADING_MSG_FADE_MS = 480;
+  var WIDGET_AD_DEFAULT_BANNER_DURATION_SEC = 10;
+  var WIDGET_AD_MAX_BANNER_DURATION_SEC = 45;
+
+  function clampWidgetAdBannerDuration(raw) {
+    var n = Number(raw);
+    if (!Number.isFinite(n)) return WIDGET_AD_DEFAULT_BANNER_DURATION_SEC;
+    n = Math.round(n);
+    if (n < 1) return 1;
+    if (n > WIDGET_AD_MAX_BANNER_DURATION_SEC) return WIDGET_AD_MAX_BANNER_DURATION_SEC;
+    return n;
+  }
+
+  function parseWidgetAdBannerSlides(data) {
+    var out = [];
+    if (Array.isArray(data.banners)) {
+      for (var i = 0; i < data.banners.length; i++) {
+        var b = data.banners[i];
+        if (!b) continue;
+        var url = String(b.url || "").trim();
+        if (!url) continue;
+        out.push({ url: url, durationSec: clampWidgetAdBannerDuration(b.durationSec) });
+      }
+    }
+    if (!out.length && Array.isArray(data.bannerUrls)) {
+      for (var j = 0; j < data.bannerUrls.length; j++) {
+        var legacyUrl = String(data.bannerUrls[j] || "").trim();
+        if (!legacyUrl) continue;
+        out.push({ url: legacyUrl, durationSec: WIDGET_AD_DEFAULT_BANNER_DURATION_SEC });
+      }
+    }
+    if (!out.length && data.bannerUrl) {
+      out.push({ url: String(data.bannerUrl), durationSec: WIDGET_AD_DEFAULT_BANNER_DURATION_SEC });
+    }
+    return out;
+  }
+
+  function shuffleWidgetAdBannerIndices(len) {
+    var queue = [];
+    for (var i = 0; i < len; i++) queue.push(i);
+    for (var k = queue.length - 1; k > 0; k--) {
+      var r = Math.floor(Math.random() * (k + 1));
+      var tmp = queue[k];
+      queue[k] = queue[r];
+      queue[r] = tmp;
+    }
+    return queue;
+  }
 
   var cachedWidgetAdEmbed = undefined;
   var widgetAdFetchPromise = null;
@@ -46,13 +93,8 @@
         if (data && data.kind === "text" && Array.isArray(data.messages) && data.messages.length) {
           cachedWidgetAdEmbed = { kind: "text", messages: data.messages };
         } else if (data && data.kind === "banner") {
-          var urls = [];
-          if (Array.isArray(data.bannerUrls)) {
-            urls = data.bannerUrls.map(function (x) { return String(x || "").trim(); }).filter(Boolean);
-          } else if (data.bannerUrl) {
-            urls = [String(data.bannerUrl)];
-          }
-          if (urls.length) cachedWidgetAdEmbed = { kind: "banner", bannerUrls: urls };
+          var slides = parseWidgetAdBannerSlides(data);
+          if (slides.length) cachedWidgetAdEmbed = { kind: "banner", banners: slides };
         } else {
           cachedWidgetAdEmbed = null;
         }
@@ -1063,7 +1105,9 @@
     var loadingMsgIndex = 0;
     var promoMsgIndex = 0;
     var retailerPromoMessages = getRetailerPromoMessages();
-    var widgetAdBannerUrls = [];
+    var widgetAdBanners = [];
+    var bannerShuffleQueue = [];
+    var rotationPhaseTimer = null;
     var showingProcessingBanner = false;
     var processingFadeTimer = null;
 
@@ -1074,17 +1118,42 @@
           .map(function (x) { return String(x || "").trim(); })
           .filter(Boolean);
       } else if (ad.kind === "banner") {
-        var urls = [];
-        if (Array.isArray(ad.bannerUrls) && ad.bannerUrls.length) {
-          urls = ad.bannerUrls.map(function (x) { return String(x || "").trim(); }).filter(Boolean);
-        } else if (ad.bannerUrl) {
-          urls = [String(ad.bannerUrl)];
-        }
-        if (urls.length) {
-          widgetAdBannerUrls = urls;
-          processingBannerImg.src = widgetAdBannerUrls[0];
+        var slides = parseWidgetAdBannerSlides(ad);
+        if (slides.length) {
+          widgetAdBanners = slides;
+          processingBannerImg.src = widgetAdBanners[0].url;
         }
       }
+    }
+
+    function popRandomBannerSlide() {
+      if (!widgetAdBanners.length) return null;
+      if (!bannerShuffleQueue.length) bannerShuffleQueue = shuffleWidgetAdBannerIndices(widgetAdBanners.length);
+      var idx = bannerShuffleQueue.shift();
+      if (idx == null || idx < 0 || idx >= widgetAdBanners.length) return widgetAdBanners[0];
+      return widgetAdBanners[idx];
+    }
+
+    function scheduleLoadingRotationPhase(isFirst) {
+      if (!isFirst) {
+        setProcessingBannerVisible(false, false);
+        loadingMsgIndex = (loadingMsgIndex + 1) % LOADING_MESSAGES.length;
+        setProcessingDisplay(LOADING_MESSAGES[loadingMsgIndex], false, false);
+      }
+      rotationPhaseTimer = window.setTimeout(scheduleBannerRotationPhase, LOADING_MSG_INTERVAL_MS);
+    }
+
+    function scheduleBannerRotationPhase() {
+      var slide = popRandomBannerSlide();
+      if (!slide) {
+        scheduleLoadingRotationPhase(false);
+        return;
+      }
+      processingBannerImg.src = slide.url;
+      setProcessingBannerVisible(true, false);
+      rotationPhaseTimer = window.setTimeout(function () {
+        scheduleLoadingRotationPhase(false);
+      }, Math.max(500, Math.round(slide.durationSec * 1000)));
     }
 
     void fetchWidgetAdEmbed(opts.clientKey || getClientKey()).then(applyWidgetAdEmbed);
@@ -1143,19 +1212,12 @@
       setProcessingBannerVisible(false, true);
       setProcessingDisplay(LOADING_MESSAGES[0], false, true);
 
-      loadingMsgTimer = window.setInterval(function () {
-        loadingMsgTick += 1;
-        if (widgetAdBannerUrls.length) {
-          if (loadingMsgTick % 2 === 1) {
-            var bannerIdx = Math.floor(loadingMsgTick / 2) % widgetAdBannerUrls.length;
-            processingBannerImg.src = widgetAdBannerUrls[bannerIdx];
-            setProcessingBannerVisible(true, false);
-          } else {
-            setProcessingBannerVisible(false, false);
-            loadingMsgIndex = (loadingMsgIndex + 1) % LOADING_MESSAGES.length;
-            setProcessingDisplay(LOADING_MESSAGES[loadingMsgIndex], false, false);
-          }
-        } else if (retailerPromoMessages.length) {
+      if (widgetAdBanners.length) {
+        bannerShuffleQueue = shuffleWidgetAdBannerIndices(widgetAdBanners.length);
+        rotationPhaseTimer = window.setTimeout(scheduleBannerRotationPhase, LOADING_MSG_INTERVAL_MS);
+      } else if (retailerPromoMessages.length) {
+        loadingMsgTimer = window.setInterval(function () {
+          loadingMsgTick += 1;
           if (loadingMsgTick % 2 === 1) {
             setProcessingDisplay(retailerPromoMessages[promoMsgIndex], true, false);
             promoMsgIndex = (promoMsgIndex + 1) % retailerPromoMessages.length;
@@ -1163,14 +1225,18 @@
             loadingMsgIndex = (loadingMsgIndex + 1) % LOADING_MESSAGES.length;
             setProcessingDisplay(LOADING_MESSAGES[loadingMsgIndex], false, false);
           }
-        } else {
+        }, LOADING_MSG_INTERVAL_MS);
+      } else {
+        loadingMsgTimer = window.setInterval(function () {
           loadingMsgIndex = (loadingMsgIndex + 1) % LOADING_MESSAGES.length;
           setProcessingDisplay(LOADING_MESSAGES[loadingMsgIndex], false, false);
-        }
-      }, LOADING_MSG_INTERVAL_MS);
+        }, LOADING_MSG_INTERVAL_MS);
+      }
     }
 
     function stopLoadingMessageRotation() {
+      if (rotationPhaseTimer) window.clearTimeout(rotationPhaseTimer);
+      rotationPhaseTimer = null;
       if (loadingMsgTimer) window.clearInterval(loadingMsgTimer);
       loadingMsgTimer = null;
       if (processingFadeTimer) {

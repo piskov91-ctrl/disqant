@@ -2,7 +2,7 @@ import "server-only";
 
 import { getRedis } from "@/lib/apiKeyStore";
 import {
-  normalizeWidgetAdBannerUrls,
+  normalizeWidgetAdBanners,
   normalizeWidgetAdMessages,
   parseRetailerWidgetAdRecord,
   retailerWidgetAdKey,
@@ -43,7 +43,9 @@ export async function setRetailerWidgetAd(
           messages: normalizeWidgetAdMessages(record.messages ?? []),
         }
       : {
-          bannerUrls: normalizeWidgetAdBannerUrls(record.bannerUrls ?? []),
+          banners: normalizeWidgetAdBanners(
+            (record.banners ?? []).map((b) => ({ url: b.url, durationSec: b.durationSec })),
+          ),
         }),
   };
 
