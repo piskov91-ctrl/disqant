@@ -1082,7 +1082,7 @@ export default function DemoClient() {
                       title="Camera preview"
                     />
                     <div className="dq-stage-actions">
-                      <div className="dq-cam-row" style={{ width: "100%", pointerEvents: "auto" }}>
+                      <div className="dq-cam-row dq-stage-actions-row" style={{ width: "100%", pointerEvents: "auto" }}>
                         <button
                           type="button"
                           className="dq-flip"
