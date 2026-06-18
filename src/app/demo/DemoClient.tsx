@@ -27,6 +27,7 @@ import {
   formatTryOnApiError,
   isCameraCaptureSupported,
   requestCameraVideoStream,
+  WearMeResultFullscreen,
   WearMeTipsPrivacy,
   type CameraFacingMode,
   type TryOnResponse,
@@ -1036,6 +1037,10 @@ export default function DemoClient() {
                 <div className={`dq-progress${wearShowProgress ? " is-on" : ""}`}>
                   <span style={{ width: `${wearProgressPct}%` }} />
                 </div>
+
+                {wearSaveVisible && wearStageUrl ? (
+                  <WearMeResultFullscreen imageUrl={wearStageUrl} active={wearSaveVisible} />
+                ) : null}
 
                 {wearSaveVisible ? (
                   <button

@@ -9,6 +9,7 @@ import { SwitchCamera } from "lucide-react";
 import {
   compressImageToMax1000px,
   formatTryOnApiError,
+  WearMeResultFullscreen,
   type TryOnResponse,
 } from "@/lib/wearMeShared";
 
@@ -359,11 +360,15 @@ export function AdminWearMeClient({ apiKey }: { apiKey: string }) {
             Generating…
           </div>
         ) : resultUrl ? (
-          <img
-            src={resultUrl}
-            alt="Try-on result"
-            className="max-h-[min(70vh,560px)] max-w-full rounded-xl border border-zinc-700 object-contain"
-          />
+          <div className="relative inline-block max-w-full">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={resultUrl}
+              alt="Try-on result"
+              className="max-h-[min(70vh,560px)] max-w-full rounded-xl border border-zinc-700 object-contain"
+            />
+            <WearMeResultFullscreen imageUrl={resultUrl} active />
+          </div>
         ) : (
           <div className="flex h-48 max-w-md items-center justify-center rounded-xl border border-dashed border-zinc-700 bg-zinc-950/30 text-sm text-zinc-500">
             Output appears here after you generate.

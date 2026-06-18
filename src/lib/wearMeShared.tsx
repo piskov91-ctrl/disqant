@@ -1,5 +1,7 @@
 "use client";
 
+import { useEffect, useLayoutEffect, useState } from "react";
+
 /** Echoed from FormData; the API route uses Fashn Try-On Max. */
 export type GarmentCategoryHint = "tops" | "bottoms";
 
@@ -56,6 +58,128 @@ export function WearMeTipsPrivacy() {
         🔒 Your privacy is protected. Photos are processed instantly and permanently deleted.
       </div>
     </div>
+  );
+}
+
+export const WEAR_ME_FULLSCREEN_STYLE_ID = "fit-room-wear-fullscreen-style";
+
+/** Fullscreen expand control + overlay (matches `public/widget.js`). */
+export const WEAR_ME_FULLSCREEN_CSS =
+  ".dq-fs{position:absolute;top:12px;left:12px;z-index:6;width:40px;height:40px;padding:0;border-radius:999px;display:inline-flex;align-items:center;justify-content:center;cursor:pointer;border:1px solid rgba(255,255,255,.35);background:rgba(26,22,18,.82);color:#f5ede4;box-shadow:0 6px 18px rgba(0,0,0,.35);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);transition:transform .16s ease,filter .16s ease;-webkit-tap-highlight-color:transparent;}" +
+  ".dq-fs:hover{transform:translateY(-1px);filter:brightness(1.08);}" +
+  ".dq-fs:active{transform:translateY(0);}" +
+  ".dq-fs-icon{width:18px;height:18px;display:block;}" +
+  ".dq-fs-overlay{position:fixed;inset:0;z-index:2147483648;background:rgba(12,10,8,.94);display:flex;align-items:center;justify-content:center;padding:max(16px,env(safe-area-inset-top,0px)) max(16px,env(safe-area-inset-right,0px)) max(16px,env(safe-area-inset-bottom,0px)) max(16px,env(safe-area-inset-left,0px));}" +
+  ".dq-fs-overlay img{max-width:100%;max-height:100%;width:auto;height:auto;object-fit:contain;display:block;}" +
+  ".dq-fs-close{position:absolute;top:max(16px,env(safe-area-inset-top,0px));right:max(16px,env(safe-area-inset-right,0px));appearance:none;display:inline-flex;align-items:center;justify-content:center;border:1px solid rgba(255,255,255,.14);background:#0f0f14;color:#fff;border-radius:999px;min-width:44px;min-height:44px;padding:0;cursor:pointer;box-shadow:0 10px 26px rgba(0,0,0,.22);transition:transform .16s ease,box-shadow .16s ease,background-color .16s ease;z-index:1;-webkit-tap-highlight-color:transparent;}" +
+  ".dq-fs-close:hover{background:#2a2633;transform:translateY(-1px);}" +
+  ".dq-fs-close:active{transform:translateY(0);}" +
+  ".dq-fs-close-icon{width:22px;height:22px;display:block;}";
+
+function ensureWearMeFullscreenStyles() {
+  if (typeof document === "undefined") return;
+  if (document.getElementById(WEAR_ME_FULLSCREEN_STYLE_ID)) return;
+  const el = document.createElement("style");
+  el.id = WEAR_ME_FULLSCREEN_STYLE_ID;
+  el.textContent = WEAR_ME_FULLSCREEN_CSS;
+  document.head.appendChild(el);
+}
+
+function DqExpandIcon() {
+  return (
+    <svg
+      className="dq-fs-icon"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden
+    >
+      <path d="M8 3H5a2 2 0 0 0-2 2v3" />
+      <path d="M21 8V5a2 2 0 0 0-2-2h-3" />
+      <path d="M3 16v3a2 2 0 0 0 2 2h3" />
+      <path d="M16 21h3a2 2 0 0 0 2-2v-3" />
+    </svg>
+  );
+}
+
+/** Expand button on try-on result + fullscreen image overlay. */
+export function WearMeResultFullscreen({
+  imageUrl,
+  active,
+}: {
+  imageUrl: string | null;
+  active: boolean;
+}) {
+  const [open, setOpen] = useState(false);
+
+  useLayoutEffect(() => {
+    ensureWearMeFullscreenStyles();
+  }, []);
+
+  useEffect(() => {
+    if (!open) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setOpen(false);
+    };
+    document.addEventListener("keydown", onKey);
+    return () => document.removeEventListener("keydown", onKey);
+  }, [open]);
+
+  useEffect(() => {
+    if (!active) setOpen(false);
+  }, [active]);
+
+  if (!active || !imageUrl) return null;
+
+  return (
+    <>
+      <button
+        type="button"
+        className="dq-fs"
+        onClick={() => setOpen(true)}
+        aria-label="View fullscreen"
+        title="Fullscreen"
+      >
+        <DqExpandIcon />
+      </button>
+      {open ? (
+        <div
+          className="dq-fs-overlay"
+          role="dialog"
+          aria-modal="true"
+          aria-label="Try-on result fullscreen"
+          onClick={(e) => {
+            if (e.target === e.currentTarget) setOpen(false);
+          }}
+        >
+          <button
+            type="button"
+            className="dq-fs-close"
+            onClick={() => setOpen(false)}
+            aria-label="Close fullscreen"
+            title="Close"
+          >
+            <svg
+              className="dq-fs-close-icon"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2.5"
+              strokeLinecap="round"
+              aria-hidden
+            >
+              <path d="M18 6 6 18" />
+              <path d="m6 6 12 12" />
+            </svg>
+          </button>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src={imageUrl} alt="Try-on result" />
+        </div>
+      ) : null}
+    </>
   );
 }
 
@@ -144,7 +268,8 @@ export const DEMO_WEAR_MODAL_CSS =
   ".dq-cam-row .dq-primary{flex:1;min-width:0;}" +
   "@media (min-width:521px){.dq-backdrop{top:var(--site-header-height,0px);}.dq-modal{max-height:min(calc(100dvh - var(--site-header-height,0px) - 28px),calc(100vh - var(--site-header-height,0px) - 28px));}.dq-modal-foot{padding:20px 16px 24px;}.dq-modal-foot .dq-x{min-width:88px;min-height:58px;font-size:28px;line-height:1;box-shadow:0 14px 32px rgba(0,0,0,.2);}.dq-modal-foot .dq-x-icon{width:30px;height:30px;}}" +
   "@media (max-width:520px){.dq-backdrop{align-items:flex-start;top:var(--site-header-height,0px);padding-top:max(14px,calc(env(safe-area-inset-top,0px) + 10px));}.dq-modal{max-height:min(calc(100dvh - var(--site-header-height,0px) - 28px),calc(100vh - var(--site-header-height,0px) - 28px));}.dq-head{padding-right:max(56px,calc(60px + env(safe-area-inset-right, 0px)));}.dq-modal-foot{position:absolute;top:max(10px, env(safe-area-inset-top, 0px));right:max(10px, env(safe-area-inset-right, 0px));left:auto;bottom:auto;z-index:50;border:0;padding:0;background:transparent;}.dq-x{min-width:54px;min-height:54px;font-size:22px;line-height:1}.dq-x-icon{width:26px;height:26px}}" +
-  "@media (max-width:420px){.dq-body{padding:10px}.dq-stage{height:min(52vh,380px)}.dq-choice{min-width:100%}}";
+  "@media (max-width:420px){.dq-body{padding:10px}.dq-stage{height:min(52vh,380px)}.dq-choice{min-width:100%}}" +
+  WEAR_ME_FULLSCREEN_CSS;
 
 export async function compressImageToMax1000px(file: File) {
   try {

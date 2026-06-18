@@ -223,6 +223,17 @@
       + ".dq-dl:active{transform:translateY(0);}"
       + ".dq-dl:disabled{opacity:.6;cursor:not-allowed;transform:none;}"
       + ".dq-dl-icon{width:20px;height:20px;display:block;}"
+      + ".dq-fs{position:absolute;top:12px;left:12px;z-index:6;width:40px;height:40px;padding:0;border-radius:999px;display:none;align-items:center;justify-content:center;cursor:pointer;border:1px solid rgba(255,255,255,.35);background:rgba(26,22,18,.82);color:#f5ede4;box-shadow:0 6px 18px rgba(0,0,0,.35);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);transition:transform .16s ease,filter .16s ease;-webkit-tap-highlight-color:transparent;}"
+      + ".dq-fs.is-on{display:inline-flex;}"
+      + ".dq-fs:hover{transform:translateY(-1px);filter:brightness(1.08);}"
+      + ".dq-fs:active{transform:translateY(0);}"
+      + ".dq-fs-icon{width:18px;height:18px;display:block;}"
+      + ".dq-fs-overlay{position:fixed;inset:0;z-index:2147483648;background:rgba(12,10,8,.94);display:flex;align-items:center;justify-content:center;padding:max(16px,env(safe-area-inset-top,0px)) max(16px,env(safe-area-inset-right,0px)) max(16px,env(safe-area-inset-bottom,0px)) max(16px,env(safe-area-inset-left,0px));}"
+      + ".dq-fs-overlay img{max-width:100%;max-height:100%;width:auto;height:auto;object-fit:contain;display:block;}"
+      + ".dq-fs-close{position:absolute;top:max(16px,env(safe-area-inset-top,0px));right:max(16px,env(safe-area-inset-right,0px));appearance:none;display:inline-flex;align-items:center;justify-content:center;border:1px solid rgba(255,255,255,.14);background:#0f0f14;color:#fff;border-radius:999px;min-width:44px;min-height:44px;padding:0;cursor:pointer;box-shadow:0 10px 26px rgba(0,0,0,.22);transition:transform .16s ease,box-shadow .16s ease,background-color .16s ease;z-index:1;-webkit-tap-highlight-color:transparent;}"
+      + ".dq-fs-close:hover{background:#2a2633;transform:translateY(-1px);}"
+      + ".dq-fs-close:active{transform:translateY(0);}"
+      + ".dq-fs-close-icon{width:22px;height:22px;display:block;}"
       + ".dq-row{display:flex;gap:10px;flex-wrap:wrap;}"
       + ".dq-choice{flex:1;min-width:160px;display:flex;align-items:center;gap:10px;justify-content:center;padding:12px 12px;border-radius:16px;border:1px solid rgba(198,167,125,.28);background:#1a1612;color:#f5ede4;cursor:pointer;box-shadow:0 8px 22px rgba(0,0,0,.22);font:900 12px/1 system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;transition:transform .16s ease, box-shadow .16s ease, border-color .16s ease;}"
       + ".dq-choice:hover{transform:translateY(-1px);box-shadow:0 12px 28px rgba(0,0,0,.28);border-color:rgba(198,167,125,.45);}"
@@ -656,19 +667,78 @@
     saveBtn.title = "Download image";
     saveBtn.innerHTML = '<svg class="dq-dl-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v12"/><path d="m7 10 5 5 5-5"/><path d="M5 21h14"/></svg>';
 
+    var fsBtn = document.createElement("button");
+    fsBtn.className = "dq-fs";
+    fsBtn.type = "button";
+    fsBtn.setAttribute("aria-label", "View fullscreen");
+    fsBtn.title = "Fullscreen";
+    fsBtn.innerHTML = '<svg class="dq-fs-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 3H5a2 2 0 0 0-2 2v3"/><path d="M21 8V5a2 2 0 0 0-2-2h-3"/><path d="M3 16v3a2 2 0 0 0 2 2h3"/><path d="M16 21h3a2 2 0 0 0 2-2v-3"/></svg>';
+
+    var fsOverlay = null;
+
     body.appendChild(stage);
     body.appendChild(wow);
     body.appendChild(row);
     body.appendChild(fileInput);
     body.appendChild(generateBtn);
+    body.appendChild(generateBtn);
     stage.appendChild(saveBtn);
+    stage.appendChild(fsBtn);
+
+    function closeFullscreen() {
+      if (fsOverlay && fsOverlay.parentNode) fsOverlay.parentNode.removeChild(fsOverlay);
+      fsOverlay = null;
+      document.removeEventListener("keydown", onFullscreenKeyDown);
+    }
+
+    function onFullscreenKeyDown(e) {
+      if (e.key === "Escape") closeFullscreen();
+    }
+
+    function openFullscreen(src) {
+      if (!src) return;
+      closeFullscreen();
+      fsOverlay = document.createElement("div");
+      fsOverlay.className = "dq-fs-overlay";
+      fsOverlay.setAttribute("role", "dialog");
+      fsOverlay.setAttribute("aria-modal", "true");
+      fsOverlay.setAttribute("aria-label", "Try-on result fullscreen");
+
+      var fsClose = document.createElement("button");
+      fsClose.type = "button";
+      fsClose.className = "dq-fs-close";
+      fsClose.setAttribute("aria-label", "Close fullscreen");
+      fsClose.title = "Close";
+      fsClose.innerHTML = '<svg class="dq-fs-close-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" aria-hidden="true"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>';
+      fsClose.addEventListener("click", closeFullscreen);
+
+      var fsImg = document.createElement("img");
+      fsImg.src = src;
+      fsImg.alt = "Try-on result";
+
+      fsOverlay.appendChild(fsClose);
+      fsOverlay.appendChild(fsImg);
+      fsOverlay.addEventListener("click", function (e) {
+        if (e.target === fsOverlay) closeFullscreen();
+      });
+
+      document.body.appendChild(fsOverlay);
+      document.addEventListener("keydown", onFullscreenKeyDown);
+    }
+
+    fsBtn.addEventListener("click", function () {
+      var src = stageImg && stageImg.src ? stageImg.src : "";
+      openFullscreen(src);
+    });
 
     function hideDownload() {
       saveBtn.classList.remove("is-on");
+      fsBtn.classList.remove("is-on");
     }
 
     function showDownload() {
       saveBtn.classList.add("is-on");
+      fsBtn.classList.add("is-on");
     }
 
     function setStageImage(url, alt) {
@@ -812,6 +882,7 @@
     var originalClose = m.close;
     m.close = function () {
       stopStream();
+      closeFullscreen();
       originalClose();
     };
 
