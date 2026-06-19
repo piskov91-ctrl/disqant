@@ -279,7 +279,9 @@ function WidgetAdLoadingPreview({
   const [showPromo, setShowPromo] = useState(false);
   const [fading, setFading] = useState(false);
   const [activeSlideId, setActiveSlideId] = useState<string | null>(null);
+  const [bannerImgFading, setBannerImgFading] = useState(false);
   const phaseTimerRef = useRef<number | null>(null);
+  const fadeTimerRef = useRef<number | null>(null);
 
   const promoLines = useMemo(
     () => messages.map((m) => m.trim()).filter(Boolean).slice(0, RETAILER_WIDGET_AD_MAX_MESSAGES),
@@ -297,64 +299,70 @@ function WidgetAdLoadingPreview({
   useEffect(() => {
     if (phaseTimerRef.current) window.clearTimeout(phaseTimerRef.current);
     phaseTimerRef.current = null;
+    if (fadeTimerRef.current) window.clearTimeout(fadeTimerRef.current);
+    fadeTimerRef.current = null;
+    setBannerImgFading(false);
     setShowPromo(false);
     setActiveSlideId(null);
     setLoadingIndex(0);
     setPromoIndex(0);
+    setFading(false);
 
-    if (!hasTextPromo && !hasBanner) return;
+    if (hasBanner) {
+      const FADE_MS = 480;
+      const bannerQueue: number[] = [];
+
+      function shuffleQueue() {
+        bannerQueue.length = 0;
+        for (let i = 0; i < slides.length; i++) bannerQueue.push(i);
+        for (let i = bannerQueue.length - 1; i > 0; i--) {
+          const j = Math.floor(Math.random() * (i + 1));
+          [bannerQueue[i], bannerQueue[j]] = [bannerQueue[j], bannerQueue[i]];
+        }
+      }
+
+      function popSlide(): BannerSlideDraft | null {
+        if (!slides.length) return null;
+        if (!bannerQueue.length) shuffleQueue();
+        const idx = bannerQueue.shift();
+        if (idx == null) return slides[0] ?? null;
+        return slides[idx] ?? slides[0] ?? null;
+      }
+
+      function showNextSlide(isFirst: boolean) {
+        const slide = popSlide();
+        if (!slide) return;
+
+        if (isFirst) {
+          setActiveSlideId(slide.id);
+        } else {
+          setBannerImgFading(true);
+          fadeTimerRef.current = window.setTimeout(() => {
+            fadeTimerRef.current = null;
+            setActiveSlideId(slide.id);
+            setBannerImgFading(false);
+          }, FADE_MS);
+        }
+
+        phaseTimerRef.current = window.setTimeout(
+          () => showNextSlide(false),
+          Math.max(500, slide.durationSec * 1000),
+        );
+      }
+
+      shuffleQueue();
+      showNextSlide(true);
+
+      return () => {
+        if (phaseTimerRef.current) window.clearTimeout(phaseTimerRef.current);
+        if (fadeTimerRef.current) window.clearTimeout(fadeTimerRef.current);
+      };
+    }
+
+    if (!hasTextPromo) return;
 
     const LOADING_MS = 3000;
     const FADE_MS = 480;
-    const bannerQueue: number[] = [];
-
-    function shuffleQueue() {
-      bannerQueue.length = 0;
-      for (let i = 0; i < slides.length; i++) bannerQueue.push(i);
-      for (let i = bannerQueue.length - 1; i > 0; i--) {
-        const j = Math.floor(Math.random() * (i + 1));
-        [bannerQueue[i], bannerQueue[j]] = [bannerQueue[j], bannerQueue[i]];
-      }
-    }
-
-    function popSlide(): BannerSlideDraft | null {
-      if (!slides.length) return null;
-      if (!bannerQueue.length) shuffleQueue();
-      const idx = bannerQueue.shift();
-      if (idx == null) return slides[0] ?? null;
-      return slides[idx] ?? slides[0] ?? null;
-    }
-
-    function runLoadingPhase(isFirst: boolean) {
-      setActiveSlideId(null);
-      if (!isFirst) {
-        setFading(true);
-        window.setTimeout(() => {
-          setShowPromo(false);
-          setLoadingIndex((i) => (i + 1) % WEAR_LOADING_MESSAGES.length);
-          setFading(false);
-        }, FADE_MS);
-      }
-      phaseTimerRef.current = window.setTimeout(runBannerPhase, LOADING_MS);
-    }
-
-    function runBannerPhase() {
-      const slide = popSlide();
-      if (!slide) {
-        runLoadingPhase(false);
-        return;
-      }
-      setFading(true);
-      window.setTimeout(() => {
-        setShowPromo(true);
-        setActiveSlideId(slide.id);
-        setFading(false);
-      }, FADE_MS);
-      phaseTimerRef.current = window.setTimeout(
-        () => runLoadingPhase(false),
-        slide.durationSec * 1000,
-      );
-    }
 
     function runTextPromoPhase() {
       setFading(true);
@@ -376,12 +384,7 @@ function WidgetAdLoadingPreview({
       phaseTimerRef.current = window.setTimeout(runTextPromoPhase, LOADING_MS);
     }
 
-    if (hasBanner) {
-      shuffleQueue();
-      phaseTimerRef.current = window.setTimeout(runBannerPhase, LOADING_MS);
-    } else if (hasTextPromo) {
-      phaseTimerRef.current = window.setTimeout(runTextPromoPhase, LOADING_MS);
-    }
+    phaseTimerRef.current = window.setTimeout(runTextPromoPhase, LOADING_MS);
 
     return () => {
       if (phaseTimerRef.current) window.clearTimeout(phaseTimerRef.current);
@@ -398,30 +401,50 @@ function WidgetAdLoadingPreview({
           Widget preview
         </p>
         <p className="mt-1 text-xs text-zinc-500">
-          Shoppers see this on the loading overlay while AI generates their look.
-          {hasBanner ? " Banners play in random order." : null}
+          {hasBanner
+            ? "Matches the live try-on: banners fill the stage and rotate at each clip’s duration (random order)."
+            : "Shoppers see this on the loading overlay while AI generates their look."}
         </p>
       </div>
-      <div className="relative aspect-[4/3] min-h-[220px] bg-[#0f0f14]">
-        <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 bg-[rgba(26,22,18,0.82)] backdrop-blur-sm">
-          <div
-            className={`flex min-h-[4.5rem] flex-col items-center justify-center gap-3.5 transition-opacity duration-[480ms] ${
-              fading ? "opacity-0" : "opacity-100"
+      <div className="relative aspect-[4/3] min-h-[220px] overflow-hidden bg-[#0f0f14]">
+        {hasBanner && activeSlide ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img
+            key={activeSlide.id}
+            src={activeSlide.url}
+            alt=""
+            className={`absolute inset-0 z-[1] h-full w-full object-cover object-center transition-opacity duration-[480ms] ${
+              bannerImgFading ? "opacity-0" : "opacity-100"
             }`}
-          >
+          />
+        ) : null}
+
+        <div
+          className={`absolute inset-0 z-[4] flex flex-col items-center justify-center gap-3 ${
+            hasBanner
+              ? "bg-[rgba(12,10,8,0.32)]"
+              : "bg-[rgba(26,22,18,0.82)] backdrop-blur-sm"
+          }`}
+        >
+          {kind === "banner" && !hasBanner ? (
+            <p className="max-w-[280px] px-4 text-center text-sm font-semibold leading-snug text-zinc-500">
+              Upload banner images to preview how they appear during try-on.
+            </p>
+          ) : hasBanner ? (
             <div
               className="h-[34px] w-[34px] animate-spin rounded-full border-[3px] border-[rgba(15,15,20,0.14)] border-t-[#c6a77d]"
               aria-hidden
             />
-            {hasBanner && showPromo && activeSlide ? (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img
-                key={activeSlide.id}
-                src={activeSlide.url}
-                alt=""
-                className="max-h-40 max-w-[min(420px,92%)] rounded-[10px] border border-[#c6a77d]/35 object-contain shadow-[0_8px_24px_rgba(0,0,0,0.35)]"
+          ) : (
+            <div
+              className={`flex min-h-[4.5rem] flex-col items-center justify-center gap-3.5 transition-opacity duration-[480ms] ${
+                fading ? "opacity-0" : "opacity-100"
+              }`}
+            >
+              <div
+                className="h-[34px] w-[34px] animate-spin rounded-full border-[3px] border-[rgba(15,15,20,0.14)] border-t-[#c6a77d]"
+                aria-hidden
               />
-            ) : (
               <p
                 className={`max-w-[420px] px-4 text-center text-sm font-black leading-snug ${
                   hasTextPromo && showPromo ? "text-[#c6a77d]" : "text-[#f5ede4]"
@@ -429,11 +452,12 @@ function WidgetAdLoadingPreview({
               >
                 {hasTextPromo && showPromo ? promoText : loadingText}
               </p>
-            )}
-          </div>
+            </div>
+          )}
         </div>
-        <div className="pointer-events-none absolute inset-x-3 bottom-3 h-2.5 overflow-hidden rounded-full bg-[rgba(245,237,228,0.12)]">
-          <div className="h-full w-[45%] rounded-full bg-gradient-to-r from-[#a68958] via-[#c6a77d] to-[#e8d4bc]" />
+
+        <div className="pointer-events-none absolute inset-x-3 bottom-3 z-[5] h-2.5 overflow-hidden rounded-full bg-[rgba(245,237,228,0.12)]">
+          <div className="h-full w-[45%] animate-pulse rounded-full bg-gradient-to-r from-[#a68958] via-[#c6a77d] to-[#e8d4bc]" />
         </div>
       </div>
     </div>
