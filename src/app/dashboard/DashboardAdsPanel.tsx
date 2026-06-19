@@ -1,14 +1,19 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { ArrowLeft, ArrowRight, Plus, X } from "lucide-react";
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type ChangeEvent,
+} from "react";
+import { GripVertical, Plus, X } from "lucide-react";
 import {
   RETAILER_WIDGET_AD_DEFAULT_BANNER_DURATION_SEC,
   RETAILER_WIDGET_AD_MAX_BANNER_BYTES,
-  RETAILER_WIDGET_AD_MAX_BANNER_DURATION_SEC,
   RETAILER_WIDGET_AD_MAX_MESSAGE_CHARS,
   RETAILER_WIDGET_AD_MAX_MESSAGES,
-  RETAILER_WIDGET_AD_MIN_BANNER_DURATION_SEC,
   normalizeWidgetAdBannerDuration,
   type RetailerWidgetAdBannerSlide,
   type RetailerWidgetAdRecord,
@@ -60,246 +65,191 @@ function slidesFromRecord(banners: RetailerWidgetAdBannerSlide[]): BannerSlideDr
   }));
 }
 
-/** Stable key so the live preview remounts when draft clips change (add / remove / reorder / duration). */
+/** Stable key so the live preview remounts when draft clips change (add / remove / reorder). */
 function bannerPreviewKey(slides: BannerSlideDraft[]): string {
-  return slides.map((s) => `${s.id}:${s.durationSec}:${s.url.length}`).join("|");
+  return slides.map((s) => `${s.id}:${s.url.length}`).join("|");
 }
 
-function BannerTimelineClip({
+function BannerImageCard({
   slide,
   index,
-  slideCount,
-  onDurationChange,
+  isDragging,
+  isDropTarget,
   onRemove,
-  onMove,
+  onDragStart,
+  onDragEnd,
+  onDragOver,
+  onDragLeave,
+  onDrop,
 }: {
   slide: BannerSlideDraft;
   index: number;
-  slideCount: number;
-  onDurationChange: (id: string, durationSec: number) => void;
+  isDragging: boolean;
+  isDropTarget: boolean;
   onRemove: (id: string) => void;
-  onMove: (id: string, direction: -1 | 1) => void;
+  onDragStart: (id: string) => void;
+  onDragEnd: () => void;
+  onDragOver: (id: string) => void;
+  onDragLeave: (id: string) => void;
+  onDrop: (id: string) => void;
 }) {
-  const durationPct =
-    (slide.durationSec / RETAILER_WIDGET_AD_MAX_BANNER_DURATION_SEC) * 100;
-
   return (
-    <li className="relative flex w-[148px] shrink-0 flex-col rounded-xl border border-white/10 bg-zinc-900/50 shadow-sm transition-shadow hover:border-[#c6a77d]/35">
-      <div className="relative overflow-hidden rounded-t-xl border-b border-white/10 bg-zinc-950/70">
+    <li
+      draggable
+      onDragStart={(e) => {
+        e.dataTransfer.effectAllowed = "move";
+        e.dataTransfer.setData("text/plain", slide.id);
+        onDragStart(slide.id);
+      }}
+      onDragEnd={onDragEnd}
+      onDragOver={(e) => {
+        e.preventDefault();
+        e.dataTransfer.dropEffect = "move";
+        onDragOver(slide.id);
+      }}
+      onDragLeave={() => onDragLeave(slide.id)}
+      onDrop={(e) => {
+        e.preventDefault();
+        onDrop(slide.id);
+      }}
+      className={`group relative list-none rounded-xl border bg-zinc-900/50 shadow-sm transition-[border-color,box-shadow,opacity] ${
+        isDragging
+          ? "cursor-grabbing border-[#c6a77d]/45 opacity-45"
+          : "cursor-grab border-white/10 hover:border-[#c6a77d]/35"
+      } ${isDropTarget ? "border-[#c6a77d]/55 ring-2 ring-[#c6a77d]/25" : ""}`}
+    >
+      <div className="relative aspect-[3/1] overflow-hidden rounded-xl bg-zinc-950/70">
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
           src={slide.url}
           alt={`Banner ${index + 1}`}
-          className="aspect-[4/3] w-full object-contain p-1"
+          draggable={false}
+          className="h-full w-full object-cover"
         />
+        <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-black/20 opacity-70 transition-opacity group-hover:opacity-100" />
+        <span className="pointer-events-none absolute bottom-2 left-2 rounded bg-black/55 px-1.5 py-0.5 text-[10px] font-bold tabular-nums text-zinc-300">
+          {index + 1}
+        </span>
+        <span className="pointer-events-none absolute bottom-2 right-2 inline-flex items-center gap-0.5 rounded bg-black/55 px-1.5 py-0.5 text-[10px] font-semibold text-zinc-400 opacity-0 transition-opacity group-hover:opacity-100">
+          <GripVertical className="h-3 w-3" aria-hidden />
+          Drag
+        </span>
         <button
           type="button"
           onClick={() => onRemove(slide.id)}
-          className="absolute right-1.5 top-1.5 inline-flex h-6 w-6 items-center justify-center rounded-full border border-white/15 bg-black/75 text-zinc-200 transition hover:bg-black/90"
+          className="absolute right-2 top-2 inline-flex h-7 w-7 items-center justify-center rounded-full border border-white/15 bg-black/75 text-zinc-200 opacity-0 shadow-sm transition hover:border-red-400/40 hover:bg-red-950/80 hover:text-red-200 group-hover:opacity-100"
           aria-label={`Remove banner ${index + 1}`}
         >
-          <X className="h-3 w-3" aria-hidden />
+          <X className="h-3.5 w-3.5" aria-hidden />
         </button>
-        <span className="absolute bottom-1.5 left-1.5 rounded bg-black/65 px-1.5 py-0.5 text-[10px] font-bold tabular-nums text-zinc-300">
-          {index + 1}
-        </span>
-      </div>
-
-      <div className="space-y-2 px-2.5 py-2.5">
-        <div className="flex items-center justify-between gap-1">
-          <span className="text-[10px] font-semibold uppercase tracking-[0.14em] text-zinc-500">
-            Order
-          </span>
-          <div className="flex gap-1">
-            <button
-              type="button"
-              disabled={index === 0}
-              onClick={() => onMove(slide.id, -1)}
-              className="inline-flex h-6 w-6 items-center justify-center rounded-md border border-white/10 bg-zinc-950/80 text-zinc-400 transition hover:border-[#c6a77d]/35 hover:text-zinc-200 disabled:pointer-events-none disabled:opacity-35"
-              aria-label={`Move banner ${index + 1} earlier`}
-            >
-              <ArrowLeft className="h-3 w-3" aria-hidden />
-            </button>
-            <button
-              type="button"
-              disabled={index >= slideCount - 1}
-              onClick={() => onMove(slide.id, 1)}
-              className="inline-flex h-6 w-6 items-center justify-center rounded-md border border-white/10 bg-zinc-950/80 text-zinc-400 transition hover:border-[#c6a77d]/35 hover:text-zinc-200 disabled:pointer-events-none disabled:opacity-35"
-              aria-label={`Move banner ${index + 1} later`}
-            >
-              <ArrowRight className="h-3 w-3" aria-hidden />
-            </button>
-          </div>
-        </div>
-
-        <label className="flex items-center justify-between gap-2">
-          <span className="text-[10px] font-semibold uppercase tracking-[0.14em] text-zinc-500">
-            Duration
-          </span>
-          <span className="flex items-center gap-1">
-            <input
-              type="number"
-              min={RETAILER_WIDGET_AD_MIN_BANNER_DURATION_SEC}
-              max={RETAILER_WIDGET_AD_MAX_BANNER_DURATION_SEC}
-              step={1}
-              value={slide.durationSec}
-              onChange={(e) => {
-                const parsed = Number.parseInt(e.target.value, 10);
-                onDurationChange(
-                  slide.id,
-                  Number.isFinite(parsed)
-                    ? parsed
-                    : RETAILER_WIDGET_AD_DEFAULT_BANNER_DURATION_SEC,
-                );
-              }}
-              onBlur={() =>
-                onDurationChange(slide.id, normalizeWidgetAdBannerDuration(slide.durationSec))
-              }
-              className="w-12 rounded-md border border-white/12 bg-zinc-950/80 px-1.5 py-1 text-center text-xs font-semibold tabular-nums text-zinc-100 focus:border-[#c6a77d]/45 focus:outline-none focus:ring-1 focus:ring-[#c6a77d]/30"
-            />
-            <span className="text-[11px] font-medium text-zinc-500">sec</span>
-          </span>
-        </label>
-
-        <div
-          className="h-1.5 overflow-hidden rounded-full bg-zinc-800/90"
-          title={`${slide.durationSec}s of ${RETAILER_WIDGET_AD_MAX_BANNER_DURATION_SEC}s max`}
-          aria-hidden
-        >
-          <div
-            className="h-full rounded-full bg-gradient-to-r from-[#a68958]/80 via-[#c6a77d]/80 to-[#e8d4bc]/80"
-            style={{ width: `${Math.min(100, Math.max(4, durationPct))}%` }}
-          />
-        </div>
       </div>
     </li>
   );
 }
 
-function BannerTimeline({
+function BannerImageGrid({
   slides,
-  onDurationChange,
+  onReorder,
   onRemove,
-  onMove,
   onAddFiles,
   uploading,
 }: {
   slides: BannerSlideDraft[];
-  onDurationChange: (id: string, durationSec: number) => void;
+  onReorder: (fromIndex: number, toIndex: number) => void;
   onRemove: (id: string) => void;
-  onMove: (id: string, direction: -1 | 1) => void;
   onAddFiles: (files: FileList | null) => void;
   uploading: boolean;
 }) {
-  const rulerMarks = [0, 15, 30, 45];
+  const [dragId, setDragId] = useState<string | null>(null);
+  const [dropTargetId, setDropTargetId] = useState<string | null>(null);
+
+  function clearDragState() {
+    setDragId(null);
+    setDropTargetId(null);
+  }
+
+  function handleDrop(targetId: string) {
+    if (!dragId || dragId === targetId) {
+      clearDragState();
+      return;
+    }
+    const fromIndex = slides.findIndex((s) => s.id === dragId);
+    const toIndex = slides.findIndex((s) => s.id === targetId);
+    if (fromIndex >= 0 && toIndex >= 0) onReorder(fromIndex, toIndex);
+    clearDragState();
+  }
+
+  const fileInputProps = {
+    type: "file" as const,
+    accept: "image/jpeg,image/png,image/webp,image/*",
+    multiple: true,
+    className: "sr-only",
+    disabled: uploading,
+    onChange: (e: ChangeEvent<HTMLInputElement>) => {
+      onAddFiles(e.target.files);
+      e.target.value = "";
+    },
+  };
 
   return (
     <div className="overflow-hidden rounded-2xl border border-white/10 bg-zinc-900/40 shadow-lg shadow-black/20 backdrop-blur-sm">
       <div className="flex items-center justify-between gap-3 border-b border-white/10 bg-black/20 px-4 py-3">
         <div>
           <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-[#d4bc94]/90">
-            Timeline
+            Banner images
           </p>
           <p className="mt-0.5 text-xs text-zinc-500">
-            Set how long each banner shows · random order in the widget · max{" "}
-            {RETAILER_WIDGET_AD_MAX_BANNER_DURATION_SEC}s each
+            Drag cards to reorder · delete on hover · up to 30MB each
           </p>
         </div>
         <label className="inline-flex shrink-0 cursor-pointer items-center gap-1.5 rounded-full border border-[#c6a77d]/40 bg-[#c6a77d]/10 px-3 py-1.5 text-xs font-semibold text-[#e8dcc8] transition hover:border-[#c6a77d]/60 hover:bg-[#c6a77d]/16">
           <Plus className="h-3.5 w-3.5" aria-hidden />
           {uploading ? "Adding…" : "Add images"}
-          <input
-            type="file"
-            accept="image/jpeg,image/png,image/webp,image/*"
-            multiple
-            className="sr-only"
-            disabled={uploading}
-            onChange={(e) => {
-              onAddFiles(e.target.files);
-              e.target.value = "";
-            }}
-          />
+          <input {...fileInputProps} />
         </label>
       </div>
 
-      <div className="relative border-b border-white/10 px-4 py-2">
-        <div className="relative h-5">
-          {rulerMarks.map((sec) => (
-            <span
-              key={sec}
-              className="absolute top-0 -translate-x-1/2 text-[10px] tabular-nums text-zinc-600"
-              style={{ left: `${(sec / RETAILER_WIDGET_AD_MAX_BANNER_DURATION_SEC) * 100}%` }}
-            >
-              {sec}s
-            </span>
-          ))}
-          <div className="absolute bottom-0 left-0 right-0 flex justify-between px-0.5">
-            {rulerMarks.map((sec) => (
-              <span
-                key={`tick-${sec}`}
-                className="h-2 w-px bg-zinc-700"
-                style={{
-                  position: "absolute",
-                  left: `${(sec / RETAILER_WIDGET_AD_MAX_BANNER_DURATION_SEC) * 100}%`,
-                  transform: "translateX(-50%)",
-                }}
-              />
-            ))}
-          </div>
-        </div>
-      </div>
-
-      <div className="overflow-x-auto px-4 py-4">
+      <div className="p-4">
         {slides.length ? (
-          <ul className="flex min-w-min gap-3 pb-1">
+          <ul className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
             {slides.map((slide, index) => (
-              <BannerTimelineClip
+              <BannerImageCard
                 key={slide.id}
                 slide={slide}
                 index={index}
-                slideCount={slides.length}
-                onDurationChange={onDurationChange}
+                isDragging={dragId === slide.id}
+                isDropTarget={dropTargetId === slide.id && dragId !== slide.id}
                 onRemove={onRemove}
-                onMove={onMove}
+                onDragStart={setDragId}
+                onDragEnd={clearDragState}
+                onDragOver={setDropTargetId}
+                onDragLeave={(id) => {
+                  if (dropTargetId === id) setDropTargetId(null);
+                }}
+                onDrop={handleDrop}
               />
             ))}
-            <li className="flex w-[120px] shrink-0 items-center justify-center">
-              <label className="flex h-full min-h-[168px] w-full cursor-pointer flex-col items-center justify-center gap-2 rounded-xl border border-dashed border-white/15 bg-zinc-950/50 text-center transition hover:border-[#c6a77d]/35 hover:bg-zinc-900/50">
+            <li className="list-none">
+              <label className="flex aspect-[3/1] cursor-pointer flex-col items-center justify-center gap-2 rounded-xl border border-dashed border-white/15 bg-zinc-950/50 text-center transition hover:border-[#c6a77d]/35 hover:bg-zinc-900/50">
                 <Plus className="h-5 w-5 text-[#c6a77d]/80" aria-hidden />
-                <span className="text-[11px] font-semibold text-zinc-400">Add clip</span>
-                <input
-                  type="file"
-                  accept="image/jpeg,image/png,image/webp,image/*"
-                  multiple
-                  className="sr-only"
-                  disabled={uploading}
-                  onChange={(e) => {
-                    onAddFiles(e.target.files);
-                    e.target.value = "";
-                  }}
-                />
+                <span className="text-[11px] font-semibold text-zinc-400">Add image</span>
+                <input {...fileInputProps} />
               </label>
             </li>
           </ul>
         ) : (
-          <label className="flex cursor-pointer flex-col items-center justify-center gap-2 rounded-xl border border-dashed border-white/15 bg-zinc-950/50 px-4 py-12 text-center transition hover:border-[#c6a77d]/35 hover:bg-zinc-900/50">
+          <label className="flex cursor-pointer flex-col items-center justify-center gap-2 rounded-xl border border-dashed border-white/15 bg-zinc-950/50 px-4 py-14 text-center transition hover:border-[#c6a77d]/35 hover:bg-zinc-900/50">
             <Plus className="h-6 w-6 text-[#c6a77d]/80" aria-hidden />
-            <span className="text-sm font-semibold text-[#d4bc94]">Add banner images to the timeline</span>
-            <span className="text-xs text-zinc-500">Unlimited uploads · up to 30MB each · default 10s per clip</span>
-            <input
-              type="file"
-              accept="image/jpeg,image/png,image/webp,image/*"
-              multiple
-              className="sr-only"
-              disabled={uploading}
-              onChange={(e) => {
-                onAddFiles(e.target.files);
-                e.target.value = "";
-              }}
-            />
+            <span className="text-sm font-semibold text-[#d4bc94]">Add your first banner</span>
+            <span className="text-xs text-zinc-500">JPG, PNG, or WebP · up to 30MB each</span>
+            <input {...fileInputProps} />
           </label>
         )}
       </div>
+
+      <p className="border-t border-white/10 px-4 py-3 text-xs leading-relaxed text-zinc-500">
+        Add more images for better coverage — banners rotate randomly during each try-on.
+      </p>
     </div>
   );
 }
@@ -445,7 +395,7 @@ function WidgetAdLoadingPreview({
         </p>
         <p className="mt-1 text-xs text-zinc-500">
           {hasBanner
-            ? "Matches the live try-on: banners fill the stage and rotate at each clip’s duration (random order)."
+            ? "Matches the live try-on: banners fill the stage and rotate randomly during generation."
             : "Shoppers see this on the loading overlay while AI generates their look."}
         </p>
       </div>
@@ -615,27 +565,17 @@ export function DashboardAdsPanel() {
     }
   }, []);
 
-  const updateSlideDuration = useCallback((id: string, durationSec: number) => {
-    const next = normalizeWidgetAdBannerDuration(durationSec);
-    setBannerSlides((prev) =>
-      prev.map((slide) => (slide.id === id ? { ...slide, durationSec: next } : slide)),
-    );
+  const reorderSlides = useCallback((fromIndex: number, toIndex: number) => {
+    setBannerSlides((prev) => {
+      const next = [...prev];
+      const [item] = next.splice(fromIndex, 1);
+      next.splice(toIndex, 0, item);
+      return next;
+    });
   }, []);
 
   const removeSlide = useCallback((id: string) => {
     setBannerSlides((prev) => prev.filter((slide) => slide.id !== id));
-  }, []);
-
-  const moveSlide = useCallback((id: string, direction: -1 | 1) => {
-    setBannerSlides((prev) => {
-      const index = prev.findIndex((slide) => slide.id === id);
-      if (index < 0) return prev;
-      const target = index + direction;
-      if (target < 0 || target >= prev.length) return prev;
-      const next = [...prev];
-      [next[index], next[target]] = [next[target], next[index]];
-      return next;
-    });
   }, []);
 
   const saveAd = useCallback(async () => {
@@ -725,8 +665,8 @@ export function DashboardAdsPanel() {
       <div>
         <h2 className="text-lg font-semibold text-zinc-50">Widget ads</h2>
         <p className="mt-2 max-w-2xl text-sm leading-relaxed text-zinc-400">
-          Promote a sale or message while shoppers wait for their AI try-on. Banner clips play in
-          random order with the duration you set on each thumbnail.
+          Promote a sale or message while shoppers wait for their AI try-on. Upload banner images that
+          rotate randomly during each generation.
         </p>
       </div>
 
@@ -766,7 +706,7 @@ export function DashboardAdsPanel() {
                   : "border border-transparent text-zinc-500 hover:border-[#c6a77d]/35 hover:text-zinc-200"
               }`}
             >
-              Banner timeline
+              Banner images
             </button>
           </div>
 
@@ -850,24 +790,14 @@ export function DashboardAdsPanel() {
                     <span className="mt-0.5 shrink-0 text-[#c6a77d]" aria-hidden>
                       •
                     </span>
-                    <span>
-                      Set the display duration per image based on how long you want each banner visible — a
-                      typical try-on takes 20–40 seconds
-                    </span>
-                  </li>
-                  <li className="flex gap-2.5">
-                    <span className="mt-0.5 shrink-0 text-[#c6a77d]" aria-hidden>
-                      •
-                    </span>
                     <span>Images are stored until you delete them manually</span>
                   </li>
                 </ul>
               </div>
-              <BannerTimeline
+              <BannerImageGrid
                 slides={bannerSlides}
-                onDurationChange={updateSlideDuration}
+                onReorder={reorderSlides}
                 onRemove={removeSlide}
-                onMove={moveSlide}
                 onAddFiles={(files) => void onBannerFiles(files)}
                 uploading={uploading}
               />
