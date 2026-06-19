@@ -248,8 +248,13 @@
     return rect.width >= 24 && rect.height >= 24 && rect.bottom > 0 && rect.right > 0;
   }
 
+  function isWidgetModalImage(img) {
+    return !!(img && img.closest && img.closest(".dq-backdrop"));
+  }
+
   function isEligibleImage(img) {
     if (!img || img.tagName !== "IMG") return false;
+    if (isWidgetModalImage(img)) return false;
     if (img.getAttribute(WIDGET_ATTR_BOUND) === "1") return false;
 
     var src = img.currentSrc || img.src || "";
@@ -729,6 +734,7 @@
     var stageImg = document.createElement("img");
     stageImg.alt = "Preview";
     stageImg.style.display = "none";
+    stageImg.setAttribute(WIDGET_ATTR_SKIP, "1");
 
     var processing = document.createElement("div");
     processing.className = "dq-processing";
@@ -819,6 +825,13 @@
 
     var fsOverlay = null;
     var bodyOverflowBeforeFs = null;
+    var stagePreviewBlobUrl = null;
+
+    function revokeStagePreviewBlob() {
+      if (!stagePreviewBlobUrl) return;
+      try { URL.revokeObjectURL(stagePreviewBlobUrl); } catch (_e) { }
+      stagePreviewBlobUrl = null;
+    }
 
     function resetStageImageFit() {
       if (!stageImg) return;
@@ -918,17 +931,52 @@
 
     function setStageImage(url, alt, isTryOnResult) {
       if (!url) return;
-      stageImg.alt = alt || "Preview";
-      stageImg.src = url;
-      stageImg.style.display = "block";
+
+      if (!isTryOnResult && url.indexOf("blob:") === 0) {
+        revokeStagePreviewBlob();
+        stagePreviewBlobUrl = url;
+      }
+
       stageEmpty.style.display = "none";
-      resetStageImageFit();
+      stageImg.alt = alt || "Preview";
+      stageImg.setAttribute(WIDGET_ATTR_SKIP, "1");
+
       if (!isTryOnResult) {
         wow.classList.remove("is-on");
         hideResultActions();
         setStageActionsVisible(true);
       } else {
         setStageActionsVisible(false);
+      }
+
+      function revealStageImage() {
+        stageImg.style.display = "block";
+        stageImg.style.visibility = "visible";
+        stageImg.style.opacity = "1";
+        resetStageImageFit();
+      }
+
+      function showStageImageError() {
+        stageImg.style.display = "none";
+        stageEmpty.style.display = "flex";
+      }
+
+      stageImg.onload = function () {
+        stageImg.onload = null;
+        stageImg.onerror = null;
+        revealStageImage();
+      };
+      stageImg.onerror = function () {
+        stageImg.onload = null;
+        stageImg.onerror = null;
+        showStageImageError();
+      };
+
+      if (stageImg.src !== url) stageImg.src = url;
+      if (stageImg.complete && stageImg.naturalWidth > 0) {
+        stageImg.onload = null;
+        stageImg.onerror = null;
+        revealStageImage();
       }
     }
 
@@ -1064,6 +1112,7 @@
     m.close = function () {
       stopStream();
       closeFullscreen();
+      revokeStagePreviewBlob();
       originalClose();
     };
 
@@ -1389,6 +1438,7 @@
   function bindImage(img) {
     if (img.getAttribute(WIDGET_ATTR_BOUND) === "1") return;
     if (img.getAttribute(WIDGET_ATTR_SKIP) === "1") return;
+    if (isWidgetModalImage(img)) return;
     if (shouldSkipAccessoryImage(img)) {
       img.setAttribute(WIDGET_ATTR_SKIP, "1");
       return;
@@ -1446,6 +1496,7 @@
   var scanBatchIndex = 0;
 
   function processImageForBinding(img) {
+    if (isWidgetModalImage(img)) return;
     if (img.getAttribute(WIDGET_ATTR_SKIP) === "1") return;
     if (isEligibleImage(img)) {
       bindImage(img);
