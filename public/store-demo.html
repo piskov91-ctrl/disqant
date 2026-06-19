@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Store Demo — Fit Room Test</title>
+  <style>
+    body { font-family: system-ui, sans-serif; margin: 0; padding: 24px; background: #111; color: #eee; }
+    h1 { font-size: 1.5rem; margin: 0 0 20px; }
+    .page { display: none; }
+    .page.active { display: block; }
+    .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 16px; }
+    .card {
+      background: #222; border: 1px solid #444; border-radius: 8px; padding: 0;
+      cursor: pointer; text-align: left; color: inherit; font: inherit; overflow: hidden;
+    }
+    .card-thumb { width: 100%; aspect-ratio: 3/4; background-size: cover; background-position: center; background-color: #333; }
+    .card-info { padding: 12px; }
+    .card-name { font-weight: 600; margin: 0 0 4px; }
+    .card-price { color: #c6a77d; margin: 0; }
+    .back { background: none; border: 0; color: #c6a77d; cursor: pointer; font-size: 14px; margin-bottom: 20px; padding: 0; }
+    .pdp { display: grid; grid-template-columns: 1fr 1fr; gap: 32px; max-width: 900px; }
+    @media (max-width: 700px) { .pdp { grid-template-columns: 1fr; } }
+    .pdp img { width: 100%; border-radius: 8px; background: #333; }
+    .pdp-name { font-size: 1.5rem; margin: 0 0 8px; }
+    .pdp-price { color: #c6a77d; font-size: 1.2rem; margin: 0 0 16px; }
+    .pdp-desc { color: #aaa; line-height: 1.5; margin: 0; }
+  </style>
+</head>
+<body>
+
+  <div id="shop-page" class="page active">
+    <h1>Shop</h1>
+    <div class="grid" id="grid"></div>
+  </div>
+
+  <div id="product-page" class="page">
+    <button type="button" class="back" id="back-btn">← Back</button>
+    <div class="pdp">
+      <div>
+        <img id="pdp-img" alt="" />
+      </div>
+      <div>
+        <h2 class="pdp-name" id="pdp-name"></h2>
+        <p class="pdp-price" id="pdp-price"></p>
+        <p class="pdp-desc" id="pdp-desc"></p>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    var products = [
+      { name: "Linen Dress", price: 165, img: "https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=600&q=80", desc: "Relaxed linen midi dress on hanger." },
+      { name: "Wool Coat", price: 395, img: "https://images.unsplash.com/photo-1539533018447-63fcce2678e3?w=600&q=80", desc: "Charcoal wrap coat on mannequin." },
+      { name: "Cotton Shirt", price: 89, img: "https://images.unsplash.com/photo-1626497764749-6b77a20f2a1b?w=600&q=80", desc: "Crisp white shirt on hanger." },
+      { name: "Cashmere Knit", price: 175, img: "https://images.unsplash.com/photo-1434389677669-e08b4cac3105?w=600&q=80", desc: "Soft cashmere jumper on hanger." },
+      { name: "Gold Chain", price: 120, img: "https://images.unsplash.com/photo-1611591437281-460bf5971556?w=600&q=80", desc: "Fine gold chain bracelet." },
+      { name: "Bikini Set", price: 135, img: "https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=600&q=80", desc: "Terracotta two-piece swimwear." },
+      { name: "White Trainers", price: 185, img: "https://images.unsplash.com/photo-1549298916-b41d501d3772?w=600&q=80", desc: "Leather trainers on display." }
+    ];
+
+    var shopPage = document.getElementById("shop-page");
+    var productPage = document.getElementById("product-page");
+    var grid = document.getElementById("grid");
+    var pdpImg = document.getElementById("pdp-img");
+
+    function showShop() {
+      shopPage.classList.add("active");
+      productPage.classList.remove("active");
+    }
+
+    function showProduct(p) {
+      document.getElementById("pdp-name").textContent = p.name;
+      document.getElementById("pdp-price").textContent = "£" + p.price.toFixed(2);
+      document.getElementById("pdp-desc").textContent = p.desc;
+      pdpImg.alt = p.name;
+      pdpImg.src = p.img;
+      shopPage.classList.remove("active");
+      productPage.classList.add("active");
+      setTimeout(function(){ window.dispatchEvent(new Event("fit-room-rescan")); }, 800);
+    }
+
+    for (var i = 0; i < products.length; i++) {
+      (function (p) {
+        var card = document.createElement("button");
+        card.type = "button";
+        card.className = "card";
+        var thumb = document.createElement("div");
+        thumb.className = "card-thumb";
+        thumb.style.backgroundImage = "url(" + p.img + ")";
+        var info = document.createElement("div");
+        info.className = "card-info";
+        var name = document.createElement("p");
+        name.className = "card-name";
+        name.textContent = p.name;
+        var price = document.createElement("p");
+        price.className = "card-price";
+        price.textContent = "£" + p.price.toFixed(2);
+        info.appendChild(name);
+        info.appendChild(price);
+        card.appendChild(thumb);
+        card.appendChild(info);
+        card.onclick = function () { showProduct(p); };
+        grid.appendChild(card);
+      })(products[i]);
+    }
+
+    document.getElementById("back-btn").onclick = showShop;
+  </script>
+
+  <script defer src="/widget.js" data-fit-room-key="KgU7HRdnv-TjExraQsyI0Hjanzhh3P-BgG4mguLP4lM"></script>
+
+</body>
+</html>

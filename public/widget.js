@@ -242,26 +242,8 @@
     return isProductPagePath(effectivePagePath());
   }
 
-  function isElementDisplayed(el) {
-    if (!el) return false;
-    var node = el;
-    while (node && node.nodeType === 1) {
-      var st = window.getComputedStyle(node);
-      if (st.display === "none" || st.visibility === "hidden") return false;
-      node = node.parentElement;
-    }
-    return true;
-  }
-
   function isVisibleEnough(img) {
-    if (!img || !isElementDisplayed(img)) return false;
-
-    // offsetWidth/Height force layout — needed for SPA pages that show a hidden PDP
-    // then fire fit-room-rescan before the first paint (getBoundingClientRect stays 0).
-    var layoutW = img.offsetWidth;
-    var layoutH = img.offsetHeight;
-    if (layoutW >= 24 && layoutH >= 24) return true;
-
+    if (!img) return false;
     var rect = img.getBoundingClientRect();
     return rect.width >= 24 && rect.height >= 24 && rect.bottom > 0 && rect.right > 0;
   }
@@ -1454,8 +1436,6 @@
     });
   }
 
-  var LAYOUT_RESCAN_ATTR = "data-fit-room-layout-rescan";
-
   function scanAndBind() {
     if (!shouldBindOnThisPage()) return;
     injectStyles();
@@ -1472,18 +1452,7 @@
 
       var src = img.currentSrc || img.src || "";
       if (!src || src.indexOf("data:") === 0) return;
-
-      if (img.complete) {
-        // Loaded while hidden or rescanned before layout — retry once next frame.
-        if (isElementDisplayed(img) && !img.getAttribute(LAYOUT_RESCAN_ATTR)) {
-          img.setAttribute(LAYOUT_RESCAN_ATTR, "1");
-          window.requestAnimationFrame(function () {
-            img.removeAttribute(LAYOUT_RESCAN_ATTR);
-            scanAndBind();
-          });
-        }
-        return;
-      }
+      if (img.complete) return;
 
       img.setAttribute(WIDGET_ATTR_PENDING, "1");
       function clearPending() { img.removeAttribute(WIDGET_ATTR_PENDING); }
