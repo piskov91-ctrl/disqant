@@ -97,6 +97,50 @@
       });
   }
 
+  var widgetAdCache = null;
+  var widgetAdCacheKey = null;
+  var widgetAdFetchPromise = null;
+  var widgetAdFetchPromiseKey = null;
+
+  function loadWidgetAds(clientKey) {
+    if (!clientKey) return Promise.resolve(null);
+    if (widgetAdCacheKey === clientKey) return Promise.resolve(widgetAdCache);
+    if (widgetAdFetchPromise && widgetAdFetchPromiseKey === clientKey) return widgetAdFetchPromise;
+
+    widgetAdFetchPromiseKey = clientKey;
+    widgetAdFetchPromise = fetchWidgetAds(clientKey)
+      .then(function (ad) {
+        widgetAdCacheKey = clientKey;
+        widgetAdCache = ad;
+        widgetAdFetchPromise = null;
+        widgetAdFetchPromiseKey = null;
+        return ad;
+      })
+      .catch(function () {
+        widgetAdCacheKey = clientKey;
+        widgetAdCache = null;
+        widgetAdFetchPromise = null;
+        widgetAdFetchPromiseKey = null;
+        return null;
+      });
+    return widgetAdFetchPromise;
+  }
+
+  function prefetchWidgetAds(clientKey) {
+    if (!clientKey) return;
+    loadWidgetAds(clientKey).catch(function () { });
+  }
+
+  function preloadWidgetAdBannerUrls(slides) {
+    if (!slides || !slides.length) return;
+    for (var i = 0; i < slides.length; i++) {
+      var url = slides[i] && slides[i].url;
+      if (!url) continue;
+      var img = new Image();
+      img.src = url;
+    }
+  }
+
   /** Fit Room API origin — derived from widget script src so embeds on retailer pages POST to fit-room.com, not the host page. */
   function getWidgetApiOrigin() {
     var s = getCurrentScript();
@@ -664,6 +708,8 @@
     document.body.appendChild(m.backdrop);
     OPEN_MODAL = m;
 
+    prefetchWidgetAds(opts.clientKey || getClientKey());
+
     var body = m.body;
 
     var tipsBlock = document.createElement("div");
@@ -1157,18 +1203,23 @@
     var processingFadeTimer = null;
 
     function applyWidgetAdEmbed(ad) {
-      if (!ad) return;
+      if (!ad) return false;
       if (ad.kind === "text" && ad.messages && ad.messages.length) {
         retailerPromoMessages = ad.messages
           .map(function (x) { return String(x || "").trim(); })
           .filter(Boolean);
-      } else if (ad.kind === "banner") {
+        return retailerPromoMessages.length > 0;
+      }
+      if (ad.kind === "banner") {
         var slides = parseWidgetAdBannerSlides(ad);
         if (slides.length) {
           widgetAdBanners = slides;
-          processingBannerImg.src = widgetAdBanners[0].url;
+          preloadWidgetAdBannerUrls(slides);
+          processingBannerImg.src = slides[0].url;
+          return true;
         }
       }
+      return false;
     }
 
     function popRandomBannerSlide() {
@@ -1209,7 +1260,8 @@
 
       if (widgetAdBanners.length) {
         bannerShuffleQueue = shuffleWidgetAdBannerIndices(widgetAdBanners.length);
-        rotationPhaseTimer = window.setTimeout(scheduleBannerRotationPhase, LOADING_MSG_INTERVAL_MS);
+        scheduleBannerRotationPhase();
+        return;
       } else if (retailerPromoMessages.length) {
         loadingMsgTimer = window.setInterval(function () {
           loadingMsgTick += 1;
@@ -1285,15 +1337,26 @@
       setProcessingBannerVisible(false, true);
       setProcessingDisplay(LOADING_MESSAGES[0], false, true);
 
+      var adsKey = opts.clientKey || getClientKey();
+      var hadAds = false;
+      if (widgetAdCacheKey === adsKey && widgetAdCache) {
+        hadAds = applyWidgetAdEmbed(widgetAdCache);
+      }
+
       runLoadingContentRotation();
 
-      var adsKey = opts.clientKey || getClientKey();
       if (!adsKey) return;
 
-      fetchWidgetAds(adsKey).then(function (ad) {
+      loadWidgetAds(adsKey).then(function (ad) {
+        if (!processing.classList.contains("is-on")) return;
         if (!ad) return;
-        applyWidgetAdEmbed(ad);
-        if (!widgetAdBanners.length && !retailerPromoMessages.length) return;
+        var applied = applyWidgetAdEmbed(ad);
+        if (!applied) return;
+        if (hadAds) return;
+        if (rotationPhaseTimer) window.clearTimeout(rotationPhaseTimer);
+        rotationPhaseTimer = null;
+        if (loadingMsgTimer) window.clearInterval(loadingMsgTimer);
+        loadingMsgTimer = null;
         setProcessingBannerVisible(false, true);
         setProcessingDisplay(LOADING_MESSAGES[loadingMsgIndex], false, true);
         runLoadingContentRotation();
@@ -1609,6 +1672,7 @@
 
   function boot() {
     beaconClientVisit(getClientKey());
+    prefetchWidgetAds(getClientKey());
     scanAndBind();
     observe();
     window.addEventListener("load", function () { scanAndBind(); });
