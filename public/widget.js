@@ -356,7 +356,8 @@
       + ".dq-stage-actions-row{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;width:100%;pointer-events:none;}"
       + ".dq-stage-actions .dq-choice{pointer-events:auto;flex:0 1 auto;min-width:140px;max-width:min(200px,46%);}"
       + ".dq-stage-actions .dq-wear-me{pointer-events:auto;width:100%;max-width:min(100%,360px);padding:12px 24px;font-size:14px;}"
-      + ".dq-choice{flex:1;min-width:160px;display:flex;align-items:center;gap:10px;justify-content:center;padding:12px 12px;border-radius:16px;border:1px solid rgba(198,167,125,.28);background:#1a1612;color:#f5ede4;cursor:pointer;box-shadow:0 8px 22px rgba(0,0,0,.22);font:900 12px/1 system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;transition:transform .16s ease, box-shadow .16s ease, border-color .16s ease;}"
+      + ".dq-choice{flex:1;min-width:160px;display:flex;align-items:center;gap:10px;justify-content:center;padding:12px 12px;border-radius:16px;border:1px solid rgba(198,167,125,.28);background:#1a1612;color:#f5ede4;cursor:pointer;box-shadow:0 8px 22px rgba(0,0,0,.22);font:900 12px/1 system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;transition:transform .16s ease, box-shadow .16s ease, border-color .16s ease;position:relative;overflow:hidden;}"
+      + ".dq-choice-input{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%;font-size:0;border:0;margin:0;padding:0;}"
       + ".dq-choice:hover{transform:translateY(-1px);box-shadow:0 12px 28px rgba(0,0,0,.28);border-color:rgba(198,167,125,.45);}"
       + ".dq-ico{width:18px;height:18px;display:inline-block;opacity:.92;}"
       + ".dq-wear-me{appearance:none;box-sizing:border-box;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;width:100%;padding:14px 32px;border-radius:50px;color:#2c241f;font-family:Georgia,ui-serif,serif;font-weight:700;font-size:15px;line-height:1.25;letter-spacing:2px;background:linear-gradient(135deg,#c6a77d 0%,#e2cfb4 50%,#c6a77d 100%);border:1px solid rgba(255,255,255,.3);box-shadow:0 4px 15px rgba(0,0,0,.3),inset 0 1px 1px rgba(255,255,255,.5);transition:all .3s ease;transform:translateY(0);-webkit-font-smoothing:antialiased;}"
@@ -766,9 +767,16 @@
     var stageActionsRow = document.createElement("div");
     stageActionsRow.className = "dq-stage-actions-row";
 
-    var uploadBtn = document.createElement("button");
+    var uploadBtn = document.createElement("label");
     uploadBtn.className = "dq-choice";
-    uploadBtn.type = "button";
+
+    var fileInput = document.createElement("input");
+    fileInput.type = "file";
+    fileInput.accept = "image/*";
+    fileInput.className = "dq-choice-input";
+    fileInput.setAttribute("aria-label", "Choose photo from gallery");
+
+    uploadBtn.appendChild(fileInput);
     uploadBtn.appendChild(makeIcon("gallery"));
     uploadBtn.appendChild(document.createTextNode("Gallery"));
 
@@ -780,11 +788,6 @@
 
     stageActionsRow.appendChild(uploadBtn);
     stageActionsRow.appendChild(cameraBtn);
-
-    var fileInput = document.createElement("input");
-    fileInput.type = "file";
-    fileInput.accept = "image/*";
-    fileInput.style.display = "none";
 
     var generateBtn = document.createElement("button");
     generateBtn.className = "dq-wear-me";
@@ -836,7 +839,6 @@
     stage.appendChild(stageActions);
     stage.appendChild(wow);
     body.appendChild(stage);
-    body.appendChild(fileInput);
     stage.appendChild(saveBtn);
     stage.appendChild(fsBtn);
 
@@ -1065,13 +1067,13 @@
       originalClose();
     };
 
-    uploadBtn.addEventListener("click", function () { fileInput.click(); });
     fileInput.addEventListener("change", function () {
       var f = fileInput.files && fileInput.files[0];
       if (!f) return;
       modelFile = f;
       hideResultActions();
       setStageImage(URL.createObjectURL(f), "Your photo");
+      fileInput.value = "";
     });
 
     cameraBtn.addEventListener("click", async function () {
