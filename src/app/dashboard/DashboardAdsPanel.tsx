@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Plus, X } from "lucide-react";
+import { ArrowLeft, ArrowRight, Plus, X } from "lucide-react";
 import {
   RETAILER_WIDGET_AD_DEFAULT_BANNER_DURATION_SEC,
   RETAILER_WIDGET_AD_MAX_BANNER_BYTES,
@@ -60,16 +60,25 @@ function slidesFromRecord(banners: RetailerWidgetAdBannerSlide[]): BannerSlideDr
   }));
 }
 
+/** Stable key so the live preview remounts when draft clips change (add / remove / reorder / duration). */
+function bannerPreviewKey(slides: BannerSlideDraft[]): string {
+  return slides.map((s) => `${s.id}:${s.durationSec}:${s.url.length}`).join("|");
+}
+
 function BannerTimelineClip({
   slide,
   index,
+  slideCount,
   onDurationChange,
   onRemove,
+  onMove,
 }: {
   slide: BannerSlideDraft;
   index: number;
+  slideCount: number;
   onDurationChange: (id: string, durationSec: number) => void;
   onRemove: (id: string) => void;
+  onMove: (id: string, direction: -1 | 1) => void;
 }) {
   const durationPct =
     (slide.durationSec / RETAILER_WIDGET_AD_MAX_BANNER_DURATION_SEC) * 100;
@@ -97,6 +106,32 @@ function BannerTimelineClip({
       </div>
 
       <div className="space-y-2 px-2.5 py-2.5">
+        <div className="flex items-center justify-between gap-1">
+          <span className="text-[10px] font-semibold uppercase tracking-[0.14em] text-zinc-500">
+            Order
+          </span>
+          <div className="flex gap-1">
+            <button
+              type="button"
+              disabled={index === 0}
+              onClick={() => onMove(slide.id, -1)}
+              className="inline-flex h-6 w-6 items-center justify-center rounded-md border border-white/10 bg-zinc-950/80 text-zinc-400 transition hover:border-[#c6a77d]/35 hover:text-zinc-200 disabled:pointer-events-none disabled:opacity-35"
+              aria-label={`Move banner ${index + 1} earlier`}
+            >
+              <ArrowLeft className="h-3 w-3" aria-hidden />
+            </button>
+            <button
+              type="button"
+              disabled={index >= slideCount - 1}
+              onClick={() => onMove(slide.id, 1)}
+              className="inline-flex h-6 w-6 items-center justify-center rounded-md border border-white/10 bg-zinc-950/80 text-zinc-400 transition hover:border-[#c6a77d]/35 hover:text-zinc-200 disabled:pointer-events-none disabled:opacity-35"
+              aria-label={`Move banner ${index + 1} later`}
+            >
+              <ArrowRight className="h-3 w-3" aria-hidden />
+            </button>
+          </div>
+        </div>
+
         <label className="flex items-center justify-between gap-2">
           <span className="text-[10px] font-semibold uppercase tracking-[0.14em] text-zinc-500">
             Duration
@@ -145,12 +180,14 @@ function BannerTimeline({
   slides,
   onDurationChange,
   onRemove,
+  onMove,
   onAddFiles,
   uploading,
 }: {
   slides: BannerSlideDraft[];
   onDurationChange: (id: string, durationSec: number) => void;
   onRemove: (id: string) => void;
+  onMove: (id: string, direction: -1 | 1) => void;
   onAddFiles: (files: FileList | null) => void;
   uploading: boolean;
 }) {
@@ -220,8 +257,10 @@ function BannerTimeline({
                 key={slide.id}
                 slide={slide}
                 index={index}
+                slideCount={slides.length}
                 onDurationChange={onDurationChange}
                 onRemove={onRemove}
+                onMove={onMove}
               />
             ))}
             <li className="flex w-[120px] shrink-0 items-center justify-center">
@@ -290,6 +329,10 @@ function WidgetAdLoadingPreview({
   const slides = useMemo(
     () => bannerSlides.filter((s) => s.url.trim()),
     [bannerSlides],
+  );
+  const slidesFingerprint = useMemo(
+    () => bannerPreviewKey(slides),
+    [slides],
   );
   const hasTextPromo = kind === "text" && promoLines.length > 0;
   const hasBanner = kind === "banner" && slides.length > 0;
@@ -389,7 +432,7 @@ function WidgetAdLoadingPreview({
     return () => {
       if (phaseTimerRef.current) window.clearTimeout(phaseTimerRef.current);
     };
-  }, [hasBanner, hasTextPromo, slides, promoLines.length]);
+  }, [hasBanner, hasTextPromo, slides, slidesFingerprint, promoLines.join("\n")]);
 
   const loadingText = WEAR_LOADING_MESSAGES[loadingIndex] ?? WEAR_LOADING_MESSAGES[0];
   const promoText = promoLines[promoIndex] ?? promoLines[0] ?? "";
@@ -581,6 +624,18 @@ export function DashboardAdsPanel() {
 
   const removeSlide = useCallback((id: string) => {
     setBannerSlides((prev) => prev.filter((slide) => slide.id !== id));
+  }, []);
+
+  const moveSlide = useCallback((id: string, direction: -1 | 1) => {
+    setBannerSlides((prev) => {
+      const index = prev.findIndex((slide) => slide.id === id);
+      if (index < 0) return prev;
+      const target = index + direction;
+      if (target < 0 || target >= prev.length) return prev;
+      const next = [...prev];
+      [next[index], next[target]] = [next[target], next[index]];
+      return next;
+    });
   }, []);
 
   const saveAd = useCallback(async () => {
@@ -812,6 +867,7 @@ export function DashboardAdsPanel() {
                 slides={bannerSlides}
                 onDurationChange={updateSlideDuration}
                 onRemove={removeSlide}
+                onMove={moveSlide}
                 onAddFiles={(files) => void onBannerFiles(files)}
                 uploading={uploading}
               />
@@ -837,6 +893,7 @@ export function DashboardAdsPanel() {
                   ) : null}
                 </div>
                 <WidgetAdLoadingPreview
+                  key={bannerPreviewKey(previewBannerSlides)}
                   kind="banner"
                   messages={previewMessages}
                   bannerSlides={previewBannerSlides}
