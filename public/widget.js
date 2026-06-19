@@ -1436,36 +1436,106 @@
     });
   }
 
-  function scanAndBind() {
-    if (!shouldBindOnThisPage()) return;
+  var SCAN_BATCH_ALL_MODE = 6;
+  var scanBatchScheduled = false;
+  var scanBatchRunning = false;
+  var scanBatchRescanPending = false;
+  var scanBatchImgs = null;
+  var scanBatchIndex = 0;
+
+  function processImageForBinding(img) {
+    if (img.getAttribute(WIDGET_ATTR_SKIP) === "1") return;
+    if (isEligibleImage(img)) {
+      bindImage(img);
+      return;
+    }
+
+    if (img.getAttribute(WIDGET_ATTR_BOUND) === "1") return;
+    if (img.getAttribute(WIDGET_ATTR_PENDING) === "1") return;
+
+    var src = img.currentSrc || img.src || "";
+    if (!src || src.indexOf("data:") === 0) return;
+    if (img.complete) return;
+
+    img.setAttribute(WIDGET_ATTR_PENDING, "1");
+    function clearPending() { img.removeAttribute(WIDGET_ATTR_PENDING); }
+
+    img.addEventListener("load", function () {
+      clearPending();
+      scanAndBind();
+    }, { once: true });
+
+    img.addEventListener("error", function () {
+      clearPending();
+    }, { once: true });
+  }
+
+  function scanAndBindSync() {
     injectStyles();
     var imgs = Array.prototype.slice.call(document.images || []);
-    imgs.forEach(function (img) {
-      if (img.getAttribute(WIDGET_ATTR_SKIP) === "1") return;
-      if (isEligibleImage(img)) {
-        bindImage(img);
-        return;
-      }
+    for (var i = 0; i < imgs.length; i++) {
+      processImageForBinding(imgs[i]);
+    }
+  }
 
-      if (img.getAttribute(WIDGET_ATTR_BOUND) === "1") return;
-      if (img.getAttribute(WIDGET_ATTR_PENDING) === "1") return;
+  function finishScanBatch() {
+    scanBatchRunning = false;
+    scanBatchImgs = null;
+    scanBatchIndex = 0;
+    if (scanBatchRescanPending) {
+      scanBatchRescanPending = false;
+      scanAndBind();
+    }
+  }
 
-      var src = img.currentSrc || img.src || "";
-      if (!src || src.indexOf("data:") === 0) return;
-      if (img.complete) return;
+  function runScanBatchStep() {
+    scanBatchScheduled = false;
+    if (!shouldBindOnThisPage()) {
+      finishScanBatch();
+      return;
+    }
 
-      img.setAttribute(WIDGET_ATTR_PENDING, "1");
-      function clearPending() { img.removeAttribute(WIDGET_ATTR_PENDING); }
+    if (!scanBatchImgs) {
+      injectStyles();
+      scanBatchImgs = Array.prototype.slice.call(document.images || []);
+      scanBatchIndex = 0;
+    }
 
-      img.addEventListener("load", function () {
-        clearPending();
-        scanAndBind();
-      }, { once: true });
+    var end = Math.min(scanBatchIndex + SCAN_BATCH_ALL_MODE, scanBatchImgs.length);
+    for (; scanBatchIndex < end; scanBatchIndex++) {
+      processImageForBinding(scanBatchImgs[scanBatchIndex]);
+    }
 
-      img.addEventListener("error", function () {
-        clearPending();
-      }, { once: true });
-    });
+    if (scanBatchIndex < scanBatchImgs.length) {
+      scanBatchScheduled = true;
+      window.requestAnimationFrame(runScanBatchStep);
+      return;
+    }
+
+    finishScanBatch();
+  }
+
+  function scanAndBindBatched() {
+    if (scanBatchRunning) {
+      scanBatchRescanPending = true;
+      return;
+    }
+    scanBatchRunning = true;
+    scanBatchImgs = null;
+    scanBatchIndex = 0;
+    if (!scanBatchScheduled) {
+      scanBatchScheduled = true;
+      window.requestAnimationFrame(runScanBatchStep);
+    }
+  }
+
+  function scanAndBind() {
+    if (!shouldBindOnThisPage()) return;
+    if (widgetBindMode() === "all") {
+      scanAndBindBatched();
+      return;
+    }
+    scanAndBindSync();
   }
 
   function observe() {
