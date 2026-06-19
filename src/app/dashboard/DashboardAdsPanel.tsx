@@ -738,17 +738,51 @@ export function DashboardAdsPanel() {
           ) : (
             <div className="space-y-8">
               <div
-                className="rounded-xl border border-[#c6a77d]/18 bg-[#c6a77d]/[0.06] px-4 py-3 text-xs leading-relaxed text-zinc-400"
+                className="rounded-2xl border border-[#c6a77d]/35 bg-[#0f0f14]/90 px-5 py-4 shadow-[inset_0_1px_0_0_rgba(198,167,125,0.08)]"
                 role="note"
               >
-                <p>
-                  <span className="font-semibold text-zinc-300">Recommended image size:</span> 1200×400px
-                  (3:1 ratio). <span className="font-semibold text-zinc-300">Supported formats:</span> JPG,
-                  PNG, WebP. <span className="font-semibold text-zinc-300">Max file size:</span> 30MB. Set
-                  the display duration per image based on how long you want each banner to stay visible — a
-                  typical try-on takes 20–40 seconds, so you can plan accordingly. Images are stored until you
-                  delete them manually.
-                </p>
+                <ul className="space-y-2 text-xs leading-relaxed text-zinc-400">
+                  <li className="flex gap-2.5">
+                    <span className="mt-0.5 shrink-0 text-[#c6a77d]" aria-hidden>
+                      •
+                    </span>
+                    <span>
+                      <span className="font-semibold text-zinc-300">Recommended image size:</span> 1200×400px
+                      (3:1 ratio)
+                    </span>
+                  </li>
+                  <li className="flex gap-2.5">
+                    <span className="mt-0.5 shrink-0 text-[#c6a77d]" aria-hidden>
+                      •
+                    </span>
+                    <span>
+                      <span className="font-semibold text-zinc-300">Supported formats:</span> JPG, PNG, WebP
+                    </span>
+                  </li>
+                  <li className="flex gap-2.5">
+                    <span className="mt-0.5 shrink-0 text-[#c6a77d]" aria-hidden>
+                      •
+                    </span>
+                    <span>
+                      <span className="font-semibold text-zinc-300">Max file size:</span> 30MB
+                    </span>
+                  </li>
+                  <li className="flex gap-2.5">
+                    <span className="mt-0.5 shrink-0 text-[#c6a77d]" aria-hidden>
+                      •
+                    </span>
+                    <span>
+                      Set the display duration per image based on how long you want each banner visible — a
+                      typical try-on takes 20–40 seconds
+                    </span>
+                  </li>
+                  <li className="flex gap-2.5">
+                    <span className="mt-0.5 shrink-0 text-[#c6a77d]" aria-hidden>
+                      •
+                    </span>
+                    <span>Images are stored until you delete them manually</span>
+                  </li>
+                </ul>
               </div>
               <BannerTimeline
                 slides={bannerSlides}
