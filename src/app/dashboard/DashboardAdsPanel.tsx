@@ -737,6 +737,19 @@ export function DashboardAdsPanel() {
             </div>
           ) : (
             <div className="space-y-8">
+              <div
+                className="rounded-xl border border-[#c6a77d]/18 bg-[#c6a77d]/[0.06] px-4 py-3 text-xs leading-relaxed text-zinc-400"
+                role="note"
+              >
+                <p>
+                  <span className="font-semibold text-zinc-300">Recommended image size:</span> 1200×400px
+                  (3:1 ratio). <span className="font-semibold text-zinc-300">Supported formats:</span> JPG,
+                  PNG, WebP. <span className="font-semibold text-zinc-300">Max file size:</span> 30MB. Set
+                  the display duration per image based on how long you want each banner to stay visible — a
+                  typical try-on takes 20–40 seconds, so you can plan accordingly. Images are stored until you
+                  delete them manually.
+                </p>
+              </div>
               <BannerTimeline
                 slides={bannerSlides}
                 onDurationChange={updateSlideDuration}
