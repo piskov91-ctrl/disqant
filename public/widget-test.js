@@ -345,6 +345,12 @@
       + ".dq-backdrop.dq-open .dq-modal{transform:translateY(0) scale(1);opacity:1;}"
       + ".dq-backdrop.dq-closing{opacity:0;}"
       + ".dq-backdrop.dq-closing .dq-modal{transform:translateY(10px) scale(.985);opacity:0;}"
+      + ".dq-test-badge{position:absolute;left:10px;bottom:10px;z-index:50;padding:3px 8px;border-radius:6px;background:#dc2626;color:#fff;font:800 10px/1 system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;letter-spacing:.12em;text-transform:uppercase;box-shadow:0 2px 10px rgba(0,0,0,.35);pointer-events:none;}"
+      + ".dq-test-tools{display:flex;align-items:center;gap:8px;padding:0 2px;}"
+      + ".dq-preview-ads{appearance:none;cursor:pointer;padding:6px 12px;border-radius:8px;border:1px solid rgba(220,38,38,.45);background:rgba(220,38,38,.12);color:#fca5a5;font:700 11px/1 system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;letter-spacing:.03em;transition:background-color .16s ease,border-color .16s ease,color .16s ease;}"
+      + ".dq-preview-ads:hover{background:rgba(220,38,38,.22);color:#fecaca;}"
+      + ".dq-preview-ads.is-active{border-color:rgba(220,38,38,.8);background:rgba(220,38,38,.32);color:#fff;}"
+      + ".dq-preview-ads:disabled{opacity:.55;cursor:not-allowed;}"
       + ".dq-head{display:flex;align-items:flex-start;justify-content:flex-start;flex-shrink:0;padding:12px;padding-left:max(12px, env(safe-area-inset-left, 0px));padding-right:max(12px, env(safe-area-inset-right, 0px));padding-top:max(12px, env(safe-area-inset-top, 0px));border-bottom:1px solid rgba(198,167,125,.18);background:#2c241f;position:relative;}"
       + ".dq-head-title{font:900 13px/1 system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;letter-spacing:.25px;color:#f5ede4;}"
       + ".dq-head-sub{font-size:11px;font-weight:600;color:#c6a77d;letter-spacing:.2px;line-height:1.35;margin-top:4px;}"
@@ -359,6 +365,7 @@
       + ".dq-tips-list li{display:flex;align-items:flex-start;gap:6px;font:400 11px/1.4 system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;color:rgba(245,237,228,.88);letter-spacing:.01em;}"
       + ".dq-tips-mark{flex-shrink:0;color:#c6a77d;font-size:9px;line-height:1.45;font-weight:600;}"
       + ".dq-tips-privacy{margin:0;padding:6px;border-radius:8px;border:1px solid rgba(198,167,125,.5);background:#1a1612;font:500 11px/1.4 system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;color:rgba(245,237,228,.92);letter-spacing:.02em;box-shadow:inset 0 1px 0 rgba(198,167,125,.08);}"
+      + ".dq-stage.is-ad-preview .dq-stage-actions{display:none;}"
       + ".dq-stage{position:relative;width:100%;flex:1 1 auto;min-height:0;align-self:stretch;border-radius:12px;border:1px solid rgba(198,167,125,.2);background:#0f0f14;overflow:hidden;}"
       + ".dq-stage img{position:absolute;inset:0;width:100%;height:100%;display:block;background:#0f0f14;object-fit:contain;object-position:center center;transform:none !important;max-width:none;max-height:none;z-index:1;}"
       + ".dq-empty{position:absolute;inset:0;z-index:2;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;color:rgba(245,237,228,.65);text-align:center;padding:18px;pointer-events:none;}"
@@ -675,6 +682,13 @@
     modal.appendChild(head);
     modal.appendChild(body);
     modal.appendChild(brand);
+
+    var testBadge = document.createElement("div");
+    testBadge.className = "dq-test-badge";
+    testBadge.textContent = "TEST";
+    testBadge.setAttribute("aria-hidden", "true");
+    modal.appendChild(testBadge);
+
     backdrop.appendChild(modal);
 
     function onKeyDown(e) {
@@ -750,6 +764,15 @@
     tipsPrivacy.className = "dq-tips-privacy";
     tipsPrivacy.textContent = "🔒 Your privacy is protected. Photos are processed instantly and permanently deleted.";
     tipsBlock.appendChild(tipsPrivacy);
+
+    var testTools = document.createElement("div");
+    testTools.className = "dq-test-tools";
+    var previewAdsBtn = document.createElement("button");
+    previewAdsBtn.type = "button";
+    previewAdsBtn.className = "dq-preview-ads";
+    previewAdsBtn.textContent = "Preview ads";
+    testTools.appendChild(previewAdsBtn);
+    tipsBlock.appendChild(testTools);
 
     body.appendChild(tipsBlock);
 
@@ -1207,6 +1230,110 @@
     var showingStageAdOverlay = false;
     var stageAdFadeTimer = null;
     var processingFadeTimer = null;
+    var adPreviewActive = false;
+    var previewStatusTimer = null;
+
+    function clearPreviewStatusTimer() {
+      if (previewStatusTimer) {
+        window.clearTimeout(previewStatusTimer);
+        previewStatusTimer = null;
+      }
+    }
+
+    function setPreviewAdsBtnLabel(label, active) {
+      previewAdsBtn.textContent = label;
+      previewAdsBtn.classList.toggle("is-active", !!active);
+    }
+
+    function stopAdPreview() {
+      if (!adPreviewActive) return;
+      adPreviewActive = false;
+      clearPreviewStatusTimer();
+      if (rotationPhaseTimer) window.clearTimeout(rotationPhaseTimer);
+      rotationPhaseTimer = null;
+      if (stageAdFadeTimer) {
+        window.clearTimeout(stageAdFadeTimer);
+        stageAdFadeTimer = null;
+      }
+      showingStageAdOverlay = false;
+      setStageAdOverlayVisible(false);
+      processing.classList.remove("has-stage-ads");
+      stage.classList.remove("is-ad-preview");
+      stageAdImg.classList.remove("is-fading");
+      stageEmpty.style.display = "";
+      setStageActionsVisible(true);
+      previewAdsBtn.disabled = false;
+      setPreviewAdsBtnLabel("Preview ads", false);
+    }
+
+    function showPreviewStatusMessage(message) {
+      clearPreviewStatusTimer();
+      previewAdsBtn.disabled = true;
+      setPreviewAdsBtnLabel(message, false);
+      previewStatusTimer = window.setTimeout(function () {
+        previewStatusTimer = null;
+        previewAdsBtn.disabled = false;
+        setPreviewAdsBtnLabel("Preview ads", false);
+      }, 2200);
+    }
+
+    function beginAdBannerPreview(ad) {
+      if (!adPreviewActive) return;
+      if (!ad || ad.kind !== "banner") {
+        adPreviewActive = false;
+        showPreviewStatusMessage("No banner ads");
+        return;
+      }
+      var applied = applyWidgetAdEmbed(ad);
+      if (!applied || !widgetAdBanners.length) {
+        adPreviewActive = false;
+        showPreviewStatusMessage("No banner ads");
+        return;
+      }
+      stageEmpty.style.display = "none";
+      stage.classList.add("is-ad-preview");
+      setStageActionsVisible(false);
+      setPreviewAdsBtnLabel("Stop preview", true);
+      runBannerSlideRotation();
+    }
+
+    function startAdPreview() {
+      if (adPreviewActive) {
+        stopAdPreview();
+        return;
+      }
+      if (tryOnFetchInFlight || processing.classList.contains("is-on")) return;
+
+      var adsKey = clientKey || getClientKey();
+      if (!adsKey) {
+        showPreviewStatusMessage("Missing API key");
+        return;
+      }
+
+      adPreviewActive = true;
+      previewAdsBtn.disabled = false;
+      setPreviewAdsBtnLabel("Loading…", false);
+
+      if (widgetAdCacheKey === adsKey && widgetAdCache) {
+        beginAdBannerPreview(widgetAdCache);
+        return;
+      }
+
+      loadWidgetAds(adsKey)
+        .then(function (ad) {
+          if (!adPreviewActive) return;
+          beginAdBannerPreview(ad);
+        })
+        .catch(function () {
+          if (!adPreviewActive) return;
+          adPreviewActive = false;
+          showPreviewStatusMessage("Failed to load");
+        });
+    }
+
+    previewAdsBtn.addEventListener("click", function () {
+      startAdPreview();
+    });
 
     function applyWidgetAdEmbed(ad) {
       if (!ad) return false;
@@ -1264,6 +1391,10 @@
     function showBannerSlideAndScheduleNext(isFirst) {
       var slide = popRandomBannerSlide();
       if (!slide) {
+        if (adPreviewActive) {
+          stopAdPreview();
+          return;
+        }
         setStageAdOverlayVisible(false);
         processing.classList.remove("has-stage-ads");
         runLoadingContentRotation();
@@ -1403,6 +1534,7 @@
     }
 
     function startLoading() {
+      stopAdPreview();
       processing.classList.add("is-on");
       progress.classList.add("is-on");
       wow.classList.remove("is-on");
