@@ -366,15 +366,18 @@
       + ".dq-empty span{font:600 12px/1.3 system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;}"
       + ".dq-processing{position:absolute;inset:0;display:none;align-items:center;justify-content:center;flex-direction:column;gap:10px;z-index:4;background:rgba(26,22,18,.82);backdrop-filter:blur(8px);}"
       + ".dq-processing.is-on{display:flex;}"
+      + ".dq-processing.has-stage-ads{background:rgba(12,10,8,.32);}"
+      + ".dq-processing.has-stage-ads .dq-processing-text{display:none;}"
       + ".dq-processing-inner{display:flex;flex-direction:column;align-items:center;gap:14px;min-height:4.5rem;justify-content:center;}"
       + ".dq-spin{width:34px;height:34px;border-radius:999px;border:3px solid rgba(15,15,20,.14);border-top-color:#c6a77d;animation:dqspin 1s linear infinite;}"
       + "@keyframes dqspin{to{transform:rotate(360deg);}}"
       + ".dq-processing-text{font:900 14px/1.35 system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;color:#f5ede4;text-align:center;max-width:420px;padding:0 16px;min-height:2.7rem;display:flex;align-items:center;justify-content:center;transition:opacity .48s ease,color .48s ease;opacity:1;}"
       + ".dq-processing-text.is-fading{opacity:0;}"
       + ".dq-processing-text.is-promo{color:#c6a77d;font-weight:700;}"
-      + ".dq-processing-banner{display:none;flex-direction:column;align-items:center;justify-content:center;gap:14px;max-width:min(420px,92%);transition:opacity .48s ease;opacity:1;}"
-      + ".dq-processing-banner.is-fading{opacity:0;}"
-      + ".dq-processing-banner img{max-width:100%;max-height:160px;border-radius:10px;border:1px solid rgba(198,167,125,.35);box-shadow:0 8px 24px rgba(0,0,0,.35);object-fit:contain;display:block;}"
+      + ".dq-stage-ad-overlay{position:absolute;inset:0;z-index:3;display:none;pointer-events:none;overflow:hidden;background:#0f0f14;}"
+      + ".dq-stage-ad-overlay.is-on{display:block;}"
+      + ".dq-stage-ad-overlay img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:center;display:block;transition:opacity .48s ease;opacity:1;}"
+      + ".dq-stage-ad-overlay img.is-fading{opacity:0;}"
       + ".dq-progress{position:absolute;left:12px;right:12px;bottom:12px;z-index:5;height:10px;border-radius:999px;background:rgba(245,237,228,.12);overflow:hidden;display:none;}"
       + ".dq-progress.is-on{display:block;}"
       + ".dq-progress>span{display:block;height:100%;width:0%;background:linear-gradient(135deg,#a68958,#c6a77d 45%,#e8d4bc 100%);background-size:200% 100%;transition:width .12s ease;position:relative;animation:dq-bar-pulse 1.9s ease-in-out infinite;}"
@@ -793,15 +796,16 @@
     processingText.setAttribute("role", "status");
     processingText.setAttribute("aria-live", "polite");
     processingText.textContent = LOADING_MESSAGES[0];
-    var processingBanner = document.createElement("div");
-    processingBanner.className = "dq-processing-banner";
-    var processingBannerImg = document.createElement("img");
-    processingBannerImg.alt = "";
-    processingBanner.appendChild(processingBannerImg);
     processingInner.appendChild(spin);
     processingInner.appendChild(processingText);
-    processingInner.appendChild(processingBanner);
     processing.appendChild(processingInner);
+
+    var stageAdOverlay = document.createElement("div");
+    stageAdOverlay.className = "dq-stage-ad-overlay";
+    stageAdOverlay.setAttribute("aria-hidden", "true");
+    var stageAdImg = document.createElement("img");
+    stageAdImg.alt = "";
+    stageAdOverlay.appendChild(stageAdImg);
 
     var progress = document.createElement("div");
     progress.className = "dq-progress";
@@ -810,6 +814,7 @@
 
     stage.appendChild(stageEmpty);
     stage.appendChild(stageImg);
+    stage.appendChild(stageAdOverlay);
     stage.appendChild(processing);
     stage.appendChild(progress);
 
@@ -1199,7 +1204,8 @@
     var widgetAdBanners = [];
     var bannerShuffleQueue = [];
     var rotationPhaseTimer = null;
-    var showingProcessingBanner = false;
+    var showingStageAdOverlay = false;
+    var stageAdFadeTimer = null;
     var processingFadeTimer = null;
 
     function applyWidgetAdEmbed(ad) {
@@ -1215,7 +1221,7 @@
         if (slides.length) {
           widgetAdBanners = slides;
           preloadWidgetAdBannerUrls(slides);
-          processingBannerImg.src = slides[0].url;
+          stageAdImg.src = slides[0].url;
           return true;
         }
       }
@@ -1230,26 +1236,52 @@
       return widgetAdBanners[idx];
     }
 
-    function scheduleLoadingRotationPhase(isFirst) {
-      if (!isFirst) {
-        setProcessingBannerVisible(false, false);
-        loadingMsgIndex = (loadingMsgIndex + 1) % LOADING_MESSAGES.length;
-        setProcessingDisplay(LOADING_MESSAGES[loadingMsgIndex], false, false);
+    function setStageAdImgSrc(url, fade) {
+      if (!url) return;
+      if (stageAdFadeTimer) {
+        window.clearTimeout(stageAdFadeTimer);
+        stageAdFadeTimer = null;
       }
-      rotationPhaseTimer = window.setTimeout(scheduleBannerRotationPhase, LOADING_MSG_INTERVAL_MS);
-    }
-
-    function scheduleBannerRotationPhase() {
-      var slide = popRandomBannerSlide();
-      if (!slide) {
-        scheduleLoadingRotationPhase(false);
+      if (fade && stageAdImg.src && stageAdImg.src !== url) {
+        stageAdImg.classList.add("is-fading");
+        stageAdFadeTimer = window.setTimeout(function () {
+          stageAdFadeTimer = null;
+          stageAdImg.src = url;
+          stageAdImg.classList.remove("is-fading");
+        }, LOADING_MSG_FADE_MS);
         return;
       }
-      processingBannerImg.src = slide.url;
-      setProcessingBannerVisible(true, false);
+      stageAdImg.classList.remove("is-fading");
+      stageAdImg.src = url;
+    }
+
+    function setStageAdOverlayVisible(show) {
+      showingStageAdOverlay = !!show;
+      stageAdOverlay.classList.toggle("is-on", showingStageAdOverlay);
+      processing.classList.toggle("has-stage-ads", showingStageAdOverlay);
+    }
+
+    function showBannerSlideAndScheduleNext(isFirst) {
+      var slide = popRandomBannerSlide();
+      if (!slide) {
+        setStageAdOverlayVisible(false);
+        processing.classList.remove("has-stage-ads");
+        runLoadingContentRotation();
+        return;
+      }
+      setStageAdImgSrc(slide.url, !isFirst);
+      setStageAdOverlayVisible(true);
       rotationPhaseTimer = window.setTimeout(function () {
-        scheduleLoadingRotationPhase(false);
+        showBannerSlideAndScheduleNext(false);
       }, Math.max(500, Math.round(slide.durationSec * 1000)));
+    }
+
+    function runBannerSlideRotation() {
+      if (rotationPhaseTimer) window.clearTimeout(rotationPhaseTimer);
+      rotationPhaseTimer = null;
+      if (!widgetAdBanners.length) return;
+      bannerShuffleQueue = shuffleWidgetAdBannerIndices(widgetAdBanners.length);
+      showBannerSlideAndScheduleNext(true);
     }
 
     function runLoadingContentRotation() {
@@ -1259,10 +1291,14 @@
       loadingMsgTimer = null;
 
       if (widgetAdBanners.length) {
-        bannerShuffleQueue = shuffleWidgetAdBannerIndices(widgetAdBanners.length);
-        scheduleBannerRotationPhase();
+        runBannerSlideRotation();
         return;
-      } else if (retailerPromoMessages.length) {
+      }
+
+      setStageAdOverlayVisible(false);
+      processing.classList.remove("has-stage-ads");
+
+      if (retailerPromoMessages.length) {
         loadingMsgTimer = window.setInterval(function () {
           loadingMsgTick += 1;
           if (loadingMsgTick % 2 === 1) {
@@ -1281,33 +1317,8 @@
       }
     }
 
-    function setProcessingBannerVisible(show, instant) {
-      if (processingFadeTimer) {
-        window.clearTimeout(processingFadeTimer);
-        processingFadeTimer = null;
-      }
-      if (instant) {
-        processingBanner.classList.remove("is-fading");
-        processingText.classList.remove("is-fading");
-        showingProcessingBanner = !!show;
-        processingText.style.display = show ? "none" : "flex";
-        processingBanner.style.display = show ? "flex" : "none";
-        return;
-      }
-      var fadeEl = show ? processingText : processingBanner;
-      fadeEl.classList.add("is-fading");
-      processingFadeTimer = window.setTimeout(function () {
-        processingFadeTimer = null;
-        showingProcessingBanner = !!show;
-        processingText.style.display = show ? "none" : "flex";
-        processingBanner.style.display = show ? "flex" : "none";
-        processingBanner.classList.remove("is-fading");
-        processingText.classList.remove("is-fading");
-      }, LOADING_MSG_FADE_MS);
-    }
-
     function setProcessingDisplay(text, isPromo, instant) {
-      if (showingProcessingBanner) return;
+      if (showingStageAdOverlay) return;
       if (processingFadeTimer) {
         window.clearTimeout(processingFadeTimer);
         processingFadeTimer = null;
@@ -1334,7 +1345,9 @@
       promoMsgIndex = 0;
       widgetAdBanners = [];
       bannerShuffleQueue = [];
-      setProcessingBannerVisible(false, true);
+      setStageAdOverlayVisible(false);
+      processing.classList.remove("has-stage-ads");
+      stageAdImg.classList.remove("is-fading");
       setProcessingDisplay(LOADING_MESSAGES[0], false, true);
 
       var adsKey = opts.clientKey || getClientKey();
@@ -1357,7 +1370,8 @@
         rotationPhaseTimer = null;
         if (loadingMsgTimer) window.clearInterval(loadingMsgTimer);
         loadingMsgTimer = null;
-        setProcessingBannerVisible(false, true);
+        setStageAdOverlayVisible(false);
+        processing.classList.remove("has-stage-ads");
         setProcessingDisplay(LOADING_MESSAGES[loadingMsgIndex], false, true);
         runLoadingContentRotation();
       });
@@ -1372,11 +1386,15 @@
         window.clearTimeout(processingFadeTimer);
         processingFadeTimer = null;
       }
-      showingProcessingBanner = false;
-      processingText.style.display = "flex";
-      processingBanner.style.display = "none";
+      if (stageAdFadeTimer) {
+        window.clearTimeout(stageAdFadeTimer);
+        stageAdFadeTimer = null;
+      }
+      showingStageAdOverlay = false;
+      setStageAdOverlayVisible(false);
+      processing.classList.remove("has-stage-ads");
+      stageAdImg.classList.remove("is-fading");
       processingText.classList.remove("is-fading", "is-promo");
-      processingBanner.classList.remove("is-fading");
     }
 
     function setProgress(pct) {
