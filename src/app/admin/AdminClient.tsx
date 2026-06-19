@@ -511,6 +511,7 @@ export default function AdminClient() {
   const [recoveryLoading, setRecoveryLoading] = useState(false);
   const [recoveryError, setRecoveryError] = useState<string | null>(null);
   const [recoveryDeletingUserId, setRecoveryDeletingUserId] = useState<string | null>(null);
+  const [recoveryRestoringClientId, setRecoveryRestoringClientId] = useState<string | null>(null);
   const [fashnCredits, setFashnCredits] = useState<AdminFashnCredits | null>(null);
   const [fashnCreditsLoading, setFashnCreditsLoading] = useState(false);
   const [fashnCreditsError, setFashnCreditsError] = useState<string | null>(null);
@@ -1433,6 +1434,34 @@ export default function AdminClient() {
       setRetailerCreateKeyError(e instanceof Error ? e.message : "Failed to create API key.");
     } finally {
       setRetailerCreateKeyBusy(false);
+    }
+  }
+
+  async function restoreRecoveryClient(clientId: string, label: string) {
+    const ok = window.confirm(
+      `Restore the API key for "${label}"? This re-enables the client key for embeds and try-on. Retailer login is not restored.`,
+    );
+    if (!ok) return;
+
+    setRecoveryRestoringClientId(clientId);
+    setRecoveryError(null);
+    try {
+      const res = await fetch("/api/admin/recovery/restore", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ clientId }),
+      });
+      const data = (await res.json()) as { ok?: true; error?: string };
+      if (!res.ok) {
+        if (data.error === "Unauthorized.") window.location.reload();
+        setRecoveryError(data.error || "Failed to restore client key.");
+        return;
+      }
+      void load();
+    } catch (e) {
+      setRecoveryError(e instanceof Error ? e.message : "Failed to restore client key.");
+    } finally {
+      setRecoveryRestoringClientId(null);
     }
   }
 
@@ -4083,7 +4112,9 @@ export default function AdminClient() {
                           ? `${r.remainingTryOns} (${r.usageCount}/${r.usageLimit} used)`
                           : "—";
                       const rowLabel = r.storeName || r.companyName || r.email || r.userId;
-                      const rowBusy = recoveryDeletingUserId === r.userId;
+                      const rowBusy =
+                        recoveryDeletingUserId === r.userId || recoveryRestoringClientId === r.clientId;
+                      const canRestore = Boolean(r.clientId);
                       return (
                         <div
                           key={r.userId}
@@ -4096,15 +4127,24 @@ export default function AdminClient() {
                           <div className="text-sm text-zinc-200">{remainingLabel}</div>
                           <div className="font-mono text-xs text-zinc-400">{r.clientId ?? "—"}</div>
                           <div className="text-xs text-zinc-500">{new Date(r.deletedAt).toLocaleString()}</div>
-                          <div className="flex justify-end">
+                          <div className="flex justify-end gap-2">
                             <button
                               type="button"
-                              disabled={rowBusy || recoveryDeletingUserId !== null}
+                              disabled={!canRestore || rowBusy || recoveryRestoringClientId !== null || recoveryDeletingUserId !== null}
+                              onClick={() => r.clientId && void restoreRecoveryClient(r.clientId, rowLabel)}
+                              className="inline-flex h-9 shrink-0 items-center justify-center rounded-full border border-emerald-800/60 bg-emerald-950/40 px-3 text-sm font-semibold text-emerald-200 transition hover:border-emerald-700 hover:bg-emerald-950/70 disabled:pointer-events-none disabled:opacity-50"
+                              aria-label={`Restore API key for ${rowLabel}`}
+                            >
+                              {recoveryRestoringClientId === r.clientId ? "…" : "Restore"}
+                            </button>
+                            <button
+                              type="button"
+                              disabled={rowBusy || recoveryDeletingUserId !== null || recoveryRestoringClientId !== null}
                               onClick={() => void deleteRecoveryRecord(r.userId, rowLabel)}
                               className="inline-flex h-9 shrink-0 items-center justify-center rounded-full border border-red-900/60 bg-red-950/40 px-3 text-sm font-semibold text-red-200 transition hover:border-red-800 hover:bg-red-950/70 disabled:pointer-events-none disabled:opacity-50"
                               aria-label={`Remove recovery record for ${rowLabel}`}
                             >
-                              {rowBusy ? "…" : "Delete"}
+                              {recoveryDeletingUserId === r.userId ? "…" : "Delete"}
                             </button>
                           </div>
                         </div>

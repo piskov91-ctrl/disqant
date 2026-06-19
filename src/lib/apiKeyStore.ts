@@ -417,6 +417,38 @@ export async function markClientKeyDeleted(params: { id: string; deletedAt?: str
   return next;
 }
 
+/** Re-enable a soft-deleted client key (admin Recovery): clear deletedAt, index, and byKey lookup. */
+export async function restoreClientKey(id: string): Promise<ClientApiKeyRecord> {
+  const redis = getRedis();
+  const bundle = await getRecordForMutation(id.trim());
+  if (!bundle) throw new Error("Client key not found.");
+  const { redisKey } = bundle;
+  let rec = bundle.rec;
+
+  if (!rec.key?.trim()) throw new Error("Client key record has no API key.");
+
+  const legacy = redisKey.startsWith(LEGACY_KEY_PREFIX);
+  const indexKey = legacy ? LEGACY_KEY_INDEX : KEY_INDEX;
+  const lookupKey = legacy ? keyLookupKeyLegacy(rec.key) : keyLookupKey(rec.key);
+
+  const existingLookup = (await redis.get(lookupKey)) as string | null;
+  if (existingLookup && existingLookup !== rec.id) {
+    throw new Error("API key lookup is already assigned to another client.");
+  }
+
+  if (rec.deletedAt) {
+    const next: ClientApiKeyRecord = { ...rec, deletedAt: null };
+    await redis.set(redisKey, next);
+    rec = next;
+  }
+
+  await redis.set(lookupKey, rec.id);
+  await redis.lrem(indexKey, 0, rec.id);
+  await redis.lpush(indexKey, rec.id);
+
+  return rec;
+}
+
 /** Load a client key record by internal id (e.g. retailer dashboard). */
 export async function getClientKeyRecordById(id: string): Promise<ClientApiKeyRecord | null> {
   if (!id) return null;
