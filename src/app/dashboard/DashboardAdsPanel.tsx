@@ -84,8 +84,8 @@ function BannerTimelineClip({
     (slide.durationSec / RETAILER_WIDGET_AD_MAX_BANNER_DURATION_SEC) * 100;
 
   return (
-    <li className="relative flex w-[148px] shrink-0 flex-col rounded-xl border border-white/10 bg-[#121018] shadow-sm transition-shadow hover:border-[#c6a77d]/35">
-      <div className="relative overflow-hidden rounded-t-xl border-b border-white/8 bg-[#0f0f14]">
+    <li className="relative flex w-[148px] shrink-0 flex-col rounded-xl border border-white/10 bg-zinc-900/50 shadow-sm transition-shadow hover:border-[#c6a77d]/35">
+      <div className="relative overflow-hidden rounded-t-xl border-b border-white/10 bg-zinc-950/70">
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
           src={slide.url}
@@ -194,8 +194,8 @@ function BannerTimeline({
   const rulerMarks = [0, 15, 30, 45];
 
   return (
-    <div className="overflow-hidden rounded-2xl border border-[#c6a77d]/22 bg-[#14111a] shadow-inner shadow-black/40">
-      <div className="flex items-center justify-between gap-3 border-b border-white/8 px-4 py-3">
+    <div className="overflow-hidden rounded-2xl border border-white/10 bg-zinc-900/40 shadow-lg shadow-black/20 backdrop-blur-sm">
+      <div className="flex items-center justify-between gap-3 border-b border-white/10 bg-black/20 px-4 py-3">
         <div>
           <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-[#d4bc94]/90">
             Timeline
@@ -222,7 +222,7 @@ function BannerTimeline({
         </label>
       </div>
 
-      <div className="relative border-b border-white/6 px-4 py-2">
+      <div className="relative border-b border-white/10 px-4 py-2">
         <div className="relative h-5">
           {rulerMarks.map((sec) => (
             <span
@@ -264,7 +264,7 @@ function BannerTimeline({
               />
             ))}
             <li className="flex w-[120px] shrink-0 items-center justify-center">
-              <label className="flex h-full min-h-[168px] w-full cursor-pointer flex-col items-center justify-center gap-2 rounded-xl border border-dashed border-[#c6a77d]/30 bg-zinc-950/40 text-center transition hover:border-[#c6a77d]/50 hover:bg-zinc-950/70">
+              <label className="flex h-full min-h-[168px] w-full cursor-pointer flex-col items-center justify-center gap-2 rounded-xl border border-dashed border-white/15 bg-zinc-950/50 text-center transition hover:border-[#c6a77d]/35 hover:bg-zinc-900/50">
                 <Plus className="h-5 w-5 text-[#c6a77d]/80" aria-hidden />
                 <span className="text-[11px] font-semibold text-zinc-400">Add clip</span>
                 <input
@@ -282,7 +282,7 @@ function BannerTimeline({
             </li>
           </ul>
         ) : (
-          <label className="flex cursor-pointer flex-col items-center justify-center gap-2 rounded-xl border border-dashed border-[#c6a77d]/35 bg-zinc-950/40 px-4 py-12 text-center transition hover:border-[#c6a77d]/55 hover:bg-zinc-950/60">
+          <label className="flex cursor-pointer flex-col items-center justify-center gap-2 rounded-xl border border-dashed border-white/15 bg-zinc-950/50 px-4 py-12 text-center transition hover:border-[#c6a77d]/35 hover:bg-zinc-900/50">
             <Plus className="h-6 w-6 text-[#c6a77d]/80" aria-hidden />
             <span className="text-sm font-semibold text-[#d4bc94]">Add banner images to the timeline</span>
             <span className="text-xs text-zinc-500">Unlimited uploads · up to 30MB each · default 10s per clip</span>
@@ -817,7 +817,7 @@ export function DashboardAdsPanel() {
           ) : (
             <div className="space-y-8">
               <div
-                className="rounded-2xl border border-[#c6a77d]/35 bg-[#0f0f14]/90 px-5 py-4 shadow-[inset_0_1px_0_0_rgba(198,167,125,0.08)]"
+                className="rounded-2xl border border-[#c6a77d]/15 bg-black/40 px-5 py-4 backdrop-blur-md"
                 role="note"
               >
                 <ul className="space-y-2 text-xs leading-relaxed text-zinc-400">
