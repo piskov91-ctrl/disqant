@@ -366,7 +366,7 @@
       + ".dq-empty span{font:600 12px/1.3 system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;}"
       + ".dq-processing{position:absolute;inset:0;display:none;align-items:center;justify-content:center;flex-direction:column;gap:10px;z-index:4;background:rgba(26,22,18,.82);backdrop-filter:blur(8px);}"
       + ".dq-processing.is-on{display:flex;}"
-      + ".dq-processing.has-stage-ads{background:rgba(12,10,8,.32);}"
+      + ".dq-processing.has-stage-ads{background:transparent;backdrop-filter:none;-webkit-backdrop-filter:none;}"
       + ".dq-processing.has-stage-ads .dq-processing-text{display:none;}"
       + ".dq-processing-inner{display:flex;flex-direction:column;align-items:center;gap:14px;min-height:4.5rem;justify-content:center;}"
       + ".dq-spin{width:34px;height:34px;border-radius:999px;border:3px solid rgba(15,15,20,.14);border-top-color:#c6a77d;animation:dqspin 1s linear infinite;}"
@@ -376,8 +376,7 @@
       + ".dq-processing-text.is-promo{color:#c6a77d;font-weight:700;}"
       + ".dq-stage-ad-overlay{position:absolute;inset:0;z-index:3;display:none;pointer-events:none;overflow:hidden;background:#0f0f14;}"
       + ".dq-stage-ad-overlay.is-on{display:block;}"
-      + ".dq-stage-ad-overlay img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:center;display:block;transition:opacity .48s ease;opacity:1;}"
-      + ".dq-stage-ad-overlay img.is-fading{opacity:0;}"
+      + ".dq-stage-ad-overlay img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:center;display:block;opacity:1;filter:none;transform:none;}"
       + ".dq-progress{position:absolute;left:12px;right:12px;bottom:12px;z-index:5;height:10px;border-radius:999px;background:rgba(245,237,228,.12);overflow:hidden;display:none;}"
       + ".dq-progress.is-on{display:block;}"
       + ".dq-progress>span{display:block;height:100%;width:0%;background:linear-gradient(135deg,#a68958,#c6a77d 45%,#e8d4bc 100%);background-size:200% 100%;transition:width .12s ease;position:relative;animation:dq-bar-pulse 1.9s ease-in-out infinite;}"
@@ -1236,20 +1235,11 @@
       return widgetAdBanners[idx];
     }
 
-    function setStageAdImgSrc(url, fade) {
+    function setStageAdImgSrc(url) {
       if (!url) return;
       if (stageAdFadeTimer) {
         window.clearTimeout(stageAdFadeTimer);
         stageAdFadeTimer = null;
-      }
-      if (fade && stageAdImg.src && stageAdImg.src !== url) {
-        stageAdImg.classList.add("is-fading");
-        stageAdFadeTimer = window.setTimeout(function () {
-          stageAdFadeTimer = null;
-          stageAdImg.src = url;
-          stageAdImg.classList.remove("is-fading");
-        }, LOADING_MSG_FADE_MS);
-        return;
       }
       stageAdImg.classList.remove("is-fading");
       stageAdImg.src = url;
@@ -1269,7 +1259,7 @@
         runLoadingContentRotation();
         return;
       }
-      setStageAdImgSrc(slide.url, !isFirst);
+      setStageAdImgSrc(slide.url);
       setStageAdOverlayVisible(true);
       rotationPhaseTimer = window.setTimeout(function () {
         showBannerSlideAndScheduleNext(false);
