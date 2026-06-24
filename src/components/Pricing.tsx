@@ -18,7 +18,12 @@ type Plan = {
   stripePlan?: SubscriptionPlanKey;
 };
 
-const PRICING_BRAND_AD_FEATURE = "Advertise your brand to shoppers during every try-on";
+const PRICING_DEALS_PROMO_FEATURE = "Promote your deals during every try-on";
+
+const PLAN_INCLUDES_DEALS_PROMO: Partial<Record<SubscriptionPlanKey, true>> = {
+  studio: true,
+  premium: true,
+};
 
 const PLAN_META: Record<
   SubscriptionPlanKey,
@@ -89,8 +94,16 @@ function featuresWithTryOnCount(features: readonly string[], tryOnLimit: number)
   });
 }
 
-function buildPlanFeatures(metaFeatures: readonly string[], tryOnLimit: number): string[] {
-  return [...featuresWithTryOnCount(metaFeatures, tryOnLimit), PRICING_BRAND_AD_FEATURE];
+function buildPlanFeatures(
+  planKey: SubscriptionPlanKey,
+  metaFeatures: readonly string[],
+  tryOnLimit: number,
+): string[] {
+  const lines = featuresWithTryOnCount(metaFeatures, tryOnLimit);
+  if (PLAN_INCLUDES_DEALS_PROMO[planKey]) {
+    return [...lines, PRICING_DEALS_PROMO_FEATURE];
+  }
+  return lines;
 }
 
 function buildPlansFromCatalog(catalog: SubscriptionPlanCatalog): Plan[] {
@@ -102,7 +115,7 @@ function buildPlansFromCatalog(catalog: SubscriptionPlanCatalog): Plan[] {
       description: meta.description,
       price: formatPriceGbp(def.amountGbpPence),
       period: "/month",
-      features: buildPlanFeatures(meta.features, def.tryOnLimit),
+      features: buildPlanFeatures(key, meta.features, def.tryOnLimit),
       highlighted: meta.highlighted,
       stripePlan: key,
     };
@@ -120,7 +133,6 @@ function buildPlansFromCatalog(catalog: SubscriptionPlanCatalog): Plan[] {
         "Everything in Premium",
         "Custom pricing",
         "Dedicated account manager",
-        PRICING_BRAND_AD_FEATURE,
       ],
       highlighted: false,
       contactOnly: true,
