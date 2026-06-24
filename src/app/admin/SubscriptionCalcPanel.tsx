@@ -149,6 +149,24 @@ export function SubscriptionCalcPanel() {
     setSaveMessage(null);
   }
 
+  function updatePriceInput(key: SubscriptionPlanKey, value: string) {
+    setPriceInputs((prev) => ({ ...prev, [key]: value }));
+    const pence = penceFromPoundsInput(value);
+    if (pence !== null) {
+      setPlans((prev) => prev.map((p) => (p.key === key ? { ...p, amountGbpPence: pence } : p)));
+    }
+    setSaveMessage(null);
+  }
+
+  function updateTryOnInput(key: SubscriptionPlanKey, value: string) {
+    setTryOnInputs((prev) => ({ ...prev, [key]: value }));
+    const tryOns = parsePositiveIntInput(value);
+    if (tryOns !== null) {
+      setPlans((prev) => prev.map((p) => (p.key === key ? { ...p, tryOnLimit: tryOns } : p)));
+    }
+    setSaveMessage(null);
+  }
+
   async function handleSave() {
     setSaving(true);
     setError(null);
@@ -163,16 +181,17 @@ export function SubscriptionCalcPanel() {
 
     const plansPayload = {} as Record<SubscriptionPlanKey, SubscriptionPlanRow>;
     for (const key of SUBSCRIPTION_PLAN_KEYS_ORDERED) {
+      const draft = draftPlans[key];
       const row = plans.find((p) => p.key === key);
-      const name = row?.name.trim() ?? "";
-      const amountGbpPence = penceFromPoundsInput(priceInputs[key]);
-      const tryOnLimit = parsePositiveIntInput(tryOnInputs[key]);
+      const name = (row?.name ?? draft?.name ?? "").trim();
+      const amountGbpPence = draft?.amountGbpPence ?? penceFromPoundsInput(priceInputs[key]);
+      const tryOnLimit = draft?.tryOnLimit ?? parsePositiveIntInput(tryOnInputs[key]);
       if (!name.length) {
         setError(`Plan ${key}: name is required.`);
         setSaving(false);
         return;
       }
-      if (amountGbpPence === null) {
+      if (amountGbpPence === null || !Number.isFinite(amountGbpPence) || amountGbpPence <= 0) {
         setError(`Plan ${key}: enter a valid monthly price.`);
         setSaving(false);
         return;
@@ -299,10 +318,7 @@ export function SubscriptionCalcPanel() {
                         type="text"
                         inputMode="decimal"
                         value={priceInputs[profit.key]}
-                        onChange={(e) => {
-                          setPriceInputs((prev) => ({ ...prev, [profit.key]: e.target.value }));
-                          setSaveMessage(null);
-                        }}
+                        onChange={(e) => updatePriceInput(profit.key, e.target.value)}
                         className="mt-1.5 w-full rounded-lg border border-white/10 bg-black/30 px-3 py-2 text-sm tabular-nums text-[#F5EDE4] outline-none focus:border-[#C6A77D]/45"
                       />
                     </div>
@@ -312,10 +328,7 @@ export function SubscriptionCalcPanel() {
                         type="text"
                         inputMode="numeric"
                         value={tryOnInputs[profit.key]}
-                        onChange={(e) => {
-                          setTryOnInputs((prev) => ({ ...prev, [profit.key]: e.target.value }));
-                          setSaveMessage(null);
-                        }}
+                        onChange={(e) => updateTryOnInput(profit.key, e.target.value)}
                         className="mt-1.5 w-full rounded-lg border border-white/10 bg-black/30 px-3 py-2 text-sm tabular-nums text-[#F5EDE4] outline-none focus:border-[#C6A77D]/45"
                       />
                     </div>

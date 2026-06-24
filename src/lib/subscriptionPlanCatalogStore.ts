@@ -51,7 +51,9 @@ function parsePlanRow(raw: unknown): StoredSubscriptionPlanRow | null {
   const o = raw as Record<string, unknown>;
   const name = typeof o.name === "string" ? o.name.trim() : "";
   const amountGbpPence = parsePositiveInt(o.amountGbpPence);
-  const tryOnLimit = parsePositiveInt(o.tryOnLimit);
+  const tryOnLimit =
+    parsePositiveInt(o.tryOnLimit) ??
+    parsePositiveInt(o.try_on_limit);
   if (!name.length || amountGbpPence === null || tryOnLimit === null) return null;
   const maxRaw = o.maxTopUpPurchasesPerBillingCycle;
   const maxTopUpPurchasesPerBillingCycle =

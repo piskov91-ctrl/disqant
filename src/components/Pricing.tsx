@@ -18,6 +18,8 @@ type Plan = {
   stripePlan?: SubscriptionPlanKey;
 };
 
+const PRICING_BRAND_AD_FEATURE = "Advertise your brand to shoppers during every try-on";
+
 const PLAN_META: Record<
   SubscriptionPlanKey,
   Pick<Plan, "description" | "features" | "highlighted">
@@ -87,6 +89,10 @@ function featuresWithTryOnCount(features: readonly string[], tryOnLimit: number)
   });
 }
 
+function buildPlanFeatures(metaFeatures: readonly string[], tryOnLimit: number): string[] {
+  return [...featuresWithTryOnCount(metaFeatures, tryOnLimit), PRICING_BRAND_AD_FEATURE];
+}
+
 function buildPlansFromCatalog(catalog: SubscriptionPlanCatalog): Plan[] {
   const selfServe: Plan[] = SUBSCRIPTION_PLAN_KEYS_ORDERED.map((key) => {
     const def = catalog[key];
@@ -96,7 +102,7 @@ function buildPlansFromCatalog(catalog: SubscriptionPlanCatalog): Plan[] {
       description: meta.description,
       price: formatPriceGbp(def.amountGbpPence),
       period: "/month",
-      features: featuresWithTryOnCount(meta.features, def.tryOnLimit),
+      features: buildPlanFeatures(meta.features, def.tryOnLimit),
       highlighted: meta.highlighted,
       stripePlan: key,
     };
@@ -114,6 +120,7 @@ function buildPlansFromCatalog(catalog: SubscriptionPlanCatalog): Plan[] {
         "Everything in Premium",
         "Custom pricing",
         "Dedicated account manager",
+        PRICING_BRAND_AD_FEATURE,
       ],
       highlighted: false,
       contactOnly: true,

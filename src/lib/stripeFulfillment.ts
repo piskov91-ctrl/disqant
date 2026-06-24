@@ -48,6 +48,16 @@ function parsePositiveInt(raw: string | undefined): number | null {
 const DEFAULT_ENTERPRISE_TRY_ON_LIMIT = 5000;
 const ENTERPRISE_TRY_ON_LIMIT_MAX = 500_000;
 
+function parseSubscriptionTryOnLimitFromMetadata(session: Stripe.Checkout.Session): number | null {
+  const meta = session.metadata ?? {};
+  for (const key of ["try_on_limit", "usage_limit", "tryOnLimit"]) {
+    const raw = meta[key];
+    const n = parsePositiveInt(typeof raw === "string" ? raw : undefined);
+    if (n != null) return n;
+  }
+  return null;
+}
+
 function parseEnterpriseTryOnLimitFromMetadata(session: Stripe.Checkout.Session): number {
   const meta = session.metadata ?? {};
   for (const key of ["try_on_limit", "usage_limit", "tryOnLimit"]) {
@@ -189,7 +199,9 @@ async function fulfillPaidSubscriptionCheckoutSession(session: Stripe.Checkout.S
     throw new Error("Invalid Stripe checkout metadata for fulfillment.");
   }
 
-  const { tryOnLimit } = await getSubscriptionPlanDefinitionAsync(planKey);
+  const planDef = await getSubscriptionPlanDefinitionAsync(planKey);
+  const metadataTryOnLimit = parseSubscriptionTryOnLimitFromMetadata(session);
+  const tryOnLimit = metadataTryOnLimit ?? planDef.tryOnLimit;
 
   const user = await findRetailerIdentityForStripeSession(retailerUserId);
   if (!user) {
@@ -269,12 +281,11 @@ async function fulfillPaidSubscriptionCheckoutSession(session: Stripe.Checkout.S
     clearSubscriptionCancellationSchedule: true,
   });
 
-  const planDef = await getSubscriptionPlanDefinitionAsync(planKey);
   queueRetailerSubscriptionConfirmationEmail(
     contactEmail,
     retailerStoreGreetingLabel({ storeName: user.storeName, companyName: user.companyName }),
     planDef.name,
-    planDef.tryOnLimit,
+    tryOnLimit,
   );
 }
 
