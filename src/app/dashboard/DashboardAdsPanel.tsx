@@ -12,8 +12,10 @@ import { GripVertical, Plus, X } from "lucide-react";
 import {
   RETAILER_WIDGET_AD_DEFAULT_BANNER_DURATION_SEC,
   RETAILER_WIDGET_AD_MAX_BANNER_BYTES,
+  RETAILER_WIDGET_AD_MAX_BANNER_DURATION_SEC,
   RETAILER_WIDGET_AD_MAX_MESSAGE_CHARS,
   RETAILER_WIDGET_AD_MAX_MESSAGES,
+  RETAILER_WIDGET_AD_MIN_BANNER_DURATION_SEC,
   normalizeWidgetAdBannerDuration,
   type RetailerWidgetAdBannerSlide,
   type RetailerWidgetAdRecord,
@@ -67,9 +69,9 @@ function slidesFromRecord(banners: RetailerWidgetAdBannerSlide[]): BannerSlideDr
   }));
 }
 
-/** Stable key so the live preview remounts when draft clips change (add / remove / reorder / link). */
+/** Stable key so the live preview remounts when draft clips change (add / remove / reorder / link / duration). */
 function bannerPreviewKey(slides: BannerSlideDraft[]): string {
-  return slides.map((s) => `${s.id}:${s.url.length}:${s.linkUrl}`).join("|");
+  return slides.map((s) => `${s.id}:${s.url.length}:${s.linkUrl}:${s.durationSec}`).join("|");
 }
 
 function BannerImageCard({
@@ -78,6 +80,7 @@ function BannerImageCard({
   isDragging,
   isDropTarget,
   onRemove,
+  onDurationChange,
   onLinkUrlChange,
   onDragStart,
   onDragEnd,
@@ -90,6 +93,7 @@ function BannerImageCard({
   isDragging: boolean;
   isDropTarget: boolean;
   onRemove: (id: string) => void;
+  onDurationChange: (id: string, durationSec: number) => void;
   onLinkUrlChange: (id: string, linkUrl: string) => void;
   onDragStart: (id: string) => void;
   onDragEnd: () => void;
@@ -151,7 +155,36 @@ function BannerImageCard({
           <X className="h-3.5 w-3.5" aria-hidden />
         </button>
       </div>
-      <div className="border-t border-white/10 px-2.5 py-2">
+      <div className="space-y-2 border-t border-white/10 px-2.5 py-2">
+        <label className="flex items-center justify-between gap-2">
+          <span className="text-[10px] font-semibold uppercase tracking-[0.14em] text-zinc-500">
+            Duration
+          </span>
+          <span className="flex items-center gap-1">
+            <input
+              type="number"
+              min={RETAILER_WIDGET_AD_MIN_BANNER_DURATION_SEC}
+              max={RETAILER_WIDGET_AD_MAX_BANNER_DURATION_SEC}
+              step={1}
+              value={slide.durationSec}
+              onChange={(e) => {
+                const parsed = Number.parseInt(e.target.value, 10);
+                onDurationChange(
+                  slide.id,
+                  Number.isFinite(parsed)
+                    ? parsed
+                    : RETAILER_WIDGET_AD_DEFAULT_BANNER_DURATION_SEC,
+                );
+              }}
+              onBlur={() =>
+                onDurationChange(slide.id, normalizeWidgetAdBannerDuration(slide.durationSec))
+              }
+              className="w-12 rounded-lg border border-white/10 bg-zinc-950/80 px-1.5 py-1 text-center text-xs font-semibold tabular-nums text-zinc-100 focus:border-[#c6a77d]/45 focus:outline-none focus:ring-1 focus:ring-[#c6a77d]/30"
+              aria-label={`Display duration for banner ${index + 1} in seconds`}
+            />
+            <span className="text-[11px] font-medium text-zinc-500">sec</span>
+          </span>
+        </label>
         <label className="sr-only" htmlFor={`banner-link-${slide.id}`}>
           Link URL for banner {index + 1}
         </label>
@@ -173,6 +206,7 @@ function BannerImageGrid({
   slides,
   onReorder,
   onRemove,
+  onDurationChange,
   onLinkUrlChange,
   onAddFiles,
   uploading,
@@ -180,6 +214,7 @@ function BannerImageGrid({
   slides: BannerSlideDraft[];
   onReorder: (fromIndex: number, toIndex: number) => void;
   onRemove: (id: string) => void;
+  onDurationChange: (id: string, durationSec: number) => void;
   onLinkUrlChange: (id: string, linkUrl: string) => void;
   onAddFiles: (files: FileList | null) => void;
   uploading: boolean;
@@ -244,6 +279,7 @@ function BannerImageGrid({
                 isDragging={dragId === slide.id}
                 isDropTarget={dropTargetId === slide.id && dragId !== slide.id}
                 onRemove={onRemove}
+                onDurationChange={onDurationChange}
                 onLinkUrlChange={onLinkUrlChange}
                 onDragStart={setDragId}
                 onDragEnd={clearDragState}
@@ -420,7 +456,7 @@ function WidgetAdLoadingPreview({
         </p>
         <p className="mt-1 text-xs text-zinc-500">
           {hasBanner
-            ? "Matches the live try-on: banners fill the stage and rotate randomly during generation."
+            ? "Matches the live try-on: banners fill the stage and rotate at each clip’s duration (random order)."
             : "Shoppers see this on the loading overlay while AI generates their look."}
         </p>
       </div>
@@ -598,6 +634,13 @@ export function DashboardAdsPanel() {
       next.splice(toIndex, 0, item);
       return next;
     });
+  }, []);
+
+  const updateSlideDuration = useCallback((id: string, durationSec: number) => {
+    const next = normalizeWidgetAdBannerDuration(durationSec);
+    setBannerSlides((prev) =>
+      prev.map((slide) => (slide.id === id ? { ...slide, durationSec: next } : slide)),
+    );
   }, []);
 
   const updateSlideLinkUrl = useCallback((id: string, linkUrl: string) => {
@@ -831,6 +874,7 @@ export function DashboardAdsPanel() {
                 slides={bannerSlides}
                 onReorder={reorderSlides}
                 onRemove={removeSlide}
+                onDurationChange={updateSlideDuration}
                 onLinkUrlChange={updateSlideLinkUrl}
                 onAddFiles={(files) => void onBannerFiles(files)}
                 uploading={uploading}
