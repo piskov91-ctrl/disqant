@@ -13,7 +13,8 @@ import {
   buildRetailerSubscriptionClientUsagePayload,
   listSubscriptionClientRecordsForRetailerDashboard,
 } from "@/lib/retailerSubscriptionClients";
-import { catalogSubscriptionPlanKeyFromTryOnLimit, getSubscriptionPlansCatalog, retailerDashboardPlanFromBaseLimit } from "@/lib/subscriptionPlans";
+import { catalogSubscriptionPlanKeyFromTryOnLimit, retailerDashboardPlanFromBaseLimit } from "@/lib/subscriptionPlans";
+import { getSubscriptionPlansCatalog } from "@/lib/subscriptionPlansServer";
 import {
   SUBSCRIPTION_CANCELLATION_REASON_LABELS,
   SUBSCRIPTION_CANCELLATION_REASONS,

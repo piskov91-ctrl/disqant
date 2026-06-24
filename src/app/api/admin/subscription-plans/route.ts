@@ -10,7 +10,7 @@ import {
   computeSubscriptionPlanProfit,
   recommendedProfitMarginPlanKey,
 } from "@/lib/subscriptionPlanProfit";
-import { SUBSCRIPTION_PLAN_KEYS_ORDERED, type SubscriptionPlanKey } from "@/lib/subscriptionPlans";
+import { SUBSCRIPTION_PLAN_KEYS_ORDERED, type SubscriptionPlanKey } from "@/lib/subscriptionPlansData";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";

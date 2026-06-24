@@ -1,4 +1,4 @@
-import type { SubscriptionPlanKey } from "@/lib/subscriptionPlans";
+import type { SubscriptionPlanKey } from "@/lib/subscriptionPlansData";
 import type { StoredSubscriptionPlanRow } from "@/lib/subscriptionPlanCatalogStore";
 
 export type SubscriptionPlanProfitRow = {

@@ -9,7 +9,8 @@ import {
 } from "@/lib/apiKeyStore";
 import { subscriptionPlanCap } from "@/lib/clientTryOnBuckets";
 import { attachStripeBillingIds, getRetailerById, linkRetailerToClientId, type RetailerUser } from "@/lib/retailerAuth";
-import { getSubscriptionPlanDefinitionAsync, parseSubscriptionPlanKey } from "@/lib/subscriptionPlans";
+import { parseSubscriptionPlanKey } from "@/lib/subscriptionPlans";
+import { getSubscriptionPlanDefinitionAsync } from "@/lib/subscriptionPlansServer";
 import {
   queueRetailerEnterprisePaymentConfirmationEmail,
   queueRetailerSubscriptionConfirmationEmail,

@@ -3,11 +3,11 @@ import { getClientKeyRecordById, listClientKeys } from "@/lib/apiKeyStore";
 import { normalizeClientTryOnBuckets, storedOrDerivedBasePlanLimit, totalTryOnsUsed } from "@/lib/clientTryOnBuckets";
 import type { RetailerUser } from "@/lib/retailerAuth";
 import {
-  getSubscriptionPlansCatalog,
   maxTopUpPurchasesPerBillingCycleForCatalogBaseLimit,
   parseSubscriptionPlanKey,
   planLabelFromTryOnLimit,
 } from "@/lib/subscriptionPlans";
+import { getSubscriptionPlansCatalog } from "@/lib/subscriptionPlansServer";
 
 export function normalizeRetailerBillingEmail(email: string): string {
   return email.trim().toLowerCase();

@@ -2,7 +2,7 @@ import {
   defaultStoredSubscriptionPlanCatalog,
   getStoredSubscriptionPlanCatalog,
 } from "@/lib/subscriptionPlanCatalogStore";
-import { getSubscriptionPlansCatalog } from "@/lib/subscriptionPlans";
+import { getSubscriptionPlansCatalog } from "@/lib/subscriptionPlansServer";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";

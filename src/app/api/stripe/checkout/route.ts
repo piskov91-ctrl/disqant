@@ -1,10 +1,12 @@
 import { checkoutSiteOrigin, getStripe } from "@/lib/stripeServer";
 import {
-  getSubscriptionPlansCatalog,
   parseSubscriptionPlanKey,
-  stripeCatalogSubscriptionPriceId,
   type SubscriptionPlanKey,
 } from "@/lib/subscriptionPlans";
+import {
+  getSubscriptionPlansCatalog,
+  stripeCatalogSubscriptionPriceId,
+} from "@/lib/subscriptionPlansServer";
 import { getRetailerSessionUser } from "@/lib/retailerAuth";
 
 export const runtime = "nodejs";

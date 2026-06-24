@@ -2,7 +2,8 @@ import { getStripe, checkoutSiteOrigin } from "@/lib/stripeServer";
 import { getRetailerSessionUser, retailerEligibleForTryOnTopUps } from "@/lib/retailerAuth";
 import { loadClientSubscriptionSnapshotWithoutPendingApply } from "@/lib/apiKeyStore";
 import { storedOrDerivedBasePlanLimit } from "@/lib/clientTryOnBuckets";
-import { getSubscriptionPlansCatalog, maxTopUpPurchasesPerBillingCycleForCatalogBaseLimit } from "@/lib/subscriptionPlans";
+import { maxTopUpPurchasesPerBillingCycleForCatalogBaseLimit } from "@/lib/subscriptionPlans";
+import { getSubscriptionPlansCatalog } from "@/lib/subscriptionPlansServer";
 import {
   STRIPE_TOP_UP_CHECKOUT_KIND,
   TOP_UP_CUSTOM_MAX_TRY_ONS,

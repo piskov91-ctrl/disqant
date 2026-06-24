@@ -4,10 +4,7 @@ import {
   FASHN_USD_PER_CREDIT,
   FASHN_USD_TO_GBP,
 } from "@/lib/enterprisePriceCalculator";
-import {
-  SUBSCRIPTION_PLANS,
-  type SubscriptionPlanKey,
-} from "@/lib/subscriptionPlans";
+import { SUBSCRIPTION_PLANS, type SubscriptionPlanKey } from "@/lib/subscriptionPlansData";
 
 const CATALOG_REDIS_KEY = "fit-room:subscriptionPlans:catalog";
 

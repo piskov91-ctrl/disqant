@@ -8,7 +8,7 @@ import {
   listApprovedSubscriptionsFeedback,
   mapApprovedSubscriptionsFeedbackToSlides,
 } from "@/lib/subscriptionsFeedbackStore";
-import { getSubscriptionPlansCatalog } from "@/lib/subscriptionPlans";
+import { getSubscriptionPlansCatalog } from "@/lib/subscriptionPlansServer";
 import { getRetailerSessionUser } from "@/lib/retailerAuth";
 import { SubscriptionsFeedbackSection } from "./SubscriptionsFeedbackSection";
 import { SubscriptionsSubscriberTestimonials } from "./SubscriptionsSubscriberTestimonials";
