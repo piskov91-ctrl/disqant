@@ -11,7 +11,11 @@ import {
   recommendedProfitMarginPlanKey,
 } from "@/lib/subscriptionPlanProfit";
 import { syncSubscriptionPlanStripePrices } from "@/lib/subscriptionPlanStripeSync";
-import { SUBSCRIPTION_PLAN_KEYS_ORDERED, type SubscriptionPlanKey } from "@/lib/subscriptionPlansData";
+import {
+  SUBSCRIPTION_CATALOG_PRICE_REVISION,
+  SUBSCRIPTION_PLAN_KEYS_ORDERED,
+  type SubscriptionPlanKey,
+} from "@/lib/subscriptionPlansData";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -115,7 +119,11 @@ export async function POST(req: Request) {
     };
   }
 
-  const next: StoredSubscriptionPlanCatalog = { costPerTryOnGbp: costN, plans };
+  const next: StoredSubscriptionPlanCatalog = {
+    costPerTryOnGbp: costN,
+    plans,
+    priceRevision: SUBSCRIPTION_CATALOG_PRICE_REVISION,
+  };
 
   try {
     const { catalog: synced, subscriptionMigrations } = await syncSubscriptionPlanStripePrices({

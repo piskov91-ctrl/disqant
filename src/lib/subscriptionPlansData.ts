@@ -36,6 +36,12 @@ export const SUBSCRIPTION_PLANS = {
   },
 } as const;
 
+/**
+ * Bump when default plan prices change in code. Stored Redis catalogs with a lower revision
+ * are migrated to {@link SUBSCRIPTION_PLANS} prices on read (and persisted).
+ */
+export const SUBSCRIPTION_CATALOG_PRICE_REVISION = 2;
+
 export type SubscriptionPlanKey = keyof typeof SUBSCRIPTION_PLANS;
 
 export type SubscriptionPlanDefinition = {

@@ -4,7 +4,7 @@ import {
   FASHN_USD_PER_CREDIT,
   FASHN_USD_TO_GBP,
 } from "@/lib/enterprisePriceCalculator";
-import { SUBSCRIPTION_PLANS, type SubscriptionPlanKey } from "@/lib/subscriptionPlansData";
+import { SUBSCRIPTION_PLANS, SUBSCRIPTION_CATALOG_PRICE_REVISION, type SubscriptionPlanKey } from "@/lib/subscriptionPlansData";
 
 const CATALOG_REDIS_KEY = "fit-room:subscriptionPlans:catalog";
 
@@ -15,6 +15,8 @@ export type StoredSubscriptionPlanRow = SubscriptionPlanRow;
 export type StoredSubscriptionPlanCatalog = {
   costPerTryOnGbp: number;
   plans: Record<SubscriptionPlanKey, StoredSubscriptionPlanRow>;
+  /** When lower than {@link SUBSCRIPTION_CATALOG_PRICE_REVISION}, default prices are re-applied from code. */
+  priceRevision?: number;
 };
 
 /** Default Fashn cost per try-on in GBP (2 credits × $0.075 ÷ 1.25). */
@@ -37,7 +39,7 @@ export function defaultStoredSubscriptionPlanCatalog(): StoredSubscriptionPlanCa
       ...(typeof maxTopUps === "number" ? { maxTopUpPurchasesPerBillingCycle: maxTopUps } : {}),
     };
   }
-  return { costPerTryOnGbp: defaultCostPerTryOnGbp(), plans };
+  return { costPerTryOnGbp: defaultCostPerTryOnGbp(), plans, priceRevision: SUBSCRIPTION_CATALOG_PRICE_REVISION };
 }
 
 function parsePositiveInt(raw: unknown): number | null {
@@ -95,7 +97,33 @@ function parseStoredCatalog(raw: unknown): StoredSubscriptionPlanCatalog | null 
     if (row) plans[key] = row;
   }
 
-  return { costPerTryOnGbp: costN, plans };
+  const priceRevisionRaw = o.priceRevision;
+  const priceRevision =
+    typeof priceRevisionRaw === "number" && Number.isFinite(priceRevisionRaw)
+      ? Math.floor(priceRevisionRaw)
+      : 0;
+
+  return { costPerTryOnGbp: costN, plans, priceRevision };
+}
+
+function applyCatalogPriceRevision(catalog: StoredSubscriptionPlanCatalog): StoredSubscriptionPlanCatalog {
+  const revision = catalog.priceRevision ?? 0;
+  if (revision >= SUBSCRIPTION_CATALOG_PRICE_REVISION) return catalog;
+
+  const defaults = defaultStoredSubscriptionPlanCatalog();
+  const plans = { ...catalog.plans };
+  for (const key of Object.keys(SUBSCRIPTION_PLANS) as SubscriptionPlanKey[]) {
+    plans[key] = {
+      ...plans[key],
+      amountGbpPence: defaults.plans[key].amountGbpPence,
+    };
+  }
+
+  return {
+    ...catalog,
+    plans,
+    priceRevision: SUBSCRIPTION_CATALOG_PRICE_REVISION,
+  };
 }
 
 export async function getStoredSubscriptionPlanCatalog(): Promise<StoredSubscriptionPlanCatalog | null> {
@@ -103,7 +131,18 @@ export async function getStoredSubscriptionPlanCatalog(): Promise<StoredSubscrip
     const raw = await getRedis().get(CATALOG_REDIS_KEY);
     if (raw == null) return null;
     const parsed = typeof raw === "string" ? JSON.parse(raw) : raw;
-    return parseStoredCatalog(parsed);
+    const stored = parseStoredCatalog(parsed);
+    if (!stored) return null;
+
+    const migrated = applyCatalogPriceRevision(stored);
+    if ((stored.priceRevision ?? 0) < SUBSCRIPTION_CATALOG_PRICE_REVISION) {
+      try {
+        await setStoredSubscriptionPlanCatalog(migrated);
+      } catch {
+        // Still serve migrated prices even if Redis write fails.
+      }
+    }
+    return migrated;
   } catch {
     return null;
   }
