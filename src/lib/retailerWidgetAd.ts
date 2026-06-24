@@ -5,6 +5,8 @@ export type RetailerWidgetAdKind = "text" | "banner";
 export type RetailerWidgetAdBannerSlide = {
   url: string;
   durationSec: number;
+  /** Optional click-through URL shown during widget try-on generation. */
+  linkUrl?: string;
 };
 
 export type RetailerWidgetAdRecord = {
@@ -29,6 +31,7 @@ export const RETAILER_WIDGET_AD_MAX_MESSAGE_CHARS = 220;
 export const RETAILER_WIDGET_AD_DEFAULT_BANNER_DURATION_SEC = 10;
 export const RETAILER_WIDGET_AD_MIN_BANNER_DURATION_SEC = 1;
 export const RETAILER_WIDGET_AD_MAX_BANNER_DURATION_SEC = 45;
+export const RETAILER_WIDGET_AD_MAX_BANNER_LINK_CHARS = 2048;
 
 export const RETAILER_WIDGET_AD_REDIS_PREFIX = "fit-room:retailer:widget-ad:";
 
@@ -50,10 +53,18 @@ function parseBannersFromRaw(raw: Record<string, unknown>): RetailerWidgetAdBann
     const out: RetailerWidgetAdBannerSlide[] = [];
     for (const item of raw.banners) {
       if (!item || typeof item !== "object") continue;
-      const o = item as { url?: unknown; durationSec?: unknown };
+      const o = item as { url?: unknown; durationSec?: unknown; linkUrl?: unknown };
       const url = typeof o.url === "string" ? o.url.trim() : "";
       if (!url) continue;
-      out.push({ url, durationSec: normalizeWidgetAdBannerDuration(o.durationSec) });
+      const slide: RetailerWidgetAdBannerSlide = {
+        url,
+        durationSec: normalizeWidgetAdBannerDuration(o.durationSec),
+      };
+      const link = typeof o.linkUrl === "string" ? o.linkUrl.trim() : "";
+      if (link && /^https?:\/\//i.test(link)) {
+        slide.linkUrl = link.slice(0, RETAILER_WIDGET_AD_MAX_BANNER_LINK_CHARS);
+      }
+      out.push(slide);
     }
     if (out.length) return out;
   }
@@ -113,19 +124,44 @@ export function normalizeWidgetAdBannerUrl(raw: string): string {
   throw new Error("Banner must be a JPEG, PNG, or WebP image.");
 }
 
+export function normalizeWidgetAdBannerLinkUrl(raw: unknown): string | undefined {
+  const t = String(raw ?? "").trim();
+  if (!t) return undefined;
+  if (t.length > RETAILER_WIDGET_AD_MAX_BANNER_LINK_CHARS) {
+    throw new Error("Banner link URL is too long.");
+  }
+  if (!/^https?:\/\//i.test(t)) {
+    throw new Error("Banner link must start with http:// or https://");
+  }
+  try {
+    const u = new URL(t);
+    if (u.protocol !== "http:" && u.protocol !== "https:") {
+      throw new Error("Banner link must be http or https.");
+    }
+    return u.href;
+  } catch (e) {
+    if (e instanceof Error && e.message.startsWith("Banner link")) throw e;
+    throw new Error("Enter a valid banner link URL.");
+  }
+}
+
 export type WidgetAdBannerInput = {
   url?: string;
   durationSec?: unknown;
+  linkUrl?: unknown;
 };
 
 export function normalizeWidgetAdBanners(raw: WidgetAdBannerInput[]): RetailerWidgetAdBannerSlide[] {
   const out: RetailerWidgetAdBannerSlide[] = [];
   for (const item of raw) {
     const url = normalizeWidgetAdBannerUrl(String(item?.url ?? ""));
-    out.push({
+    const linkUrl = normalizeWidgetAdBannerLinkUrl(item?.linkUrl);
+    const slide: RetailerWidgetAdBannerSlide = {
       url,
       durationSec: normalizeWidgetAdBannerDuration(item?.durationSec),
-    });
+    };
+    if (linkUrl) slide.linkUrl = linkUrl;
+    out.push(slide);
   }
   if (!out.length) throw new Error("Add at least one banner image.");
   return out;

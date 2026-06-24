@@ -42,7 +42,10 @@
         if (!b) continue;
         var url = String(b.url || "").trim();
         if (!url) continue;
-        out.push({ url: url, durationSec: clampWidgetAdBannerDuration(b.durationSec) });
+        var slide = { url: url, durationSec: clampWidgetAdBannerDuration(b.durationSec) };
+        var linkUrl = String(b.linkUrl || "").trim();
+        if (linkUrl && /^https?:\/\//i.test(linkUrl)) slide.linkUrl = linkUrl;
+        out.push(slide);
       }
     }
     if (!out.length && Array.isArray(data.bannerUrls)) {
@@ -366,7 +369,7 @@
       + ".dq-empty span{font:600 12px/1.3 system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;}"
       + ".dq-processing{position:absolute;inset:0;display:none;align-items:center;justify-content:center;flex-direction:column;gap:10px;z-index:4;background:rgba(26,22,18,.82);backdrop-filter:blur(8px);}"
       + ".dq-processing.is-on{display:flex;}"
-      + ".dq-processing.has-stage-ads{background:transparent;backdrop-filter:none;-webkit-backdrop-filter:none;}"
+      + ".dq-processing.has-stage-ads{background:transparent;backdrop-filter:none;-webkit-backdrop-filter:none;pointer-events:none;}"
       + ".dq-processing.has-stage-ads .dq-processing-text{display:none;}"
       + ".dq-processing-inner{display:flex;flex-direction:column;align-items:center;gap:14px;min-height:4.5rem;justify-content:center;}"
       + ".dq-spin{width:34px;height:34px;border-radius:999px;border:3px solid rgba(15,15,20,.14);border-top-color:#c6a77d;animation:dqspin 1s linear infinite;}"
@@ -376,6 +379,8 @@
       + ".dq-processing-text.is-promo{color:#c6a77d;font-weight:700;}"
       + ".dq-stage-ad-overlay{position:absolute;inset:0;z-index:3;display:none;pointer-events:none;overflow:hidden;background:#0f0f14;}"
       + ".dq-stage-ad-overlay.is-on{display:block;}"
+      + ".dq-stage-ad-overlay.is-clickable{pointer-events:auto;}"
+      + ".dq-stage-ad-overlay .dq-stage-ad-link{position:absolute;inset:0;display:block;z-index:1;cursor:pointer;}"
       + ".dq-stage-ad-overlay img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:center;display:block;opacity:1;filter:none;transform:none;}"
       + ".dq-progress{position:absolute;left:12px;right:12px;bottom:12px;z-index:5;height:10px;border-radius:999px;background:rgba(245,237,228,.12);overflow:hidden;display:none;}"
       + ".dq-progress.is-on{display:block;}"
@@ -1235,20 +1240,42 @@
       return widgetAdBanners[idx];
     }
 
-    function setStageAdImgSrc(url) {
-      if (!url) return;
+    function setStageAdSlide(slide) {
+      if (!slide || !slide.url) return;
       if (stageAdFadeTimer) {
         window.clearTimeout(stageAdFadeTimer);
         stageAdFadeTimer = null;
       }
       stageAdImg.classList.remove("is-fading");
-      stageAdImg.src = url;
+      stageAdImg.src = slide.url;
+
+      var linkUrl = slide.linkUrl ? String(slide.linkUrl).trim() : "";
+      var existingLink = stageAdOverlay.querySelector("a.dq-stage-ad-link");
+      if (linkUrl && /^https?:\/\//i.test(linkUrl)) {
+        if (!existingLink) {
+          existingLink = document.createElement("a");
+          existingLink.className = "dq-stage-ad-link";
+          existingLink.target = "_blank";
+          existingLink.rel = "noopener noreferrer";
+          stageAdOverlay.appendChild(existingLink);
+          existingLink.appendChild(stageAdImg);
+        }
+        existingLink.href = linkUrl;
+        stageAdOverlay.classList.add("is-clickable");
+      } else {
+        if (existingLink) {
+          stageAdOverlay.appendChild(stageAdImg);
+          existingLink.parentNode.removeChild(existingLink);
+        }
+        stageAdOverlay.classList.remove("is-clickable");
+      }
     }
 
     function setStageAdOverlayVisible(show) {
       showingStageAdOverlay = !!show;
       stageAdOverlay.classList.toggle("is-on", showingStageAdOverlay);
       processing.classList.toggle("has-stage-ads", showingStageAdOverlay);
+      if (!showingStageAdOverlay) stageAdOverlay.classList.remove("is-clickable");
     }
 
     function showBannerSlideAndScheduleNext(isFirst) {
@@ -1259,7 +1286,7 @@
         runLoadingContentRotation();
         return;
       }
-      setStageAdImgSrc(slide.url);
+      setStageAdSlide(slide);
       setStageAdOverlayVisible(true);
       rotationPhaseTimer = window.setTimeout(function () {
         showBannerSlideAndScheduleNext(false);

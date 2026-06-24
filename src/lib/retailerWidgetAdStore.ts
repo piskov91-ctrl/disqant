@@ -44,7 +44,11 @@ export async function setRetailerWidgetAd(
         }
       : {
           banners: normalizeWidgetAdBanners(
-            (record.banners ?? []).map((b) => ({ url: b.url, durationSec: b.durationSec })),
+            (record.banners ?? []).map((b) => ({
+              url: b.url,
+              durationSec: b.durationSec,
+              linkUrl: b.linkUrl,
+            })),
           ),
         }),
   };

@@ -26,6 +26,7 @@ type BannerSlideDraft = {
   id: string;
   url: string;
   durationSec: number;
+  linkUrl: string;
 };
 
 type WidgetAdApiResponse = {
@@ -62,12 +63,13 @@ function slidesFromRecord(banners: RetailerWidgetAdBannerSlide[]): BannerSlideDr
     id: newSlideId(),
     url: b.url,
     durationSec: b.durationSec,
+    linkUrl: b.linkUrl ?? "",
   }));
 }
 
-/** Stable key so the live preview remounts when draft clips change (add / remove / reorder). */
+/** Stable key so the live preview remounts when draft clips change (add / remove / reorder / link). */
 function bannerPreviewKey(slides: BannerSlideDraft[]): string {
-  return slides.map((s) => `${s.id}:${s.url.length}`).join("|");
+  return slides.map((s) => `${s.id}:${s.url.length}:${s.linkUrl}`).join("|");
 }
 
 function BannerImageCard({
@@ -76,6 +78,7 @@ function BannerImageCard({
   isDragging,
   isDropTarget,
   onRemove,
+  onLinkUrlChange,
   onDragStart,
   onDragEnd,
   onDragOver,
@@ -87,6 +90,7 @@ function BannerImageCard({
   isDragging: boolean;
   isDropTarget: boolean;
   onRemove: (id: string) => void;
+  onLinkUrlChange: (id: string, linkUrl: string) => void;
   onDragStart: (id: string) => void;
   onDragEnd: () => void;
   onDragOver: (id: string) => void;
@@ -95,30 +99,34 @@ function BannerImageCard({
 }) {
   return (
     <li
-      draggable
-      onDragStart={(e) => {
-        e.dataTransfer.effectAllowed = "move";
-        e.dataTransfer.setData("text/plain", slide.id);
-        onDragStart(slide.id);
-      }}
-      onDragEnd={onDragEnd}
-      onDragOver={(e) => {
-        e.preventDefault();
-        e.dataTransfer.dropEffect = "move";
-        onDragOver(slide.id);
-      }}
-      onDragLeave={() => onDragLeave(slide.id)}
-      onDrop={(e) => {
-        e.preventDefault();
-        onDrop(slide.id);
-      }}
       className={`group relative list-none rounded-xl border bg-zinc-900/50 shadow-sm transition-[border-color,box-shadow,opacity] ${
         isDragging
-          ? "cursor-grabbing border-[#c6a77d]/45 opacity-45"
-          : "cursor-grab border-white/10 hover:border-[#c6a77d]/35"
+          ? "border-[#c6a77d]/45 opacity-45"
+          : "border-white/10 hover:border-[#c6a77d]/35"
       } ${isDropTarget ? "border-[#c6a77d]/55 ring-2 ring-[#c6a77d]/25" : ""}`}
     >
-      <div className="relative aspect-[3/1] overflow-hidden rounded-xl bg-zinc-950/70">
+      <div
+        draggable
+        onDragStart={(e) => {
+          e.dataTransfer.effectAllowed = "move";
+          e.dataTransfer.setData("text/plain", slide.id);
+          onDragStart(slide.id);
+        }}
+        onDragEnd={onDragEnd}
+        onDragOver={(e) => {
+          e.preventDefault();
+          e.dataTransfer.dropEffect = "move";
+          onDragOver(slide.id);
+        }}
+        onDragLeave={() => onDragLeave(slide.id)}
+        onDrop={(e) => {
+          e.preventDefault();
+          onDrop(slide.id);
+        }}
+        className={`relative aspect-[3/1] overflow-hidden rounded-t-xl bg-zinc-950/70 ${
+          isDragging ? "cursor-grabbing" : "cursor-grab"
+        }`}
+      >
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
           src={slide.url}
@@ -143,6 +151,20 @@ function BannerImageCard({
           <X className="h-3.5 w-3.5" aria-hidden />
         </button>
       </div>
+      <div className="border-t border-white/10 px-2.5 py-2">
+        <label className="sr-only" htmlFor={`banner-link-${slide.id}`}>
+          Link URL for banner {index + 1}
+        </label>
+        <input
+          id={`banner-link-${slide.id}`}
+          type="url"
+          inputMode="url"
+          value={slide.linkUrl}
+          onChange={(e) => onLinkUrlChange(slide.id, e.target.value)}
+          placeholder="https://yourstore.com/product (optional)"
+          className="w-full rounded-lg border border-white/10 bg-zinc-950/80 px-2.5 py-1.5 text-xs text-zinc-100 placeholder:text-zinc-600 focus:border-[#c6a77d]/45 focus:outline-none focus:ring-1 focus:ring-[#c6a77d]/30"
+        />
+      </div>
     </li>
   );
 }
@@ -151,12 +173,14 @@ function BannerImageGrid({
   slides,
   onReorder,
   onRemove,
+  onLinkUrlChange,
   onAddFiles,
   uploading,
 }: {
   slides: BannerSlideDraft[];
   onReorder: (fromIndex: number, toIndex: number) => void;
   onRemove: (id: string) => void;
+  onLinkUrlChange: (id: string, linkUrl: string) => void;
   onAddFiles: (files: FileList | null) => void;
   uploading: boolean;
 }) {
@@ -220,6 +244,7 @@ function BannerImageGrid({
                 isDragging={dragId === slide.id}
                 isDropTarget={dropTargetId === slide.id && dragId !== slide.id}
                 onRemove={onRemove}
+                onLinkUrlChange={onLinkUrlChange}
                 onDragStart={setDragId}
                 onDragEnd={clearDragState}
                 onDragOver={setDropTargetId}
@@ -554,6 +579,7 @@ export function DashboardAdsPanel() {
           id: newSlideId(),
           url,
           durationSec: RETAILER_WIDGET_AD_DEFAULT_BANNER_DURATION_SEC,
+          linkUrl: "",
         });
       }
       setEditorKind("banner");
@@ -572,6 +598,12 @@ export function DashboardAdsPanel() {
       next.splice(toIndex, 0, item);
       return next;
     });
+  }, []);
+
+  const updateSlideLinkUrl = useCallback((id: string, linkUrl: string) => {
+    setBannerSlides((prev) =>
+      prev.map((slide) => (slide.id === id ? { ...slide, linkUrl } : slide)),
+    );
   }, []);
 
   const removeSlide = useCallback((id: string) => {
@@ -595,9 +627,10 @@ export function DashboardAdsPanel() {
             }
           : {
               kind: "banner" as const,
-              banners: bannerSlides.map(({ url, durationSec }) => ({
+              banners: bannerSlides.map(({ url, durationSec, linkUrl }) => ({
                 url,
                 durationSec: normalizeWidgetAdBannerDuration(durationSec),
+                ...(linkUrl.trim() ? { linkUrl: linkUrl.trim() } : {}),
               })),
             };
 
@@ -798,6 +831,7 @@ export function DashboardAdsPanel() {
                 slides={bannerSlides}
                 onReorder={reorderSlides}
                 onRemove={removeSlide}
+                onLinkUrlChange={updateSlideLinkUrl}
                 onAddFiles={(files) => void onBannerFiles(files)}
                 uploading={uploading}
               />
