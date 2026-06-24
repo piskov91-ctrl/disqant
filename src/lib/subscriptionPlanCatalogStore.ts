@@ -8,12 +8,9 @@ import { SUBSCRIPTION_PLANS, type SubscriptionPlanKey } from "@/lib/subscription
 
 const CATALOG_REDIS_KEY = "fit-room:subscriptionPlans:catalog";
 
-export type StoredSubscriptionPlanRow = {
-  name: string;
-  amountGbpPence: number;
-  tryOnLimit: number;
-  maxTopUpPurchasesPerBillingCycle?: number;
-};
+import type { SubscriptionPlanRow } from "@/lib/subscriptionPlansData";
+
+export type StoredSubscriptionPlanRow = SubscriptionPlanRow;
 
 export type StoredSubscriptionPlanCatalog = {
   costPerTryOnGbp: number;

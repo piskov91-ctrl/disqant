@@ -1,20 +1,19 @@
 "use client";
 
 import { useCallback, useEffect, useId, useMemo, useState } from "react";
-import type { SubscriptionPlanKey } from "@/lib/subscriptionPlans";
-import { SUBSCRIPTION_PLAN_KEYS_ORDERED } from "@/lib/subscriptionPlans";
+import type { SubscriptionPlanKey, SubscriptionPlanRow } from "@/lib/subscriptionPlansData";
+import { SUBSCRIPTION_PLAN_KEYS_ORDERED } from "@/lib/subscriptionPlansData";
 import {
   computeSubscriptionPlanProfit,
   recommendedProfitMarginPlanKey,
   type SubscriptionPlanProfitRow,
 } from "@/lib/subscriptionPlanProfit";
-import type { StoredSubscriptionPlanRow } from "@/lib/subscriptionPlanCatalogStore";
 
-type EditablePlanRow = StoredSubscriptionPlanRow & { key: SubscriptionPlanKey };
+type EditablePlanRow = SubscriptionPlanRow & { key: SubscriptionPlanKey };
 
 type CatalogPayload = {
   costPerTryOnGbp: number;
-  plans: Record<SubscriptionPlanKey, StoredSubscriptionPlanRow>;
+  plans: Record<SubscriptionPlanKey, SubscriptionPlanRow>;
   profitRows?: SubscriptionPlanProfitRow[];
   recommendedPlanKey?: SubscriptionPlanKey | null;
 };
@@ -115,7 +114,7 @@ export function SubscriptionCalcPanel() {
   }, [costPerTryOnGbp]);
 
   const draftPlans = useMemo(() => {
-    const out = {} as Record<SubscriptionPlanKey, StoredSubscriptionPlanRow>;
+    const out = {} as Record<SubscriptionPlanKey, SubscriptionPlanRow>;
     for (const row of plans) {
       const pricePence = penceFromPoundsInput(priceInputs[row.key]) ?? row.amountGbpPence;
       const tryOns = parsePositiveIntInput(tryOnInputs[row.key]) ?? row.tryOnLimit;
@@ -131,15 +130,19 @@ export function SubscriptionCalcPanel() {
     return out;
   }, [plans, priceInputs, tryOnInputs]);
 
-  const profitRows = useMemo(
-    () =>
-      SUBSCRIPTION_PLAN_KEYS_ORDERED.map((key) =>
-        computeSubscriptionPlanProfit(key, draftPlans[key], costPerTryOn),
-      ),
-    [draftPlans, costPerTryOn],
-  );
+  const profitRows = useMemo(() => {
+    if (loading || plans.length === 0) return [];
+    return SUBSCRIPTION_PLAN_KEYS_ORDERED.map((key) => {
+      const plan = draftPlans[key];
+      if (!plan) return null;
+      return computeSubscriptionPlanProfit(key, plan, costPerTryOn);
+    }).filter((row): row is SubscriptionPlanProfitRow => row !== null);
+  }, [draftPlans, costPerTryOn, loading, plans.length]);
 
-  const recommendedKey = useMemo(() => recommendedProfitMarginPlanKey(profitRows), [profitRows]);
+  const recommendedKey = useMemo(
+    () => (profitRows.length > 0 ? recommendedProfitMarginPlanKey(profitRows) : null),
+    [profitRows],
+  );
 
   function updatePlanName(key: SubscriptionPlanKey, name: string) {
     setPlans((prev) => prev.map((p) => (p.key === key ? { ...p, name } : p)));
@@ -158,7 +161,7 @@ export function SubscriptionCalcPanel() {
       return;
     }
 
-    const plansPayload = {} as Record<SubscriptionPlanKey, StoredSubscriptionPlanRow>;
+    const plansPayload = {} as Record<SubscriptionPlanKey, SubscriptionPlanRow>;
     for (const key of SUBSCRIPTION_PLAN_KEYS_ORDERED) {
       const row = plans.find((p) => p.key === key);
       const name = row?.name.trim() ?? "";

@@ -1,5 +1,4 @@
-import type { SubscriptionPlanKey } from "@/lib/subscriptionPlansData";
-import type { StoredSubscriptionPlanRow } from "@/lib/subscriptionPlanCatalogStore";
+import type { SubscriptionPlanKey, SubscriptionPlanRow } from "@/lib/subscriptionPlansData";
 
 export type SubscriptionPlanProfitRow = {
   key: SubscriptionPlanKey;
@@ -14,7 +13,7 @@ export type SubscriptionPlanProfitRow = {
 
 export function computeSubscriptionPlanProfit(
   key: SubscriptionPlanKey,
-  plan: StoredSubscriptionPlanRow,
+  plan: SubscriptionPlanRow,
   costPerTryOnGbp: number,
 ): SubscriptionPlanProfitRow {
   const revenueGbp = plan.amountGbpPence / 100;

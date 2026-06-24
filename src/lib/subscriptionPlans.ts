@@ -11,4 +11,5 @@ export {
   type SubscriptionPlanCatalog,
   type SubscriptionPlanDefinition,
   type SubscriptionPlanKey,
+  type SubscriptionPlanRow,
 } from "@/lib/subscriptionPlansData";

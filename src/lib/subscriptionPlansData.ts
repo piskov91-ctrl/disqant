@@ -46,6 +46,14 @@ export type SubscriptionPlanDefinition = {
   maxTopUpPurchasesPerBillingCycle?: number;
 };
 
+/** Editable plan row shape used by admin Subscription Calc and Redis catalog store. */
+export type SubscriptionPlanRow = {
+  name: string;
+  amountGbpPence: number;
+  tryOnLimit: number;
+  maxTopUpPurchasesPerBillingCycle?: number;
+};
+
 export type SubscriptionPlanCatalog = Record<SubscriptionPlanKey, SubscriptionPlanDefinition>;
 
 const PLAN_KEY_ORDER: readonly SubscriptionPlanKey[] = ["starter", "boutique", "studio", "premium"];
