@@ -58,6 +58,14 @@ function parsePlanRow(raw: unknown): StoredSubscriptionPlanRow | null {
   const maxRaw = o.maxTopUpPurchasesPerBillingCycle;
   const maxTopUpPurchasesPerBillingCycle =
     maxRaw === undefined || maxRaw === null ? undefined : parsePositiveInt(maxRaw) ?? undefined;
+  const stripeProductId =
+    typeof o.stripeProductId === "string" && o.stripeProductId.trim().length > 0
+      ? o.stripeProductId.trim()
+      : undefined;
+  const stripePriceId =
+    typeof o.stripePriceId === "string" && o.stripePriceId.trim().length > 0
+      ? o.stripePriceId.trim()
+      : undefined;
   return {
     name: name.slice(0, 80),
     amountGbpPence,
@@ -65,6 +73,8 @@ function parsePlanRow(raw: unknown): StoredSubscriptionPlanRow | null {
     ...(typeof maxTopUpPurchasesPerBillingCycle === "number"
       ? { maxTopUpPurchasesPerBillingCycle }
       : {}),
+    ...(stripeProductId ? { stripeProductId } : {}),
+    ...(stripePriceId ? { stripePriceId } : {}),
   };
 }
 

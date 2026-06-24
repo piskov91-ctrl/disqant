@@ -10,6 +10,7 @@ import {
   computeSubscriptionPlanProfit,
   recommendedProfitMarginPlanKey,
 } from "@/lib/subscriptionPlanProfit";
+import { syncSubscriptionPlanStripePrices } from "@/lib/subscriptionPlanStripeSync";
 import { SUBSCRIPTION_PLAN_KEYS_ORDERED, type SubscriptionPlanKey } from "@/lib/subscriptionPlansData";
 
 export const runtime = "nodejs";
@@ -99,6 +100,7 @@ export async function POST(req: Request) {
       maxRaw === undefined || maxRaw === null
         ? base.plans[key].maxTopUpPurchasesPerBillingCycle
         : Math.floor(Number(maxRaw));
+    const prev = base.plans[key];
     plans[key] = {
       name: name.slice(0, 80),
       amountGbpPence,
@@ -108,14 +110,17 @@ export async function POST(req: Request) {
       maxTopUpPurchasesPerBillingCycle > 0
         ? { maxTopUpPurchasesPerBillingCycle }
         : {}),
+      ...(prev.stripeProductId ? { stripeProductId: prev.stripeProductId } : {}),
+      ...(prev.stripePriceId ? { stripePriceId: prev.stripePriceId } : {}),
     };
   }
 
   const next: StoredSubscriptionPlanCatalog = { costPerTryOnGbp: costN, plans };
 
   try {
-    await setStoredSubscriptionPlanCatalog(next);
-    return Response.json({ ok: true, ...catalogResponse(next) });
+    const synced = await syncSubscriptionPlanStripePrices({ catalog: next, previous: base });
+    await setStoredSubscriptionPlanCatalog(synced);
+    return Response.json({ ok: true, ...catalogResponse(synced) });
   } catch (e) {
     const message = e instanceof Error ? e.message : "Failed to save subscription plans.";
     return Response.json({ error: message }, { status: 503 });

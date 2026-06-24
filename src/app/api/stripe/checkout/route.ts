@@ -5,7 +5,7 @@ import {
 } from "@/lib/subscriptionPlans";
 import {
   getSubscriptionPlansCatalog,
-  stripeCatalogSubscriptionPriceId,
+  resolveSubscriptionCheckoutPriceId,
 } from "@/lib/subscriptionPlansServer";
 import { getRetailerSessionUser } from "@/lib/retailerAuth";
 
@@ -21,7 +21,7 @@ async function createCheckoutSessionUrl(params: { req: Request; planKey: Subscri
   const origin = checkoutSiteOrigin(params.req);
 
   /** Exactly one recurring line — base subscription plan only (never bundle top-ups here). */
-  const catalogPriceId = stripeCatalogSubscriptionPriceId(params.planKey);
+  const catalogPriceId = await resolveSubscriptionCheckoutPriceId(params.planKey);
   const subscriptionLineItems = catalogPriceId
     ? [{ price: catalogPriceId, quantity: 1 as const }]
     : [

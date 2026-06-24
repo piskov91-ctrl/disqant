@@ -224,7 +224,7 @@ export function SubscriptionCalcPanel() {
         return;
       }
       applyPayload(data);
-      setSaveMessage("Subscription plan prices and try-on limits saved.");
+      setSaveMessage("Subscription plan prices, try-on limits, and Stripe catalog prices saved.");
     } catch (e) {
       setError(e instanceof Error ? e.message : "Failed to save subscription plans.");
     } finally {
@@ -238,8 +238,8 @@ export function SubscriptionCalcPanel() {
       <h2 className="mt-2 text-lg font-semibold text-[#F5EDE4]">Plan economics &amp; catalog</h2>
       <p className="mt-2 max-w-2xl text-sm leading-relaxed text-zinc-400">
         Model revenue, Fashn cost, and net profit per tier. Saving updates live subscription prices and try-on limits
-        across checkout, fulfillment, and the public plans page. If Stripe catalog Price IDs are set in env, checkout
-        still bills those fixed Stripe prices — clear them to use saved amounts via dynamic checkout.
+        across checkout, fulfillment, and the public plans page, and syncs new recurring Stripe Prices for each tier
+        (existing Stripe Prices are archived when the amount changes).
       </p>
 
       {error ? (

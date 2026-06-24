@@ -52,6 +52,10 @@ export type SubscriptionPlanRow = {
   amountGbpPence: number;
   tryOnLimit: number;
   maxTopUpPurchasesPerBillingCycle?: number;
+  /** Stripe Product ID synced when prices are saved in Subscription Calc. */
+  stripeProductId?: string;
+  /** Active Stripe recurring Price ID for checkout (new price created when amount changes). */
+  stripePriceId?: string;
 };
 
 export type SubscriptionPlanCatalog = Record<SubscriptionPlanKey, SubscriptionPlanDefinition>;

@@ -37,6 +37,16 @@ export async function getSubscriptionPlanDefinitionAsync(key: SubscriptionPlanKe
   return catalog[key];
 }
 
+/** Redis-synced Stripe Price ID for checkout, then optional env catalog fallback. */
+export async function resolveSubscriptionCheckoutPriceId(
+  planKey: SubscriptionPlanKey,
+): Promise<string | undefined> {
+  const stored = await getStoredSubscriptionPlanCatalog();
+  const fromCatalog = stored?.plans[planKey]?.stripePriceId?.trim();
+  if (fromCatalog) return fromCatalog;
+  return stripeCatalogSubscriptionPriceId(planKey);
+}
+
 /**
  * Optional Stripe recurring Price IDs (Dashboard catalog). When set, subscription Checkout uses `{ price, quantity: 1 }`
  * only — recurring invoices stay tied to that catalog price (base plan only). Top-ups remain separate `mode: payment`
