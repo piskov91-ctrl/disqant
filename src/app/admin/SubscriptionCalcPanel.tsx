@@ -16,6 +16,10 @@ type CatalogPayload = {
   plans: Record<SubscriptionPlanKey, SubscriptionPlanRow>;
   profitRows?: SubscriptionPlanProfitRow[];
   recommendedPlanKey?: SubscriptionPlanKey | null;
+  subscriptionMigrationSummary?: {
+    updatedCount: number;
+    errors: string[];
+  };
 };
 
 function formatGbp(amount: number, fractionDigits = 2): string {
@@ -224,7 +228,24 @@ export function SubscriptionCalcPanel() {
         return;
       }
       applyPayload(data);
-      setSaveMessage("Subscription plan prices, try-on limits, and Stripe catalog prices saved.");
+      const migrated = data.subscriptionMigrationSummary?.updatedCount ?? 0;
+      const migrationErrors = data.subscriptionMigrationSummary?.errors ?? [];
+      if (migrationErrors.length > 0) {
+        setError(
+          `Plans saved, but ${migrationErrors.length} subscription update(s) failed. First error: ${migrationErrors[0]}`,
+        );
+        setSaveMessage(
+          migrated > 0
+            ? `Catalog saved. ${migrated} active subscription(s) will renew at the new price next billing period.`
+            : "Catalog saved. Some existing subscriptions could not be updated — see error.",
+        );
+      } else {
+        setSaveMessage(
+          migrated > 0
+            ? `Catalog saved. ${migrated} active subscription(s) will use the new price from their next renewal (no charge today).`
+            : "Subscription plan prices, try-on limits, and Stripe catalog prices saved.",
+        );
+      }
     } catch (e) {
       setError(e instanceof Error ? e.message : "Failed to save subscription plans.");
     } finally {
@@ -238,8 +259,8 @@ export function SubscriptionCalcPanel() {
       <h2 className="mt-2 text-lg font-semibold text-[#F5EDE4]">Plan economics &amp; catalog</h2>
       <p className="mt-2 max-w-2xl text-sm leading-relaxed text-zinc-400">
         Model revenue, Fashn cost, and net profit per tier. Saving updates live subscription prices and try-on limits
-        across checkout, fulfillment, and the public plans page, and syncs new recurring Stripe Prices for each tier
-        (existing Stripe Prices are archived when the amount changes).
+        across checkout, fulfillment, and the public plans page, syncs new recurring Stripe Prices for each tier,
+        and moves active subscribers to the new price at their next renewal (no immediate charge).
       </p>
 
       {error ? (

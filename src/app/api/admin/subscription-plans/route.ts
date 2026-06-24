@@ -118,9 +118,24 @@ export async function POST(req: Request) {
   const next: StoredSubscriptionPlanCatalog = { costPerTryOnGbp: costN, plans };
 
   try {
-    const synced = await syncSubscriptionPlanStripePrices({ catalog: next, previous: base });
+    const { catalog: synced, subscriptionMigrations } = await syncSubscriptionPlanStripePrices({
+      catalog: next,
+      previous: base,
+    });
     await setStoredSubscriptionPlanCatalog(synced);
-    return Response.json({ ok: true, ...catalogResponse(synced) });
+
+    const totalUpdated = subscriptionMigrations.reduce((n, m) => n + m.updatedCount, 0);
+    const migrationErrors = subscriptionMigrations.flatMap((m) => m.errors);
+
+    return Response.json({
+      ok: true,
+      ...catalogResponse(synced),
+      subscriptionMigrations,
+      subscriptionMigrationSummary: {
+        updatedCount: totalUpdated,
+        errors: migrationErrors,
+      },
+    });
   } catch (e) {
     const message = e instanceof Error ? e.message : "Failed to save subscription plans.";
     return Response.json({ error: message }, { status: 503 });
