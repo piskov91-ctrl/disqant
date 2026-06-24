@@ -31,6 +31,10 @@ type PriceCardProps = {
   totalGbp: number;
   profitGbp: number;
   marginPct: number;
+  fashnCostGbp: number;
+  discountInputId: string;
+  rawDiscountPct: string;
+  onDiscountChange: (value: string) => void;
   extra?: ReactNode;
   featured?: boolean;
 };
@@ -54,12 +58,28 @@ function PriceCard({
   totalGbp,
   profitGbp,
   marginPct,
+  fashnCostGbp,
+  discountInputId,
+  rawDiscountPct,
+  onDiscountChange,
   extra,
   featured,
 }: PriceCardProps) {
+  const discountPct = useMemo(() => parseEnterpriseDiscountPct(rawDiscountPct), [rawDiscountPct]);
+  const discountInvalid = rawDiscountPct.trim().length > 0 && discountPct === null;
+  const discountResult = useMemo(() => {
+    if (discountPct === null) return null;
+    return computeEnterpriseRecommendedDiscount(totalGbp, fashnCostGbp, discountPct);
+  }, [totalGbp, fashnCostGbp, discountPct]);
+
+  const showDiscounted = discountResult !== null && discountResult.discountPct > 0;
+  const displayTotal = showDiscounted ? discountResult.discountedPriceGbp : totalGbp;
+  const displayProfit = showDiscounted ? discountResult.profitAfterDiscountGbp : profitGbp;
+  const displayMargin = showDiscounted ? discountResult.marginAfterDiscountPct : marginPct;
+
   return (
     <article
-      className={`relative overflow-hidden rounded-2xl border bg-gradient-to-b from-[#1a1612] to-[#12100d] p-5 shadow-lg ${accentRing[accent]} ${
+      className={`relative flex flex-col overflow-hidden rounded-2xl border bg-gradient-to-b from-[#1a1612] to-[#12100d] p-5 shadow-lg ${accentRing[accent]} ${
         featured ? "ring-1 ring-[#C6A77D]/30" : ""
       }`}
     >
@@ -71,45 +91,74 @@ function PriceCard({
       <h3 className={`text-sm font-semibold uppercase tracking-[0.12em] ${accentTitle[accent]}`}>{title}</h3>
       <p className="mt-1 text-xs leading-relaxed text-zinc-500">{subtitle}</p>
       {extra ? <div className="mt-3 text-xs text-zinc-400">{extra}</div> : null}
-      <p className="mt-5 font-serif text-3xl tracking-tight text-[#F5EDE4]">{formatGbp(totalGbp)}</p>
+      <p className="mt-5 font-serif text-3xl tracking-tight text-[#F5EDE4]">{formatGbp(displayTotal)}</p>
+      {showDiscounted ? (
+        <p className="mt-1 text-xs text-zinc-500">
+          {formatGbp(totalGbp)} − {discountResult.discountPct}%
+        </p>
+      ) : null}
       <dl className="mt-4 space-y-2 border-t border-white/5 pt-4 text-sm">
         <div className="flex items-baseline justify-between gap-3">
-          <dt className="text-zinc-500">Profit</dt>
-          <dd className={`font-medium tabular-nums ${profitGbp >= 0 ? "text-emerald-300/95" : "text-red-300"}`}>
-            {formatGbp(profitGbp)}
+          <dt className="text-zinc-500">{showDiscounted ? "Profit after discount" : "Profit"}</dt>
+          <dd className={`font-medium tabular-nums ${displayProfit >= 0 ? "text-emerald-300/95" : "text-red-300"}`}>
+            {formatGbp(displayProfit)}
           </dd>
         </div>
         <div className="flex items-baseline justify-between gap-3">
-          <dt className="text-zinc-500">Margin</dt>
-          <dd className="font-medium tabular-nums text-zinc-300">{marginPct.toFixed(1)}%</dd>
+          <dt className="text-zinc-500">{showDiscounted ? "Margin after discount" : "Margin"}</dt>
+          <dd className="font-medium tabular-nums text-zinc-300">{displayMargin.toFixed(1)}%</dd>
         </div>
       </dl>
+
+      <div className="mt-4 border-t border-white/5 pt-4">
+        <label htmlFor={discountInputId} className="block text-[10px] font-semibold uppercase tracking-[0.14em] text-zinc-500">
+          Discount
+        </label>
+        <div className="mt-2 flex items-center gap-2">
+          <input
+            id={discountInputId}
+            type="range"
+            min={0}
+            max={MAX_ENTERPRISE_DISCOUNT_PCT}
+            step={1}
+            value={discountPct ?? 0}
+            onChange={(e) => onDiscountChange(e.target.value)}
+            className="h-2 min-w-0 flex-1 cursor-pointer appearance-none rounded-full bg-zinc-800 accent-[#C6A77D]"
+          />
+          <div className="relative w-[4.5rem] shrink-0">
+            <input
+              type="text"
+              inputMode="decimal"
+              value={rawDiscountPct}
+              onChange={(e) => onDiscountChange(e.target.value.replace(/[^\d]/g, ""))}
+              className="w-full rounded-lg border border-white/10 bg-[#0f0d0b] py-1.5 pl-2 pr-6 text-right text-xs font-medium tabular-nums text-[#F5EDE4] outline-none focus:border-[#C6A77D]/55"
+              aria-label={`${title} discount percentage`}
+            />
+            <span className="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 text-[10px] text-zinc-500">
+              %
+            </span>
+          </div>
+        </div>
+        {discountInvalid ? (
+          <p className="mt-2 text-xs text-red-300/90">Enter 0–{MAX_ENTERPRISE_DISCOUNT_PCT}.</p>
+        ) : null}
+      </div>
     </article>
   );
 }
 
 export function EnterprisePriceCalculatorPanel() {
   const [rawTryOns, setRawTryOns] = useState("5000");
-  const [rawDiscountPct, setRawDiscountPct] = useState("0");
+  const [recommendedDiscountPct, setRecommendedDiscountPct] = useState("0");
+  const [midDiscountPct, setMidDiscountPct] = useState("0");
+  const [minimumDiscountPct, setMinimumDiscountPct] = useState("0");
 
   const breakdown = useMemo(() => {
     const parsed = Number.parseInt(rawTryOns.replace(/,/g, ""), 10);
     return computeEnterprisePricing(parsed);
   }, [rawTryOns]);
 
-  const discountPct = useMemo(() => parseEnterpriseDiscountPct(rawDiscountPct), [rawDiscountPct]);
-
-  const discountResult = useMemo(() => {
-    if (!breakdown || discountPct === null) return null;
-    return computeEnterpriseRecommendedDiscount(
-      breakdown.recommended.totalGbp,
-      breakdown.fashnCostGbp,
-      discountPct,
-    );
-  }, [breakdown, discountPct]);
-
   const inputInvalid = rawTryOns.trim().length > 0 && breakdown === null;
-  const discountInvalid = rawDiscountPct.trim().length > 0 && discountPct === null;
 
   return (
     <div className="space-y-8">
@@ -171,6 +220,10 @@ export function EnterprisePriceCalculatorPanel() {
               totalGbp={breakdown.recommended.totalGbp}
               profitGbp={breakdown.recommended.profitGbp}
               marginPct={breakdown.recommended.marginPct}
+              fashnCostGbp={breakdown.fashnCostGbp}
+              discountInputId="enterprise-calc-discount-recommended"
+              rawDiscountPct={recommendedDiscountPct}
+              onDiscountChange={setRecommendedDiscountPct}
               extra={
                 <>
                   <span className="text-zinc-500">Tier </span>
@@ -188,6 +241,10 @@ export function EnterprisePriceCalculatorPanel() {
               totalGbp={breakdown.mid.totalGbp}
               profitGbp={breakdown.mid.profitGbp}
               marginPct={breakdown.mid.marginPct}
+              fashnCostGbp={breakdown.fashnCostGbp}
+              discountInputId="enterprise-calc-discount-mid"
+              rawDiscountPct={midDiscountPct}
+              onDiscountChange={setMidDiscountPct}
             />
             <PriceCard
               accent="amber"
@@ -196,81 +253,11 @@ export function EnterprisePriceCalculatorPanel() {
               totalGbp={breakdown.minimum.totalGbp}
               profitGbp={breakdown.minimum.profitGbp}
               marginPct={breakdown.minimum.marginPct}
+              fashnCostGbp={breakdown.fashnCostGbp}
+              discountInputId="enterprise-calc-discount-minimum"
+              rawDiscountPct={minimumDiscountPct}
+              onDiscountChange={setMinimumDiscountPct}
             />
-          </div>
-
-          <div className="rounded-2xl border border-[#C6A77D]/25 bg-gradient-to-br from-[#1a1612]/90 to-[#0f0d0b] p-5 md:p-6">
-            <div className="flex flex-wrap items-end justify-between gap-4">
-              <div>
-                <h3 className="text-sm font-semibold uppercase tracking-[0.12em] text-[#e8d4bc]">Discount</h3>
-                <p className="mt-1 text-xs text-zinc-500">
-                  Apply up to {MAX_ENTERPRISE_DISCOUNT_PCT}% off the recommended price.
-                </p>
-              </div>
-              <div className="w-full max-w-xs">
-                <label htmlFor="enterprise-calc-discount" className="block text-sm font-medium text-[#F5EDE4]/85">
-                  Discount %
-                </label>
-                <div className="mt-2 flex items-center gap-3">
-                  <input
-                    id="enterprise-calc-discount"
-                    type="range"
-                    min={0}
-                    max={MAX_ENTERPRISE_DISCOUNT_PCT}
-                    step={1}
-                    value={discountPct ?? 0}
-                    onChange={(e) => setRawDiscountPct(e.target.value)}
-                    className="h-2 min-w-0 flex-1 cursor-pointer appearance-none rounded-full bg-zinc-800 accent-[#C6A77D]"
-                  />
-                  <div className="relative w-20 shrink-0">
-                    <input
-                      type="text"
-                      inputMode="decimal"
-                      value={rawDiscountPct}
-                      onChange={(e) => setRawDiscountPct(e.target.value.replace(/[^\d]/g, ""))}
-                      className="w-full rounded-lg border border-[#C6A77D]/25 bg-[#0f0d0b] py-2 pl-3 pr-7 text-right text-sm font-medium tabular-nums text-[#F5EDE4] outline-none focus:border-[#C6A77D]/55"
-                      aria-label="Discount percentage"
-                    />
-                    <span className="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 text-xs text-zinc-500">
-                      %
-                    </span>
-                  </div>
-                </div>
-                {discountInvalid ? (
-                  <p className="mt-2 text-xs text-red-300/90">
-                    Enter a number from 0 to {MAX_ENTERPRISE_DISCOUNT_PCT}.
-                  </p>
-                ) : null}
-              </div>
-            </div>
-
-            {discountResult ? (
-              <div className="mt-6 grid gap-4 sm:grid-cols-2">
-                <div className="rounded-xl border border-[#C6A77D]/20 bg-black/30 px-4 py-4">
-                  <p className="text-xs font-medium uppercase tracking-wider text-zinc-500">Discounted price</p>
-                  <p className="mt-1 font-serif text-2xl tracking-tight text-[#F5EDE4]">
-                    {formatGbp(discountResult.discountedPriceGbp)}
-                  </p>
-                  <p className="mt-1 text-xs text-zinc-500">
-                    {formatGbp(breakdown.recommended.totalGbp)} − {discountResult.discountPct}%
-                  </p>
-                </div>
-                <div className="rounded-xl border border-[#C6A77D]/20 bg-black/30 px-4 py-4">
-                  <p className="text-xs font-medium uppercase tracking-wider text-zinc-500">Profit after discount</p>
-                  <p
-                    className={`mt-1 font-serif text-2xl tracking-tight tabular-nums ${
-                      discountResult.profitAfterDiscountGbp >= 0 ? "text-emerald-300/95" : "text-red-300"
-                    }`}
-                  >
-                    {formatGbp(discountResult.profitAfterDiscountGbp)}
-                  </p>
-                  <p className="mt-1 text-xs text-zinc-500">
-                    Margin {discountResult.marginAfterDiscountPct.toFixed(1)}% · Fashn cost{" "}
-                    {formatGbp(breakdown.fashnCostGbp)}
-                  </p>
-                </div>
-              </div>
-            ) : null}
           </div>
 
           <details className="rounded-xl border border-zinc-800/70 bg-black/20 px-4 py-3 text-sm text-zinc-400">
