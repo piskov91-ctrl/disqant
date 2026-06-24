@@ -1,4 +1,5 @@
-import type { SubscriptionPlanKey } from "@/lib/subscriptionPlans";
+import type { SubscriptionPlanCatalog, SubscriptionPlanKey } from "@/lib/subscriptionPlans";
+import { SUBSCRIPTION_PLAN_KEYS_ORDERED } from "@/lib/subscriptionPlans";
 import { EnterpriseQuoteButton } from "@/components/EnterpriseQuoteModal";
 import { StripeSubscribeButton } from "@/components/StripeSubscribeButton";
 
@@ -17,12 +18,12 @@ type Plan = {
   stripePlan?: SubscriptionPlanKey;
 };
 
-const plans: Plan[] = [
-  {
-    name: "Starter",
+const PLAN_META: Record<
+  SubscriptionPlanKey,
+  Pick<Plan, "description" | "features" | "highlighted">
+> = {
+  starter: {
     description: "Get started fast",
-    price: "£50",
-    period: "/month",
     features: [
       "100 try-ons per month",
       "Wear Me on all your products",
@@ -31,13 +32,9 @@ const plans: Plan[] = [
       "Discounted top-ups available",
     ],
     highlighted: false,
-    stripePlan: "starter",
   },
-  {
-    name: "Boutique",
+  boutique: {
     description: "For busy independents",
-    price: "£149",
-    period: "/month",
     features: [
       "500 try-ons per month",
       "Wear Me on all your products",
@@ -46,13 +43,9 @@ const plans: Plan[] = [
       "Discounted top-ups available",
     ],
     highlighted: false,
-    stripePlan: "boutique",
   },
-  {
-    name: "Studio",
+  studio: {
     description: "Growing brands",
-    price: "£299",
-    period: "/month",
     features: [
       "1000 try-ons per month",
       "Wear Me on all your products",
@@ -61,13 +54,9 @@ const plans: Plan[] = [
       "Discounted top-ups available",
     ],
     highlighted: true,
-    stripePlan: "studio",
   },
-  {
-    name: "Premium",
+  premium: {
     description: "High throughput",
-    price: "£599",
-    period: "/month",
     features: [
       "2000 try-ons per month",
       "Wear Me on all your products",
@@ -76,31 +65,72 @@ const plans: Plan[] = [
       "Unlimited discounted top-ups",
     ],
     highlighted: false,
-    stripePlan: "premium",
   },
-  {
-    name: "Enterprise",
-    description: "Scale without limits",
-    price: null,
-    period: null,
-    features: [
-      "Unlimited try-ons",
-      "Everything in Premium",
-      "Custom pricing",
-      "Dedicated account manager",
-    ],
-    highlighted: false,
-    contactOnly: true,
-    subtitle: "Custom quote",
-  },
-];
+};
+
+function formatPriceGbp(pence: number): string {
+  const pounds = pence / 100;
+  const hasFraction = pence % 100 !== 0;
+  return new Intl.NumberFormat("en-GB", {
+    style: "currency",
+    currency: "GBP",
+    minimumFractionDigits: hasFraction ? 2 : 0,
+    maximumFractionDigits: hasFraction ? 2 : 0,
+  }).format(pounds);
+}
+
+function featuresWithTryOnCount(features: readonly string[], tryOnLimit: number): string[] {
+  return features.map((line) => {
+    const m = line.match(/^(\d[\d,]*)\s+try-ons per month$/i);
+    if (!m) return line;
+    return `${tryOnLimit.toLocaleString("en-GB")} try-ons per month`;
+  });
+}
+
+function buildPlansFromCatalog(catalog: SubscriptionPlanCatalog): Plan[] {
+  const selfServe: Plan[] = SUBSCRIPTION_PLAN_KEYS_ORDERED.map((key) => {
+    const def = catalog[key];
+    const meta = PLAN_META[key];
+    return {
+      name: def.name,
+      description: meta.description,
+      price: formatPriceGbp(def.amountGbpPence),
+      period: "/month",
+      features: featuresWithTryOnCount(meta.features, def.tryOnLimit),
+      highlighted: meta.highlighted,
+      stripePlan: key,
+    };
+  });
+
+  return [
+    ...selfServe,
+    {
+      name: "Enterprise",
+      description: "Scale without limits",
+      price: null,
+      period: null,
+      features: [
+        "Unlimited try-ons",
+        "Everything in Premium",
+        "Custom pricing",
+        "Dedicated account manager",
+      ],
+      highlighted: false,
+      contactOnly: true,
+      subtitle: "Custom quote",
+    },
+  ];
+}
 
 type PricingProps = {
   /** Omit or set empty to avoid a duplicate `id` when this block is already the page subject (e.g. `/subscriptions`). */
   sectionId?: string;
+  catalog: SubscriptionPlanCatalog;
 };
 
-export function Pricing({ sectionId = "subscriptions" }: PricingProps) {
+export function Pricing({ sectionId = "subscriptions", catalog }: PricingProps) {
+  const plans = buildPlansFromCatalog(catalog);
+
   return (
     <section
       id={sectionId || undefined}

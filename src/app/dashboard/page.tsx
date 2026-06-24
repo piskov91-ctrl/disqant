@@ -13,7 +13,7 @@ import {
   buildRetailerSubscriptionClientUsagePayload,
   listSubscriptionClientRecordsForRetailerDashboard,
 } from "@/lib/retailerSubscriptionClients";
-import { catalogSubscriptionPlanKeyFromTryOnLimit, retailerDashboardPlanFromBaseLimit } from "@/lib/subscriptionPlans";
+import { catalogSubscriptionPlanKeyFromTryOnLimit, getSubscriptionPlansCatalog, retailerDashboardPlanFromBaseLimit } from "@/lib/subscriptionPlans";
 import {
   SUBSCRIPTION_CANCELLATION_REASON_LABELS,
   SUBSCRIPTION_CANCELLATION_REASONS,
@@ -134,7 +134,8 @@ export default async function DashboardPage() {
   }
 
   const planCap = storedOrDerivedBasePlanLimit(client);
-  const planBits = retailerDashboardPlanFromBaseLimit(planCap);
+  const subscriptionCatalog = await getSubscriptionPlansCatalog();
+  const planBits = retailerDashboardPlanFromBaseLimit(planCap, subscriptionCatalog);
   const billingAnchorDayUtc = resolveBillingAnchorDay(client);
   const nextResetUtc = getNextMonthlyResetUtcDateForDisplay(client);
   const nextResetLabel = `${new Intl.DateTimeFormat("en-GB", {
@@ -181,14 +182,14 @@ export default async function DashboardPage() {
 
   const linkedTrim = user.clientId?.trim() ?? "";
   const subscriptionClientRecords = await listSubscriptionClientRecordsForRetailerDashboard(user);
-  const subscriptionClientsUsage = subscriptionClientRecords.map((rec) =>
-    buildRetailerSubscriptionClientUsagePayload(rec, linkedTrim || null),
+  const subscriptionClientsUsage = await Promise.all(
+    subscriptionClientRecords.map((rec) => buildRetailerSubscriptionClientUsagePayload(rec, linkedTrim || null)),
   );
 
   const linkedUsage =
     subscriptionClientsUsage.find((r) => r.isLinked) ?? subscriptionClientsUsage[0] ?? null;
   const currentPlanBits = linkedUsage
-    ? retailerDashboardPlanFromBaseLimit(linkedUsage.basePlanLimit)
+    ? retailerDashboardPlanFromBaseLimit(linkedUsage.basePlanLimit, subscriptionCatalog)
     : planBits;
   const currentMonthlyPriceLabel =
     typeof currentPlanBits.priceGbpPence === "number"
@@ -213,7 +214,7 @@ export default async function DashboardPage() {
       canceledAtIso: canceledAtStored,
       cancellationReasonLabel: cancellationReasonLabelFromStored(user.cancellationReason),
       showRenewSubscriptionButton,
-      renewSubscriptionPlanKey: catalogSubscriptionPlanKeyFromTryOnLimit(planCap),
+      renewSubscriptionPlanKey: catalogSubscriptionPlanKeyFromTryOnLimit(planCap, subscriptionCatalog),
       hasQueuedPlanUpgrade:
         typeof linkedUsage?.pendingBasePlanLimit === "number" &&
         Number.isFinite(linkedUsage.pendingBasePlanLimit),
@@ -246,6 +247,7 @@ export default async function DashboardPage() {
           adsEligible={adsEligible}
           apiKey={client.key}
           subscriptionClientsUsage={subscriptionClientsUsage}
+          subscriptionCatalog={subscriptionCatalog}
         />
       </main>
       <Footer />

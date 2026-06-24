@@ -10,6 +10,7 @@ import type { WearMeRetailDashboardStats } from "@/lib/wearMeRetailDashboardStat
 import { LOCAL_OR_UNKNOWN_PRODUCT } from "@/lib/tryOnConstants";
 import type { RetailerDashboardSubscriptionClientUsagePayload } from "@/lib/retailerSubscriptionClients";
 import { tryOnUsageFillStyle } from "@/lib/tryOnUsageBarStyle";
+import type { SubscriptionPlanCatalog } from "@/lib/subscriptionPlans";
 import { retailerDashboardPlanFromBaseLimit, maxTopUpPurchasesPerBillingCycleForCatalogBaseLimit } from "@/lib/subscriptionPlans";
 import { DashboardAdsPanel } from "./DashboardAdsPanel";
 import { DashboardEmailDeveloperPanel } from "./DashboardEmailDeveloperPanel";
@@ -60,7 +61,10 @@ type RetailerClientUsageFetchJson = {
   pendingPlanRecordedAt?: string | null;
 };
 
-function subscriptionRowsFromUsageJson(data: RetailerClientUsageFetchJson): RetailerDashboardSubscriptionClientUsagePayload[] {
+function subscriptionRowsFromUsageJson(
+  data: RetailerClientUsageFetchJson,
+  catalog: SubscriptionPlanCatalog,
+): RetailerDashboardSubscriptionClientUsagePayload[] {
   const ks = Array.isArray(data.keys) ? data.keys : [];
   if (ks.length > 0) return ks;
 
@@ -95,7 +99,7 @@ function subscriptionRowsFromUsageJson(data: RetailerClientUsageFetchJson): Reta
           ? data.maxTopUpsPurchasesPerBillingCycle
           : data.maxTopUpsPurchasesPerBillingCycle === null
             ? null
-            : maxTopUpPurchasesPerBillingCycleForCatalogBaseLimit(baseLim),
+            : maxTopUpPurchasesPerBillingCycleForCatalogBaseLimit(baseLim, catalog),
       createdAt: new Date().toISOString(),
       pendingBasePlanLimit:
         typeof data.pendingBasePlanLimit === "number" && Number.isFinite(data.pendingBasePlanLimit)
@@ -308,6 +312,7 @@ export type RetailerDashboardShellProps = {
   adsEligible: boolean;
   apiKey: string;
   subscriptionClientsUsage: RetailerDashboardSubscriptionClientUsagePayload[];
+  subscriptionCatalog: SubscriptionPlanCatalog;
 };
 
 function utcCalendarDayOrdinal(day: number): string {
@@ -345,6 +350,7 @@ function RetailerDashboardShellInner({
   adsEligible,
   apiKey,
   subscriptionClientsUsage,
+  subscriptionCatalog,
 }: RetailerDashboardShellProps) {
   const searchParams = useSearchParams();
   const [tab, setTab] = useState<DashboardTab>(() => parseDashboardTab(searchParams));
@@ -387,7 +393,10 @@ function RetailerDashboardShellInner({
   const [usageLoading, setUsageLoading] = useState(false);
   const [usageError, setUsageError] = useState<string | null>(null);
 
-  const derivedPlan = useMemo(() => retailerDashboardPlanFromBaseLimit(sidebarBasePlanLimit), [sidebarBasePlanLimit]);
+  const derivedPlan = useMemo(
+    () => retailerDashboardPlanFromBaseLimit(sidebarBasePlanLimit, subscriptionCatalog),
+    [sidebarBasePlanLimit, subscriptionCatalog],
+  );
   const derivedMonthlyPriceLabel = useMemo(() => {
     if (derivedPlan.priceGbpPence == null) return null;
     return new Intl.NumberFormat("en-GB", { style: "currency", currency: "GBP" }).format(
@@ -447,13 +456,13 @@ function RetailerDashboardShellInner({
         setUsageError(data.error || "Could not load try-on usage.");
         return;
       }
-      setSubscriptionRows(subscriptionRowsFromUsageJson(data));
+      setSubscriptionRows(subscriptionRowsFromUsageJson(data, subscriptionCatalog));
     } catch {
       setUsageError("Something went wrong. Please try again.");
     } finally {
       setUsageLoading(false);
     }
-  }, []);
+  }, [subscriptionCatalog]);
 
   useEffect(() => {
     if (typeof window === "undefined") return;

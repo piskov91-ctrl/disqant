@@ -9,6 +9,7 @@ import { AnalyticsInsightsModal } from "@/components/AnalyticsInsightsModal";
 import { AdminWearMeClient } from "@/app/admin/AdminWearMeClient";
 import AdminIntegrationGuide from "@/app/admin/AdminIntegrationGuide";
 import { EnterprisePriceCalculatorModal } from "@/app/admin/EnterprisePriceCalculator";
+import { SubscriptionCalcPanel } from "@/app/admin/SubscriptionCalcPanel";
 import { getNextMonthlyResetUtcDateForDisplay } from "@/lib/billingCycle";
 import { storedOrDerivedBasePlanLimit, totalTryOnsUsed, clientTryOnFullyBlocked } from "@/lib/clientTryOnBuckets";
 import { tryOnUsageFillStyle } from "@/lib/tryOnUsageBarStyle";
@@ -155,6 +156,7 @@ type AdminTab =
   | "contact"
   | "enterprise"
   | "enterpriseCalc"
+  | "subscriptionCalc"
   | "reviews"
   | "analytics"
   | "wearMe"
@@ -2762,6 +2764,19 @@ export default function AdminClient() {
             <button
               type="button"
               role="tab"
+              aria-selected={activeTab === "subscriptionCalc"}
+              onClick={() => setActiveTab("subscriptionCalc")}
+              className={`rounded-full px-5 py-2 text-sm font-semibold transition ${
+                activeTab === "subscriptionCalc"
+                  ? "bg-zinc-800 text-zinc-100 shadow-sm"
+                  : "text-zinc-500 hover:text-zinc-300"
+              }`}
+            >
+              Subscription Calc
+            </button>
+            <button
+              type="button"
+              role="tab"
               aria-selected={activeTab === "reviews"}
               aria-label={
                 reviewsPendingBadge > 0
@@ -3932,6 +3947,8 @@ export default function AdminClient() {
                 Open price calculator
               </button>
             </section>
+          ) : activeTab === "subscriptionCalc" ? (
+            <SubscriptionCalcPanel />
           ) : activeTab === "reviews" ? (
             <section className="mt-8 w-full overflow-hidden rounded-2xl border border-zinc-800 bg-zinc-900/60 p-6 shadow-sm md:p-8">
               <h2 className="text-base font-semibold text-zinc-100">Reviews</h2>

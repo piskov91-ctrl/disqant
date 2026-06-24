@@ -8,6 +8,7 @@ import {
   listApprovedSubscriptionsFeedback,
   mapApprovedSubscriptionsFeedbackToSlides,
 } from "@/lib/subscriptionsFeedbackStore";
+import { getSubscriptionPlansCatalog } from "@/lib/subscriptionPlans";
 import { getRetailerSessionUser } from "@/lib/retailerAuth";
 import { SubscriptionsFeedbackSection } from "./SubscriptionsFeedbackSection";
 import { SubscriptionsSubscriberTestimonials } from "./SubscriptionsSubscriberTestimonials";
@@ -27,6 +28,7 @@ type PageProps = {
 export default async function SubscriptionsPage(props: PageProps) {
   const q = await props.searchParams;
   const retailerUser = await getRetailerSessionUser();
+  const subscriptionCatalog = await getSubscriptionPlansCatalog();
 
   const approvedRows = await listApprovedSubscriptionsFeedback(80).catch(() => []);
   const subscriberSlides = mapApprovedSubscriptionsFeedbackToSlides(approvedRows);
@@ -69,7 +71,7 @@ export default async function SubscriptionsPage(props: PageProps) {
             {checkoutBanner}
           </div>
         ) : null}
-        <Pricing sectionId="" />
+        <Pricing sectionId="" catalog={subscriptionCatalog} />
         <SubscriptionsSubscriberTestimonials initialSubscriberSlides={subscriberSlides} />
         {retailerUser ? <SubscriptionsFeedbackSection /> : null}
       </main>

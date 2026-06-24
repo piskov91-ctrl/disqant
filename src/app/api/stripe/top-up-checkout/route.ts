@@ -2,7 +2,7 @@ import { getStripe, checkoutSiteOrigin } from "@/lib/stripeServer";
 import { getRetailerSessionUser, retailerEligibleForTryOnTopUps } from "@/lib/retailerAuth";
 import { loadClientSubscriptionSnapshotWithoutPendingApply } from "@/lib/apiKeyStore";
 import { storedOrDerivedBasePlanLimit } from "@/lib/clientTryOnBuckets";
-import { maxTopUpPurchasesPerBillingCycleForCatalogBaseLimit } from "@/lib/subscriptionPlans";
+import { getSubscriptionPlansCatalog, maxTopUpPurchasesPerBillingCycleForCatalogBaseLimit } from "@/lib/subscriptionPlans";
 import {
   STRIPE_TOP_UP_CHECKOUT_KIND,
   TOP_UP_CUSTOM_MAX_TRY_ONS,
@@ -74,7 +74,8 @@ export async function POST(req: Request) {
   }
   const snap = loaded.rec;
   const base = storedOrDerivedBasePlanLimit(snap);
-  const topUpCap = maxTopUpPurchasesPerBillingCycleForCatalogBaseLimit(base);
+  const catalog = await getSubscriptionPlansCatalog();
+  const topUpCap = maxTopUpPurchasesPerBillingCycleForCatalogBaseLimit(base, catalog);
   const purchased = snap.topUpsPurchasedThisBillingCycle ?? 0;
   if (topUpCap !== null && purchased >= topUpCap) {
     return Response.json(

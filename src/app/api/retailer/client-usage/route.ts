@@ -9,7 +9,7 @@ import { getRetailerSessionUser } from "@/lib/retailerAuth";
 
 export const runtime = "nodejs";
 
-function singleClientUsageFlatten(client: ClientApiKeyRecord, linkedId: string | null) {
+async function singleClientUsageFlatten(client: ClientApiKeyRecord, linkedId: string | null) {
   return buildRetailerSubscriptionClientUsagePayload(client, linkedId?.trim() ?? null);
 }
 
@@ -30,14 +30,16 @@ export async function GET() {
       return NextResponse.json({ error: "No linked API key." }, { status: 404 });
     }
 
-    const keys = records.map((r) => buildRetailerSubscriptionClientUsagePayload(r, linkedTrim || null));
+    const keys = await Promise.all(
+      records.map((r) => buildRetailerSubscriptionClientUsagePayload(r, linkedTrim || null)),
+    );
 
     const linkedRecord = linkedTrim ? records.find((r) => r.id === linkedTrim) : undefined;
     const primaryFlatten =
       linkedRecord != null
-        ? singleClientUsageFlatten(linkedRecord, linkedTrim || null)
+        ? await singleClientUsageFlatten(linkedRecord, linkedTrim || null)
         : records.length > 0 && records[0]
-          ? singleClientUsageFlatten(records[0], linkedTrim || null)
+          ? await singleClientUsageFlatten(records[0], linkedTrim || null)
           : null;
 
     if (!primaryFlatten) {
@@ -92,11 +94,13 @@ export async function POST(req: Request) {
 
   try {
     const records = await listSubscriptionClientRecordsForRetailerDashboard(user);
-    const keys = records.map((r) => buildRetailerSubscriptionClientUsagePayload(r, linkedId || null));
+    const keys = await Promise.all(
+      records.map((r) => buildRetailerSubscriptionClientUsagePayload(r, linkedId || null)),
+    );
     return NextResponse.json({
       linkedClientId: linkedId || null,
       keys,
-      ...singleClientUsageFlatten(client, linkedId || null),
+      ...(await singleClientUsageFlatten(client, linkedId || null)),
     });
   } catch {
     return NextResponse.json({ error: "Could not load usage." }, { status: 500 });

@@ -1,6 +1,14 @@
+import {
+  defaultStoredSubscriptionPlanCatalog,
+  getStoredSubscriptionPlanCatalog,
+  type StoredSubscriptionPlanCatalog,
+} from "@/lib/subscriptionPlanCatalogStore";
+
 /**
- * Self-serve subscription catalog. Keys are stored in Stripe metadata and Redis (`pendingSubscriptionPlanKey`).
+ * Self-serve subscription catalog defaults. Keys are stored in Stripe metadata and Redis (`pendingSubscriptionPlanKey`).
  * Legacy aliases: `growth` → `boutique`, `pro` → `studio` (see {@link parseSubscriptionPlanKey}).
+ *
+ * Runtime values may be overridden via Redis — use {@link getSubscriptionPlansCatalog} on the server.
  */
 export const SUBSCRIPTION_PLANS = {
   starter: {
@@ -34,12 +42,45 @@ export const SUBSCRIPTION_PLANS = {
 
 export type SubscriptionPlanKey = keyof typeof SUBSCRIPTION_PLANS;
 
+export type SubscriptionPlanDefinition = {
+  key: SubscriptionPlanKey;
+  name: string;
+  amountGbpPence: number;
+  tryOnLimit: number;
+  maxTopUpPurchasesPerBillingCycle?: number;
+};
+
+export type SubscriptionPlanCatalog = Record<SubscriptionPlanKey, SubscriptionPlanDefinition>;
+
 const PLAN_KEY_ORDER: readonly SubscriptionPlanKey[] = ["starter", "boutique", "studio", "premium"];
 
 const LEGACY_PLAN_ALIASES: Record<string, SubscriptionPlanKey> = {
   growth: "boutique",
   pro: "studio",
 };
+
+function catalogFromStored(stored: StoredSubscriptionPlanCatalog): SubscriptionPlanCatalog {
+  const out = {} as SubscriptionPlanCatalog;
+  for (const key of PLAN_KEY_ORDER) {
+    const row = stored.plans[key];
+    out[key] = {
+      key,
+      name: row.name,
+      amountGbpPence: row.amountGbpPence,
+      tryOnLimit: row.tryOnLimit,
+      ...(typeof row.maxTopUpPurchasesPerBillingCycle === "number"
+        ? { maxTopUpPurchasesPerBillingCycle: row.maxTopUpPurchasesPerBillingCycle }
+        : {}),
+    };
+  }
+  return out;
+}
+
+/** Effective subscription catalog (Redis overrides merged with code defaults). */
+export async function getSubscriptionPlansCatalog(): Promise<SubscriptionPlanCatalog> {
+  const stored = await getStoredSubscriptionPlanCatalog();
+  return catalogFromStored(stored ?? defaultStoredSubscriptionPlanCatalog());
+}
 
 /**
  * Optional Stripe recurring Price IDs (Dashboard catalog). When set, subscription Checkout uses `{ price, quantity: 1 }`
@@ -66,39 +107,59 @@ export function parseSubscriptionPlanKey(raw: unknown): SubscriptionPlanKey | nu
   return LEGACY_PLAN_ALIASES[k] ?? null;
 }
 
-export function getSubscriptionPlanDefinition(key: SubscriptionPlanKey) {
-  return SUBSCRIPTION_PLANS[key];
+export function getSubscriptionPlanDefinition(
+  key: SubscriptionPlanKey,
+  catalog: SubscriptionPlanCatalog = SUBSCRIPTION_PLANS as unknown as SubscriptionPlanCatalog,
+) {
+  return catalog[key];
 }
 
-export function maxTopUpPurchasesPerBillingCycleForCatalogBaseLimit(basePlanTryOnLimit: number): number | null {
-  const k = catalogSubscriptionPlanKeyFromTryOnLimit(basePlanTryOnLimit);
+export async function getSubscriptionPlanDefinitionAsync(key: SubscriptionPlanKey) {
+  const catalog = await getSubscriptionPlansCatalog();
+  return catalog[key];
+}
+
+export function maxTopUpPurchasesPerBillingCycleForCatalogBaseLimit(
+  basePlanTryOnLimit: number,
+  catalog: SubscriptionPlanCatalog = SUBSCRIPTION_PLANS as unknown as SubscriptionPlanCatalog,
+): number | null {
+  const k = catalogSubscriptionPlanKeyFromTryOnLimit(basePlanTryOnLimit, catalog);
   if (!k) return null;
-  const raw = SUBSCRIPTION_PLANS[k] as { maxTopUpPurchasesPerBillingCycle?: number };
+  const raw = catalog[k];
   const n = raw.maxTopUpPurchasesPerBillingCycle;
   return typeof n === "number" && Number.isFinite(n) ? Math.floor(n) : null;
 }
 
 /** Map try-on limit to a known subscription name, or a generic label for custom/admin limits. */
-export function planLabelFromTryOnLimit(limit: number): string {
+export function planLabelFromTryOnLimit(
+  limit: number,
+  catalog: SubscriptionPlanCatalog = SUBSCRIPTION_PLANS as unknown as SubscriptionPlanCatalog,
+): string {
   if (!Number.isFinite(limit) || limit <= 0) return "Plan";
-  for (const p of Object.values(SUBSCRIPTION_PLANS)) {
+  for (const p of Object.values(catalog)) {
     if (p.tryOnLimit === limit) return p.name;
   }
   return "Custom plan";
 }
 
 /** Maps a client's base try-on cap to a self-serve Stripe catalog tier; null for custom/admin limits. */
-export function catalogSubscriptionPlanKeyFromTryOnLimit(limit: number): SubscriptionPlanKey | null {
+export function catalogSubscriptionPlanKeyFromTryOnLimit(
+  limit: number,
+  catalog: SubscriptionPlanCatalog = SUBSCRIPTION_PLANS as unknown as SubscriptionPlanCatalog,
+): SubscriptionPlanKey | null {
   const lim = Math.floor(limit);
   if (!Number.isFinite(lim) || lim <= 0) return null;
   for (const key of PLAN_KEY_ORDER) {
-    if (SUBSCRIPTION_PLANS[key].tryOnLimit === lim) return key;
+    if (catalog[key].tryOnLimit === lim) return key;
   }
   return null;
 }
 
-/** Short tier label for retailer dashboard (matches SUBSCRIPTION_PLANS try-on caps). */
-export function retailerDashboardPlanFromBaseLimit(limit: number): {
+/** Short tier label for retailer dashboard (matches catalog try-on caps). */
+export function retailerDashboardPlanFromBaseLimit(
+  limit: number,
+  catalog: SubscriptionPlanCatalog = SUBSCRIPTION_PLANS as unknown as SubscriptionPlanCatalog,
+): {
   planName: string;
   monthlyTryOnLimit: number;
   priceGbpPence: number | null;
@@ -108,18 +169,11 @@ export function retailerDashboardPlanFromBaseLimit(limit: number): {
     return { planName: "Custom Plan", monthlyTryOnLimit: lim, priceGbpPence: null };
   }
 
-  const tierNames: Record<SubscriptionPlanKey, string> = {
-    starter: "Starter",
-    boutique: "Boutique",
-    studio: "Studio",
-    premium: "Premium",
-  };
-
   for (const key of PLAN_KEY_ORDER) {
-    const p = SUBSCRIPTION_PLANS[key];
+    const p = catalog[key];
     if (p.tryOnLimit === lim) {
       return {
-        planName: tierNames[key],
+        planName: p.name,
         monthlyTryOnLimit: lim,
         priceGbpPence: p.amountGbpPence,
       };
@@ -128,3 +182,5 @@ export function retailerDashboardPlanFromBaseLimit(limit: number): {
 
   return { planName: "Custom Plan", monthlyTryOnLimit: lim, priceGbpPence: null };
 }
+
+export const SUBSCRIPTION_PLAN_KEYS_ORDERED: readonly SubscriptionPlanKey[] = PLAN_KEY_ORDER;

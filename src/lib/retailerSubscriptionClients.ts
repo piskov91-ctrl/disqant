@@ -3,7 +3,7 @@ import { getClientKeyRecordById, listClientKeys } from "@/lib/apiKeyStore";
 import { normalizeClientTryOnBuckets, storedOrDerivedBasePlanLimit, totalTryOnsUsed } from "@/lib/clientTryOnBuckets";
 import type { RetailerUser } from "@/lib/retailerAuth";
 import {
-  getSubscriptionPlanDefinition,
+  getSubscriptionPlansCatalog,
   maxTopUpPurchasesPerBillingCycleForCatalogBaseLimit,
   parseSubscriptionPlanKey,
   planLabelFromTryOnLimit,
@@ -68,12 +68,16 @@ export type RetailerDashboardSubscriptionClientUsagePayload = {
   pendingPlanRecordedAt?: string | null;
 };
 
-export function buildRetailerSubscriptionClientUsagePayload(
+export async function buildRetailerSubscriptionClientUsagePayload(
   client: ClientApiKeyRecord,
   linkedClientId: string | null,
-): RetailerDashboardSubscriptionClientUsagePayload {
+): Promise<RetailerDashboardSubscriptionClientUsagePayload> {
+  const catalog = await getSubscriptionPlansCatalog();
   const basePlanLimit = storedOrDerivedBasePlanLimit(client);
-  const maxTopUpsPurchasesPerBillingCycle = maxTopUpPurchasesPerBillingCycleForCatalogBaseLimit(basePlanLimit);
+  const maxTopUpsPurchasesPerBillingCycle = maxTopUpPurchasesPerBillingCycleForCatalogBaseLimit(
+    basePlanLimit,
+    catalog,
+  );
   const trimmedLinked = linkedClientId?.trim() || null;
   const pendLim = client.pendingBasePlanLimit;
   let pendingBasePlanLimit: number | null = null;
@@ -85,7 +89,9 @@ export function buildRetailerSubscriptionClientUsagePayload(
       ? parseSubscriptionPlanKey(client.pendingSubscriptionPlanKey)
       : null;
     pendingSubscriptionPlanKey = client.pendingSubscriptionPlanKey?.trim().toLowerCase() || null;
-    pendingPlanDisplayName = pk ? getSubscriptionPlanDefinition(pk).name : planLabelFromTryOnLimit(pendingBasePlanLimit);
+    pendingPlanDisplayName = pk
+      ? catalog[pk].name
+      : planLabelFromTryOnLimit(pendingBasePlanLimit, catalog);
   }
   return {
     clientId: client.id,

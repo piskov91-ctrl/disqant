@@ -1,18 +1,20 @@
 import { checkoutSiteOrigin, getStripe } from "@/lib/stripeServer";
 import {
-  SUBSCRIPTION_PLANS,
+  getSubscriptionPlansCatalog,
   parseSubscriptionPlanKey,
   stripeCatalogSubscriptionPriceId,
+  type SubscriptionPlanKey,
 } from "@/lib/subscriptionPlans";
 import { getRetailerSessionUser } from "@/lib/retailerAuth";
 
 export const runtime = "nodejs";
 
-async function createCheckoutSessionUrl(params: { req: Request; planKey: keyof typeof SUBSCRIPTION_PLANS }) {
+async function createCheckoutSessionUrl(params: { req: Request; planKey: SubscriptionPlanKey }) {
   const user = await getRetailerSessionUser();
   if (!user) return { kind: "unauthorized" as const };
 
-  const def = SUBSCRIPTION_PLANS[params.planKey];
+  const catalog = await getSubscriptionPlansCatalog();
+  const def = catalog[params.planKey];
   const stripe = getStripe();
   const origin = checkoutSiteOrigin(params.req);
 

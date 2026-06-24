@@ -9,7 +9,7 @@ import {
 } from "@/lib/apiKeyStore";
 import { subscriptionPlanCap } from "@/lib/clientTryOnBuckets";
 import { attachStripeBillingIds, getRetailerById, linkRetailerToClientId, type RetailerUser } from "@/lib/retailerAuth";
-import { getSubscriptionPlanDefinition, parseSubscriptionPlanKey } from "@/lib/subscriptionPlans";
+import { getSubscriptionPlanDefinitionAsync, parseSubscriptionPlanKey } from "@/lib/subscriptionPlans";
 import {
   queueRetailerEnterprisePaymentConfirmationEmail,
   queueRetailerSubscriptionConfirmationEmail,
@@ -188,7 +188,7 @@ async function fulfillPaidSubscriptionCheckoutSession(session: Stripe.Checkout.S
     throw new Error("Invalid Stripe checkout metadata for fulfillment.");
   }
 
-  const { tryOnLimit } = getSubscriptionPlanDefinition(planKey);
+  const { tryOnLimit } = await getSubscriptionPlanDefinitionAsync(planKey);
 
   const user = await findRetailerIdentityForStripeSession(retailerUserId);
   if (!user) {
@@ -268,7 +268,7 @@ async function fulfillPaidSubscriptionCheckoutSession(session: Stripe.Checkout.S
     clearSubscriptionCancellationSchedule: true,
   });
 
-  const planDef = getSubscriptionPlanDefinition(planKey);
+  const planDef = await getSubscriptionPlanDefinitionAsync(planKey);
   queueRetailerSubscriptionConfirmationEmail(
     contactEmail,
     retailerStoreGreetingLabel({ storeName: user.storeName, companyName: user.companyName }),
