@@ -46,7 +46,10 @@ export function Footer() {
           </Link>
         </nav>
         <div className="mt-1 w-full max-w-lg border-t border-[#C6A77D]/20 pt-4">
-          <p className="text-[11px] font-light leading-relaxed tracking-[0.04em] text-[#C6A77D] sm:text-xs">
+          <p className="text-[11px] font-light leading-relaxed tracking-[0.04em] text-white sm:text-xs">
+            Turn &quot;Will this suit me?&quot; into &quot;I&apos;ll buy it.&quot;
+          </p>
+          <p className="mt-2 text-[11px] font-light leading-relaxed tracking-[0.04em] text-[#C6A77D] sm:text-xs">
             Built for independent fashion retailers. No app. No downloads. Live in minutes.
           </p>
         </div>

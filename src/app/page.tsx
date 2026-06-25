@@ -72,6 +72,14 @@ export default async function Home() {
                     <span className="shrink-0 text-[#C6A77D]" aria-hidden>
                       ✦
                     </span>
+                    <span>
+                      Turn &quot;Will this suit me?&quot; into &quot;I&apos;ll buy it.&quot;
+                    </span>
+                  </li>
+                  <li className="flex gap-3">
+                    <span className="shrink-0 text-[#C6A77D]" aria-hidden>
+                      ✦
+                    </span>
                     <span>Increases conversions and purchase confidence</span>
                   </li>
                   <li className="flex gap-3">
