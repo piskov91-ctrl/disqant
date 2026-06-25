@@ -75,7 +75,7 @@
 
   function fetchWidgetAds(clientKey) {
     if (!clientKey) return Promise.resolve(null);
-    return fetch(getWidgetApiOrigin() + "/api/retailer/widget-ads", {
+    return fetch(getWidgetApiOrigin() + "/api/retailer/widget-ads?t=" + Date.now(), {
       method: "GET",
       headers: { "x-api-key": clientKey },
       credentials: "omit",
