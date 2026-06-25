@@ -6,6 +6,12 @@ const config: Config = {
     "./src/components/**/*.{js,ts,jsx,tsx,mdx}",
     "./src/app/**/*.{js,ts,jsx,tsx,mdx}",
   ],
+  safelist: [
+    "home-hero-overlay",
+    "home-hero-copy",
+    "on-photo-heading",
+    "on-photo-body",
+  ],
   theme: {
     extend: {
       colors: {
