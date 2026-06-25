@@ -77,6 +77,7 @@ function bannerPreviewKey(slides: BannerSlideDraft[]): string {
 function BannerImageCard({
   slide,
   index,
+  className,
   isDragging,
   isDropTarget,
   onRemove,
@@ -90,6 +91,7 @@ function BannerImageCard({
 }: {
   slide: BannerSlideDraft;
   index: number;
+  className?: string;
   isDragging: boolean;
   isDropTarget: boolean;
   onRemove: (id: string) => void;
@@ -103,7 +105,7 @@ function BannerImageCard({
 }) {
   return (
     <li
-      className={`group relative list-none rounded-xl border bg-zinc-900/50 shadow-sm transition-[border-color,box-shadow,opacity] ${
+      className={`group relative w-full min-w-0 list-none rounded-xl border bg-zinc-900/50 shadow-sm transition-[border-color,box-shadow,opacity] ${className ?? ""} ${
         isDragging
           ? "border-[#c6a77d]/45 opacity-45"
           : "border-white/10 hover:border-[#c6a77d]/35"
@@ -127,7 +129,7 @@ function BannerImageCard({
           e.preventDefault();
           onDrop(slide.id);
         }}
-        className={`relative aspect-[3/1] overflow-hidden rounded-t-xl bg-zinc-950/70 ${
+        className={`relative aspect-[3/1] min-h-[5.5rem] w-full overflow-hidden rounded-t-xl bg-zinc-950/70 ${
           isDragging ? "cursor-grabbing" : "cursor-grab"
         }`}
       >
@@ -136,7 +138,7 @@ function BannerImageCard({
           src={slide.url}
           alt={`Banner ${index + 1}`}
           draggable={false}
-          className="h-full w-full object-cover"
+          className="absolute inset-0 block h-full w-full object-cover object-center"
         />
         <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-black/20 opacity-70 transition-opacity group-hover:opacity-100" />
         <span className="pointer-events-none absolute bottom-2 left-2 rounded bg-black/55 px-1.5 py-0.5 text-[10px] font-bold tabular-nums text-zinc-300">
@@ -149,7 +151,7 @@ function BannerImageCard({
         <button
           type="button"
           onClick={() => onRemove(slide.id)}
-          className="absolute right-2 top-2 inline-flex h-7 w-7 items-center justify-center rounded-full border border-white/15 bg-black/75 text-zinc-200 opacity-0 shadow-sm transition hover:border-red-400/40 hover:bg-red-950/80 hover:text-red-200 group-hover:opacity-100"
+          className="absolute right-2 top-2 inline-flex h-7 w-7 items-center justify-center rounded-full border border-white/15 bg-black/75 text-zinc-200 opacity-100 shadow-sm transition hover:border-red-400/40 hover:bg-red-950/80 hover:text-red-200 sm:opacity-0 sm:group-hover:opacity-100"
           aria-label={`Remove banner ${index + 1}`}
         >
           <X className="h-3.5 w-3.5" aria-hidden />
@@ -258,7 +260,7 @@ function BannerImageGrid({
             Banner images
           </p>
           <p className="mt-0.5 text-xs text-zinc-500">
-            Drag cards to reorder · delete on hover · up to 30MB each
+            Drag cards to reorder · swipe on mobile · up to 30MB each
           </p>
         </div>
         <label className="inline-flex shrink-0 cursor-pointer items-center gap-1.5 rounded-full border border-[#c6a77d]/40 bg-[#c6a77d]/10 px-3 py-1.5 text-xs font-semibold text-[#e8dcc8] transition hover:border-[#c6a77d]/60 hover:bg-[#c6a77d]/16">
@@ -270,10 +272,12 @@ function BannerImageGrid({
 
       <div className="p-4">
         {slides.length ? (
-          <ul className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
+          <div className="-mx-1 overflow-x-auto overscroll-x-contain px-1 pb-1 sm:mx-0 sm:overflow-visible sm:px-0 [scrollbar-width:thin] [&::-webkit-scrollbar]:h-1.5 [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-white/20">
+            <ul className="flex w-max min-w-full snap-x snap-mandatory gap-4 sm:grid sm:w-full sm:grid-cols-2 sm:snap-none xl:grid-cols-3">
             {slides.map((slide, index) => (
               <BannerImageCard
                 key={slide.id}
+                className="w-[min(88vw,300px)] shrink-0 snap-start sm:w-auto sm:min-w-0"
                 slide={slide}
                 index={index}
                 isDragging={dragId === slide.id}
@@ -290,14 +294,15 @@ function BannerImageGrid({
                 onDrop={handleDrop}
               />
             ))}
-            <li className="list-none">
-              <label className="flex aspect-[3/1] cursor-pointer flex-col items-center justify-center gap-2 rounded-xl border border-dashed border-white/15 bg-zinc-950/50 text-center transition hover:border-[#c6a77d]/35 hover:bg-zinc-900/50">
+            <li className="w-[min(88vw,300px)] shrink-0 list-none snap-start sm:w-auto sm:min-w-0">
+              <label className="flex aspect-[3/1] min-h-[5.5rem] w-full cursor-pointer flex-col items-center justify-center gap-2 rounded-xl border border-dashed border-white/15 bg-zinc-950/50 text-center transition hover:border-[#c6a77d]/35 hover:bg-zinc-900/50">
                 <Plus className="h-5 w-5 text-[#c6a77d]/80" aria-hidden />
                 <span className="text-[11px] font-semibold text-zinc-400">Add image</span>
                 <input {...fileInputProps} />
               </label>
             </li>
-          </ul>
+            </ul>
+          </div>
         ) : (
           <label className="flex cursor-pointer flex-col items-center justify-center gap-2 rounded-xl border border-dashed border-white/15 bg-zinc-950/50 px-4 py-14 text-center transition hover:border-[#c6a77d]/35 hover:bg-zinc-900/50">
             <Plus className="h-6 w-6 text-[#c6a77d]/80" aria-hidden />

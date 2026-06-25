@@ -382,6 +382,12 @@
       + ".dq-stage-ad-overlay.is-clickable{pointer-events:auto;}"
       + ".dq-stage-ad-overlay .dq-stage-ad-link{position:absolute;inset:0;display:block;z-index:1;cursor:pointer;}"
       + ".dq-stage-ad-overlay img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:center;display:block;opacity:1;filter:none;transform:none;}"
+      + ".dq-result-banner-rail{position:absolute;right:10px;top:50%;transform:translateY(-50%);z-index:9;display:none;flex-direction:column;gap:6px;max-height:calc(100% - 88px);overflow-y:auto;pointer-events:auto;padding:2px;}"
+      + ".dq-result-banner-rail.is-on{display:flex;}"
+      + ".dq-result-banner-thumb{display:block;width:52px;height:52px;border-radius:8px;overflow:hidden;border:1px solid rgba(198,167,125,.45);box-shadow:0 4px 14px rgba(0,0,0,.35);background:#0f0f14;flex-shrink:0;}"
+      + ".dq-result-banner-thumb.is-link{cursor:pointer;}"
+      + ".dq-result-banner-thumb img{width:100%;height:100%;object-fit:cover;object-position:center;display:block;}"
+      + "@media (max-width:520px){.dq-result-banner-rail{right:8px;top:auto;bottom:max(58px,env(safe-area-inset-bottom,0px));transform:none;max-height:min(38vh,200px);}}"
       + ".dq-progress{position:absolute;left:12px;right:12px;bottom:12px;z-index:5;height:10px;border-radius:999px;background:rgba(245,237,228,.12);overflow:hidden;display:none;}"
       + ".dq-progress.is-on{display:block;}"
       + ".dq-progress>span{display:block;height:100%;width:0%;background:linear-gradient(135deg,#a68958,#c6a77d 45%,#e8d4bc 100%);background-size:200% 100%;transition:width .12s ease;position:relative;animation:dq-bar-pulse 1.9s ease-in-out infinite;}"
@@ -819,6 +825,12 @@
     stage.appendChild(stageEmpty);
     stage.appendChild(stageImg);
     stage.appendChild(stageAdOverlay);
+
+    var resultBannerRail = document.createElement("div");
+    resultBannerRail.className = "dq-result-banner-rail";
+    resultBannerRail.setAttribute("aria-hidden", "true");
+    stage.appendChild(resultBannerRail);
+
     stage.appendChild(processing);
     stage.appendChild(progress);
 
@@ -975,6 +987,39 @@
       fsBtn.classList.remove("is-on");
       saveBtn.style.display = "none";
       fsBtn.style.display = "none";
+      clearResultBannerThumbnails();
+    }
+
+    function clearResultBannerThumbnails() {
+      if (!resultBannerRail) return;
+      resultBannerRail.innerHTML = "";
+      resultBannerRail.classList.remove("is-on");
+    }
+
+    function renderResultBannerThumbnails(slides) {
+      if (!resultBannerRail) return;
+      clearResultBannerThumbnails();
+      if (!slides || !slides.length) return;
+      for (var i = 0; i < slides.length; i++) {
+        var s = slides[i];
+        if (!s || !s.url) continue;
+        var linkUrl = s.linkUrl ? String(s.linkUrl).trim() : "";
+        var hasLink = /^https?:\/\//i.test(linkUrl);
+        var thumb = document.createElement(hasLink ? "a" : "div");
+        thumb.className = "dq-result-banner-thumb" + (hasLink ? " is-link" : "");
+        if (hasLink) {
+          thumb.href = linkUrl;
+          thumb.target = "_blank";
+          thumb.rel = "noopener noreferrer";
+          thumb.setAttribute("aria-label", "Open banner link");
+        }
+        var thumbImg = document.createElement("img");
+        thumbImg.src = s.url;
+        thumbImg.alt = "";
+        thumb.appendChild(thumbImg);
+        resultBannerRail.appendChild(thumb);
+      }
+      if (resultBannerRail.childNodes.length) resultBannerRail.classList.add("is-on");
     }
 
     function showResultActions() {
@@ -1207,6 +1252,7 @@
     var retailerPromoMessages = getRetailerPromoMessages();
     var widgetAdBanners = [];
     var bannerShuffleQueue = [];
+    var bannersShownDuringGeneration = [];
     var rotationPhaseTimer = null;
     var showingStageAdOverlay = false;
     var stageAdFadeTimer = null;
@@ -1238,6 +1284,17 @@
       var idx = bannerShuffleQueue.shift();
       if (idx == null || idx < 0 || idx >= widgetAdBanners.length) return widgetAdBanners[0];
       return widgetAdBanners[idx];
+    }
+
+    function recordBannerShown(slide) {
+      if (!slide || !slide.url) return;
+      for (var i = 0; i < bannersShownDuringGeneration.length; i++) {
+        if (bannersShownDuringGeneration[i].url === slide.url) return;
+      }
+      bannersShownDuringGeneration.push({
+        url: slide.url,
+        linkUrl: slide.linkUrl ? String(slide.linkUrl).trim() : ""
+      });
     }
 
     function setStageAdSlide(slide) {
@@ -1287,6 +1344,7 @@
         return;
       }
       setStageAdSlide(slide);
+      recordBannerShown(slide);
       setStageAdOverlayVisible(true);
       rotationPhaseTimer = window.setTimeout(function () {
         showBannerSlideAndScheduleNext(false);
@@ -1362,6 +1420,8 @@
       promoMsgIndex = 0;
       widgetAdBanners = [];
       bannerShuffleQueue = [];
+      bannersShownDuringGeneration = [];
+      clearResultBannerThumbnails();
       setStageAdOverlayVisible(false);
       processing.classList.remove("has-stage-ads");
       stageAdImg.classList.remove("is-fading");
@@ -1522,6 +1582,7 @@
         wow.classList.add("is-on");
         setStageActionsVisible(false);
         showResultActions();
+        renderResultBannerThumbnails(bannersShownDuringGeneration);
       } catch (_e) {
         stopLoading(false);
       } finally {
