@@ -10,7 +10,11 @@ export function SiteBackground() {
       <div className="app-bg__base" />
       <div
         className="app-bg__photo"
-        style={{ backgroundImage: `url("${FITTING_ROOM_BG}")` }}
+        style={{
+          backgroundImage: `url("${FITTING_ROOM_BG}")`,
+          backgroundSize: "cover",
+          backgroundRepeat: "no-repeat",
+        }}
       />
       <div className="absolute inset-0 bg-gradient-to-b from-black/82 via-black/52 to-black/78 md:from-black/70 md:via-black/45 md:to-black/68" />
     </div>
