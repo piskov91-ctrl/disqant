@@ -382,9 +382,9 @@
       + ".dq-stage-ad-overlay.is-clickable{pointer-events:auto;}"
       + ".dq-stage-ad-overlay .dq-stage-ad-link{position:absolute;inset:0;display:block;z-index:1;cursor:pointer;}"
       + ".dq-stage-ad-overlay img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:center;display:block;opacity:1;filter:none;transform:none;}"
-      + ".dq-result-banner-rail{position:absolute;left:12px;right:12px;bottom:max(58px,env(safe-area-inset-bottom,0px));z-index:9;display:none;flex-direction:row;flex-wrap:nowrap;align-items:center;gap:8px;max-width:calc(100% - 24px);overflow-x:auto;overflow-y:hidden;pointer-events:auto;padding:4px 2px;-webkit-overflow-scrolling:touch;scrollbar-width:thin;}"
+      + ".dq-result-banner-rail{position:absolute;right:10px;top:50%;left:auto;bottom:auto;transform:translateY(-50%);z-index:9;display:none;flex-direction:column;flex-wrap:nowrap;align-items:center;gap:8px;width:80px;max-height:calc(100% - 88px);overflow-x:hidden;overflow-y:auto;pointer-events:auto;padding:4px 2px;-webkit-overflow-scrolling:touch;scrollbar-width:thin;}"
       + ".dq-result-banner-rail.is-on{display:flex;}"
-      + ".dq-result-banner-thumb{display:block;flex:0 0 auto;width:90px;height:64px;border-radius:8px;overflow:hidden;border:1px solid rgba(198,167,125,.45);box-shadow:0 4px 14px rgba(0,0,0,.35);background:#0f0f14;}"
+      + ".dq-result-banner-thumb{display:block;flex:0 0 auto;width:80px;height:60px;border-radius:8px;overflow:hidden;border:1px solid rgba(198,167,125,.45);box-shadow:0 4px 14px rgba(0,0,0,.35);background:#0f0f14;}"
       + ".dq-result-banner-thumb.is-link{cursor:pointer;}"
       + ".dq-result-banner-thumb img{position:static !important;inset:auto !important;width:100% !important;height:100% !important;max-width:100% !important;max-height:100% !important;object-fit:cover !important;object-position:center;display:block;transform:none !important;}"
       + ".dq-progress{position:absolute;left:12px;right:12px;bottom:12px;z-index:5;height:10px;border-radius:999px;background:rgba(245,237,228,.12);overflow:hidden;display:none;}"
@@ -872,6 +872,28 @@
     var wow = document.createElement("div");
     wow.className = "dq-wow dq-stage-wow";
     wow.textContent = "Wow, you look amazing! ✨";
+    var wowHideTimer = null;
+
+    function clearWowHideTimer() {
+      if (wowHideTimer) {
+        window.clearTimeout(wowHideTimer);
+        wowHideTimer = null;
+      }
+    }
+
+    function hideWowMessage() {
+      clearWowHideTimer();
+      wow.classList.remove("is-on");
+    }
+
+    function showWowMessage() {
+      clearWowHideTimer();
+      wow.classList.add("is-on");
+      wowHideTimer = window.setTimeout(function () {
+        wowHideTimer = null;
+        hideWowMessage();
+      }, 5000);
+    }
 
     var saveBtn = document.createElement("button");
     saveBtn.className = "dq-dl";
@@ -1042,7 +1064,7 @@
       stageImg.setAttribute(WIDGET_ATTR_SKIP, "1");
 
       if (!isTryOnResult) {
-        wow.classList.remove("is-on");
+        hideWowMessage();
         hideResultActions();
         setStageActionsVisible(true);
       } else {
@@ -1482,7 +1504,7 @@
     function startLoading() {
       processing.classList.add("is-on");
       progress.classList.add("is-on");
-      wow.classList.remove("is-on");
+      hideWowMessage();
       setStageActionsVisible(false);
       setProgress(0);
       startLoadingMessageRotation();
@@ -1579,7 +1601,7 @@
 
         setStageImage(out, "Try-on result", true);
         stopLoading(true);
-        wow.classList.add("is-on");
+        showWowMessage();
         setStageActionsVisible(false);
         showResultActions();
         renderResultBannerThumbnails(bannersShownDuringGeneration);
