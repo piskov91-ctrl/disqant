@@ -45,6 +45,11 @@ export function Footer() {
             Privacy &amp; Cookies
           </Link>
         </nav>
+        <div className="mt-1 w-full max-w-lg border-t border-[#C6A77D]/20 pt-4">
+          <p className="text-[11px] font-light leading-relaxed tracking-[0.04em] text-[#C6A77D] sm:text-xs">
+            Built for independent fashion retailers. No app. No downloads. Live in minutes.
+          </p>
+        </div>
         <p className="text-zinc-600">© 2026 Fit Room Ltd. All rights reserved.</p>
       </div>
     </footer>
