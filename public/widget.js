@@ -1274,7 +1274,7 @@
     var retailerPromoMessages = getRetailerPromoMessages();
     var widgetAdBanners = [];
     var bannerShuffleQueue = [];
-    var bannersShownDuringGeneration = [];
+    var seenBanners = [];
     var rotationPhaseTimer = null;
     var showingStageAdOverlay = false;
     var stageAdFadeTimer = null;
@@ -1293,7 +1293,6 @@
         if (slides.length) {
           widgetAdBanners = slides;
           preloadWidgetAdBannerUrls(slides);
-          stageAdImg.src = slides[0].url;
           return true;
         }
       }
@@ -1308,29 +1307,6 @@
       return widgetAdBanners[idx];
     }
 
-    function recordBannerShown(slide) {
-      if (!slide || !slide.url) return;
-      bannersShownDuringGeneration.push({
-        url: slide.url,
-        linkUrl: slide.linkUrl ? String(slide.linkUrl).trim() : ""
-      });
-    }
-
-    function buildResultBannerThumbnails() {
-      var seen = {};
-      var out = [];
-      for (var i = 0; i < bannersShownDuringGeneration.length; i++) {
-        var s = bannersShownDuringGeneration[i];
-        if (!s || !s.url || seen[s.url]) continue;
-        seen[s.url] = true;
-        out.push({
-          url: s.url,
-          linkUrl: s.linkUrl ? String(s.linkUrl).trim() : ""
-        });
-      }
-      return out;
-    }
-
     function setStageAdSlide(slide) {
       if (!slide || !slide.url) return;
       if (stageAdFadeTimer) {
@@ -1339,6 +1315,10 @@
       }
       stageAdImg.classList.remove("is-fading");
       stageAdImg.src = slide.url;
+      seenBanners.push({
+        url: slide.url,
+        linkUrl: slide.linkUrl ? String(slide.linkUrl).trim() : ""
+      });
 
       var linkUrl = slide.linkUrl ? String(slide.linkUrl).trim() : "";
       var existingLink = stageAdOverlay.querySelector("a.dq-stage-ad-link");
@@ -1378,7 +1358,6 @@
         return;
       }
       setStageAdSlide(slide);
-      recordBannerShown(slide);
       setStageAdOverlayVisible(true);
       rotationPhaseTimer = window.setTimeout(function () {
         showBannerSlideAndScheduleNext(false);
@@ -1454,7 +1433,7 @@
       promoMsgIndex = 0;
       widgetAdBanners = [];
       bannerShuffleQueue = [];
-      bannersShownDuringGeneration = [];
+      seenBanners = [];
       clearResultBannerThumbnails();
       setStageAdOverlayVisible(false);
       processing.classList.remove("has-stage-ads");
@@ -1616,7 +1595,7 @@
         showWowMessage();
         setStageActionsVisible(false);
         showResultActions();
-        renderResultBannerThumbnails(buildResultBannerThumbnails());
+        renderResultBannerThumbnails(seenBanners);
       } catch (_e) {
         stopLoading(false);
       } finally {
