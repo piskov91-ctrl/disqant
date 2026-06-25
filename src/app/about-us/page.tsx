@@ -26,7 +26,7 @@ export default function AboutUsPage() {
             <p className="mb-5 inline-flex items-center gap-2 rounded-full border border-[#c6a77d]/40 bg-black/20 px-4 py-1.5 text-xs font-medium uppercase tracking-[0.2em] text-[#c6a77d] backdrop-blur-md">
               About Us
             </p>
-            <h1 className="text-balance text-4xl font-semibold tracking-tight text-white md:text-5xl">
+            <h1 className="on-photo-heading text-balance text-4xl font-semibold tracking-tight text-white md:text-5xl">
               About Us
             </h1>
             <div className="mt-3 h-px w-24 bg-gradient-to-r from-[#c6a77d]/80 to-transparent" />

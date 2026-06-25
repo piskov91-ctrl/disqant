@@ -66,12 +66,12 @@ export function Testimonials({
       }`}
     >
       <div className="mx-auto max-w-6xl px-6">
-        <h2 className="text-center text-sm font-semibold uppercase tracking-widest text-[#C6A77D]">
+        <h2 className={`text-center text-sm font-semibold uppercase tracking-widest text-[#C6A77D]${isDark ? " on-photo-heading" : ""}`}>
           What retailers say
         </h2>
         <p
           className={`mx-auto mt-3 max-w-2xl text-center text-3xl font-semibold tracking-tight md:text-4xl ${
-            isDark ? "text-[#F5EDE4]" : "text-zinc-900"
+            isDark ? "on-photo-heading text-[#F5EDE4]" : "text-zinc-900"
           }`}
         >
           {effectiveCuratedSubheading}
@@ -79,7 +79,7 @@ export function Testimonials({
 
         <p
           className={`mx-auto mt-6 flex flex-wrap items-baseline justify-center gap-x-1.5 gap-y-1 text-center text-lg tabular-nums sm:text-xl ${
-            isDark ? "text-[#F5EDE4]" : "text-zinc-900"
+            isDark ? "on-photo-body text-[#F5EDE4]" : "text-zinc-900"
           }`}
         >
           <span className={`font-semibold ${isDark ? "text-amber-400" : "text-amber-500"}`} aria-hidden>
@@ -90,7 +90,7 @@ export function Testimonials({
 
         <p
           className={`mx-auto mt-5 max-w-lg text-center text-sm leading-relaxed ${
-            isDark ? "text-[#F5EDE4]/65" : "text-zinc-500"
+            isDark ? "on-photo-body text-[#F5EDE4]/65" : "text-zinc-500"
           }`}
         >
           {effectiveCuratedFootnote}

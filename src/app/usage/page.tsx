@@ -35,10 +35,10 @@ export default async function UsagePage(props: UsagePageProps) {
       <main className="pt-[var(--site-header-height)]">
         <section className="border-b border-white/10 py-14">
           <div className="mx-auto max-w-6xl px-6">
-            <h1 className="text-balance text-4xl font-semibold tracking-tight text-zinc-50 md:text-5xl">
+            <h1 className="on-photo-heading text-balance text-4xl font-semibold tracking-tight text-zinc-50 md:text-5xl">
               Dashboard
             </h1>
-            <p className="mt-4 max-w-2xl text-lg leading-relaxed text-zinc-400">
+            <p className="on-photo-body mt-4 max-w-2xl text-lg leading-relaxed text-zinc-400">
               See try-ons used, try-ons remaining, and your try-on limit—and your most-used product images.
             </p>
           </div>

@@ -24,11 +24,11 @@ export function WhatYouNeedToDoSteps() {
     <>
       <h1
         id="what-you-need-to-do-heading"
-        className="text-center text-sm font-semibold uppercase tracking-[0.18em] text-[#C6A77D] md:text-left md:text-base"
+        className="on-photo-heading text-center text-sm font-semibold uppercase tracking-[0.18em] text-[#C6A77D] md:text-left md:text-base"
       >
         What you need to do
       </h1>
-      <p className="mt-2 text-center text-sm leading-relaxed text-[#F5EDE4]/75 md:mx-0 md:text-left">
+      <p className="on-photo-body mt-2 text-center text-sm leading-relaxed text-[#F5EDE4]/75 md:mx-0 md:text-left">
         Nothing complicated. No app to download, no software to install.
       </p>
       <ul

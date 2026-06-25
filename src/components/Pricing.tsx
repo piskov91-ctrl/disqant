@@ -156,13 +156,13 @@ export function Pricing({ sectionId = "subscriptions", catalog }: PricingProps) 
       className="scroll-mt-28 border-t border-[#C6A77D]/15 bg-transparent py-14 md:py-16"
     >
       <div className="mx-auto max-w-[1600px] px-4 sm:px-6">
-        <h2 className="text-center text-xs font-semibold uppercase tracking-widest text-[#C6A77D] sm:text-sm">
+        <h2 className="on-photo-heading text-center text-xs font-semibold uppercase tracking-widest text-[#C6A77D] sm:text-sm">
           Subscriptions
         </h2>
-        <p className="mx-auto mt-2 max-w-2xl text-center text-2xl font-semibold tracking-tight text-[#F5EDE4] md:text-3xl">
+        <p className="on-photo-heading mx-auto mt-2 max-w-2xl text-center text-2xl font-semibold tracking-tight text-[#F5EDE4] md:text-3xl">
           Plans for every stage
         </p>
-        <p className="mx-auto mt-3 max-w-xl text-center text-xs leading-relaxed text-[#F5EDE4]/70 sm:text-sm">
+        <p className="on-photo-body mx-auto mt-3 max-w-xl text-center text-xs leading-relaxed text-[#F5EDE4]/70 sm:text-sm">
           All plans include core try-on and integration support. Upgrade as your store grows.
         </p>
 
