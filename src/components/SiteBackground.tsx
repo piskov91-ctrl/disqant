@@ -16,12 +16,9 @@ export function SiteBackground() {
           backgroundRepeat: "no-repeat",
           backgroundPosition: "center",
           backgroundAttachment: "scroll",
-          position: "fixed",
-          top: 0,
-          left: 0,
+          position: "absolute",
           width: "100%",
           height: "100%",
-          
         }}
       />
       <div className="absolute inset-0 bg-gradient-to-b from-black/82 via-black/52 to-black/78 md:from-black/70 md:via-black/45 md:to-black/68" />

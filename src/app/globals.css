@@ -34,7 +34,7 @@ body {
 /* Fitting-room photo layer. Use scroll attachment on a fixed viewport layer to avoid
    Android Chrome zoom/jank from background-attachment: fixed on mobile. */
 .app-bg__photo {
-  position: fixed;
+  position: absolute;
   top: 0;
   left: 0;
   width: 100%;
