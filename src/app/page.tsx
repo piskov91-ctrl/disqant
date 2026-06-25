@@ -43,21 +43,21 @@ export default async function Home() {
               <div className="order-1 flex min-w-0 flex-col justify-center">
                 <h1
                   className="max-w-[min(100%,34rem)] text-balance font-serif text-4xl font-normal leading-[1.12] tracking-tight text-[#C6A77D] antialiased sm:text-5xl sm:leading-[1.1] md:text-[2.875rem] md:leading-[1.08] lg:text-6xl lg:leading-[1.06] xl:text-[3.5rem]"
-                  style={{ textShadow: "0 0 8px rgba(198,167,125,0.25), 0 2px 6px rgba(0,0,0,0.4)" }}
+                  style={{ textShadow: "0 0 15px rgba(198,167,125,0.4), 0 2px 8px rgba(0,0,0,0.7)" }}
                 >
                   AI Virtual Try-On for Fashion Stores
                 </h1>
 
                 <h2
                   className="mt-6 max-w-[40rem] text-pretty font-sans text-lg font-light leading-relaxed text-zinc-200/95 sm:mt-7 sm:text-xl sm:leading-[1.55]"
-                  style={{ textShadow: "0 2px 10px rgba(0,0,0,0.45)" }}
+                  style={{ textShadow: "0 2px 8px rgba(0,0,0,0.7)" }}
                 >
                   Give your shoppers a fitting room experience — directly on your website.
                 </h2>
 
                 <p
                   className="mt-6 max-w-[36rem] text-pretty font-sans text-base font-normal leading-[1.75] text-zinc-300 sm:mt-8 sm:text-lg sm:leading-[1.72]"
-                  style={{ textShadow: "0 2px 10px rgba(0,0,0,0.45)" }}
+                  style={{ textShadow: "0 2px 8px rgba(0,0,0,0.7)" }}
                 >
                   Wear Me is the UK&apos;s first virtual try-on service built for independent fashion retailers.
                   Your customers upload a photo and see how your clothes, shoes, bags and jewellery look on them
@@ -66,7 +66,7 @@ export default async function Home() {
 
                 <ul
                   className="mt-6 max-w-[36rem] space-y-2.5 font-sans text-base leading-relaxed text-zinc-300 sm:mt-8 sm:text-[1.0625rem]"
-                  style={{ textShadow: "0 2px 10px rgba(0,0,0,0.45)" }}
+                  style={{ textShadow: "0 2px 8px rgba(0,0,0,0.7)" }}
                 >
                   <li className="flex gap-3">
                     <span className="shrink-0 text-[#C6A77D]" aria-hidden>
