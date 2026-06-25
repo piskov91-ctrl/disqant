@@ -43,7 +43,7 @@ body {
   background-position: center;
   background-size: cover;
   background-attachment: scroll;
-  will-change: transform;
+  
 }
 
 @media (max-width: 768px) {
@@ -66,7 +66,7 @@ body {
   height: min(90vw, 50rem);
   border-radius: 50%;
   filter: blur(80px);
-  will-change: transform;
+  
   transform: translate3d(0, 0, 0);
   opacity: 0.5;
   mix-blend-mode: screen;
