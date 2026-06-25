@@ -73,25 +73,6 @@
     return queue;
   }
 
-  function shuffleBannerSlidesForResult(slides) {
-    var list = [];
-    for (var i = 0; i < slides.length; i++) {
-      var s = slides[i];
-      if (!s || !s.url) continue;
-      list.push({
-        url: s.url,
-        linkUrl: s.linkUrl ? String(s.linkUrl).trim() : ""
-      });
-    }
-    for (var j = list.length - 1; j > 0; j--) {
-      var r = Math.floor(Math.random() * (j + 1));
-      var tmp = list[j];
-      list[j] = list[r];
-      list[r] = tmp;
-    }
-    return list;
-  }
-
   function fetchWidgetAds(clientKey) {
     if (!clientKey) return Promise.resolve(null);
     return fetch(getWidgetApiOrigin() + "/api/retailer/widget-ads", {
@@ -1336,8 +1317,18 @@
     }
 
     function buildResultBannerThumbnails() {
-      if (widgetAdBanners.length) return shuffleBannerSlidesForResult(widgetAdBanners);
-      return shuffleBannerSlidesForResult(bannersShownDuringGeneration);
+      var seen = {};
+      var out = [];
+      for (var i = 0; i < bannersShownDuringGeneration.length; i++) {
+        var s = bannersShownDuringGeneration[i];
+        if (!s || !s.url || seen[s.url]) continue;
+        seen[s.url] = true;
+        out.push({
+          url: s.url,
+          linkUrl: s.linkUrl ? String(s.linkUrl).trim() : ""
+        });
+      }
+      return out;
     }
 
     function setStageAdSlide(slide) {
