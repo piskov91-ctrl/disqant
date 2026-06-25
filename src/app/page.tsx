@@ -8,6 +8,7 @@ import {
   listApprovedSubscriptionsFeedback,
   mapApprovedSubscriptionsFeedbackToSlides,
 } from "@/lib/subscriptionsFeedbackStore";
+import styles from "./page.module.css";
 
 export const metadata: Metadata = {
   description:
@@ -29,9 +30,10 @@ export default async function Home() {
           aria-label="Home hero"
           className="relative min-h-[calc(100dvh_-_var(--site-header-height))] overflow-hidden text-white"
         >
+          <div className={styles.heroOverlay} aria-hidden />
           <div className="relative z-10 mx-auto max-w-6xl px-4 py-12 sm:px-6 sm:py-16 md:py-20 lg:py-24 xl:py-28">
             <div className="grid grid-cols-1 items-center gap-10 md:grid-cols-2 md:gap-10 lg:gap-14 xl:gap-16">
-              <div className="home-hero-copy order-1 flex min-w-0 flex-col justify-center">
+              <div className={`${styles.heroCopy} order-1 flex min-w-0 flex-col justify-center`}>
                 <h1 className="max-w-[min(100%,34rem)] text-balance font-serif text-4xl font-normal leading-[1.12] tracking-tight text-[#C6A77D] antialiased sm:text-5xl sm:leading-[1.1] md:text-[2.875rem] md:leading-[1.08] lg:text-6xl lg:leading-[1.06] xl:text-[3.5rem]">
                   AI Virtual Try-On for Fashion Stores
                 </h1>
@@ -95,9 +97,9 @@ export default async function Home() {
                 </div>
               </div>
 
-              <div className="home-hero-media order-2 flex w-full min-w-0 justify-center rounded-2xl md:justify-end">
+              <div className="order-2 flex w-full min-w-0 justify-center md:justify-end">
                 <video
-                  className="relative z-0 h-auto w-full max-h-[min(52vh,420px)] max-w-full rounded-2xl object-contain shadow-lg shadow-black/30 sm:max-h-[min(56vh,480px)] md:max-h-[min(62vh,560px)] lg:max-h-[min(68vh,640px)]"
+                  className="h-auto w-full max-h-[min(52vh,420px)] max-w-full rounded-2xl object-contain shadow-lg shadow-black/30 sm:max-h-[min(56vh,480px)] md:max-h-[min(62vh,560px)] lg:max-h-[min(68vh,640px)]"
                   autoPlay
                   loop
                   muted
@@ -108,7 +110,6 @@ export default async function Home() {
                 >
                   <source src="/demo-video.mp4" type="video/mp4" />
                 </video>
-                <div className="home-hero-media-overlay" aria-hidden />
               </div>
             </div>
           </div>
