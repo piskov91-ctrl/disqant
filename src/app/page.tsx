@@ -40,10 +40,7 @@ export default async function Home() {
           />
           <div className="relative z-10 mx-auto max-w-6xl px-4 py-12 sm:px-6 sm:py-16 md:py-20 lg:py-24 xl:py-28">
             <div className="grid grid-cols-1 items-center gap-10 md:grid-cols-2 md:gap-10 lg:gap-14 xl:gap-16">
-              <div
-                className="order-1 flex min-w-0 flex-col justify-center"
-                style={{ backdropFilter: "blur(4px)", background: "rgba(0,0,0,0.08)" }}
-              >
+              <div className="order-1 flex min-w-0 flex-col justify-center">
                 <h1
                   className="max-w-[min(100%,34rem)] text-balance font-serif text-4xl font-normal leading-[1.12] tracking-tight text-[#C6A77D] antialiased sm:text-5xl sm:leading-[1.1] md:text-[2.875rem] md:leading-[1.08] lg:text-6xl lg:leading-[1.06] xl:text-[3.5rem]"
                   style={{ textShadow: "0 0 8px rgba(198,167,125,0.25), 0 2px 6px rgba(0,0,0,0.4)" }}
