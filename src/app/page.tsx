@@ -43,7 +43,7 @@ export default async function Home() {
               <div className="order-1 flex min-w-0 flex-col justify-center">
                 <h1
                   className="max-w-[min(100%,34rem)] text-balance font-serif text-4xl font-normal leading-[1.12] tracking-tight text-[#C6A77D] antialiased sm:text-5xl sm:leading-[1.1] md:text-[2.875rem] md:leading-[1.08] lg:text-6xl lg:leading-[1.06] xl:text-[3.5rem]"
-                  style={{ textShadow: "0 2px 10px rgba(0,0,0,0.45)" }}
+                  style={{ textShadow: "0 0 8px rgba(198,167,125,0.25), 0 2px 10px rgba(0,0,0,0.45)" }}
                 >
                   AI Virtual Try-On for Fashion Stores
                 </h1>
