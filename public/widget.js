@@ -363,7 +363,7 @@
       + ".dq-tips-mark{flex-shrink:0;color:#c6a77d;font-size:9px;line-height:1.45;font-weight:600;}"
       + ".dq-tips-privacy{margin:0;padding:6px;border-radius:8px;border:1px solid rgba(198,167,125,.5);background:#1a1612;font:500 11px/1.4 system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;color:rgba(245,237,228,.92);letter-spacing:.02em;box-shadow:inset 0 1px 0 rgba(198,167,125,.08);}"
       + ".dq-stage{position:relative;width:100%;flex:1 1 auto;min-height:0;align-self:stretch;border-radius:12px;border:1px solid rgba(198,167,125,.2);background:#0f0f14;overflow:hidden;}"
-      + ".dq-stage img{position:absolute;inset:0;width:100%;height:100%;display:block;background:#0f0f14;object-fit:contain;object-position:center center;transform:none !important;max-width:none;max-height:none;z-index:1;}"
+      + ".dq-stage > img{position:absolute;inset:0;width:100%;height:100%;display:block;background:#0f0f14;object-fit:contain;object-position:center center;transform:none !important;max-width:none;max-height:none;z-index:1;}"
       + ".dq-empty{position:absolute;inset:0;z-index:2;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;color:rgba(245,237,228,.65);text-align:center;padding:18px;pointer-events:none;}"
       + ".dq-empty strong{color:#f5ede4;font:900 14px/1.2 system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;}"
       + ".dq-empty span{font:600 12px/1.3 system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;}"
@@ -382,12 +382,11 @@
       + ".dq-stage-ad-overlay.is-clickable{pointer-events:auto;}"
       + ".dq-stage-ad-overlay .dq-stage-ad-link{position:absolute;inset:0;display:block;z-index:1;cursor:pointer;}"
       + ".dq-stage-ad-overlay img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:center;display:block;opacity:1;filter:none;transform:none;}"
-      + ".dq-result-banner-rail{position:absolute;right:10px;top:50%;transform:translateY(-50%);z-index:9;display:none;flex-direction:column;gap:6px;max-height:calc(100% - 88px);overflow-y:auto;pointer-events:auto;padding:2px;}"
+      + ".dq-result-banner-rail{position:absolute;left:12px;right:12px;bottom:max(58px,env(safe-area-inset-bottom,0px));z-index:9;display:none;flex-direction:row;flex-wrap:nowrap;align-items:center;gap:8px;max-width:calc(100% - 24px);overflow-x:auto;overflow-y:hidden;pointer-events:auto;padding:4px 2px;-webkit-overflow-scrolling:touch;scrollbar-width:thin;}"
       + ".dq-result-banner-rail.is-on{display:flex;}"
-      + ".dq-result-banner-thumb{display:block;width:52px;height:52px;border-radius:8px;overflow:hidden;border:1px solid rgba(198,167,125,.45);box-shadow:0 4px 14px rgba(0,0,0,.35);background:#0f0f14;flex-shrink:0;}"
+      + ".dq-result-banner-thumb{display:block;flex:0 0 auto;width:90px;height:64px;border-radius:8px;overflow:hidden;border:1px solid rgba(198,167,125,.45);box-shadow:0 4px 14px rgba(0,0,0,.35);background:#0f0f14;}"
       + ".dq-result-banner-thumb.is-link{cursor:pointer;}"
-      + ".dq-result-banner-thumb img{width:100%;height:100%;object-fit:cover;object-position:center;display:block;}"
-      + "@media (max-width:520px){.dq-result-banner-rail{right:8px;top:auto;bottom:max(58px,env(safe-area-inset-bottom,0px));transform:none;max-height:min(38vh,200px);}}"
+      + ".dq-result-banner-thumb img{position:static !important;inset:auto !important;width:100% !important;height:100% !important;max-width:100% !important;max-height:100% !important;object-fit:cover !important;object-position:center;display:block;transform:none !important;}"
       + ".dq-progress{position:absolute;left:12px;right:12px;bottom:12px;z-index:5;height:10px;border-radius:999px;background:rgba(245,237,228,.12);overflow:hidden;display:none;}"
       + ".dq-progress.is-on{display:block;}"
       + ".dq-progress>span{display:block;height:100%;width:0%;background:linear-gradient(135deg,#a68958,#c6a77d 45%,#e8d4bc 100%);background-size:200% 100%;transition:width .12s ease;position:relative;animation:dq-bar-pulse 1.9s ease-in-out infinite;}"
@@ -1016,6 +1015,7 @@
         var thumbImg = document.createElement("img");
         thumbImg.src = s.url;
         thumbImg.alt = "";
+        thumbImg.setAttribute(WIDGET_ATTR_SKIP, "1");
         thumb.appendChild(thumbImg);
         resultBannerRail.appendChild(thumb);
       }
