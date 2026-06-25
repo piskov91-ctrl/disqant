@@ -31,17 +31,19 @@ body {
   background: #000000;
 }
 
-/* Fitting-room photo layer. Desktop uses fixed attachment; mobile falls back to scroll
-   (background-attachment:fixed is unreliable / causes zoom-on-scroll on mobile browsers).
-   The layer already lives inside a position:fixed parent (.app-bg), so on mobile it still
-   stays put while the page scrolls. */
+/* Fitting-room photo layer. Use scroll attachment on a fixed viewport layer to avoid
+   Android Chrome zoom/jank from background-attachment: fixed on mobile. */
 .app-bg__photo {
-  position: absolute;
-  inset: 0;
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
   background-repeat: no-repeat;
   background-position: center;
   background-size: cover;
-  background-attachment: fixed;
+  background-attachment: scroll;
+  will-change: transform;
 }
 
 @media (max-width: 768px) {
@@ -53,16 +55,8 @@ body {
     min-height: 100dvh;
   }
   .app-bg__photo {
-    position: fixed;
-    inset: 0;
-    width: 100%;
-    height: 100%;
     min-height: 100dvh;
-    background-attachment: scroll;
-    background-size: cover;
     background-position: center top;
-    background-repeat: no-repeat;
-    transform: translateZ(0);
   }
 }
 

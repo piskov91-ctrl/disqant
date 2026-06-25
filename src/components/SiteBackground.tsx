@@ -14,6 +14,14 @@ export function SiteBackground() {
           backgroundImage: `url("${FITTING_ROOM_BG}")`,
           backgroundSize: "cover",
           backgroundRepeat: "no-repeat",
+          backgroundPosition: "center",
+          backgroundAttachment: "scroll",
+          position: "fixed",
+          top: 0,
+          left: 0,
+          width: "100%",
+          height: "100%",
+          willChange: "transform",
         }}
       />
       <div className="absolute inset-0 bg-gradient-to-b from-black/82 via-black/52 to-black/78 md:from-black/70 md:via-black/45 md:to-black/68" />
