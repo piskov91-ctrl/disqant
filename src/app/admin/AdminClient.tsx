@@ -162,6 +162,7 @@ type AdminTab =
   | "analytics"
   | "wearMe"
   | "integration"
+  | "logs"
   | "recovery";
 
 type AdminFashnCredits = {
@@ -233,6 +234,16 @@ type ContactInquiryRow = {
   monthlyVisitorsLabel: string;
   message: string;
   thread?: InquiryThreadMessageRow[];
+};
+
+/** Mirrors `/api/admin/try-on-error-logs`. */
+type TryOnErrorLogRow = {
+  id: string;
+  createdAt: string;
+  read: boolean;
+  message: string;
+  apiKey: string;
+  statusCode?: number;
 };
 
 /** Mirrors `/api/admin/enterprise-quotes`. */
@@ -552,6 +563,11 @@ export default function AdminClient() {
   const [contactReplyError, setContactReplyError] = useState<string | null>(null);
   const [contactInquiryDeleteBusyId, setContactInquiryDeleteBusyId] = useState<string | null>(null);
 
+  const [tryOnErrorLogsUnread, setTryOnErrorLogsUnread] = useState(0);
+  const [tryOnErrorLogs, setTryOnErrorLogs] = useState<TryOnErrorLogRow[]>([]);
+  const [tryOnErrorLogsLoading, setTryOnErrorLogsLoading] = useState(false);
+  const [tryOnErrorLogsError, setTryOnErrorLogsError] = useState<string | null>(null);
+
   const [enterpriseQuotesUnread, setEnterpriseQuotesUnread] = useState(0);
   const [enterpriseQuotes, setEnterpriseQuotes] = useState<EnterpriseQuoteRow[]>([]);
   const [enterpriseQuotesLoading, setEnterpriseQuotesLoading] = useState(false);
@@ -850,6 +866,59 @@ export default function AdminClient() {
       setContactInquiries([]);
     } finally {
       setContactInquiriesLoading(false);
+    }
+  }
+
+  async function loadTryOnErrorLogsBadge() {
+    try {
+      const res = await fetch("/api/admin/try-on-error-logs?badge=1");
+      const data = (await res.json()) as { unreadCount?: number; error?: string };
+      if (!res.ok) {
+        if (data.error === "Unauthorized.") window.location.reload();
+        setTryOnErrorLogsUnread(0);
+        return;
+      }
+      const u =
+        typeof data.unreadCount === "number" && Number.isFinite(data.unreadCount)
+          ? Math.max(0, Math.floor(data.unreadCount))
+          : 0;
+      setTryOnErrorLogsUnread(u);
+    } catch {
+      setTryOnErrorLogsUnread(0);
+    }
+  }
+
+  async function loadTryOnErrorLogs() {
+    setTryOnErrorLogsLoading(true);
+    setTryOnErrorLogsError(null);
+    try {
+      const res = await fetch("/api/admin/try-on-error-logs", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ markAllRead: true }),
+      });
+      const data = (await res.json()) as {
+        unreadCount?: number;
+        logs?: TryOnErrorLogRow[];
+        error?: string;
+      };
+      if (!res.ok) {
+        if (data.error === "Unauthorized.") window.location.reload();
+        setTryOnErrorLogsError(data.error || "Failed to load try-on error logs.");
+        setTryOnErrorLogs([]);
+        return;
+      }
+      const u =
+        typeof data.unreadCount === "number" && Number.isFinite(data.unreadCount)
+          ? Math.max(0, Math.floor(data.unreadCount))
+          : 0;
+      setTryOnErrorLogsUnread(u);
+      setTryOnErrorLogs(Array.isArray(data.logs) ? data.logs : []);
+    } catch (e) {
+      setTryOnErrorLogsError(e instanceof Error ? e.message : "Failed to load try-on error logs.");
+      setTryOnErrorLogs([]);
+    } finally {
+      setTryOnErrorLogsLoading(false);
     }
   }
 
@@ -1501,6 +1570,7 @@ export default function AdminClient() {
     void loadContactInquiriesBadge();
     void loadEnterpriseQuotesBadge();
     void loadSubscriptionReviewsBadge();
+    void loadTryOnErrorLogsBadge();
   }, []);
 
   useEffect(() => {
@@ -1519,6 +1589,7 @@ export default function AdminClient() {
     if (activeTab === "contact") void loadContactInquiries();
     if (activeTab === "enterprise") void loadEnterpriseQuotes();
     if (activeTab === "reviews") void loadSubscriptionReviews();
+    if (activeTab === "logs") void loadTryOnErrorLogs();
   }, [activeTab]); // eslint-disable-line react-hooks/exhaustive-deps -- loaders are not memoised; tab key is intentional.
 
   useEffect(() => {
@@ -1836,6 +1907,7 @@ export default function AdminClient() {
     void loadContactInquiriesBadge();
     void loadEnterpriseQuotesBadge();
     void loadSubscriptionReviewsBadge();
+    void loadTryOnErrorLogsBadge();
     if (activeTab === "clients" || activeTab === "wearMe") void load();
     else if (activeTab === "analytics") void loadAnalytics();
     else if (activeTab === "contact") void loadContactInquiries();
@@ -1844,6 +1916,7 @@ export default function AdminClient() {
     else if (activeTab === "recovery") void loadRecovery();
     else if (activeTab === "retailers") void loadRetailers();
     else if (activeTab === "customTryons") void loadCustomTryOnAccess();
+    else if (activeTab === "logs") void loadTryOnErrorLogs();
   }
 
   const tabBusy =
@@ -1863,7 +1936,9 @@ export default function AdminClient() {
               ? enterpriseQuotesLoading
               : activeTab === "reviews"
                 ? subscriptionReviewsLoading
-                : false;
+                : activeTab === "logs"
+                  ? tryOnErrorLogsLoading
+                  : false;
 
   const wearMeKeyRecord = useMemo(
     () => keys.find((k) => k.id === wearMeKeyId) ?? null,
@@ -2843,6 +2918,34 @@ export default function AdminClient() {
               }`}
             >
               Integration Guide
+            </button>
+            <button
+              type="button"
+              role="tab"
+              aria-selected={activeTab === "logs"}
+              aria-label={
+                tryOnErrorLogsUnread > 0
+                  ? `Try-on error logs, ${tryOnErrorLogsUnread} unread`
+                  : "Try-on error logs"
+              }
+              onClick={() => setActiveTab("logs")}
+              className={`rounded-full px-5 py-2 text-sm font-semibold transition ${
+                activeTab === "logs"
+                  ? "bg-zinc-800 text-zinc-100 shadow-sm"
+                  : "text-zinc-500 hover:text-zinc-300"
+              }`}
+            >
+              <span className="inline-flex items-center justify-center gap-2">
+                Logs
+                {tryOnErrorLogsUnread > 0 ? (
+                  <span
+                    className="inline-flex min-h-[1.125rem] min-w-[1.125rem] items-center justify-center rounded-full bg-red-600 px-1.5 text-[10px] font-bold leading-none text-white tabular-nums"
+                    aria-hidden
+                  >
+                    {tryOnErrorLogsUnread > 99 ? "99+" : tryOnErrorLogsUnread}
+                  </span>
+                ) : null}
+              </span>
             </button>
             <button
               type="button"
@@ -4173,6 +4276,66 @@ export default function AdminClient() {
                   </div>
                 </div>
               )}
+            </section>
+          ) : activeTab === "logs" ? (
+            <section className="mt-8 w-full overflow-hidden rounded-2xl border border-zinc-800 bg-zinc-900/60 p-6 shadow-sm md:p-8">
+              <h2 className="text-base font-semibold text-zinc-100">Try-on error logs</h2>
+              <p className="mt-1 text-sm text-zinc-400">
+                Failures from <span className="font-mono text-zinc-500">/api/try-on</span> (invalid keys, Fashn errors,
+                timeouts, etc.). Expected quota errors (&quot;Try-on limit exceeded&quot;) are not logged. Opening this tab
+                marks all listed errors as read and clears the badge until new failures occur.
+              </p>
+              {tryOnErrorLogsError ? (
+                <div className="mt-6 rounded-xl border border-red-900/60 bg-red-950/40 px-4 py-3 text-sm text-red-200">
+                  {tryOnErrorLogsError}
+                </div>
+              ) : null}
+              {tryOnErrorLogsLoading ? (
+                <div className="mt-8 text-sm text-zinc-500">Loading error logs…</div>
+              ) : tryOnErrorLogs.length === 0 ? (
+                <div className="mt-8 text-sm text-zinc-500">No try-on errors logged yet.</div>
+              ) : (
+                <ul className="mt-6 space-y-3">
+                  {tryOnErrorLogs.map((row) => {
+                    const when = Number.isFinite(Date.parse(row.createdAt))
+                      ? new Date(row.createdAt).toLocaleString("en-GB", {
+                          timeZone: "UTC",
+                          day: "numeric",
+                          month: "short",
+                          year: "numeric",
+                          hour: "2-digit",
+                          minute: "2-digit",
+                          second: "2-digit",
+                        })
+                      : "—";
+                    return (
+                      <li
+                        key={row.id}
+                        className="rounded-xl border border-zinc-800 bg-zinc-950/40 px-4 py-4 md:px-5"
+                      >
+                        <div className="flex flex-wrap items-start justify-between gap-3">
+                          <p className="text-xs text-zinc-500">{when} UTC</p>
+                          {row.statusCode != null ? (
+                            <span className="rounded border border-zinc-700 bg-zinc-900 px-2 py-0.5 font-mono text-[10px] font-semibold uppercase tracking-wide text-zinc-400">
+                              HTTP {row.statusCode}
+                            </span>
+                          ) : null}
+                        </div>
+                        <p className="mt-3 text-sm leading-relaxed text-rose-100/95">{row.message}</p>
+                        <p className="mt-3 text-xs text-zinc-500">
+                          API key:{" "}
+                          <span className="break-all font-mono text-zinc-300">{row.apiKey}</span>
+                        </p>
+                      </li>
+                    );
+                  })}
+                </ul>
+              )}
+              <p className="mt-6 text-xs text-zinc-600">
+                Redis keys:{" "}
+                <span className="font-mono text-zinc-400">fit-room:tryOnErrorLogs:index</span>,{" "}
+                <span className="font-mono text-zinc-400">fit-room:tryOnErrorLog:&#123;id&#125;</span>
+              </p>
             </section>
           ) : activeTab === "integration" ? (
             <AdminIntegrationGuide />

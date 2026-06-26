@@ -13,6 +13,7 @@ import {
   TRY_ON_EMBED_CORS_BASE_HEADERS,
   tryOnEmbedOptionsResponse,
 } from "@/lib/embedCors";
+import { recordTryOnErrorLog } from "@/lib/tryOnErrorLogStore";
 
 export const runtime = "nodejs";
 
@@ -85,6 +86,29 @@ function serializeFashnError(err: unknown): string {
   } catch {
     return "Try-on failed.";
   }
+}
+
+function logTryOnFailure(message: string, apiKey: string | null, statusCode: number) {
+  void recordTryOnErrorLog({
+    message,
+    apiKey: apiKey?.trim() || "(none)",
+    statusCode,
+  }).catch((err) => {
+    console.error("[fit-room][tryOnErrorLog] failed to persist", {
+      message: err instanceof Error ? err.message : String(err),
+    });
+  });
+}
+
+function tryOnErrorJson(
+  error: string,
+  status: number,
+  apiKey: string | null,
+  corsAllowOrigin: string,
+  extra?: Record<string, unknown>,
+) {
+  logTryOnFailure(error, apiKey, status);
+  return withTryOnCors(Response.json({ error, ...extra }, { status }), corsAllowOrigin);
 }
 
 function resolveGarmentCategoryHint(form: FormData): GarmentCategoryHint {
@@ -198,11 +222,10 @@ export async function POST(req: Request) {
     effectiveClientApiKey = process.env.DEMO_API_KEY?.trim() || null;
   }
   if (!effectiveClientApiKey) {
-    return withTryOnCors(
-      Response.json(
-      { error: "Try It Free is not configured. Set DEMO_API_KEY for this environment." },
-      { status: 503 },
-      ),
+    return tryOnErrorJson(
+      "Try It Free is not configured. Set DEMO_API_KEY for this environment.",
+      503,
+      null,
       corsAllowOrigin,
     );
   }
@@ -236,7 +259,7 @@ export async function POST(req: Request) {
         corsAllowOrigin,
       );
     }
-    return withTryOnCors(Response.json({ error: msg }, { status: 401 }), corsAllowOrigin);
+    return tryOnErrorJson(msg, 401, effectiveClientApiKey, corsAllowOrigin);
   }
 
   // Note: /demo page itself is still access-code gated, but this API now requires a client API key.
@@ -248,7 +271,7 @@ export async function POST(req: Request) {
   try {
     form = await req.formData();
   } catch {
-    return withTryOnCors(Response.json({ error: "Invalid form data." }, { status: 400 }), corsAllowOrigin);
+    return tryOnErrorJson("Invalid form data.", 400, effectiveClientApiKey, corsAllowOrigin);
   }
 
   const modelFile = form.get("model");
@@ -262,11 +285,10 @@ export async function POST(req: Request) {
   const resolution = parseResolution(form);
 
   if (!(modelFile instanceof File) || !(garmentFile instanceof File)) {
-    return withTryOnCors(
-      Response.json(
-        { error: "Please upload both a person photo and a garment image." },
-        { status: 400 },
-      ),
+    return tryOnErrorJson(
+      "Please upload both a person photo and a garment image.",
+      400,
+      effectiveClientApiKey,
       corsAllowOrigin,
     );
   }
@@ -284,7 +306,7 @@ export async function POST(req: Request) {
   });
 
   if (!first.ok) {
-    return withTryOnCors(Response.json({ error: first.error }, { status: 502 }), corsAllowOrigin);
+    return tryOnErrorJson(first.error, 502, effectiveClientApiKey, corsAllowOrigin);
   }
 
   const result = await pollUntilDone({
@@ -296,6 +318,7 @@ export async function POST(req: Request) {
     category,
     serverTrace,
     corsAllowOrigin,
+    clientApiKey: effectiveClientApiKey,
   });
   if (result.ok) {
     const at = new Date().toISOString();
@@ -329,8 +352,9 @@ async function pollUntilDone(params: {
   category: GarmentCategoryHint;
   serverTrace: string;
   corsAllowOrigin: string;
+  clientApiKey: string;
 }): Promise<{ ok: true; response: Response } | { ok: false; response: Response }> {
-  const { id, headers, baseUrl, timeoutMs, pollMs, category, serverTrace, corsAllowOrigin } =
+  const { id, headers, baseUrl, timeoutMs, pollMs, category, serverTrace, corsAllowOrigin, clientApiKey } =
     params;
   const startedAt = Date.now();
   let pollN = 0;
@@ -340,11 +364,10 @@ async function pollUntilDone(params: {
     if (Date.now() - startedAt > timeoutMs) {
       return {
         ok: false,
-        response: withTryOnCors(
-          Response.json(
-            { error: "Timed out waiting for try-on result. Please try again." },
-            { status: 504 },
-          ),
+        response: tryOnErrorJson(
+          "Timed out waiting for try-on result. Please try again.",
+          504,
+          clientApiKey,
           corsAllowOrigin,
         ),
       };
@@ -365,11 +388,10 @@ async function pollUntilDone(params: {
       const text = await statusRes.text().catch(() => "");
       return {
         ok: false,
-        response: withTryOnCors(
-          Response.json(
-            { error: `FASHN /status failed (${statusRes.status}). ${text || ""}`.trim() },
-            { status: 502 },
-          ),
+        response: tryOnErrorJson(
+          `FASHN /status failed (${statusRes.status}). ${text || ""}`.trim(),
+          502,
+          clientApiKey,
           corsAllowOrigin,
         ),
       };
@@ -381,8 +403,10 @@ async function pollUntilDone(params: {
       if (!out) {
         return {
           ok: false,
-          response: withTryOnCors(
-            Response.json({ error: "FASHN completed but returned no output." }, { status: 502 }),
+          response: tryOnErrorJson(
+            "FASHN completed but returned no output.",
+            502,
+            clientApiKey,
             corsAllowOrigin,
           ),
         };
@@ -399,8 +423,10 @@ async function pollUntilDone(params: {
     if (statusData.status === "failed") {
       return {
         ok: false,
-        response: withTryOnCors(
-          Response.json({ error: serializeFashnError(statusData.error) }, { status: 502 }),
+        response: tryOnErrorJson(
+          serializeFashnError(statusData.error),
+          502,
+          clientApiKey,
           corsAllowOrigin,
         ),
       };
