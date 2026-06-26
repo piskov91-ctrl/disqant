@@ -2,11 +2,14 @@
 
 import { useCallback, useEffect, useState } from "react";
 
+type AdminSystemServiceState = "ok" | "warning" | "error";
+
 type AdminSystemServiceCheck = {
   id: string;
   label: string;
-  ok: boolean;
-  error?: string;
+  state: AdminSystemServiceState;
+  message: string;
+  creditsTotal?: number;
 };
 
 type AdminSystemStatusPayload = {
@@ -25,6 +28,30 @@ function formatCheckedAt(iso: string): string {
     minute: "2-digit",
     second: "2-digit",
   });
+}
+
+function serviceCardClasses(state: AdminSystemServiceState): string {
+  if (state === "ok") return "border-emerald-800/50 bg-emerald-950/20";
+  if (state === "warning") return "border-amber-700/55 bg-amber-950/25";
+  return "border-rose-800/55 bg-rose-950/25";
+}
+
+function serviceDotClasses(state: AdminSystemServiceState): string {
+  if (state === "ok") return "bg-emerald-400";
+  if (state === "warning") return "bg-amber-400";
+  return "bg-rose-400";
+}
+
+function serviceTitleClasses(state: AdminSystemServiceState): string {
+  if (state === "ok") return "text-emerald-100";
+  if (state === "warning") return "text-amber-100";
+  return "text-rose-100";
+}
+
+function serviceMessageClasses(state: AdminSystemServiceState): string {
+  if (state === "ok") return "text-emerald-300/80";
+  if (state === "warning") return "text-amber-200/90";
+  return "text-rose-200/90";
 }
 
 export function AdminSystemStatusPanel() {
@@ -65,7 +92,9 @@ export function AdminSystemStatusPanel() {
     void load();
   }, [load]);
 
-  const allOk = status?.services.every((service) => service.ok) ?? false;
+  const hasErrors = status?.services.some((service) => service.state === "error") ?? false;
+  const hasWarnings = status?.services.some((service) => service.state === "warning") ?? false;
+  const allHealthy = status?.services.every((service) => service.state === "ok") ?? false;
 
   return (
     <section
@@ -87,11 +116,13 @@ export function AdminSystemStatusPanel() {
                   {formatCheckedAt(status.checkedAt)}
                 </time>
               </p>
-              {!allOk ? (
+              {hasErrors ? (
                 <p className="mt-1 text-xs text-rose-300/90">One or more services are unavailable.</p>
-              ) : (
+              ) : hasWarnings ? (
+                <p className="mt-1 text-xs text-amber-300/90">All services are up; review warnings below.</p>
+              ) : allHealthy ? (
                 <p className="mt-1 text-xs text-emerald-300/90">All monitored services are responding.</p>
-              )}
+              ) : null}
             </>
           ) : null}
         </div>
@@ -112,26 +143,16 @@ export function AdminSystemStatusPanel() {
           {status.services.map((service) => (
             <li
               key={service.id}
-              className={`rounded-lg border px-4 py-3 ${
-                service.ok
-                  ? "border-emerald-800/50 bg-emerald-950/20"
-                  : "border-rose-800/55 bg-rose-950/25"
-              }`}
+              className={`rounded-lg border px-4 py-3 ${serviceCardClasses(service.state)}`}
             >
               <div className="flex items-start gap-3">
                 <span
-                  className={`mt-1.5 inline-flex h-2.5 w-2.5 shrink-0 rounded-full ${
-                    service.ok ? "bg-emerald-400" : "bg-rose-400"
-                  }`}
+                  className={`mt-1.5 inline-flex h-2.5 w-2.5 shrink-0 rounded-full ${serviceDotClasses(service.state)}`}
                   aria-hidden="true"
                 />
                 <div className="min-w-0">
-                  <p className={`text-sm font-medium ${service.ok ? "text-emerald-100" : "text-rose-100"}`}>
-                    {service.label}
-                  </p>
-                  <p className={`mt-0.5 text-xs ${service.ok ? "text-emerald-300/80" : "text-rose-200/90"}`}>
-                    {service.ok ? "Operational" : service.error || "Unavailable"}
-                  </p>
+                  <p className={`text-sm font-medium ${serviceTitleClasses(service.state)}`}>{service.label}</p>
+                  <p className={`mt-0.5 text-xs ${serviceMessageClasses(service.state)}`}>{service.message}</p>
                 </div>
               </div>
             </li>
