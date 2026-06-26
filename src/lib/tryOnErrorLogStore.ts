@@ -154,3 +154,44 @@ export async function markAllTryOnErrorLogsRead(): Promise<void> {
   }
   await redis.set(UNREAD_KEY, "0");
 }
+
+function redisTruthyCount(v: unknown): boolean {
+  if (typeof v === "boolean") return v;
+  if (typeof v === "number") return v > 0;
+  const n = Number(v);
+  return Number.isFinite(n) && n > 0;
+}
+
+/** Deletes one log record and its index entry, then recomputes unread. */
+export async function deleteTryOnErrorLog(id: string): Promise<boolean> {
+  const trimmed = id.trim();
+  if (!trimmed) return false;
+
+  const redis = getRedis();
+  const key = recordKey(trimmed);
+  const [lremResult, existedResult] = await Promise.all([
+    redis.lrem(INDEX_KEY, 0, trimmed),
+    redis.exists(key),
+  ]);
+
+  const removedFromIndex = redisTruthyCount(lremResult);
+  const hadRecordKey = redisTruthyCount(existedResult);
+
+  await redis.del(key).catch(() => {});
+  await syncUnreadTryOnErrorLogCountFromIndex();
+
+  return removedFromIndex || hadRecordKey;
+}
+
+/** Removes every indexed try-on error log from Redis. */
+export async function clearAllTryOnErrorLogs(): Promise<void> {
+  const redis = getRedis();
+  const idsRaw = await redis.lrange(INDEX_KEY, 0, TRY_ON_ERROR_LOGS_INDEX_MAX - 1);
+  const ids = normalizeRedisIdList(idsRaw);
+  if (ids.length) {
+    const keys = ids.map(recordKey);
+    await redis.del(...keys);
+  }
+  await redis.del(INDEX_KEY);
+  await redis.set(UNREAD_KEY, "0");
+}

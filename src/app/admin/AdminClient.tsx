@@ -567,6 +567,8 @@ export default function AdminClient() {
   const [tryOnErrorLogs, setTryOnErrorLogs] = useState<TryOnErrorLogRow[]>([]);
   const [tryOnErrorLogsLoading, setTryOnErrorLogsLoading] = useState(false);
   const [tryOnErrorLogsError, setTryOnErrorLogsError] = useState<string | null>(null);
+  const [tryOnErrorLogDeleteBusyId, setTryOnErrorLogDeleteBusyId] = useState<string | null>(null);
+  const [tryOnErrorLogsClearBusy, setTryOnErrorLogsClearBusy] = useState(false);
 
   const [enterpriseQuotesUnread, setEnterpriseQuotesUnread] = useState(0);
   const [enterpriseQuotes, setEnterpriseQuotes] = useState<EnterpriseQuoteRow[]>([]);
@@ -919,6 +921,93 @@ export default function AdminClient() {
       setTryOnErrorLogs([]);
     } finally {
       setTryOnErrorLogsLoading(false);
+    }
+  }
+
+  async function deleteTryOnErrorLogRow(row: TryOnErrorLogRow) {
+    const confirmed = window.confirm(
+      [
+        "Delete this try-on error log from Redis?",
+        "",
+        row.message.length > 120 ? `${row.message.slice(0, 120)}…` : row.message,
+        "",
+        "This cannot be undone.",
+      ].join("\n"),
+    );
+    if (!confirmed) return;
+
+    setTryOnErrorLogDeleteBusyId(row.id);
+    setTryOnErrorLogsError(null);
+    try {
+      const res = await fetch("/api/admin/try-on-error-logs", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ delete: true, id: row.id }),
+      });
+      const data = (await res.json()) as {
+        ok?: boolean;
+        error?: string;
+        unreadCount?: number;
+        logs?: TryOnErrorLogRow[];
+      };
+      if (!res.ok) {
+        if (data.error === "Unauthorized.") window.location.reload();
+        setTryOnErrorLogsError(data.error || "Could not delete log entry.");
+        return;
+      }
+      const u =
+        typeof data.unreadCount === "number" && Number.isFinite(data.unreadCount)
+          ? Math.max(0, Math.floor(data.unreadCount))
+          : 0;
+      setTryOnErrorLogsUnread(u);
+      setTryOnErrorLogs(Array.isArray(data.logs) ? data.logs : []);
+    } catch (e) {
+      setTryOnErrorLogsError(e instanceof Error ? e.message : "Could not delete log entry.");
+    } finally {
+      setTryOnErrorLogDeleteBusyId(null);
+    }
+  }
+
+  async function clearAllTryOnErrorLogs() {
+    if (tryOnErrorLogs.length === 0) return;
+    const confirmed = window.confirm(
+      [
+        `Delete all ${tryOnErrorLogs.length.toLocaleString()} try-on error logs from Redis?`,
+        "",
+        "This cannot be undone.",
+      ].join("\n"),
+    );
+    if (!confirmed) return;
+
+    setTryOnErrorLogsClearBusy(true);
+    setTryOnErrorLogsError(null);
+    try {
+      const res = await fetch("/api/admin/try-on-error-logs", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ clearAll: true }),
+      });
+      const data = (await res.json()) as {
+        ok?: boolean;
+        error?: string;
+        unreadCount?: number;
+        logs?: TryOnErrorLogRow[];
+      };
+      if (!res.ok) {
+        if (data.error === "Unauthorized.") window.location.reload();
+        setTryOnErrorLogsError(data.error || "Could not clear error logs.");
+        return;
+      }
+      const u =
+        typeof data.unreadCount === "number" && Number.isFinite(data.unreadCount)
+          ? Math.max(0, Math.floor(data.unreadCount))
+          : 0;
+      setTryOnErrorLogsUnread(u);
+      setTryOnErrorLogs(Array.isArray(data.logs) ? data.logs : []);
+    } catch (e) {
+      setTryOnErrorLogsError(e instanceof Error ? e.message : "Could not clear error logs.");
+    } finally {
+      setTryOnErrorLogsClearBusy(false);
     }
   }
 
@@ -1937,7 +2026,7 @@ export default function AdminClient() {
               : activeTab === "reviews"
                 ? subscriptionReviewsLoading
                 : activeTab === "logs"
-                  ? tryOnErrorLogsLoading
+                  ? tryOnErrorLogsLoading || tryOnErrorLogsClearBusy
                   : false;
 
   const wearMeKeyRecord = useMemo(
@@ -4279,12 +4368,29 @@ export default function AdminClient() {
             </section>
           ) : activeTab === "logs" ? (
             <section className="mt-8 w-full overflow-hidden rounded-2xl border border-zinc-800 bg-zinc-900/60 p-6 shadow-sm md:p-8">
-              <h2 className="text-base font-semibold text-zinc-100">Try-on error logs</h2>
-              <p className="mt-1 text-sm text-zinc-400">
-                Failures from <span className="font-mono text-zinc-500">/api/try-on</span> (invalid keys, Fashn errors,
-                timeouts, etc.). Expected quota errors (&quot;Try-on limit exceeded&quot;) are not logged. Opening this tab
-                marks all listed errors as read and clears the badge until new failures occur.
-              </p>
+              <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+                <div className="min-w-0">
+                  <h2 className="text-base font-semibold text-zinc-100">Try-on error logs</h2>
+                  <p className="mt-1 text-sm text-zinc-400">
+                    Failures from <span className="font-mono text-zinc-500">/api/try-on</span> (invalid keys, Fashn
+                    errors, timeouts, etc.). Expected quota errors (&quot;Try-on limit exceeded&quot;) are not logged.
+                    Opening this tab marks all listed errors as read and clears the badge until new failures occur.
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  disabled={
+                    tryOnErrorLogsLoading ||
+                    tryOnErrorLogsClearBusy ||
+                    tryOnErrorLogDeleteBusyId !== null ||
+                    tryOnErrorLogs.length === 0
+                  }
+                  onClick={() => void clearAllTryOnErrorLogs()}
+                  className="inline-flex h-9 shrink-0 items-center justify-center rounded-full border border-red-900/65 bg-red-950/35 px-4 text-xs font-semibold uppercase tracking-wide text-red-200 transition hover:border-red-700/70 hover:bg-red-950/65 disabled:cursor-not-allowed disabled:opacity-40"
+                >
+                  {tryOnErrorLogsClearBusy ? "Clearing…" : "Clear all"}
+                </button>
+              </div>
               {tryOnErrorLogsError ? (
                 <div className="mt-6 rounded-xl border border-red-900/60 bg-red-950/40 px-4 py-3 text-sm text-red-200">
                   {tryOnErrorLogsError}
@@ -4315,11 +4421,25 @@ export default function AdminClient() {
                       >
                         <div className="flex flex-wrap items-start justify-between gap-3">
                           <p className="text-xs text-zinc-500">{when} UTC</p>
-                          {row.statusCode != null ? (
-                            <span className="rounded border border-zinc-700 bg-zinc-900 px-2 py-0.5 font-mono text-[10px] font-semibold uppercase tracking-wide text-zinc-400">
-                              HTTP {row.statusCode}
-                            </span>
-                          ) : null}
+                          <div className="flex shrink-0 flex-wrap items-center gap-2">
+                            {row.statusCode != null ? (
+                              <span className="rounded border border-zinc-700 bg-zinc-900 px-2 py-0.5 font-mono text-[10px] font-semibold uppercase tracking-wide text-zinc-400">
+                                HTTP {row.statusCode}
+                              </span>
+                            ) : null}
+                            <button
+                              type="button"
+                              disabled={
+                                tryOnErrorLogDeleteBusyId !== null ||
+                                tryOnErrorLogsClearBusy ||
+                                tryOnErrorLogsLoading
+                              }
+                              onClick={() => void deleteTryOnErrorLogRow(row)}
+                              className="inline-flex shrink-0 items-center justify-center rounded-lg border border-red-900/65 bg-red-950/35 px-3 py-1.5 text-xs font-semibold uppercase tracking-wide text-red-200 transition hover:border-red-700/70 hover:bg-red-950/65 disabled:cursor-not-allowed disabled:opacity-40"
+                            >
+                              {tryOnErrorLogDeleteBusyId === row.id ? "Deleting…" : "Delete"}
+                            </button>
+                          </div>
                         </div>
                         <p className="mt-3 text-sm leading-relaxed text-rose-100/95">{row.message}</p>
                         <p className="mt-3 text-xs text-zinc-500">
