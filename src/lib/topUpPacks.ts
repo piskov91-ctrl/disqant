@@ -1,8 +1,8 @@
 /** Value for Stripe Checkout Session `metadata.checkout_kind` (webhook routing). */
 export const STRIPE_TOP_UP_CHECKOUT_KIND = "top_up" as const;
 
-/** £0.40 per try-on — fixed packs use the same unit rate (100 × £0.40 = £40). */
-export const TOP_UP_CUSTOM_PENCE_PER_TRY_ON = 40 as const;
+/** £0.30 per try-on — fixed packs use the same unit rate (100 × £0.30 = £30). */
+export const TOP_UP_CUSTOM_PENCE_PER_TRY_ON = 30 as const;
 
 export const TOP_UP_CUSTOM_MIN_TRY_ONS = 50 as const;
 
@@ -11,6 +11,15 @@ export const TOP_UP_CUSTOM_MAX_TRY_ONS = 50_000 as const;
 
 export function customTopUpAmountGbpPence(tryOns: number): number {
   return tryOns * TOP_UP_CUSTOM_PENCE_PER_TRY_ON;
+}
+
+function topUpPackAmountGbpPence(tryOns: number): number {
+  return tryOns * TOP_UP_CUSTOM_PENCE_PER_TRY_ON;
+}
+
+function topUpPackLabel(tryOns: number): string {
+  const pounds = topUpPackAmountGbpPence(tryOns) / 100;
+  return `${tryOns.toLocaleString("en-GB")} try-ons — £${pounds.toLocaleString("en-GB", { maximumFractionDigits: 0 })}`;
 }
 
 /** Validates integer try-on count for custom top-up checkout. */
@@ -42,9 +51,9 @@ export type TopUpPack = {
 };
 
 export const TOP_UP_PACKS: readonly TopUpPack[] = [
-  { id: "100", tryOns: 100, amountGbpPence: 4000, label: "100 try-ons — £40" },
-  { id: "300", tryOns: 300, amountGbpPence: 12000, label: "300 try-ons — £120" },
-  { id: "500", tryOns: 500, amountGbpPence: 20000, label: "500 try-ons — £200" },
+  { id: "100", tryOns: 100, amountGbpPence: topUpPackAmountGbpPence(100), label: topUpPackLabel(100) },
+  { id: "300", tryOns: 300, amountGbpPence: topUpPackAmountGbpPence(300), label: topUpPackLabel(300) },
+  { id: "500", tryOns: 500, amountGbpPence: topUpPackAmountGbpPence(500), label: topUpPackLabel(500) },
 ] as const;
 
 const byId: Record<TopUpPackId, TopUpPack> = {
