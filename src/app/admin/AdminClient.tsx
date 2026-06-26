@@ -10,6 +10,7 @@ import { AdminWearMeClient } from "@/app/admin/AdminWearMeClient";
 import AdminIntegrationGuide from "@/app/admin/AdminIntegrationGuide";
 import { EnterprisePriceCalculatorModal } from "@/app/admin/EnterprisePriceCalculator";
 import { SubscriptionCalcPanel } from "@/app/admin/SubscriptionCalcPanel";
+import { AdminSystemStatusPanel } from "@/app/admin/AdminSystemStatusPanel";
 import { getNextMonthlyResetUtcDateForDisplay } from "@/lib/billingCycle";
 import { storedOrDerivedBasePlanLimit, totalTryOnsUsed, clientTryOnFullyBlocked } from "@/lib/clientTryOnBuckets";
 import { tryOnUsageFillStyle } from "@/lib/tryOnUsageBarStyle";
@@ -2627,6 +2628,8 @@ export default function AdminClient() {
             </div>
             </div>
           </div>
+
+          <AdminSystemStatusPanel />
 
           <section
             className="mt-6 rounded-xl border border-zinc-800 bg-zinc-900/60 px-4 py-4 md:px-6"
