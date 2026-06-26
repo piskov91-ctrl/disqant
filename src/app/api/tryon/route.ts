@@ -8,6 +8,7 @@ import {
 } from "@/lib/platformAnalytics";
 import { recordTryOnProductUsage } from "@/lib/tryOnAnalytics";
 import { getRetailerSessionUser } from "@/lib/retailerAuth";
+import { retailerHasActiveSubscriptionForAds } from "@/lib/retailerWidgetAd";
 import {
   resolveEmbedCorsAllowOrigin,
   TRY_ON_EMBED_CORS_BASE_HEADERS,
@@ -190,6 +191,87 @@ async function startPrediction(params: {
   return { ok: true as const, id, headers, baseUrl };
 }
 
+type ResolvedTryOnApiKey =
+  | { ok: true; apiKey: string; isRetailerTryOn: boolean; usedAnonymousDemoKey: boolean }
+  | { ok: false; error: string; status: number; apiKeyForLog: string | null };
+
+async function resolveTryOnClientApiKey(req: Request): Promise<ResolvedTryOnApiKey> {
+  const headerApiKey =
+    req.headers.get("x-api-key") ||
+    req.headers.get("x-fit-room-api-key") ||
+    req.headers.get("x-disquant-api-key") ||
+    (req.headers.get("authorization")?.startsWith("Bearer ")
+      ? req.headers.get("authorization")!.slice("Bearer ".length)
+      : null);
+
+  const sessionUser = await getRetailerSessionUser();
+  if (sessionUser) {
+    if (!retailerHasActiveSubscriptionForAds(sessionUser)) {
+      return {
+        ok: false,
+        error: "Your subscription is not active. Subscribe or renew to run try-ons on your account.",
+        status: 403,
+        apiKeyForLog: headerApiKey?.trim() || null,
+      };
+    }
+
+    const linkedId = sessionUser.clientId?.trim() || "";
+    if (!linkedId) {
+      return {
+        ok: false,
+        error: "No API key is linked to your account. Subscribe or contact support.",
+        status: 403,
+        apiKeyForLog: headerApiKey?.trim() || null,
+      };
+    }
+
+    const client = await getClientKeyRecordById(linkedId);
+    const linkedKey = client?.key?.trim() || "";
+    if (!linkedKey || client?.deletedAt) {
+      return {
+        ok: false,
+        error: "Your account API key is unavailable. Please contact support.",
+        status: 403,
+        apiKeyForLog: headerApiKey?.trim() || null,
+      };
+    }
+
+    return {
+      ok: true,
+      apiKey: linkedKey,
+      isRetailerTryOn: true,
+      usedAnonymousDemoKey: false,
+    };
+  }
+
+  const trimmedHeader = headerApiKey?.trim() || "";
+  if (trimmedHeader) {
+    return {
+      ok: true,
+      apiKey: trimmedHeader,
+      isRetailerTryOn: true,
+      usedAnonymousDemoKey: false,
+    };
+  }
+
+  const demoKey = process.env.DEMO_API_KEY?.trim() || "";
+  if (!demoKey) {
+    return {
+      ok: false,
+      error: "Try It Free is not configured. Set DEMO_API_KEY for this environment.",
+      status: 503,
+      apiKeyForLog: null,
+    };
+  }
+
+  return {
+    ok: true,
+    apiKey: demoKey,
+    isRetailerTryOn: false,
+    usedAnonymousDemoKey: true,
+  };
+}
+
 export async function POST(req: Request) {
   const corsAllowOrigin = resolveEmbedCorsAllowOrigin(req.headers.get("Origin"));
   const serverTrace = randomUUID();
@@ -199,46 +281,14 @@ export async function POST(req: Request) {
     clientTrace,
   });
 
-  const clientApiKey =
-    req.headers.get("x-api-key") ||
-    req.headers.get("x-fit-room-api-key") ||
-    req.headers.get("x-disquant-api-key") ||
-    (req.headers.get("authorization")?.startsWith("Bearer ")
-      ? req.headers.get("authorization")!.slice("Bearer ".length)
-      : null);
-
-  let effectiveClientApiKey = clientApiKey || null;
-  if (!effectiveClientApiKey) {
-    const user = await getRetailerSessionUser();
-    const linkedId = user?.clientId?.trim() || "";
-    if (linkedId) {
-      const client = await getClientKeyRecordById(linkedId);
-      if (client?.key?.trim()) {
-        effectiveClientApiKey = client.key.trim();
-      }
-    }
-  }
-  if (!effectiveClientApiKey) {
-    effectiveClientApiKey = process.env.DEMO_API_KEY?.trim() || null;
-  }
-  if (!effectiveClientApiKey) {
-    return tryOnErrorJson(
-      "Try It Free is not configured. Set DEMO_API_KEY for this environment.",
-      503,
-      null,
-      corsAllowOrigin,
-    );
+  const resolved = await resolveTryOnClientApiKey(req);
+  if (!resolved.ok) {
+    return tryOnErrorJson(resolved.error, resolved.status, resolved.apiKeyForLog, corsAllowOrigin);
   }
 
-  /**
-   * Retailer/store try-on: any successful run billed to a real client key, including the dashboard path that injects the
-   * linked storefront key from the signed-in session (no `x-api-key` header). Only the anonymous fall-back to
-   * `DEMO_API_KEY` when the caller sent no key is treated as non-retailer for per-client timing buckets.
-   */
-  const demoKeyTrim = process.env.DEMO_API_KEY?.trim() ?? "";
-  const usedAnonymousDemoKey =
-    !clientApiKey && demoKeyTrim.length > 0 && effectiveClientApiKey === demoKeyTrim;
-  const isRetailerTryOn = !usedAnonymousDemoKey;
+  const effectiveClientApiKey = resolved.apiKey;
+  const isRetailerTryOn = resolved.isRetailerTryOn;
+  const usedAnonymousDemoKey = resolved.usedAnonymousDemoKey;
 
   let client: Awaited<ReturnType<typeof assertClientCanUseByApiKey>>;
   try {
@@ -252,7 +302,7 @@ export async function POST(req: Request) {
           {
             error: msg,
             code: "USAGE_LIMIT",
-            keyKind: clientApiKey ? "client" : "demo",
+            keyKind: usedAnonymousDemoKey ? "demo" : "client",
           },
           { status: 403 },
         ),
