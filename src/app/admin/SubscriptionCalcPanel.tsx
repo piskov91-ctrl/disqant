@@ -394,7 +394,10 @@ export function SubscriptionCalcPanel() {
               {saving ? "Saving…" : "Save plans"}
             </button>
             <p className="text-xs text-zinc-600">
-              Redis key: <span className="font-mono text-zinc-500">fit-room:subscriptionPlans:catalog</span>
+              Redis keys:{" "}
+              <span className="font-mono text-zinc-500">fit-room:subscriptionPlans:catalog</span>,{" "}
+              <span className="font-mono text-zinc-500">fit-room:stripe:env:subscription-price-ids</span>{" "}
+              (<span className="font-mono text-zinc-500">STRIPE_PRICE_SUBSCRIPTION_*</span>)
             </p>
           </div>
         </>

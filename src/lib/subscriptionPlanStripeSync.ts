@@ -1,7 +1,10 @@
 import type Stripe from "stripe";
 import { getStripe, isStripeLiveMode } from "@/lib/stripeServer";
 import type { StoredSubscriptionPlanCatalog } from "@/lib/subscriptionPlanCatalogStore";
-import { stripeCatalogSubscriptionPriceId } from "@/lib/subscriptionPlansServer";
+import {
+  persistSubscriptionStripePriceEnvFromCatalog,
+  resolveStripeCatalogSubscriptionPriceId,
+} from "@/lib/subscriptionStripePriceEnvStore";
 import {
   parseSubscriptionPlanKey,
   SUBSCRIPTION_PLAN_KEYS_ORDERED,
@@ -14,8 +17,8 @@ const SUBSCRIPTION_MIGRATION_STATUSES: Stripe.SubscriptionListParams["status"][]
   "past_due",
 ];
 
-function stripeEnvCatalogSubscriptionPriceId(planKey: SubscriptionPlanKey): string | undefined {
-  return stripeCatalogSubscriptionPriceId(planKey);
+function stripeEnvCatalogSubscriptionPriceId(planKey: SubscriptionPlanKey): Promise<string | undefined> {
+  return resolveStripeCatalogSubscriptionPriceId(planKey);
 }
 
 function stripeProductIdFromRef(product: string | { id: string } | null | undefined): string | null {
@@ -56,6 +59,7 @@ export type SubscriptionPlanMigrationSummary = {
 export type SubscriptionPlanStripeSyncResult = {
   catalog: StoredSubscriptionPlanCatalog;
   subscriptionMigrations: SubscriptionPlanMigrationSummary[];
+  stripePriceEnv: Awaited<ReturnType<typeof persistSubscriptionStripePriceEnvFromCatalog>>;
 };
 
 type PriceSyncResult = {
@@ -256,7 +260,7 @@ export async function syncSubscriptionPlanStripePrices(params: {
   for (const planKey of SUBSCRIPTION_PLAN_KEYS_ORDERED) {
     const row = plans[planKey];
     const previousRow = params.previous?.plans[planKey];
-    const envPriceId = stripeEnvCatalogSubscriptionPriceId(planKey);
+    const envPriceId = await stripeEnvCatalogSubscriptionPriceId(planKey);
 
     const productId = await resolveStripeProductId({ planKey, row, envPriceId });
     const desiredProductName = subscriptionProductName(row.name);
@@ -302,5 +306,8 @@ export async function syncSubscriptionPlanStripePrices(params: {
     }
   }
 
-  return { catalog: { ...params.catalog, plans }, subscriptionMigrations };
+  const catalog = { ...params.catalog, plans };
+  const stripePriceEnv = await persistSubscriptionStripePriceEnvFromCatalog(catalog);
+
+  return { catalog, subscriptionMigrations, stripePriceEnv };
 }

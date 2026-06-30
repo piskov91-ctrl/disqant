@@ -2,10 +2,11 @@ import type Stripe from "stripe";
 import { getStripe } from "@/lib/stripeServer";
 import { parseSubscriptionPlanKey } from "@/lib/subscriptionPlans";
 import type { SubscriptionPlanKey } from "@/lib/subscriptionPlansData";
+import { buildSubscriptionPriceIdToPlanMap } from "@/lib/subscriptionPlansServer";
 import {
-  buildSubscriptionPriceIdToPlanMap,
-  stripeCatalogSubscriptionPriceId,
-} from "@/lib/subscriptionPlansServer";
+  resolveStripeCatalogSubscriptionPriceId,
+  type StripeSubscriptionPriceEnvRecord,
+} from "@/lib/subscriptionStripePriceEnvStore";
 
 function stripePriceIdFromRef(price: string | { id: string } | null | undefined): string | null {
   if (typeof price === "string" && price.trim().length > 0) return price.trim();
@@ -61,19 +62,23 @@ export async function describeCheckoutSessionPriceResolution(session: Stripe.Che
   metadataPlan: string | null;
   resolvedPlan: SubscriptionPlanKey | null;
   lineItemPriceIds: string[];
-  envPriceIds: Partial<Record<SubscriptionPlanKey, string>>;
+  redisPriceEnv: StripeSubscriptionPriceEnvRecord | null;
+  effectivePriceIds: Partial<Record<SubscriptionPlanKey, string>>;
 }> {
   const lineItemPriceIds = await checkoutSessionStripePriceIds(session);
   const resolvedPlan = await resolvePlanKeyFromCheckoutSession(session);
-  const envPriceIds: Partial<Record<SubscriptionPlanKey, string>> = {};
+  const effectivePriceIds: Partial<Record<SubscriptionPlanKey, string>> = {};
   for (const key of ["starter", "boutique", "studio", "premium"] as const) {
-    const id = stripeCatalogSubscriptionPriceId(key);
-    if (id) envPriceIds[key] = id;
+    const id = await resolveStripeCatalogSubscriptionPriceId(key);
+    if (id) effectivePriceIds[key] = id;
   }
+  const { getSubscriptionStripePriceEnvFromRedis } = await import("@/lib/subscriptionStripePriceEnvStore");
+  const redisPriceEnv = await getSubscriptionStripePriceEnvFromRedis();
   return {
     metadataPlan: typeof session.metadata?.plan === "string" ? session.metadata.plan : null,
     resolvedPlan,
     lineItemPriceIds,
-    envPriceIds,
+    redisPriceEnv,
+    effectivePriceIds,
   };
 }

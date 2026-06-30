@@ -3,7 +3,11 @@ import {
   getStoredSubscriptionPlanCatalog,
   type StoredSubscriptionPlanCatalog,
 } from "@/lib/subscriptionPlanCatalogStore";
-import { getStripe, isStripeLiveMode } from "@/lib/stripeServer";
+import { getStripe } from "@/lib/stripeServer";
+import {
+  resolveStripeCatalogSubscriptionPriceId,
+  stripeCatalogSubscriptionPriceIdFromProcessEnv,
+} from "@/lib/subscriptionStripePriceEnvStore";
 import {
   SUBSCRIPTION_PLAN_KEYS_ORDERED,
   type SubscriptionPlanCatalog,
@@ -49,27 +53,20 @@ async function stripePriceRetrievable(priceId: string): Promise<boolean> {
 
 /**
  * Price ID → plan map for webhook fulfillment and checkout.
- * Live mode (`sk_live_`): env catalog prices win over Redis (avoids stale test Price IDs after go-live).
- * Test mode: Redis-synced Subscription Calc prices win over env.
+ * Uses Redis `STRIPE_PRICE_SUBSCRIPTION_*` overrides (Subscription Calc save), then catalog, then process env.
  */
 export async function buildSubscriptionPriceIdToPlanMap(): Promise<Map<string, SubscriptionPlanKey>> {
   const stored = await getStoredSubscriptionPlanCatalog();
   const map = new Map<string, SubscriptionPlanKey>();
-  const live = isStripeLiveMode();
 
   for (const planKey of SUBSCRIPTION_PLAN_KEYS_ORDERED) {
-    const envId = stripeCatalogSubscriptionPriceId(planKey);
-    const redisId = stored?.plans[planKey]?.stripePriceId?.trim();
+    const effectiveId = await resolveStripeCatalogSubscriptionPriceId(planKey);
+    const catalogId = stored?.plans[planKey]?.stripePriceId?.trim();
+    const processEnvId = stripeCatalogSubscriptionPriceIdFromProcessEnv(planKey);
 
-    if (live) {
-      if (envId) map.set(envId, planKey);
-      if (redisId && !map.has(redisId)) {
-        if (await stripePriceRetrievable(redisId)) map.set(redisId, planKey);
-      }
-    } else {
-      if (redisId) map.set(redisId, planKey);
-      if (envId && !map.has(envId)) map.set(envId, planKey);
-    }
+    if (effectiveId) map.set(effectiveId, planKey);
+    if (catalogId && !map.has(catalogId)) map.set(catalogId, planKey);
+    if (processEnvId && !map.has(processEnvId)) map.set(processEnvId, planKey);
   }
 
   return map;
@@ -80,38 +77,24 @@ export async function resolvePlanKeyFromStripePriceId(priceId: string): Promise<
   return map.get(priceId.trim()) ?? null;
 }
 
-/** Stripe Price ID for subscription Checkout — live env vars override stale Redis test IDs. */
+/** Stripe Price ID for subscription Checkout — Redis env overrides, then catalog, then process env. */
 export async function resolveSubscriptionCheckoutPriceId(
   planKey: SubscriptionPlanKey,
 ): Promise<string | undefined> {
-  const envId = stripeCatalogSubscriptionPriceId(planKey);
+  const fromRedisEnv = await resolveStripeCatalogSubscriptionPriceId(planKey);
+  if (fromRedisEnv) return fromRedisEnv;
+
   const stored = await getStoredSubscriptionPlanCatalog();
-  const redisId = stored?.plans[planKey]?.stripePriceId?.trim();
+  const catalogId = stored?.plans[planKey]?.stripePriceId?.trim();
+  if (catalogId && (await stripePriceRetrievable(catalogId))) return catalogId;
 
-  if (isStripeLiveMode()) {
-    if (envId) return envId;
-    if (redisId && (await stripePriceRetrievable(redisId))) return redisId;
-    return undefined;
-  }
-
-  if (redisId) return redisId;
-  return envId;
+  return stripeCatalogSubscriptionPriceIdFromProcessEnv(planKey);
 }
 
 /**
- * Optional Stripe recurring Price IDs (Dashboard catalog). When set, subscription Checkout uses `{ price, quantity: 1 }`
- * only — recurring invoices stay tied to that catalog price (base plan only). Top-ups remain separate `mode: payment`
- * sessions and never attach as subscription items.
- *
- * `boutique` / `studio` fall back to older `STRIPE_PRICE_SUBSCRIPTION_GROWTH` / `STRIPE_PRICE_SUBSCRIPTION_PRO` env names.
+ * @deprecated Prefer {@link resolveStripeCatalogSubscriptionPriceId} for runtime resolution.
+ * Process env only (Vercel-deployed `STRIPE_PRICE_SUBSCRIPTION_*`).
  */
 export function stripeCatalogSubscriptionPriceId(planKey: SubscriptionPlanKey): string | undefined {
-  const pick = (s: string | undefined) => (s && s.trim().length > 0 ? s.trim() : undefined);
-  const byKey: Record<SubscriptionPlanKey, string | undefined> = {
-    starter: pick(process.env.STRIPE_PRICE_SUBSCRIPTION_STARTER),
-    boutique: pick(process.env.STRIPE_PRICE_SUBSCRIPTION_BOUTIQUE) ?? pick(process.env.STRIPE_PRICE_SUBSCRIPTION_GROWTH),
-    studio: pick(process.env.STRIPE_PRICE_SUBSCRIPTION_STUDIO) ?? pick(process.env.STRIPE_PRICE_SUBSCRIPTION_PRO),
-    premium: pick(process.env.STRIPE_PRICE_SUBSCRIPTION_PREMIUM),
-  };
-  return byKey[planKey];
+  return stripeCatalogSubscriptionPriceIdFromProcessEnv(planKey);
 }

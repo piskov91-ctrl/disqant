@@ -126,7 +126,7 @@ export async function POST(req: Request) {
   };
 
   try {
-    const { catalog: synced, subscriptionMigrations } = await syncSubscriptionPlanStripePrices({
+    const { catalog: synced, subscriptionMigrations, stripePriceEnv } = await syncSubscriptionPlanStripePrices({
       catalog: next,
       previous: base,
     });
@@ -138,6 +138,7 @@ export async function POST(req: Request) {
     return Response.json({
       ok: true,
       ...catalogResponse(synced),
+      stripePriceEnv,
       subscriptionMigrations,
       subscriptionMigrationSummary: {
         updatedCount: totalUpdated,
