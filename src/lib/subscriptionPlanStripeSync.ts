@@ -1,6 +1,7 @@
 import type Stripe from "stripe";
-import { getStripe } from "@/lib/stripeServer";
+import { getStripe, isStripeLiveMode } from "@/lib/stripeServer";
 import type { StoredSubscriptionPlanCatalog } from "@/lib/subscriptionPlanCatalogStore";
+import { stripeCatalogSubscriptionPriceId } from "@/lib/subscriptionPlansServer";
 import {
   parseSubscriptionPlanKey,
   SUBSCRIPTION_PLAN_KEYS_ORDERED,
@@ -14,14 +15,7 @@ const SUBSCRIPTION_MIGRATION_STATUSES: Stripe.SubscriptionListParams["status"][]
 ];
 
 function stripeEnvCatalogSubscriptionPriceId(planKey: SubscriptionPlanKey): string | undefined {
-  const pick = (s: string | undefined) => (s && s.trim().length > 0 ? s.trim() : undefined);
-  const byKey: Record<SubscriptionPlanKey, string | undefined> = {
-    starter: pick(process.env.STRIPE_PRICE_SUBSCRIPTION_STARTER),
-    boutique: pick(process.env.STRIPE_PRICE_SUBSCRIPTION_BOUTIQUE) ?? pick(process.env.STRIPE_PRICE_SUBSCRIPTION_GROWTH),
-    studio: pick(process.env.STRIPE_PRICE_SUBSCRIPTION_STUDIO) ?? pick(process.env.STRIPE_PRICE_SUBSCRIPTION_PRO),
-    premium: pick(process.env.STRIPE_PRICE_SUBSCRIPTION_PREMIUM),
-  };
-  return byKey[planKey];
+  return stripeCatalogSubscriptionPriceId(planKey);
 }
 
 function stripeProductIdFromRef(product: string | { id: string } | null | undefined): string | null {
@@ -101,11 +95,18 @@ async function ensureActiveStripePrice(params: {
   envPriceId: string | undefined;
 }): Promise<PriceSyncResult> {
   const stripe = getStripe();
-  const candidateIds = [
-    params.row.stripePriceId?.trim(),
-    params.previousRow?.stripePriceId?.trim(),
-    params.envPriceId?.trim(),
-  ].filter((id): id is string => Boolean(id));
+  const envPriceId = params.envPriceId?.trim();
+  const candidateIds = isStripeLiveMode()
+    ? [
+        envPriceId,
+        params.row.stripePriceId?.trim(),
+        params.previousRow?.stripePriceId?.trim(),
+      ].filter((id): id is string => Boolean(id))
+    : [
+        params.row.stripePriceId?.trim(),
+        params.previousRow?.stripePriceId?.trim(),
+        envPriceId,
+      ].filter((id): id is string => Boolean(id));
 
   for (const priceId of candidateIds) {
     try {

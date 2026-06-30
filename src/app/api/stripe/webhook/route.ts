@@ -1,5 +1,5 @@
 import type Stripe from "stripe";
-import { getStripe } from "@/lib/stripeServer";
+import { getStripe, isStripeLiveMode } from "@/lib/stripeServer";
 import {
   claimStripeCheckoutProcessing,
   fulfillCheckoutSessionIfPaid,
@@ -7,6 +7,10 @@ import {
   isRetailerPaymentLinkCheckout,
   releaseStripeCheckoutProcessing,
 } from "@/lib/stripeFulfillment";
+import {
+  describeCheckoutSessionPriceResolution,
+  resolvePlanKeyFromCheckoutSession,
+} from "@/lib/stripeCheckoutPlan";
 
 export const runtime = "nodejs";
 
@@ -39,7 +43,23 @@ export async function POST(req: Request): Promise<Response> {
     if (event.type === "checkout.session.completed") {
       const session = event.data.object as Stripe.Checkout.Session;
 
-      if (session.payment_status === "paid" && isRetailerPaymentLinkCheckout(session)) {
+      if (session.mode === "subscription" || session.metadata?.plan) {
+        const priceDebug = await describeCheckoutSessionPriceResolution(session);
+        console.log("[stripe] checkout.session.completed plan resolution", {
+          sessionId: session.id,
+          liveMode: isStripeLiveMode(),
+          paymentStatus: session.payment_status,
+          ...priceDebug,
+        });
+      }
+
+      const catalogPlan = await resolvePlanKeyFromCheckoutSession(session);
+      const isEnterprisePaymentLink =
+        session.payment_status === "paid" &&
+        isRetailerPaymentLinkCheckout(session) &&
+        catalogPlan == null;
+
+      if (isEnterprisePaymentLink) {
         const claimed = await claimStripeCheckoutProcessing(session.id);
         if (claimed) {
           try {

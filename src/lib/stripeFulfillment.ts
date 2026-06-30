@@ -11,6 +11,7 @@ import { subscriptionPlanCap } from "@/lib/clientTryOnBuckets";
 import { attachStripeBillingIds, getRetailerById, linkRetailerToClientId, type RetailerUser } from "@/lib/retailerAuth";
 import { parseSubscriptionPlanKey } from "@/lib/subscriptionPlans";
 import { getSubscriptionPlanDefinitionAsync } from "@/lib/subscriptionPlansServer";
+import { resolvePlanKeyFromCheckoutSession } from "@/lib/stripeCheckoutPlan";
 import {
   queueRetailerEnterprisePaymentConfirmationEmail,
   queueRetailerSubscriptionConfirmationEmail,
@@ -186,15 +187,15 @@ async function fulfillPaidTopUpCheckoutSession(session: Stripe.Checkout.Session)
  * Idempotency lock must be claimed by the webhook handler before calling.
  */
 async function fulfillPaidSubscriptionCheckoutSession(session: Stripe.Checkout.Session): Promise<void> {
-  const planRaw = session.metadata?.plan ?? "";
-  const planKey = parseSubscriptionPlanKey(planRaw);
+  const planKey = await resolvePlanKeyFromCheckoutSession(session);
   const retailerUserId = (session.metadata?.retailer_user_id ?? session.client_reference_id ?? "").trim();
 
   if (!retailerUserId || !planKey) {
     console.error("[stripe] checkout session missing valid fulfillment metadata", {
       sessionId: session.id,
       retailerUserId: retailerUserId || null,
-      plan: planRaw || null,
+      plan: session.metadata?.plan ?? null,
+      mode: session.mode,
     });
     throw new Error("Invalid Stripe checkout metadata for fulfillment.");
   }

@@ -3,6 +3,7 @@ import {
   getStoredSubscriptionPlanCatalog,
   type StoredSubscriptionPlanCatalog,
 } from "@/lib/subscriptionPlanCatalogStore";
+import { getStripe, isStripeLiveMode } from "@/lib/stripeServer";
 import {
   SUBSCRIPTION_PLAN_KEYS_ORDERED,
   type SubscriptionPlanCatalog,
@@ -37,14 +38,64 @@ export async function getSubscriptionPlanDefinitionAsync(key: SubscriptionPlanKe
   return catalog[key];
 }
 
-/** Redis-synced Stripe Price ID for checkout, then optional env catalog fallback. */
+async function stripePriceRetrievable(priceId: string): Promise<boolean> {
+  try {
+    await getStripe().prices.retrieve(priceId);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * Price ID → plan map for webhook fulfillment and checkout.
+ * Live mode (`sk_live_`): env catalog prices win over Redis (avoids stale test Price IDs after go-live).
+ * Test mode: Redis-synced Subscription Calc prices win over env.
+ */
+export async function buildSubscriptionPriceIdToPlanMap(): Promise<Map<string, SubscriptionPlanKey>> {
+  const stored = await getStoredSubscriptionPlanCatalog();
+  const map = new Map<string, SubscriptionPlanKey>();
+  const live = isStripeLiveMode();
+
+  for (const planKey of SUBSCRIPTION_PLAN_KEYS_ORDERED) {
+    const envId = stripeCatalogSubscriptionPriceId(planKey);
+    const redisId = stored?.plans[planKey]?.stripePriceId?.trim();
+
+    if (live) {
+      if (envId) map.set(envId, planKey);
+      if (redisId && !map.has(redisId)) {
+        if (await stripePriceRetrievable(redisId)) map.set(redisId, planKey);
+      }
+    } else {
+      if (redisId) map.set(redisId, planKey);
+      if (envId && !map.has(envId)) map.set(envId, planKey);
+    }
+  }
+
+  return map;
+}
+
+export async function resolvePlanKeyFromStripePriceId(priceId: string): Promise<SubscriptionPlanKey | null> {
+  const map = await buildSubscriptionPriceIdToPlanMap();
+  return map.get(priceId.trim()) ?? null;
+}
+
+/** Stripe Price ID for subscription Checkout — live env vars override stale Redis test IDs. */
 export async function resolveSubscriptionCheckoutPriceId(
   planKey: SubscriptionPlanKey,
 ): Promise<string | undefined> {
+  const envId = stripeCatalogSubscriptionPriceId(planKey);
   const stored = await getStoredSubscriptionPlanCatalog();
-  const fromCatalog = stored?.plans[planKey]?.stripePriceId?.trim();
-  if (fromCatalog) return fromCatalog;
-  return stripeCatalogSubscriptionPriceId(planKey);
+  const redisId = stored?.plans[planKey]?.stripePriceId?.trim();
+
+  if (isStripeLiveMode()) {
+    if (envId) return envId;
+    if (redisId && (await stripePriceRetrievable(redisId))) return redisId;
+    return undefined;
+  }
+
+  if (redisId) return redisId;
+  return envId;
 }
 
 /**
