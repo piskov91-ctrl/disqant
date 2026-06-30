@@ -1,5 +1,6 @@
 import { getClientKeyRecordById } from "@/lib/apiKeyStore";
 import { getRetailerSessionUser } from "@/lib/retailerAuth";
+import { isRetailerInternalDemo } from "@/lib/retailerInternalDemo";
 import {
   normalizeWidgetAdBanners,
   normalizeWidgetAdBannersFromUrls,
@@ -20,7 +21,8 @@ async function requireAdsRetailer() {
   const user = await getRetailerSessionUser();
   if (!user) return { error: Response.json({ error: "Unauthorized." }, { status: 401 }) };
 
-  if (!retailerHasActiveSubscriptionForAds(user)) {
+  const internalDemo = await isRetailerInternalDemo(user.id);
+  if (!internalDemo && !retailerHasActiveSubscriptionForAds(user)) {
     return {
       error: Response.json(
         { error: "Ads are available with an active subscription." },

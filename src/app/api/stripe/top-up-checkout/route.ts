@@ -1,5 +1,6 @@
 import { getStripe, checkoutSiteOrigin } from "@/lib/stripeServer";
 import { getRetailerSessionUser, retailerEligibleForTryOnTopUps } from "@/lib/retailerAuth";
+import { isRetailerInternalDemo } from "@/lib/retailerInternalDemo";
 import { loadClientSubscriptionSnapshotWithoutPendingApply } from "@/lib/apiKeyStore";
 import { storedOrDerivedBasePlanLimit } from "@/lib/clientTryOnBuckets";
 import { maxTopUpPurchasesPerBillingCycleForCatalogBaseLimit } from "@/lib/subscriptionPlans";
@@ -54,7 +55,7 @@ export async function POST(req: Request) {
     return Response.json({ error: "Unauthorized." }, { status: 401 });
   }
 
-  if (!retailerEligibleForTryOnTopUps(user)) {
+  if ((await isRetailerInternalDemo(user.id)) || !retailerEligibleForTryOnTopUps(user)) {
     return Response.json(
       {
         error:

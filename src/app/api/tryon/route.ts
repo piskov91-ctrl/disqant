@@ -1,6 +1,12 @@
 import { randomUUID } from "node:crypto";
 import { cookies } from "next/headers";
-import { assertClientCanUseByApiKey, getClientKeyRecordById, incrementUsageOrThrow } from "@/lib/apiKeyStore";
+import {
+  assertClientCanUseByApiKey,
+  getClientByApiKey,
+  getClientKeyRecordById,
+  incrementUsageOrThrow,
+} from "@/lib/apiKeyStore";
+import { isClientKeyInternalDemo, isRetailerInternalDemo } from "@/lib/retailerInternalDemo";
 import {
   DEMO_ANALYTICS_SESSION_COOKIE,
   getRequestClientIp,
@@ -195,6 +201,12 @@ type ResolvedTryOnApiKey =
   | { ok: true; apiKey: string; isRetailerTryOn: boolean; usedAnonymousDemoKey: boolean }
   | { ok: false; error: string; status: number; apiKeyForLog: string | null };
 
+async function isClientKeyInternalDemoByApiKey(apiKey: string): Promise<boolean> {
+  const rec = await getClientByApiKey(apiKey);
+  if (!rec) return false;
+  return isClientKeyInternalDemo(rec.id);
+}
+
 async function resolveTryOnClientApiKey(req: Request): Promise<ResolvedTryOnApiKey> {
   const headerApiKey =
     req.headers.get("x-api-key") ||
@@ -206,7 +218,8 @@ async function resolveTryOnClientApiKey(req: Request): Promise<ResolvedTryOnApiK
 
   const sessionUser = await getRetailerSessionUser();
   if (sessionUser) {
-    if (!retailerHasActiveSubscriptionForAds(sessionUser)) {
+    const internalDemo = await isRetailerInternalDemo(sessionUser.id);
+    if (!internalDemo && !retailerHasActiveSubscriptionForAds(sessionUser)) {
       return {
         ok: false,
         error: "Your subscription is not active. Subscribe or renew to run try-ons on your account.",
@@ -290,9 +303,16 @@ export async function POST(req: Request) {
   const isRetailerTryOn = resolved.isRetailerTryOn;
   const usedAnonymousDemoKey = resolved.usedAnonymousDemoKey;
 
-  let client: Awaited<ReturnType<typeof assertClientCanUseByApiKey>>;
+  let client: NonNullable<Awaited<ReturnType<typeof getClientByApiKey>>>;
+  const skipUsageBilling = await isClientKeyInternalDemoByApiKey(effectiveClientApiKey);
   try {
-    client = await assertClientCanUseByApiKey(effectiveClientApiKey);
+    if (skipUsageBilling) {
+      const rec = await getClientByApiKey(effectiveClientApiKey);
+      if (!rec) throw new Error("Unauthorized.");
+      client = rec;
+    } else {
+      client = await assertClientCanUseByApiKey(effectiveClientApiKey);
+    }
   } catch (e) {
     const msg = e instanceof Error ? e.message : "Unauthorized.";
     const isUsage = msg === "Try-on limit exceeded.";
@@ -372,15 +392,17 @@ export async function POST(req: Request) {
   });
   if (result.ok) {
     const at = new Date().toISOString();
-    try {
-      await incrementUsageOrThrow(client.id);
-      void recordTryOnProductUsage({
-        clientId: client.id,
-        productImageUrl: productImageUrlField,
-        at,
-      });
-    } catch {
-      // Usage enforcement is checked before starting; ignore rare race here.
+    if (!skipUsageBilling) {
+      try {
+        await incrementUsageOrThrow(client.id);
+        void recordTryOnProductUsage({
+          clientId: client.id,
+          productImageUrl: productImageUrlField,
+          at,
+        });
+      } catch {
+        // Usage enforcement is checked before starting; ignore rare race here.
+      }
     }
     void recordTryOnCompleted({
       isRetailer: isRetailerTryOn,

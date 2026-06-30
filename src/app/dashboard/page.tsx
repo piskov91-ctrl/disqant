@@ -6,6 +6,7 @@ import { Header } from "@/components/Header";
 import { getClientKeyRecordById } from "@/lib/apiKeyStore";
 import { retailerWelcomeGreetingName } from "@/lib/retailerDisplayName";
 import { getRetailerSessionUser, retailerEligibleForTryOnTopUps } from "@/lib/retailerAuth";
+import { isRetailerInternalDemo } from "@/lib/retailerInternalDemo";
 import { retailerHasActiveSubscriptionForAds } from "@/lib/retailerWidgetAd";
 import { storedOrDerivedBasePlanLimit } from "@/lib/clientTryOnBuckets";
 import { getNextMonthlyResetUtcDateForDisplay, resolveBillingAnchorDay } from "@/lib/billingCycle";
@@ -56,6 +57,7 @@ export default async function DashboardPage() {
   if (!user) redirect("/login?next=/dashboard");
 
   const greeting = retailerWelcomeGreetingName(user);
+  const isInternalDemo = await isRetailerInternalDemo(user.id);
 
   const client = user.clientId ? await getClientKeyRecordById(user.clientId) : null;
 
@@ -81,6 +83,34 @@ export default async function DashboardPage() {
   }
 
   if (!client) {
+    if (isInternalDemo) {
+      return (
+        <>
+          <Header />
+          <main className="relative min-h-dvh pt-[var(--site-header-height)]">
+            {welcomeStrip(greeting)}
+            <section className="py-16 md:py-20">
+              <div className="mx-auto max-w-lg px-6">
+                <div className="rounded-2xl border border-violet-500/25 bg-zinc-900/50 p-10 text-center shadow-xl shadow-black/20 backdrop-blur-sm md:p-12">
+                  <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl border border-violet-500/30 bg-violet-950/40 text-violet-300">
+                    <span className="text-lg font-bold uppercase tracking-wider">Demo</span>
+                  </div>
+                  <h2 className="mt-8 text-xl font-semibold tracking-tight text-zinc-100 md:text-2xl">
+                    Internal / demo account
+                  </h2>
+                  <p className="mt-4 text-base leading-relaxed text-zinc-400">
+                    Your account has unlimited try-ons with no subscription or billing. Ask your admin to create and
+                    link an API key, then return here to install the widget.
+                  </p>
+                </div>
+              </div>
+            </section>
+          </main>
+          <Footer />
+        </>
+      );
+    }
+
     return (
       <>
         <Header />
@@ -178,8 +208,8 @@ export default async function DashboardPage() {
   const showRenewSubscriptionButton =
     !hasStripeSubscription || Boolean(canceledAtStored) || subscriptionAccessEnded;
 
-  const topUpEligible = retailerEligibleForTryOnTopUps(user);
-  const adsEligible = retailerHasActiveSubscriptionForAds(user);
+  const topUpEligible = !isInternalDemo && retailerEligibleForTryOnTopUps(user);
+  const adsEligible = isInternalDemo || retailerHasActiveSubscriptionForAds(user);
 
   const linkedTrim = user.clientId?.trim() ?? "";
   const subscriptionClientRecords = await listSubscriptionClientRecordsForRetailerDashboard(user);
@@ -246,6 +276,7 @@ export default async function DashboardPage() {
           plansPanel={plansPanel}
           topUpEligible={topUpEligible}
           adsEligible={adsEligible}
+          isInternalDemo={isInternalDemo}
           apiKey={client.key}
           subscriptionClientsUsage={subscriptionClientsUsage}
           subscriptionCatalog={subscriptionCatalog}

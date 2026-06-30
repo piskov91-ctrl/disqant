@@ -480,6 +480,9 @@ export async function assertClientCanUseByApiKey(apiKey: string) {
 }
 
 export async function incrementUsageOrThrow(id: string) {
+  const { isClientKeyInternalDemo } = await import("@/lib/retailerInternalDemo");
+  if (await isClientKeyInternalDemo(id)) return;
+
   const redis = getRedis();
   const bundle = await getRecordForMutation(id);
   if (!bundle) throw new Error("Client key not found.");

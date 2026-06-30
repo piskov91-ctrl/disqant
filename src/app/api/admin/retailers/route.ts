@@ -1,6 +1,7 @@
 import { cookies } from "next/headers";
 import { ADMIN_AUTH_COOKIE, isAdminAuthorizedCookieValue } from "@/lib/adminAuth";
 import { listRetailerAccountsForAdmin } from "@/lib/retailerAdminList";
+import { getRetailerInternalDemoMap } from "@/lib/retailerInternalDemo";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -21,7 +22,12 @@ export async function GET() {
     }
 
     const retailers = await listRetailerAccountsForAdmin();
-    return Response.json({ retailers });
+    const internalDemoMap = await getRetailerInternalDemoMap(retailers.map((r) => r.userId));
+    const enriched = retailers.map((r) => ({
+      ...r,
+      isInternalDemo: internalDemoMap[r.userId] ?? false,
+    }));
+    return Response.json({ retailers: enriched });
   } catch (e) {
     const message = e instanceof Error ? e.message : "Failed to load retailers.";
     console.error("[fit-room][admin-retailers] GET failed", {

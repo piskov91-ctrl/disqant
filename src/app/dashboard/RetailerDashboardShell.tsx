@@ -113,7 +113,13 @@ function subscriptionRowsFromUsageJson(
   ];
 }
 
-function SubscriptionKeyUsageCard({ row }: { row: RetailerDashboardSubscriptionClientUsagePayload }) {
+function SubscriptionKeyUsageCard({
+  row,
+  unlimited,
+}: {
+  row: RetailerDashboardSubscriptionClientUsagePayload;
+  unlimited?: boolean;
+}) {
   const totalLimit = row.usageLimit;
   const totalUsed = row.usageCount;
   const pctTotal = totalLimit > 0 ? Math.min(100, Math.round((totalUsed / totalLimit) * 100)) : 0;
@@ -123,7 +129,7 @@ function SubscriptionKeyUsageCard({ row }: { row: RetailerDashboardSubscriptionC
   const topUpLimit = row.topUpLimit;
   const topUpUsed = row.topUpUsageCount;
   const topUpPct = topUpLimit > 0 ? Math.min(100, Math.round((topUpUsed / topUpLimit) * 100)) : 0;
-  const blocked = totalLimit > 0 && totalUsed >= totalLimit;
+  const blocked = !unlimited && totalLimit > 0 && totalUsed >= totalLimit;
 
   return (
     <div className="space-y-5 rounded-3xl border border-[#c6a77d]/22 bg-black/28 p-6 shadow-inner shadow-black/45 backdrop-blur-xl md:p-8">
@@ -150,7 +156,7 @@ function SubscriptionKeyUsageCard({ row }: { row: RetailerDashboardSubscriptionC
               : "border-emerald-400/35 bg-emerald-500/12 text-emerald-100"
           }`}
         >
-          {blocked ? "Limit reached" : "Active"}
+          {blocked ? "Limit reached" : unlimited ? "Unlimited" : "Active"}
         </span>
       </div>
 
@@ -158,8 +164,17 @@ function SubscriptionKeyUsageCard({ row }: { row: RetailerDashboardSubscriptionC
         <div className="flex flex-wrap items-baseline justify-between gap-2">
           <p className="text-sm font-medium text-zinc-300">Consumption (this key)</p>
           <p className="tabular-nums text-sm font-semibold text-[#d4bc94]">
-            {totalUsed.toLocaleString()} / {totalLimit.toLocaleString()}{" "}
-            <span className="font-normal text-zinc-500">({pctTotal}%)</span>
+            {unlimited ? (
+              <>
+                {totalUsed.toLocaleString()}{" "}
+                <span className="font-normal text-zinc-500">(unlimited)</span>
+              </>
+            ) : (
+              <>
+                {totalUsed.toLocaleString()} / {totalLimit.toLocaleString()}{" "}
+                <span className="font-normal text-zinc-500">({pctTotal}%)</span>
+              </>
+            )}
           </p>
         </div>
         <div className="relative mt-3 h-4 w-full overflow-hidden rounded-full border border-white/[0.14] bg-black/55 shadow-[inset_0_2px_8px_rgba(0,0,0,0.45)] ring-1 ring-[#c6a77d]/12">
@@ -171,6 +186,12 @@ function SubscriptionKeyUsageCard({ row }: { row: RetailerDashboardSubscriptionC
       </div>
 
       <div className="space-y-4 border-t border-[#c6a77d]/12 pt-5">
+        {unlimited ? (
+          <p className="text-sm leading-relaxed text-zinc-400">
+            Internal / demo account — try-ons are not metered and billing does not apply.
+          </p>
+        ) : (
+          <>
         <div>
           <div className="flex flex-wrap items-center justify-between gap-2">
             <span className="text-xs font-semibold uppercase tracking-[0.12em] text-zinc-500">Monthly plan bucket</span>
@@ -203,6 +224,8 @@ function SubscriptionKeyUsageCard({ row }: { row: RetailerDashboardSubscriptionC
             </div>
           </div>
         ) : null}
+          </>
+        )}
       </div>
     </div>
   );
@@ -310,6 +333,8 @@ export type RetailerDashboardShellProps = {
   topUpEligible: boolean;
   /** When true, retailer can manage widget loading ads (active subscription). */
   adsEligible: boolean;
+  /** Internal/demo accounts: unlimited try-ons, no billing UI. */
+  isInternalDemo?: boolean;
   apiKey: string;
   subscriptionClientsUsage: RetailerDashboardSubscriptionClientUsagePayload[];
   subscriptionCatalog: SubscriptionPlanCatalog;
@@ -348,6 +373,7 @@ function RetailerDashboardShellInner({
   plansPanel,
   topUpEligible,
   adsEligible,
+  isInternalDemo = false,
   apiKey,
   subscriptionClientsUsage,
   subscriptionCatalog,
@@ -476,6 +502,7 @@ function RetailerDashboardShellInner({
   }, [refreshUsage]);
 
   const dashboardLinkedBlocked =
+    !isInternalDemo &&
     linkedSubscriptionRow != null &&
     linkedSubscriptionRow.usageLimit > 0 &&
     linkedSubscriptionRow.usageCount >= linkedSubscriptionRow.usageLimit;
@@ -627,10 +654,18 @@ function RetailerDashboardShellInner({
                     aria-hidden
                   />
                   <p className="text-[11px] font-semibold uppercase tracking-[0.26em] text-[#d4bc94]/88">
-                    Your plan
+                    {isInternalDemo ? "Account type" : "Your plan"}
                   </p>
-                  <p className="mt-5 text-2xl font-semibold tracking-tight text-zinc-50">{displayPlanSummary.planName}</p>
+                  <p className="mt-5 text-2xl font-semibold tracking-tight text-zinc-50">
+                    {isInternalDemo ? "Internal / Demo" : displayPlanSummary.planName}
+                  </p>
 
+                  {isInternalDemo ? (
+                    <p className="mt-8 border-t border-[#c6a77d]/15 pt-8 text-sm leading-relaxed text-zinc-400">
+                      Unlimited try-ons with no subscription or billing. Use this account for testing and demos only.
+                    </p>
+                  ) : (
+                  <>
                   <dl className="mt-8 space-y-6 border-t border-[#c6a77d]/15 pt-8">
                     <div>
                       <dt className="text-[11px] font-semibold uppercase tracking-[0.2em] text-zinc-500">
@@ -700,6 +735,8 @@ function RetailerDashboardShellInner({
                   </Link>
 
                   <DashboardPlanSubscriptions {...plansPanel} />
+                  </>
+                  )}
                 </div>
               </aside>
 
@@ -731,7 +768,7 @@ function RetailerDashboardShellInner({
                           : "border-emerald-400/35 bg-emerald-500/12 text-emerald-100"
                       }`}
                     >
-                      {dashboardLinkedBlocked ? "Linked key at cap" : "Active"}
+                      {dashboardLinkedBlocked ? "Linked key at cap" : isInternalDemo ? "Unlimited" : "Active"}
                     </span>
                   </div>
                 </div>
@@ -746,7 +783,7 @@ function RetailerDashboardShellInner({
                   <h3 className="text-sm font-semibold uppercase tracking-[0.14em] text-zinc-400">Subscription keys</h3>
                   <div className="space-y-6">
                     {subscriptionRows.map((row) => (
-                      <SubscriptionKeyUsageCard key={row.clientId} row={row} />
+                      <SubscriptionKeyUsageCard key={row.clientId} row={row} unlimited={isInternalDemo} />
                     ))}
                   </div>
                 </div>

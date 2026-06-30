@@ -195,6 +195,7 @@ type RetailerAdminRow = {
   createdAt: string;
   clientId: string | null;
   subscriptionStatus: "Active" | "No Plan";
+  isInternalDemo?: boolean;
 };
 
 function retailerStatusBadgeClass(status: RetailerAdminRow["subscriptionStatus"]): string {
@@ -600,6 +601,7 @@ export default function AdminClient() {
   const [retailerEmailPaymentLink, setRetailerEmailPaymentLink] = useState("");
   const [retailerEmailModalError, setRetailerEmailModalError] = useState<string | null>(null);
   const [retailerUserIdCopiedId, setRetailerUserIdCopiedId] = useState<string | null>(null);
+  const [retailerInternalDemoBusyId, setRetailerInternalDemoBusyId] = useState<string | null>(null);
   const [retailerEnterpriseHelpOpen, setRetailerEnterpriseHelpOpen] = useState(false);
 
   const [reviewsPendingBadge, setReviewsPendingBadge] = useState(0);
@@ -1419,6 +1421,36 @@ export default function AdminClient() {
       setRetailersError(e instanceof Error ? e.message : "Failed to load retailers.");
     } finally {
       setRetailersLoading(false);
+    }
+  }
+
+  async function toggleRetailerInternalDemo(userId: string, enabled: boolean) {
+    setRetailerInternalDemoBusyId(userId);
+    setRetailersError(null);
+    setRetailers((prev) =>
+      prev.map((r) => (r.userId === userId ? { ...r, isInternalDemo: enabled } : r)),
+    );
+    try {
+      const res = await fetch("/api/admin/retailers/internal-demo", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ userId, enabled }),
+      });
+      const data = (await res.json()) as { ok?: boolean; error?: string };
+      if (!res.ok || !data.ok) {
+        if (data.error === "Unauthorized.") window.location.reload();
+        setRetailers((prev) =>
+          prev.map((r) => (r.userId === userId ? { ...r, isInternalDemo: !enabled } : r)),
+        );
+        setRetailersError(data.error || "Failed to update internal/demo flag.");
+      }
+    } catch (e) {
+      setRetailers((prev) =>
+        prev.map((r) => (r.userId === userId ? { ...r, isInternalDemo: !enabled } : r)),
+      );
+      setRetailersError(e instanceof Error ? e.message : "Failed to update internal/demo flag.");
+    } finally {
+      setRetailerInternalDemoBusyId(null);
     }
   }
 
@@ -3621,7 +3653,9 @@ export default function AdminClient() {
               <p className="mt-1 text-sm text-zinc-400">
                 Every active retailer account in Redis — with or without a plan.{" "}
                 <span className="text-zinc-500">Active</span> = API key linked;{" "}
-                <span className="text-zinc-500">No Plan</span> = registered only.
+                <span className="text-zinc-500">No Plan</span> = registered only.{" "}
+                <span className="text-violet-300/90">Internal / demo</span> accounts get unlimited try-ons with no
+                subscription or billing.
               </p>
 
               <div className="mt-5">
@@ -3672,12 +3706,13 @@ export default function AdminClient() {
                 <div className="mt-8 text-sm text-zinc-500">No registered retailers yet.</div>
               ) : (
                 <div className="mt-6 w-full overflow-x-auto">
-                  <div className="min-w-[1080px]">
-                    <div className="grid grid-cols-[minmax(0,1fr)_minmax(0,1fr)_minmax(0,0.85fr)_minmax(0,5.5rem)_minmax(0,1.4fr)] gap-3 border-b border-zinc-800 px-3 py-2 text-xs font-semibold uppercase tracking-wider text-zinc-500">
+                  <div className="min-w-[1180px]">
+                    <div className="grid grid-cols-[minmax(0,1fr)_minmax(0,1fr)_minmax(0,0.85fr)_minmax(0,5.5rem)_minmax(0,7rem)_minmax(0,1.4fr)] gap-3 border-b border-zinc-800 px-3 py-2 text-xs font-semibold uppercase tracking-wider text-zinc-500">
                       <div>Store</div>
                       <div>Email</div>
                       <div>Registered</div>
                       <div>Plan</div>
+                      <div className="text-center">Internal</div>
                       <div className="text-right">Actions</div>
                     </div>
                     {retailers.map((row) => {
@@ -3694,10 +3729,12 @@ export default function AdminClient() {
                           : "—";
                       const isNoPlan = row.subscriptionStatus === "No Plan";
                       const welcomeBusy = retailerWelcomeEmailBusyId === row.userId;
+                      const internalBusy = retailerInternalDemoBusyId === row.userId;
+                      const internalDemo = Boolean(row.isInternalDemo);
                       return (
                         <div
                           key={row.userId}
-                          className="grid grid-cols-[minmax(0,1fr)_minmax(0,1fr)_minmax(0,0.85fr)_minmax(0,5.5rem)_minmax(0,1.4fr)] items-center gap-3 border-b border-zinc-800 px-3 py-3 text-sm text-zinc-200"
+                          className="grid grid-cols-[minmax(0,1fr)_minmax(0,1fr)_minmax(0,0.85fr)_minmax(0,5.5rem)_minmax(0,7rem)_minmax(0,1.4fr)] items-center gap-3 border-b border-zinc-800 px-3 py-3 text-sm text-zinc-200"
                         >
                           <div className="min-w-0">
                             <div className="truncate font-semibold text-zinc-100">{row.storeName}</div>
@@ -3729,14 +3766,44 @@ export default function AdminClient() {
                             {registered === "—" ? "—" : `${registered} UTC`}
                           </div>
                           <div>
+                            {internalDemo ? (
+                              <span className="inline-flex rounded-full border border-violet-700/70 bg-violet-950/45 px-2.5 py-0.5 text-xs font-medium text-violet-300">
+                                Internal
+                              </span>
+                            ) : (
+                              <span
+                                className={`inline-flex rounded-full border px-2.5 py-0.5 text-xs font-medium ${retailerStatusBadgeClass(row.subscriptionStatus)}`}
+                              >
+                                {row.subscriptionStatus}
+                              </span>
+                            )}
+                          </div>
+                          <div className="flex items-center justify-center gap-3">
                             <span
-                              className={`inline-flex rounded-full border px-2.5 py-0.5 text-xs font-medium ${retailerStatusBadgeClass(row.subscriptionStatus)}`}
+                              className={`text-xs font-medium ${internalDemo ? "text-violet-300" : "text-zinc-500"}`}
                             >
-                              {row.subscriptionStatus}
+                              {internalDemo ? "On" : "Off"}
                             </span>
+                            <button
+                              type="button"
+                              role="switch"
+                              aria-checked={internalDemo}
+                              aria-label={`Toggle internal/demo for ${row.storeName}`}
+                              disabled={internalBusy}
+                              onClick={() => void toggleRetailerInternalDemo(row.userId, !internalDemo)}
+                              className={`relative inline-flex h-6 w-11 shrink-0 items-center rounded-full transition-colors disabled:opacity-50 ${
+                                internalDemo ? "bg-violet-500" : "bg-zinc-600"
+                              }`}
+                            >
+                              <span
+                                className={`inline-block h-5 w-5 transform rounded-full bg-white shadow transition-transform ${
+                                  internalDemo ? "translate-x-[22px]" : "translate-x-0.5"
+                                }`}
+                              />
+                            </button>
                           </div>
                           <div className="flex flex-wrap justify-end gap-2">
-                            {isNoPlan ? (
+                            {isNoPlan && !internalDemo ? (
                               <>
                                 {!row.clientId ? (
                                   <button
@@ -3774,6 +3841,20 @@ export default function AdminClient() {
                                 </button>
                               </>
                             ) : null}
+                            {isNoPlan && internalDemo && !row.clientId ? (
+                              <button
+                                type="button"
+                                onClick={() => openRetailerCreateKeyModal(row)}
+                                disabled={
+                                  Boolean(retailerCreateKeyTarget) ||
+                                  retailerCreateKeyBusy ||
+                                  welcomeBusy
+                                }
+                                className="inline-flex h-9 shrink-0 items-center justify-center rounded-full border border-[#C6A77D]/45 bg-[#C6A77D]/10 px-3 text-xs font-semibold uppercase tracking-wide text-[#e8d4bc] transition hover:border-[#C6A77D]/65 hover:bg-[#C6A77D]/20 disabled:cursor-not-allowed disabled:opacity-40"
+                              >
+                                Create key
+                              </button>
+                            ) : null}
                             <a
                               href={STRIPE_WEBHOOK_URL}
                               target="_blank"
@@ -3791,7 +3872,8 @@ export default function AdminClient() {
               )}
               <p className="mt-6 text-xs text-zinc-600">
                 Redis keys: <span className="font-mono text-zinc-400">fit-room:retailer:user:*</span>,{" "}
-                <span className="font-mono text-zinc-400">fit-room:retailer:email:*</span>
+                <span className="font-mono text-zinc-400">fit-room:retailer:email:*</span>,{" "}
+                <span className="font-mono text-zinc-400">fit-room:retailer:internal-demo:&#123;userId&#125;</span>
               </p>
             </section>
           ) : activeTab === "customTryons" ? (
