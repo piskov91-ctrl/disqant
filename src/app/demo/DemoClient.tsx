@@ -964,7 +964,7 @@ export default function DemoClient() {
   return (
     <div className="relative min-h-dvh text-[#F5EDE4]">
       {/*
-        Full-page backdrop comes from root layout <SiteBackground /> (fittingroom.png + dark gradient).
+        Full-page backdrop comes from `body` background in globals.css (fittingroom.png + dark gradient).
         No opaque page bg here so the fitting-room photo reads through like the home page.
       */}
       {wearOpen && (
