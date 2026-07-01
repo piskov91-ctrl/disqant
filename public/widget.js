@@ -25,44 +25,6 @@
   var WIDGET_AD_DEFAULT_BANNER_DURATION_SEC = 10;
   var WIDGET_AD_MAX_BANNER_DURATION_SEC = 45;
 
-  var PHOTO_POSE_GOOD_URL =
-    "https://images.unsplash.com/photo-1469334031218-e382a71b716b?auto=format&fit=crop&w=360&h=480&q=80";
-  var PHOTO_POSE_BAD_URL =
-    "https://images.unsplash.com/photo-1531746020798-e6953c6e8e04?auto=format&fit=crop&w=360&h=480&q=80";
-
-  function buildPhotoPoseGuideHtml() {
-    return (
-      '<div class="dq-pose-guide" role="group" aria-label="Photo pose examples">' +
-      '<div class="dq-pose-card dq-pose-card--good">' +
-      '<div class="dq-pose-img-wrap">' +
-      '<img src="' +
-      PHOTO_POSE_GOOD_URL +
-      '" alt="Good example: standing straight, full body visible" loading="lazy" decoding="async" />' +
-      '<span class="dq-pose-badge dq-pose-badge--good" aria-hidden="true">✓</span>' +
-      "</div>" +
-      '<span class="dq-pose-label dq-pose-label--good">✓ Perfect</span>' +
-      "</div>" +
-      '<div class="dq-pose-card dq-pose-card--bad">' +
-      '<div class="dq-pose-img-wrap">' +
-      '<img src="' +
-      PHOTO_POSE_BAD_URL +
-      '" alt="Avoid: sideways or partially visible" loading="lazy" decoding="async" />' +
-      '<span class="dq-pose-badge dq-pose-badge--bad" aria-hidden="true">✗</span>' +
-      "</div>" +
-      '<span class="dq-pose-label dq-pose-label--bad">✗ Avoid</span>' +
-      "</div>" +
-      "</div>"
-    );
-  }
-
-  function buildStageEmptyHtml() {
-    return (
-      "<strong>Upload a full-body photo</strong>" +
-      '<span class="dq-empty-sub">Face forward with your full body in frame — good lighting helps.</span>' +
-      buildPhotoPoseGuideHtml()
-    );
-  }
-
   function clampWidgetAdBannerDuration(raw) {
     var n = Number(raw);
     if (!Number.isFinite(n)) return WIDGET_AD_DEFAULT_BANNER_DURATION_SEC;
@@ -191,6 +153,42 @@
       if (u.origin && u.origin !== "null") return u.origin;
     } catch (_e) { }
     return window.location.origin;
+  }
+
+  function buildPhotoPoseGuideHtml() {
+    var origin = getWidgetApiOrigin();
+    var goodSrc = origin + "/tryon-pose-good.svg";
+    var badSrc = origin + "/tryon-pose-bad.svg";
+    return (
+      '<div class="dq-pose-guide" role="group" aria-label="Photo pose examples">' +
+      '<div class="dq-pose-card dq-pose-card--good">' +
+      '<div class="dq-pose-img-wrap">' +
+      '<img src="' +
+      goodSrc +
+      '" alt="Stand straight facing camera, full body from head to toe" loading="lazy" decoding="async" />' +
+      '<span class="dq-pose-badge dq-pose-badge--good" aria-hidden="true">✓</span>' +
+      "</div>" +
+      '<span class="dq-pose-label dq-pose-label--good">✓ Stand straight, full body</span>' +
+      "</div>" +
+      '<div class="dq-pose-card dq-pose-card--bad">' +
+      '<div class="dq-pose-img-wrap">' +
+      '<img src="' +
+      badSrc +
+      '" alt="Avoid side angles, cropped body, or harsh lighting" loading="lazy" decoding="async" />' +
+      '<span class="dq-pose-badge dq-pose-badge--bad" aria-hidden="true">✗</span>' +
+      "</div>" +
+      '<span class="dq-pose-label dq-pose-label--bad">✗ Avoid side angles</span>' +
+      "</div>" +
+      "</div>"
+    );
+  }
+
+  function buildStageEmptyHtml() {
+    return (
+      "<strong>Upload a full-body photo</strong>" +
+      '<span class="dq-empty-sub">Face forward with your full body in frame — good lighting helps.</span>' +
+      buildPhotoPoseGuideHtml()
+    );
   }
 
   // Matches app route /api/try-on in this repo (same POST handler as /api/tryon).
@@ -409,18 +407,18 @@
       + ".dq-empty-sub{font:600 12px/1.35 system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;color:rgba(245,237,228,.58);max-width:320px;}"
       + ".dq-pose-guide{display:flex;gap:10px;width:100%;max-width:340px;margin-top:2px;}"
       + ".dq-pose-card{flex:1;min-width:0;display:flex;flex-direction:column;align-items:center;gap:6px;}"
-      + ".dq-pose-img-wrap{position:relative;width:100%;aspect-ratio:3/4;border-radius:10px;overflow:hidden;background:#1a1612;}"
+      + ".dq-pose-img-wrap{position:relative;width:100%;aspect-ratio:3/4;border-radius:10px;overflow:hidden;background:#121018;}"
       + ".dq-pose-card--good .dq-pose-img-wrap{border:1px solid rgba(52,211,153,.42);box-shadow:0 0 0 1px rgba(52,211,153,.1),0 10px 28px rgba(0,0,0,.4);}"
       + ".dq-pose-card--bad .dq-pose-img-wrap{border:1px solid rgba(248,113,113,.42);box-shadow:0 0 0 1px rgba(248,113,113,.1),0 10px 28px rgba(0,0,0,.4);}"
-      + ".dq-pose-img-wrap img{width:100%;height:100%;object-fit:cover;object-position:center top;display:block;}"
+      + ".dq-pose-img-wrap img{width:100%;height:100%;object-fit:contain;object-position:center;display:block;}"
       + ".dq-pose-badge{position:absolute;top:6px;right:6px;width:22px;height:22px;border-radius:999px;display:flex;align-items:center;justify-content:center;font:900 12px/1 system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;box-shadow:0 4px 12px rgba(0,0,0,.35);}"
       + ".dq-pose-badge--good{background:rgba(16,185,129,.94);color:#052e1a;}"
       + ".dq-pose-badge--bad{background:rgba(239,68,68,.94);color:#fff;}"
-      + ".dq-pose-label{font:800 11px/1.2 system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;letter-spacing:.02em;}"
+      + ".dq-pose-label{font:800 10px/1.25 system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;letter-spacing:.01em;text-align:center;max-width:100%;}"
       + ".dq-pose-label--good{color:#6ee7b7;}"
       + ".dq-pose-label--bad{color:#fca5a5;}"
       + ".dq-pose-guide--inline{margin-top:12px;max-width:none;}"
-      + "@media (max-width:420px){.dq-pose-guide{gap:8px;max-width:100%;}.dq-pose-label{font-size:10px;}}"
+      + "@media (max-width:420px){.dq-pose-guide{gap:8px;max-width:100%;}.dq-pose-label{font-size:9px;}}"
       + ".dq-processing{position:absolute;inset:0;display:none;align-items:center;justify-content:center;flex-direction:column;gap:10px;z-index:4;background:rgba(26,22,18,.82);backdrop-filter:blur(8px);}"
       + ".dq-processing.is-on{display:flex;}"
       + ".dq-processing.has-stage-ads{background:transparent;backdrop-filter:none;-webkit-backdrop-filter:none;pointer-events:none;}"

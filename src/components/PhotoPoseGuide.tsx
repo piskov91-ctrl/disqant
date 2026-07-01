@@ -1,6 +1,8 @@
 import {
-  PHOTO_POSE_GUIDE_BAD_URL,
-  PHOTO_POSE_GUIDE_GOOD_URL,
+  PHOTO_POSE_GUIDE_BAD_LABEL,
+  PHOTO_POSE_GUIDE_BAD_PATH,
+  PHOTO_POSE_GUIDE_GOOD_LABEL,
+  PHOTO_POSE_GUIDE_GOOD_PATH,
 } from "@/lib/photoPoseGuide";
 
 type PhotoPoseGuideProps = {
@@ -8,39 +10,40 @@ type PhotoPoseGuideProps = {
   className?: string;
 };
 
+function PoseIllustration({ src, alt }: { src: string; alt: string }) {
+  return (
+    // eslint-disable-next-line @next/next/no-img-element
+    <img src={src} alt={alt} loading="lazy" decoding="async" />
+  );
+}
+
 export function PhotoPoseGuide({ className }: PhotoPoseGuideProps) {
   const rowClass = ["dq-pose-guide", className].filter(Boolean).join(" ");
   return (
     <div className={rowClass} role="group" aria-label="Photo pose examples">
       <div className="dq-pose-card dq-pose-card--good">
         <div className="dq-pose-img-wrap">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            src={PHOTO_POSE_GUIDE_GOOD_URL}
-            alt="Good example: standing straight, full body visible"
-            loading="lazy"
-            decoding="async"
+          <PoseIllustration
+            src={PHOTO_POSE_GUIDE_GOOD_PATH}
+            alt="Stand straight facing camera, full body from head to toe"
           />
           <span className="dq-pose-badge dq-pose-badge--good" aria-hidden>
             ✓
           </span>
         </div>
-        <span className="dq-pose-label dq-pose-label--good">✓ Perfect</span>
+        <span className="dq-pose-label dq-pose-label--good">{PHOTO_POSE_GUIDE_GOOD_LABEL}</span>
       </div>
       <div className="dq-pose-card dq-pose-card--bad">
         <div className="dq-pose-img-wrap">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            src={PHOTO_POSE_GUIDE_BAD_URL}
-            alt="Avoid: sideways or partially visible"
-            loading="lazy"
-            decoding="async"
+          <PoseIllustration
+            src={PHOTO_POSE_GUIDE_BAD_PATH}
+            alt="Avoid side angles, cropped body, or harsh lighting"
           />
           <span className="dq-pose-badge dq-pose-badge--bad" aria-hidden>
             ✗
           </span>
         </div>
-        <span className="dq-pose-label dq-pose-label--bad">✗ Avoid</span>
+        <span className="dq-pose-label dq-pose-label--bad">{PHOTO_POSE_GUIDE_BAD_LABEL}</span>
       </div>
     </div>
   );
