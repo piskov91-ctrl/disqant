@@ -33,28 +33,10 @@ export const WEAR_LOADING_MESSAGES: readonly string[] = [
   "AI is processing your look... usually ready in 20-30 seconds",
 ];
 
-/** Tips + privacy block — first child of Wear Me modal body (matches `public/widget.js`). */
-const WEAR_ME_TIPS = [
-  "Stand in good lighting with your full body visible",
-  "Keep 1-2 metres from the camera",
-  "Plain backgrounds work best",
-] as const;
-
+/** Privacy notice above the Wear Me stage (matches `public/widget.js`). */
 export function WearMeTipsPrivacy() {
   return (
     <div className="dq-tips-block">
-      <div className="dq-tips">
-        <ul className="dq-tips-list">
-          {WEAR_ME_TIPS.map((tip) => (
-            <li key={tip}>
-              <span className="dq-tips-mark" aria-hidden>
-                ✦
-              </span>
-              <span>{tip}</span>
-            </li>
-          ))}
-        </ul>
-      </div>
       <div className="dq-tips-privacy">
         🔒 Your privacy is protected. Photos are processed instantly and permanently deleted.
       </div>
@@ -262,10 +244,6 @@ export const DEMO_WEAR_MODAL_CSS =
   ".dq-x-icon{width:22px;height:22px;display:block;flex-shrink:0;}" +
   ".dq-body{flex:1 1 auto;min-height:0;padding:4px;display:flex;flex-direction:column;gap:4px;overflow:hidden;background:#2c241f;}" +
   ".dq-tips-block{flex-shrink:0;display:flex;flex-direction:column;gap:4px;padding:6px;}" +
-  ".dq-tips{padding:6px;border-radius:8px;border-left:3px solid #c6a77d;background:rgba(198,167,125,.08);}" +
-  ".dq-tips-list{margin:0;padding:0;list-style:none;display:flex;flex-direction:column;gap:3px;}" +
-  ".dq-tips-list li{display:flex;align-items:flex-start;gap:6px;font:400 11px/1.4 system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;color:rgba(245,237,228,.88);letter-spacing:.01em;}" +
-  ".dq-tips-mark{flex-shrink:0;color:#c6a77d;font-size:9px;line-height:1.45;font-weight:600;}" +
   ".dq-tips-privacy{margin:0;padding:6px;border-radius:8px;border:1px solid rgba(198,167,125,.5);background:#1a1612;font:500 11px/1.4 system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;color:rgba(245,237,228,.92);letter-spacing:.02em;box-shadow:inset 0 1px 0 rgba(198,167,125,.08);}" +
   ".dq-stage{position:relative;width:100%;flex:1 1 auto;min-height:0;align-self:stretch;border-radius:12px;border:1px solid rgba(198,167,125,.2);background:#0f0f14;overflow:hidden;}" +
   ".dq-stage img,.dq-stage-photo{position:absolute;inset:0;width:100%;height:100%;display:block;background:#0f0f14;object-fit:contain;object-position:center center;transform:none !important;max-width:none;max-height:none;z-index:1;}" +
