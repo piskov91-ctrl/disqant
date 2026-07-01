@@ -1010,8 +1010,8 @@ export default function DemoClient() {
               <div className="dq-stage">
                 {!wearHasPhoto && !wearProcessing ? (
                   <div className="dq-empty">
-                    <strong>Upload a full-body photo</strong>
-                    <span>We’ll keep your full body visible (no cropping).</span>
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img src="/fit.png" alt="" />
                   </div>
                 ) : null}
 
