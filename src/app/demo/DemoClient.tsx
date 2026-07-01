@@ -33,6 +33,7 @@ import {
   type TryOnResponse,
 } from "@/lib/wearMeShared";
 import { Footer } from "@/components/Footer";
+import { PhotoPoseGuide, PhotoPoseGuideEmpty } from "@/components/PhotoPoseGuide";
 import {
   DEMO_OWN_TRYON_LIMIT,
   DEMO_OWN_TRYON_LS_KEY,
@@ -1010,8 +1011,7 @@ export default function DemoClient() {
               <div className="dq-stage">
                 {!wearHasPhoto && !wearProcessing ? (
                   <div className="dq-empty">
-                    <strong>Upload a full-body photo</strong>
-                    <span>We’ll keep your full body visible (no cropping).</span>
+                    <PhotoPoseGuideEmpty />
                   </div>
                 ) : null}
 
@@ -1353,6 +1353,9 @@ export default function DemoClient() {
                     </p>
                   </div>
                 </div>
+                {!ownGuideModelFile ? (
+                  <PhotoPoseGuide className="dq-pose-guide--inline" />
+                ) : null}
                 <div className="mt-3 flex flex-col gap-2 sm:flex-row">
                   <button
                     type="button"
