@@ -59,7 +59,7 @@ body {
   }
   .app-bg__photo {
     min-height: 100dvh;
-    background-position: center top;
+    background-position: center center;
   }
 }
 
