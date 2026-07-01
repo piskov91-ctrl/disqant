@@ -486,6 +486,7 @@ function QuotaEmailNoticeBadges({ k }: { k: KeyRecord }) {
 
 const ADMIN_QUICK_LINKS = [
   { label: "Vercel Dashboard", href: "https://vercel.com/dashboard" },
+  { label: "Google Search Console", href: "https://search.google.com/search-console" },
   { label: "Stripe Dashboard", href: "https://dashboard.stripe.com" },
   { label: "Check & Resend", href: "https://dashboard.stripe.com/test/workbench/webhooks" },
   { label: "Hostinger Email", href: "https://hpanel.hostinger.com/emails" },
