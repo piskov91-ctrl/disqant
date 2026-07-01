@@ -12,13 +12,11 @@
 
 html {
   scroll-behavior: smooth;
-  overflow: hidden;
 }
 
 body {
   color: var(--foreground);
   background: #000000;
-  overflow: hidden;
 }
 
 /* Fixed full-viewport layer: fitting room photo + overlay (see SiteBackground). Legacy blob classes kept unused. */
@@ -54,12 +52,13 @@ body {
 @media (max-width: 768px) {
   .app-bg {
     position: fixed;
-    top: 0;
-    left: 0;
+    inset: 0;
     width: 100%;
-    height: 100vh;
+    height: 100%;
+    min-height: 100dvh;
   }
   .app-bg__photo {
+    min-height: 100dvh;
     background-position: center center;
   }
 }
