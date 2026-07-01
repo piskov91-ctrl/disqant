@@ -62,6 +62,18 @@ export function WearMeTipsPrivacy() {
   );
 }
 
+/** Empty-stage pose guide — same asset as `public/widget.js` (`/fit.png`). */
+export const WEAR_STAGE_GUIDE_IMAGE = "/fit.png";
+
+export function WearMeEmptyStageGuide() {
+  return (
+    <div className="dq-empty">
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img src={WEAR_STAGE_GUIDE_IMAGE} alt="" />
+    </div>
+  );
+}
+
 export const WEAR_ME_FULLSCREEN_STYLE_ID = "fit-room-wear-fullscreen-style";
 
 /** Restore stage preview/result image to default contain fit after fullscreen closes. */

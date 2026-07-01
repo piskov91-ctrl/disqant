@@ -27,6 +27,7 @@ import {
   formatTryOnApiError,
   isCameraCaptureSupported,
   requestCameraVideoStream,
+  WearMeEmptyStageGuide,
   WearMeResultFullscreen,
   WearMeTipsPrivacy,
   type CameraFacingMode,
@@ -1008,12 +1009,7 @@ export default function DemoClient() {
             <div className="dq-body">
               <WearMeTipsPrivacy />
               <div className="dq-stage">
-                {!wearHasPhoto && !wearProcessing ? (
-                  <div className="dq-empty">
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img src="/fit.png" alt="" />
-                  </div>
-                ) : null}
+                {!wearHasPhoto && !wearProcessing ? <WearMeEmptyStageGuide /> : null}
 
                 {wearStageUrl ? (
                   // eslint-disable-next-line @next/next/no-img-element
