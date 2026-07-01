@@ -21,9 +21,9 @@ body {
     linear-gradient(to bottom, rgb(0 0 0 / 0.82), rgb(0 0 0 / 0.52), rgb(0 0 0 / 0.78)),
     url("/fittingroom.png");
   background-attachment: scroll;
-  background-size: 100% 100%, contain;
-  background-position: center, center;
-  background-repeat: no-repeat, no-repeat;
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
 }
 
 @media (min-width: 768px) {
