@@ -753,7 +753,7 @@
 
     var stageEmpty = document.createElement("div");
     stageEmpty.className = "dq-empty";
-    stageEmpty.innerHTML = '<img src="' + getWidgetApiOrigin() + '/fit.png" alt="" style="width:100%;height:100%;object-fit:contain;transform:scaleY(1.1);display:block;" />';
+    stageEmpty.innerHTML = '<img src="' + getWidgetApiOrigin() + '/fit.png" alt="" style="width:100%;height:100%;object-fit:contain;transform:scaleY(1.2);display:block;" />';
 
     var stageImg = document.createElement("img");
     stageImg.alt = "Preview";
