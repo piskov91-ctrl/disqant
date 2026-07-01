@@ -3,7 +3,8 @@
  */
 export function SiteBackground() {
   return (
-    <div className="app-bg pointer-events-none fixed inset-0 z-0 bg-black" aria-hidden>
+    <div className="app-bg pointer-events-none fixed inset-0 z-0" aria-hidden>
+      <div className="app-bg__base" />
       <img
         src="/fittingroom.png"
         alt=""
