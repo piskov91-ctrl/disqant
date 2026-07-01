@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Script from "next/script";
 import { Geist, Geist_Mono } from "next/font/google";
+import { SiteBackground } from "@/components/SiteBackground";
 import "./globals.css";
 
 const GOOGLE_ANALYTICS_ID = "G-ZNMMF12XRD";
@@ -49,6 +50,7 @@ export default function RootLayout({
         </Script>
       </head>
       <body className={`${geistSans.variable} ${geistMono.variable} font-sans`}>
+        <SiteBackground />
         <div className="relative z-10 min-h-dvh">{children}</div>
       </body>
     </html>
