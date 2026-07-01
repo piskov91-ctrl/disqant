@@ -23,6 +23,7 @@ body {
 .app-bg {
   overflow: hidden;
   contain: layout style paint;
+  height: 100vh;
 }
 
 .app-bg__base {
@@ -34,11 +35,11 @@ body {
 /* Fitting-room photo layer. Use scroll attachment on a fixed viewport layer to avoid
    Android Chrome zoom/jank from background-attachment: fixed on mobile. */
 .app-bg__photo {
-  position: absolute;
+  position: fixed;
   top: 0;
   left: 0;
   width: 100%;
-  height: 100%;
+  height: 100vh;
   background-repeat: no-repeat;
   background-position: center;
   background-size: cover;
@@ -52,13 +53,12 @@ body {
 @media (max-width: 768px) {
   .app-bg {
     position: fixed;
-    inset: 0;
+    top: 0;
+    left: 0;
     width: 100%;
-    height: 100%;
-    min-height: 100dvh;
+    height: 100vh;
   }
   .app-bg__photo {
-    min-height: 100dvh;
     background-position: center center;
   }
 }
