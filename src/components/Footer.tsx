@@ -6,7 +6,7 @@ export function Footer() {
       <div className="mx-auto flex max-w-4xl flex-col items-center gap-2.5 px-5 md:gap-3 md:px-6">
         <p className="text-zinc-400">
           <span className="whitespace-normal sm:whitespace-nowrap">
-            Fit Room Ltd <span className="text-zinc-600">|</span> London, UK{" "}
+            Fit Room <span className="text-zinc-600">·</span> London, UK{" "}
             <span className="text-zinc-600">|</span>{" "}
             <a
               href="mailto:support@fit-room.com"
@@ -53,7 +53,7 @@ export function Footer() {
             Built for independent fashion retailers. No app. No downloads. Live in minutes.
           </p>
         </div>
-        <p className="text-zinc-600">© 2026 Fit Room Ltd. All rights reserved.</p>
+        <p className="text-zinc-600">© 2026 Fit Room. All rights reserved.</p>
       </div>
     </footer>
   );
