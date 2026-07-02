@@ -488,6 +488,7 @@ const ADMIN_QUICK_LINKS = [
   { label: "Vercel Dashboard", href: "https://vercel.com/dashboard" },
   { label: "Google Search Console", href: "https://search.google.com/search-console" },
   { label: "Google Analytics", href: "https://analytics.google.com" },
+  { label: "Google Business", href: "https://business.google.com" },
   { label: "Stripe Dashboard", href: "https://dashboard.stripe.com" },
   { label: "Check & Resend", href: "https://dashboard.stripe.com/test/workbench/webhooks" },
   { label: "Hostinger Email", href: "https://hpanel.hostinger.com/emails" },
