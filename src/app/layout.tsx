@@ -1,10 +1,8 @@
 import type { Metadata } from "next";
-import Script from "next/script";
 import { Geist, Geist_Mono } from "next/font/google";
+import { CookieConsent } from "@/components/CookieConsent";
 import { SiteBackground } from "@/components/SiteBackground";
 import "./globals.css";
-
-const GOOGLE_ANALYTICS_ID = "G-ZNMMF12XRD";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -34,24 +32,10 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" className="antialiased" suppressHydrationWarning>
-      <head>
-        <Script
-          async
-          src={`https://www.googletagmanager.com/gtag/js?id=${GOOGLE_ANALYTICS_ID}`}
-          strategy="afterInteractive"
-        />
-        <Script id="google-analytics" strategy="afterInteractive">
-          {`
-            window.dataLayer = window.dataLayer || [];
-            function gtag(){dataLayer.push(arguments);}
-            gtag('js', new Date());
-            gtag('config', '${GOOGLE_ANALYTICS_ID}');
-          `}
-        </Script>
-      </head>
       <body className={`${geistSans.variable} ${geistMono.variable} font-sans`}>
         <SiteBackground />
         <div className="relative z-10 min-h-dvh">{children}</div>
+        <CookieConsent />
       </body>
     </html>
   );
