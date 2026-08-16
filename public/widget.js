@@ -322,6 +322,8 @@
   }
 
   function injectStyles() {
+    if (qs("#fit-room-widget-style")) return;
+
     var css = ""
       // Overlay wrapping
       + ".dq-wrap{display:inline-block;position:relative;vertical-align:top;line-height:0;max-width:100%;}"
@@ -475,13 +477,10 @@
       + "@media (max-width:520px){.dq-backdrop{padding:8px;align-items:center;}.dq-head{padding-right:max(56px,calc(60px + env(safe-area-inset-right, 0px)));}}"
       + "@media (max-width:420px){.dq-stage-actions .dq-choice{min-width:120px;max-width:48%;}.dq-stage-actions .dq-wear-me{max-width:100%;}}";
 
-    var style = qs("#fit-room-widget-style");
-    if (!style) {
-      style = document.createElement("style");
-      style.id = "fit-room-widget-style";
-      document.head.appendChild(style);
-    }
+    var style = document.createElement("style");
+    style.id = "fit-room-widget-style";
     style.textContent = css;
+    document.head.appendChild(style);
   }
 
   function fileFromBlob(blob, name) {
@@ -1661,14 +1660,6 @@
     }, { once: true });
   }
 
-  function scanAndBindSync() {
-    injectStyles();
-    var imgs = Array.prototype.slice.call(document.images || []);
-    for (var i = 0; i < imgs.length; i++) {
-      processImageForBinding(imgs[i]);
-    }
-  }
-
   function finishScanBatch() {
     scanBatchRunning = false;
     scanBatchImgs = null;
@@ -1722,15 +1713,40 @@
 
   function scanAndBind() {
     if (!shouldBindOnThisPage()) return;
-    if (widgetBindMode() === "all") {
-      scanAndBindBatched();
-      return;
-    }
-    scanAndBindSync();
+    scanAndBindBatched();
   }
 
+  function isWidgetOwnedNode(node) {
+    while (node && node.nodeType !== 1) {
+      node = node.parentNode;
+    }
+    if (!node || typeof node.closest !== "function") return false;
+    return !!(
+      node.closest("#fit-room-widget-style") ||
+      node.closest(".dq-wrap") ||
+      node.closest(".dq-backdrop")
+    );
+  }
+
+  function mutationsAreWidgetOwned(mutations) {
+    if (!mutations || !mutations.length) return true;
+    for (var i = 0; i < mutations.length; i++) {
+      if (!isWidgetOwnedNode(mutations[i].target)) return false;
+    }
+    return true;
+  }
+
+  var observeScanRaf = 0;
+
   function observe() {
-    var mo = new MutationObserver(function () { scanAndBind(); });
+    var mo = new MutationObserver(function (mutations) {
+      if (mutationsAreWidgetOwned(mutations)) return;
+      if (observeScanRaf) return;
+      observeScanRaf = window.requestAnimationFrame(function () {
+        observeScanRaf = 0;
+        scanAndBind();
+      });
+    });
     mo.observe(document.documentElement, { subtree: true, childList: true, attributes: false });
   }
 
