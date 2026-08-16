@@ -9,6 +9,7 @@ import {
   markClientKeyDeleted,
 } from "@/lib/apiKeyStore";
 import { validateRetailerPasswordStrength } from "@/lib/retailerPasswordPolicy";
+import { getStripe } from "@/lib/stripeServer";
 
 export const RETAILER_SESSION_COOKIE = "fit-room_retailer_session";
 
@@ -356,6 +357,19 @@ export async function deleteRetailerAccount(params: {
 }): Promise<void> {
   const row = await loadRetailerRecord(params.userId.trim());
   if (!row) throw new Error("Account not found.");
+
+  const subscriptionId = row.user.stripeSubscriptionId?.trim();
+  if (subscriptionId) {
+    try {
+      await getStripe().subscriptions.cancel(subscriptionId);
+    } catch (e) {
+      console.error("[fit-room] Stripe subscription cancel failed during account delete", {
+        userId: row.user.id,
+        subscriptionId,
+        error: e instanceof Error ? e.message : e,
+      });
+    }
+  }
 
   const redis = getRedis();
   const emailNorm = normalizeRetailerEmail(row.user.email);
