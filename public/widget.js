@@ -431,14 +431,69 @@
     if (style.position === "static") el.style.position = "relative";
   }
 
+  function isOverlaySkipHostTag(tag) {
+    return tag === "PICTURE" || tag === "A" || tag === "BUTTON" || tag === "SOURCE";
+  }
+
+  function findVisibleImageContainer(img) {
+    if (!img) return null;
+    var imgRect = img.getBoundingClientRect();
+    var el = img.parentElement;
+    var hops = 0;
+    var clipHost = null;
+    var sizedHost = null;
+
+    while (el && el !== document.body && el !== document.documentElement && hops < 12) {
+      var tag = el.tagName;
+      if (!isOverlaySkipHostTag(tag)) {
+        var style = window.getComputedStyle(el);
+        var er = el.getBoundingClientRect();
+        if (er.width >= 8 && er.height >= 8) {
+          var ox = style.overflowX;
+          var oy = style.overflowY;
+          var clips = ox === "hidden" || ox === "clip" || oy === "hidden" || oy === "clip";
+          if (clips) {
+            clipHost = el;
+            break;
+          }
+          if (!sizedHost && er.width <= imgRect.width + 16 && er.height <= imgRect.height + 16) {
+            sizedHost = el;
+          }
+        }
+      }
+      el = el.parentElement;
+      hops++;
+    }
+
+    return clipHost || sizedHost || null;
+  }
+
+  function hostIsUnusableForOverlay(host, img) {
+    if (!host) return true;
+    var tag = host.tagName;
+    if (tag === "BODY" || tag === "HTML" || isOverlaySkipHostTag(tag)) return true;
+    var hr = host.getBoundingClientRect();
+    var ir = img.getBoundingClientRect();
+    if (hr.width < 8 || hr.height < 8) return true;
+    var clipsImage =
+      ir.width > hr.width + 2 ||
+      ir.height > hr.height + 2 ||
+      ir.left < hr.left - 2 ||
+      ir.top < hr.top - 2 ||
+      ir.right > hr.right + 2 ||
+      ir.bottom > hr.bottom + 2;
+    if (clipsImage) return false;
+    if (hr.width > ir.width * 1.4 && hr.height > ir.height * 1.4) return true;
+    return false;
+  }
+
   function injectStyles() {
     if (qs("#fit-room-widget-style")) return;
 
     var css = ""
-      // Overlay wrapping
-      + ".dq-wrap{display:inline-block;position:relative;vertical-align:top;line-height:0;max-width:100%;}"
-      + ".dq-wrap>img{display:block;max-width:100%;height:auto;vertical-align:top;}"
-      + ".dq-overlay{position:absolute;inset:auto 12px 12px auto;z-index:2147483645;display:flex;align-items:center;pointer-events:auto;}"
+      // Overlay is pinned to the visible media container (not the image's layout/natural box).
+      + ".dq-wrap{display:inline-block;position:relative;vertical-align:top;max-width:100%;}"
+      + ".dq-overlay{position:absolute;right:12px;bottom:12px;left:auto;top:auto;z-index:2147483645;display:flex;align-items:center;pointer-events:auto;max-width:calc(100% - 24px);box-sizing:border-box;}"
 
       // Wear button
       + ".dq-wear-btn{position:relative;appearance:none;box-sizing:border-box;cursor:pointer;"
@@ -446,7 +501,7 @@
       + "padding:12px 30px;border-radius:50px;color:#2c241f;text-decoration:none;"
       + "font-family:Georgia,ui-serif,serif;font-weight:700;font-size:14px;line-height:1.25;letter-spacing:2px;"
       + "background:linear-gradient(135deg,#c6a77d 0%,#e2cfb4 50%,#c6a77d 100%);"
-      + "border:1px solid rgba(255,255,255,.3);"
+      + "border:1px solid rgba(255,255,255,.3);max-width:100%;"
       + "box-shadow:0 4px 15px rgba(0,0,0,.3),inset 0 1px 1px rgba(255,255,255,.5);"
       + "transition:all .3s ease;transform:translateY(0);-webkit-font-smoothing:antialiased;}"
       + ".dq-wear-btn:hover{transform:translateY(-2px);box-shadow:0 6px 20px rgba(198,167,125,.4);filter:brightness(1.1);}"
@@ -1682,8 +1737,43 @@
     return m;
   }
 
+  function removeWearOverlay(img) {
+    if (!img) return;
+    var overlay = img._dqWearOverlay;
+    if (!overlay) {
+      var searchHost = img._dqWearHost || (img.closest && img.closest(".dq-overlay-host"));
+      if (searchHost && searchHost.children) {
+        var kids = searchHost.children;
+        for (var i = 0; i < kids.length; i++) {
+          if (kids[i].classList && kids[i].classList.contains("dq-overlay")) {
+            overlay = kids[i];
+            break;
+          }
+        }
+      }
+    }
+    if (overlay && overlay.parentNode) overlay.parentNode.removeChild(overlay);
+    img._dqWearOverlay = null;
+    var host = img._dqWearHost;
+    if (host && host.classList && host.classList.contains("dq-overlay-host")) {
+      var stillHas = false;
+      var hostKids = host.children;
+      for (var h = 0; h < hostKids.length; h++) {
+        if (hostKids[h].classList && hostKids[h].classList.contains("dq-overlay")) {
+          stillHas = true;
+          break;
+        }
+      }
+      if (!stillHas) host.classList.remove("dq-overlay-host");
+    }
+    img._dqWearHost = null;
+  }
+
   function unbindImage(img) {
-    if (!img || img.getAttribute(WIDGET_ATTR_BOUND) !== "1") return;
+    if (!img) return;
+    removeWearOverlay(img);
+    img.removeAttribute(WIDGET_ATTR_BOUND);
+
     var wrap = img.parentElement;
     if (!wrap || !wrap.classList || !wrap.classList.contains("dq-wrap")) {
       wrap = img.closest ? img.closest(".dq-wrap") : null;
@@ -1692,17 +1782,14 @@
       wrap.parentNode.insertBefore(img, wrap);
       wrap.parentNode.removeChild(wrap);
     }
-    img.removeAttribute(WIDGET_ATTR_BOUND);
   }
 
   function unbindAllExcept(keepImg) {
-    var wraps = document.querySelectorAll(".dq-wrap");
-    for (var i = 0; i < wraps.length; i++) {
-      var wrap = wraps[i];
-      if (wrap.closest && wrap.closest(".dq-backdrop")) continue;
-      var boundImg = wrap.querySelector("img");
-      if (!boundImg || boundImg === keepImg) continue;
-      unbindImage(boundImg);
+    var bound = document.querySelectorAll("[" + WIDGET_ATTR_BOUND + "='1']");
+    for (var i = 0; i < bound.length; i++) {
+      if (bound[i] === keepImg) continue;
+      if (isWidgetModalImage(bound[i])) continue;
+      unbindImage(bound[i]);
     }
   }
 
@@ -1718,12 +1805,23 @@
     if (!par) return;
 
     img.setAttribute(WIDGET_ATTR_BOUND, "1");
+    removeWearOverlay(img);
 
-    var wrapper = document.createElement("span");
-    wrapper.className = "dq-wrap";
-    par.insertBefore(wrapper, img);
-    wrapper.appendChild(img);
-    ensureRelative(wrapper);
+    var overlayParent = null;
+    var host = findVisibleImageContainer(img);
+    if (host && !hostIsUnusableForOverlay(host, img)) {
+      ensureRelative(host);
+      host.classList.add("dq-overlay-host");
+      overlayParent = host;
+      img._dqWearHost = host;
+    } else {
+      var wrapper = document.createElement("span");
+      wrapper.className = "dq-wrap";
+      par.insertBefore(wrapper, img);
+      wrapper.appendChild(img);
+      overlayParent = wrapper;
+      img._dqWearHost = wrapper;
+    }
 
     var overlay = document.createElement("div");
     overlay.className = "dq-overlay";
@@ -1735,7 +1833,8 @@
     btn.setAttribute("aria-label", "Wear Me");
 
     overlay.appendChild(btn);
-    wrapper.appendChild(overlay);
+    overlayParent.appendChild(overlay);
+    img._dqWearOverlay = overlay;
 
     btn.addEventListener("click", function (e) {
       e.preventDefault();
@@ -1864,6 +1963,7 @@
     return !!(
       node.closest("#fit-room-widget-style") ||
       node.closest(".dq-wrap") ||
+      node.closest(".dq-overlay") ||
       node.closest(".dq-backdrop")
     );
   }

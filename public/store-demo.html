@@ -234,6 +234,12 @@
           wrap.parentNode.insertBefore(img, wrap);
           wrap.parentNode.removeChild(wrap);
         }
+        var host = img.closest(".dq-overlay-host");
+        if (host) {
+          var overlay = host.querySelector(".dq-overlay");
+          if (overlay && overlay.parentNode) overlay.parentNode.removeChild(overlay);
+          host.classList.remove("dq-overlay-host");
+        }
         img.removeAttribute("data-fit-room-tryon-bound");
         img.removeAttribute("data-fit-room-tryon-skip");
         img.removeAttribute("data-fit-room-tryon-pending-load");
