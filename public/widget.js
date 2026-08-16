@@ -299,6 +299,114 @@
     return !!(img && img.closest && img.closest(".dq-backdrop"));
   }
 
+  var MAIN_IMAGE_MIN_PX = 160;
+  var THUMBNAIL_MAX_PX = 140;
+  var THUMBNAIL_CLOSEST_SEL = [
+    "[class*='thumbnail']",
+    "[class*='thumbnails']",
+    "[data-thumbnail]",
+    "button.thumbnail",
+    ".product__thumbs",
+    ".product-single__thumbnails",
+    ".flex-control-thumbs",
+    "[class*='swatch']",
+    "[class*='color-variant']",
+    ".variant-thumbnail"
+  ].join(",");
+  var PRODUCT_GALLERY_SEL = [
+    "media-gallery",
+    "[class*='product__media']",
+    "[class*='product-media']",
+    "[class*='product-gallery']",
+    "[class*='product__photo']",
+    "[class*='product-single__photo']",
+    "[class*='featured-image']",
+    "[data-product-media]",
+    "[data-product-image]",
+    ".product-image-container",
+    "#ProductPhoto",
+    ".product__main-photos"
+  ].join(",");
+  var ACTIVE_SLIDE_SEL = [
+    ".is-active",
+    ".is-selected",
+    "[aria-current='true']",
+    ".swiper-slide-active",
+    ".slick-current",
+    ".slick-active"
+  ].join(",");
+
+  function isLikelyThumbnailImage(img) {
+    if (!img) return true;
+    var rect = img.getBoundingClientRect();
+    if (rect.width <= 0 || rect.height <= 0) return true;
+    if (rect.width <= THUMBNAIL_MAX_PX || rect.height <= THUMBNAIL_MAX_PX) return true;
+    if (rect.width >= MAIN_IMAGE_MIN_PX && rect.height >= MAIN_IMAGE_MIN_PX) return false;
+
+    var el = img;
+    var hops = 0;
+    while (el && hops < 5) {
+      if (el.matches && el.matches(THUMBNAIL_CLOSEST_SEL)) return true;
+      el = el.parentElement;
+      hops++;
+    }
+    return false;
+  }
+
+  function viewportVisibleArea(rect) {
+    var vw = window.innerWidth || 0;
+    var vh = window.innerHeight || 0;
+    var visW = Math.max(0, Math.min(rect.right, vw) - Math.max(rect.left, 0));
+    var visH = Math.max(0, Math.min(rect.bottom, vh) - Math.max(rect.top, 0));
+    return visW * visH;
+  }
+
+  function isPrimaryProductImageCandidate(img) {
+    if (!img || img.tagName !== "IMG") return false;
+    if (isWidgetModalImage(img)) return false;
+    if (img.getAttribute(WIDGET_ATTR_SKIP) === "1") return false;
+    var src = img.currentSrc || img.src || "";
+    if (!src || src.indexOf("data:") === 0) return false;
+    if (src.toLowerCase().indexOf(".svg") !== -1) return false;
+    if (img.naturalWidth > 0 && img.naturalHeight > 0) {
+      if (img.naturalWidth < 24 || img.naturalHeight < 24) return false;
+    }
+    if (img.closest && (img.closest("[hidden]") || img.closest('[aria-hidden="true"]'))) return false;
+    if (isLikelyThumbnailImage(img)) return false;
+    var rect = img.getBoundingClientRect();
+    if (rect.width < MAIN_IMAGE_MIN_PX || rect.height < MAIN_IMAGE_MIN_PX) return false;
+    if (rect.bottom <= 0 || rect.right <= 0) return false;
+    return true;
+  }
+
+  function scorePrimaryProductImage(img) {
+    var rect = img.getBoundingClientRect();
+    var score = viewportVisibleArea(rect) || (rect.width * rect.height);
+    if (img.closest && img.closest(PRODUCT_GALLERY_SEL)) score *= 2;
+    if (img.closest && img.closest(ACTIVE_SLIDE_SEL)) score *= 4;
+    return score;
+  }
+
+  function findPrimaryProductImage() {
+    var imgs = document.images || [];
+    var ranked = [];
+    for (var i = 0; i < imgs.length; i++) {
+      var img = imgs[i];
+      if (!isPrimaryProductImageCandidate(img)) continue;
+      ranked.push({ img: img, score: scorePrimaryProductImage(img) });
+    }
+    ranked.sort(function (a, b) { return b.score - a.score; });
+    for (var r = 0; r < ranked.length; r++) {
+      var candidate = ranked[r].img;
+      if (shouldSkipAccessoryImage(candidate)) {
+        candidate.setAttribute(WIDGET_ATTR_SKIP, "1");
+        continue;
+      }
+      return candidate;
+    }
+    return null;
+  }
+
   function isEligibleImage(img) {
     if (!img || img.tagName !== "IMG") return false;
     if (isWidgetModalImage(img)) return false;
@@ -312,6 +420,8 @@
     if (img.naturalWidth > 0 && img.naturalHeight > 0) {
       if (img.naturalWidth < 24 || img.naturalHeight < 24) return false;
     }
+
+    if (widgetBindMode() !== "all" && isLikelyThumbnailImage(img)) return false;
 
     return isVisibleEnough(img);
   }
@@ -1572,6 +1682,30 @@
     return m;
   }
 
+  function unbindImage(img) {
+    if (!img || img.getAttribute(WIDGET_ATTR_BOUND) !== "1") return;
+    var wrap = img.parentElement;
+    if (!wrap || !wrap.classList || !wrap.classList.contains("dq-wrap")) {
+      wrap = img.closest ? img.closest(".dq-wrap") : null;
+    }
+    if (wrap && wrap.parentNode) {
+      wrap.parentNode.insertBefore(img, wrap);
+      wrap.parentNode.removeChild(wrap);
+    }
+    img.removeAttribute(WIDGET_ATTR_BOUND);
+  }
+
+  function unbindAllExcept(keepImg) {
+    var wraps = document.querySelectorAll(".dq-wrap");
+    for (var i = 0; i < wraps.length; i++) {
+      var wrap = wraps[i];
+      if (wrap.closest && wrap.closest(".dq-backdrop")) continue;
+      var boundImg = wrap.querySelector("img");
+      if (!boundImg || boundImg === keepImg) continue;
+      unbindImage(boundImg);
+    }
+  }
+
   function bindImage(img) {
     if (img.getAttribute(WIDGET_ATTR_BOUND) === "1") return;
     if (img.getAttribute(WIDGET_ATTR_SKIP) === "1") return;
@@ -1679,7 +1813,13 @@
 
     if (!scanBatchImgs) {
       injectStyles();
-      scanBatchImgs = Array.prototype.slice.call(document.images || []);
+      if (widgetBindMode() === "all") {
+        scanBatchImgs = Array.prototype.slice.call(document.images || []);
+      } else {
+        var primary = findPrimaryProductImage();
+        unbindAllExcept(primary);
+        scanBatchImgs = primary ? [primary] : [];
+      }
       scanBatchIndex = 0;
     }
 
@@ -1737,6 +1877,23 @@
   }
 
   var observeScanRaf = 0;
+  var primaryRescanTimer = 0;
+  var primaryRescanFollowupTimer = 0;
+
+  function schedulePrimaryRescan() {
+    if (widgetBindMode() === "all") return;
+    if (!shouldBindOnThisPage()) return;
+    if (primaryRescanTimer) window.clearTimeout(primaryRescanTimer);
+    primaryRescanTimer = window.setTimeout(function () {
+      primaryRescanTimer = 0;
+      scanAndBind();
+    }, 180);
+    if (primaryRescanFollowupTimer) window.clearTimeout(primaryRescanFollowupTimer);
+    primaryRescanFollowupTimer = window.setTimeout(function () {
+      primaryRescanFollowupTimer = 0;
+      scanAndBind();
+    }, 450);
+  }
 
   function observe() {
     var mo = new MutationObserver(function (mutations) {
@@ -1769,6 +1926,18 @@
     window.addEventListener("load", function () { scanAndBind(); });
     window.addEventListener("hashchange", function () { scanAndBind(); });
     window.addEventListener("fit-room-rescan", function () { scanAndBind(); });
+    document.addEventListener("click", function (e) {
+      if (widgetBindMode() === "all") return;
+      var t = e.target;
+      if (t && t.closest && t.closest(".dq-backdrop")) return;
+      schedulePrimaryRescan();
+    }, true);
+    document.addEventListener("change", function (e) {
+      if (widgetBindMode() === "all") return;
+      var t = e.target;
+      if (t && t.closest && t.closest(".dq-backdrop")) return;
+      schedulePrimaryRescan();
+    }, true);
   }
 
   if (document.readyState === "loading") {
